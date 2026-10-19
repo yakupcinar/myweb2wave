@@ -1,0 +1,26 @@
+# CI = yereldeki kapının aynısı: bin/kontrol. İki ayrı tanım kayar; tek
+# betik kaymaz. Eylemler etikete değil commit SHA'sına sabit (etiket taşınabilir).
+name: kontrol
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kontrol-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kontrol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Araç sürümleri
+        run: docker --version && docker compose version
+      - name: bin/kontrol
+        run: bin/kontrol
