@@ -13,6 +13,22 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class HealthControllerTest extends WebTestCase
 {
+    /** @var array{0: mixed, 1: mixed} */
+    private array $eskiDbAdresi;
+
+    protected function setUp(): void
+    {
+        $this->eskiDbAdresi = [$_SERVER['DATABASE_URL'] ?? null, $_ENV['DATABASE_URL'] ?? null];
+    }
+
+    protected function tearDown(): void
+    {
+        // 503 testi DB adresini bozuyor; geri konmazsa SONRAKİ her DB testi
+        // port 1'e bağlanır (tuzak §13 — süit tek DB testiyle yeşil görünüyordu).
+        [$_SERVER['DATABASE_URL'], $_ENV['DATABASE_URL']] = $this->eskiDbAdresi;
+        parent::tearDown();
+    }
+
     public function testVeritabaniAyaktaykenSurumuVeDbDurumunuDoner(): void
     {
         $client = static::createClient();

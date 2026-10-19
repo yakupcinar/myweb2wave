@@ -26,7 +26,8 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 - Dil / çatı: huni = TypeScript · Astro (+ React adacıkları); çekirdek =
   PHP · Symfony (B2) — iskelet henüz yok
 - Veri servisleri: Postgres 18.6 Docker'da, host portu **5435**; çekirdek
-  FrankenPHP konteynerinde **8081**. Makinede PHP yok — her şey `docker compose`.
+  FrankenPHP konteynerinde **8081**. Testler gerçek Stripe'a değil **stripe-mock**'a
+  gider (`.env.test`); gerçek anahtar yalnız `core/.env.local` (git dışı). Makinede PHP yok — her şey `docker compose`.
 - Test veritabanı / izolasyon: `app_test` + `TEST_TOKEN` son eki (paralel
   oturumda farklı `TEST_TOKEN` ver — kural 15).
 - Üretim / dağıtım: _—_ — ⚠️ "push = üretim güncellendi" **varsayılmaz**;
@@ -131,6 +132,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§19** | PHPUnit `<server>` gerçek ortam değişkenine **yenilir** (Symfony önce `$_ENV`) — `<env force>` kullan. |
 | **§20** | Renkli çıktıda `grep '^OK'` satırı **sessizce kaybeder**; önce ANSI kodunu ayıkla. |
 | **§21** | CI sonucunu SHA ile ararken push **olmadıysa eski koşu** gelir; önce "uygulandı mı" + "SHA yeni mi". |
+| **§22** | `docker compose run -d` **0 döner**, içindeki süreç çoktan ölmüş olabilir — `docker ps` + "hazır" satırını bekle. |
 
 ---
 

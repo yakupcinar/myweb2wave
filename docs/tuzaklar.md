@@ -45,3 +45,11 @@ commit/push olmamıştı. **Sebep:** HEAD değişmedi → aynı SHA'nın önceki
 (yeşil) koşusu yeni denemenin sonucu sanıldı. İki kez yaşandı.
 **Doğrusu:** sonucu okumadan önce "uygulandı mı" (grep -F) ve "SHA yeni mi"
 ikisini de bas; biri yoksa sonuç **KOŞULMADI**.
+
+## §22 — `docker compose run -d` 0 döner, içindeki süreç ölmüş olabilir
+**Belirti:** `stripe listen` arka plana atıldı (EXIT=0), `stripe trigger`
+"Trigger succeeded!" dedi, ama hiçbir olay iletilmedi; hata yok.
+**Sebep:** CLI ilk saniyede `must specify events…` ile çıkmıştı; `-d`
+konteyneri başlatır, sürecin yaşadığını söylemez. **Doğrusu:** arka plan
+süreci için `docker ps` durumu + sürecin "hazır" satırını bekle (`Ready`),
+sonra işi tetikle.

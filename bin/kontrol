@@ -29,7 +29,7 @@ funnel() { docker compose run --rm -T funnel sh -c "$1"; }
 
 # 0 · Ortam (tuzak §14)
 df -h . | tail -1
-adim ortam-db     docker compose up -d --wait db
+adim ortam-db     docker compose up -d --wait db stripe-mock
 
 # Bağımlılıklar: temiz ortamda vendor/ yok. Yerelde var diye atlanınca CI
 # EXIT=127 verdi (2026-10-19) — kapı yerel duruma dayanmamalı.
@@ -47,6 +47,9 @@ adim funnel-tip   funnel 'npm run -s check'
 
 # 3 · Test + derleme
 adim core-testdb  core   'php bin/console doctrine:database:create --env=test --if-not-exists'
+# Göç ŞART: temiz ortamda (CI) tablo yok; yerelde elle uygulanmış olması
+# kapıyı yalancı yeşil yapar (core-kur dersiyle aynı).
+adim core-goc     core   'php bin/console doctrine:migrations:migrate -n --env=test'
 adim core-test    core   'vendor/bin/phpunit --no-progress'
 adim funnel-derle funnel 'npm run -s build'
 
