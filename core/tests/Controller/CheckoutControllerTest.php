@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Tests\Support\KayitliStripeIstemcisi;
+use App\Tests\Support\Sozlesme;
 use Stripe\ApiRequestor;
+use Stripe\Exception\ApiConnectionException;
 use Stripe\HttpClient\CurlClient;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -31,6 +33,7 @@ final class CheckoutControllerTest extends WebTestCase
         $client->jsonRequest('POST', '/checkout/sessions', ['plan' => 'monthly']);
 
         self::assertResponseStatusCodeSame(201);
+        Sozlesme::yanitiDogrula('POST', '/checkout/sessions', $client->getResponse());
         $govde = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertIsArray($govde);
         self::assertIsString($govde['url'] ?? null);
@@ -56,12 +59,53 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertCount(0, $this->stripe->istekler);
     }
 
+    public function testStripeaUlasilamazsa502(): void
+    {
+        // Ç16: 500 yerine ne olduğunu söyleyen 502; huni mesaj gösterir.
+        $this->stripe->firlat = new ApiConnectionException('baglanti yok');
+        $client = static::createClient();
+        $client->jsonRequest('POST', '/checkout/sessions', ['plan' => 'monthly']);
+
+        self::assertResponseStatusCodeSame(502);
+        self::assertSame(['error' => 'payment_provider_unavailable'], json_decode((string) $client->getResponse()->getContent(), true));
+        Sozlesme::yanitiDogrula('POST', '/checkout/sessions', $client->getResponse());
+    }
+
+    public function testCorsYalnizHunininKokenineIzinVerir(): void
+    {
+        $client = static::createClient();
+        $client->request('OPTIONS', '/checkout/sessions', [], [], [
+            'HTTP_ORIGIN' => 'https://huni.test',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
+            'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'content-type',
+        ]);
+        self::assertSame('https://huni.test', $client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+
+        $client->request('OPTIONS', '/checkout/sessions', [], [], [
+            'HTTP_ORIGIN' => 'http://localhost:9999',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
+        ]);
+        self::assertNull($client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
+    public function testWebhookYolundaCorsYok(): void
+    {
+        // Webhook'u yalnız Stripe çağırır; tarayıcıya açılmaz.
+        $client = static::createClient();
+        $client->request('OPTIONS', '/webhooks/stripe', [], [], [
+            'HTTP_ORIGIN' => 'https://huni.test',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
+        ]);
+        self::assertNull($client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
     public function testBilinmeyenPlan422VeStripeaIstekGitmez(): void
     {
         $client = static::createClient();
         $client->jsonRequest('POST', '/checkout/sessions', ['plan' => 'yillik']);
 
         self::assertResponseStatusCodeSame(422);
+        Sozlesme::yanitiDogrula('POST', '/checkout/sessions', $client->getResponse());
         self::assertCount(0, $this->stripe->istekler);
     }
 }

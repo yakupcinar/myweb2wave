@@ -31,6 +31,8 @@ services:
       - "8081:80"
     volumes:
       - ./core:/app
+      # Sözleşme testleri gerçek yanıtları buna göre doğrular (R2).
+      - ./contract/openapi.yaml:/contract/openapi.yaml:ro
     depends_on:
       db:
         condition: service_healthy
@@ -58,6 +60,17 @@ services:
       - ./funnel:/app
       - funnel-node-modules:/app/node_modules
 
+  # Sözleşmeden huni tiplerini üretir; huni dizinine yazar.
+  contract:
+    build: ./contract
+    image: myweb2wave-contract:dev
+    profiles: ["araclar"]
+    volumes:
+      - ./contract:/app
+      - ./funnel:/funnel
+      - contract-node-modules:/app/node_modules
+
 volumes:
   db-data:
   funnel-node-modules:
+  contract-node-modules:

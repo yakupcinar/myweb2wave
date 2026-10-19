@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Psr\Log\LoggerInterface;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +22,7 @@ final readonly class CheckoutController
 {
     public function __construct(
         private StripeClient $stripe,
+        private LoggerInterface $logger,
         #[Autowire('%env(STRIPE_PRICE_MONTHLY)%')]
         private string $monthlyPrice,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
@@ -38,12 +41,20 @@ final readonly class CheckoutController
             return new JsonResponse(['error' => 'unknown_plan'], 422);
         }
 
-        $session = $this->stripe->checkout->sessions->create([
-            'mode' => 'subscription',
-            'line_items' => [['price' => $prices[$plan], 'quantity' => 1]],
-            'success_url' => $this->funnelBaseUrl.'/basarili?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => $this->funnelBaseUrl.'/iptal',
-        ]);
+        try {
+            $session = $this->stripe->checkout->sessions->create([
+                'mode' => 'subscription',
+                'line_items' => [['price' => $prices[$plan], 'quantity' => 1]],
+                'success_url' => $this->funnelBaseUrl.'/basarili?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $this->funnelBaseUrl.'/iptal',
+            ]);
+        } catch (ApiErrorException $e) {
+            // Ç16: ağ, Stripe 5xx ya da reddedilen istek — huni mesaj gösterir.
+            // Ayrıntı günlüğe; istemciye iç hata metni gitmez.
+            $this->logger->error('Stripe Checkout oturumu açılamadı', ['exception' => $e]);
+
+            return new JsonResponse(['error' => 'payment_provider_unavailable'], 502);
+        }
 
         return new JsonResponse(['url' => $session->url], 201);
     }

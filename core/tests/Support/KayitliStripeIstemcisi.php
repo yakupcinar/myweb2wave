@@ -17,6 +17,9 @@ final class KayitliStripeIstemcisi implements ClientInterface
     /** @var list<array{method: string, url: string, params: array<mixed>}> */
     public array $istekler = [];
 
+    /** Doluysa istek stripe-mock'a gitmez, bu atılır (Stripe'a ulaşılamaması). */
+    public ?\Throwable $firlat = null;
+
     /**
      * @param 'delete'|'get'|'post' $method
      * @param string                $absUrl
@@ -31,6 +34,9 @@ final class KayitliStripeIstemcisi implements ClientInterface
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
     {
         $this->istekler[] = ['method' => $method, 'url' => $absUrl, 'params' => $params];
+        if (null !== $this->firlat) {
+            throw $this->firlat;
+        }
 
         return (new CurlClient())->request($method, $absUrl, $headers, $params, $hasFile, $apiMode, $maxNetworkRetries);
     }

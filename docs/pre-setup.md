@@ -153,5 +153,5 @@ kodu — güvenlik riski). **Sonuç:** depoya **asla sır girmez** — sırlar
 | Risk | Olasılık | Etki | Ne zaman ölçülür |
 |---|---|---|---|
 | ~~R1 · Next.js önbelleği yanlış kişiye ait içerik gösterir~~ | — | — | B2 ile düştü (statik huni) |
-| R2 · Astro ile Symfony'nin sözleşmesi kayar: huni eski alan adıyla istek atar, çekirdek 4xx/sessiz yok sayar | orta | yüksek | ilk uçtan uca blok: OpenAPI'den üretilen tipler + sözleşme testi |
-| R3 · Webhook iki kez gelir, abonelik iki kez açılır | yüksek | yüksek | ödeme bloğu: aynı olayı iki kez gönderen test |
+| ~~R2 · Astro ile Symfony'nin sözleşmesi kayar~~ | — | — | ✅ ölçüldü 2026-10-19: `contract/openapi.yaml` + üretilen tipler + `sozlesme-guncel`; kırma P1–P3, P7–P8 |
+| ~~R3 · Webhook iki kez gelir, abonelik iki kez açılır~~ | — | — | ✅ ölçüldü 2026-10-19: PK kısıtı + test + `stripe events resend` gerçekte 1 olay/1 abonelik (`stripe-odeme.md`) |

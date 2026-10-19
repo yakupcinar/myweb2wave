@@ -100,6 +100,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | Test | `docker compose run --rm -T core vendor/bin/phpunit` |
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
+| Sözleşme → huni tipleri | `docker compose run --rm contract npm run uret` (`contract/openapi.yaml` değişince) |
 
 ---
 
@@ -133,6 +134,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§20** | Renkli çıktıda `grep '^OK'` satırı **sessizce kaybeder**; önce ANSI kodunu ayıkla. |
 | **§21** | CI sonucunu SHA ile ararken push **olmadıysa eski koşu** gelir; önce "uygulandı mı" + "SHA yeni mi". |
 | **§22** | `docker compose run -d` **0 döner**, içindeki süreç çoktan ölmüş olabilir — `docker ps` + "hazır" satırını bekle. |
+| **§23** | `curl -s` + `[...]`'lı adres **sessizce boş** döner (glob) — `curl -g`. |
 
 ---
 

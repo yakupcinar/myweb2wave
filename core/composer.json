@@ -10,6 +10,8 @@
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.7",
+        "nelmio/cors-bundle": "^2.6",
+        "psr/log": "^3.0",
         "stripe/stripe-php": "^22.0",
         "symfony/console": "7.4.*",
         "symfony/dotenv": "7.4.*",
@@ -72,6 +74,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.95",
+        "league/openapi-psr7-validator": "^0.24",
+        "nyholm/psr7": "^1.8",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-doctrine": "^2.0",
@@ -79,6 +83,7 @@
         "phpstan/phpstan-symfony": "^2.1",
         "phpunit/phpunit": "^13.4",
         "symfony/browser-kit": "7.4.*",
-        "symfony/css-selector": "7.4.*"
+        "symfony/css-selector": "7.4.*",
+        "symfony/psr-http-message-bridge": "7.4.*"
     }
 }

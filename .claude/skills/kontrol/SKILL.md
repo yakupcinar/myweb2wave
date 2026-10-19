@@ -26,6 +26,7 @@ B3). Ön koşul: Docker Desktop açık.
 | 1 | core-kur | `composer install` — temiz ortamda `vendor/` yok (CI EXIT=127 dersi) | |
 | 1 | core-bicim | `php-cs-fixer check --diff` | EXIT≠0 = biçimsiz (kırma K5: EXIT=8) |
 | 1 | funnel-npm / funnel-bicim | `npm ci` · `prettier --check .` | |
+| 1 | sozlesme-kur / sozlesme-guncel | `npm ci` · `openapi-typescript` → `/tmp` + `cmp` depodaki `funnel/src/sozlesme/api.ts` | farklıysa: sözleşme değişmiş, `contract npm run uret` unutulmuş |
 | 2 | core-composer | `composer validate --strict` | |
 | 2 | core-stan | `phpstan analyse` (level **max**) | |
 | 2 | funnel-tip | `astro check` | |
