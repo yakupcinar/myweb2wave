@@ -8,11 +8,14 @@
 
 | Katman | Durum | Kanıt |
 |---|---|---|
-| Yığın seçimi | 🔷 karar bekliyor | `docs/pre-setup.md` |
+| Ürün kapsamı | ✅ A1–A3 | `docs/pre-setup.md` §A |
+| Yığın seçimi | ✅ B1 TypeScript / Next.js | `docs/pre-setup.md` §B |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
-- [ ] **Yığın kararı** — seçenekler, ölçütler, reddedilenler → `docs/pre-setup.md`
+- [x] **Yığın kararı** — B1, 2026-10-19
+- [ ] **İskelet** — Next.js + Postgres + Docker; R1'i ölçen ilk test
+- [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
 - [ ] **`/kontrol` skill'ini doldur** — biçim + statik + test komutları
 
 ## 2. Backlog

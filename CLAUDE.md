@@ -2,8 +2,8 @@
 
 <!-- TODO: proje adı, tek cümlelik tanım -->
 **Proje:** _henüz adı yok_ — _ne yaptığını tek cümleyle yaz_.
-**Yığın:** _henüz seçilmedi_ (karar `docs/pre-setup.md`'ye yazılır,
-gerekçesi ve reddedilen alternatiflerle).
+**Yığın:** TypeScript · Next.js (App Router) · Postgres · Stripe (test) —
+`docs/pre-setup.md` §B1, gerekçesi ve reddedilen alternatiflerle.
 
 > **Bu dosya bir YÖNLENDİRİCİ (router).** İçinde yalnızca **her oturumda
 > geçerli olan değişmezler** durur: yığın, komutlar, kurallar, tuzak
@@ -23,7 +23,7 @@ gerekçesi ve reddedilen alternatiflerle).
 ## 1. Yığın ve ortam
 
 <!-- TODO: yığın seçilince doldur -->
-- Dil / çatı: _—_
+- Dil / çatı: TypeScript · Next.js App Router (B1) — iskelet henüz yok
 - Veri servisleri: _—_ (portlar, Docker mu host mu)
 - Test veritabanı / izolasyon: _—_
 - Üretim / dağıtım: _—_ — ⚠️ "push = üretim güncellendi" **varsayılmaz**;

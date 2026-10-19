@@ -54,7 +54,11 @@ geç"). Kazanç: T1'in bağlamı tartışmayla, T2'nin bağlamı kod dökümüyl
 
 Kurallar (ihlali sessiz hata üretir):
 
-1. **T2 hiçbir dosyaya yazmaz.** `claude --permission-mode plan` ile aç.
+1. **T2 hiçbir dosyaya yazmaz.** Komut (proje kökünde):
+   `claude --agent prompt-elestirmeni --permission-mode plan -n prompt`
+   Ölçüldü 2026-10-19 (`-p` ile): ajan yüklendi, rapor kendi biçiminde
+   (`DURUM: yanlış soru`), 7 tur, Sonnet ile $0,10; açık bir tutarsızlığı
+   (Ç6) yakaladı.
    İki oturum aynı `PLAN.md`'yi yazarsa biri diğerinin işini ezer.
 2. **T2 her promptta diski yeniden okur** — T1 arada commit atmış olabilir.
    CLAUDE.md oturum başındaki hâliyle yüklenir (kural 13); uzun açık kalan
