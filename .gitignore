@@ -1,0 +1,14 @@
+# Çekirdek (Symfony)
+/core/vendor/
+/core/var/
+/core/.env.local
+/core/.env.*.local
+/core/.phpunit.cache/
+/core/.php-cs-fixer.cache
+
+# Huni (Astro)
+/funnel/node_modules/
+/funnel/dist/
+/funnel/.astro/
+
+.DS_Store

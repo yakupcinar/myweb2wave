@@ -1,0 +1,10 @@
+# Statik analiz en üst seviyede (pre-setup B2): PHP çalışma zamanında
+# dinamik, tip açığını kapatan kapı bu.
+parameters:
+    level: max
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/

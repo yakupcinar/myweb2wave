@@ -16,3 +16,18 @@ komutunundur. **Doğrusu:** `komut > log 2>&1; echo EXIT=$?`.
 **Doğrusu:** `ZStack`.
 
 <!-- Diğer tuzaklar ilk kez ısırdıklarında burada açılır. -->
+
+## §19 — Test yapılandırmasındaki `<server>`, gerçek ortam değişkenine yenilir
+**Belirti:** `phpunit.dist.xml`'de `APP_VERSION=test-surumu` verildi; uç
+`dev` döndü. **Sebep:** `<server>` yalnız `$_SERVER`'ı yazar; Symfony önce
+`$_ENV`'i okur ve compose'un konteynere verdiği gerçek `APP_VERSION=dev`
+oradadır. **Ölçüm:** beklenen değer testte düz sabitti (tuzak §3) → iki test
+`'dev' !== 'test-surumu'` ile düştü. Beklenti ortamdan okunsaydı yeşil
+kalırdı. **Doğrusu:** `<env name="…" force="true"/>`.
+
+## §20 — Renkli çıktıda `grep '^…'` satırı sessizce kaybeder
+**Belirti:** kontrol betiği "OK (2 tests…)" satırını basmadı, hata yoktu.
+**Sebep:** PHPUnit satır başına ANSI renk kodu koyuyor; `^OK` eşleşmiyor,
+renk kodu aramadan **sonra** ayıklanıyordu. **Doğrusu:** önce
+`sed 's/\x1b\[[0-9;]*m//g'`, sonra `grep`. Atlanan test sayısını taşıyan
+satır budur — kaybolursa `skipped` görünmez (tuzak §8).

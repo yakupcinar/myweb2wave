@@ -25,8 +25,10 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 <!-- TODO: yığın seçilince doldur -->
 - Dil / çatı: huni = TypeScript · Astro (+ React adacıkları); çekirdek =
   PHP · Symfony (B2) — iskelet henüz yok
-- Veri servisleri: _—_ (portlar, Docker mu host mu)
-- Test veritabanı / izolasyon: _—_
+- Veri servisleri: Postgres 18.6 Docker'da, host portu **5435**; çekirdek
+  FrankenPHP konteynerinde **8081**. Makinede PHP yok — her şey `docker compose`.
+- Test veritabanı / izolasyon: `app_test` + `TEST_TOKEN` son eki (paralel
+  oturumda farklı `TEST_TOKEN` ver — kural 15).
 - Üretim / dağıtım: _—_ — ⚠️ "push = üretim güncellendi" **varsayılmaz**;
   ölçüt çalışan sistemden okunan sürümdür (ör. `/health` → `version`).
 
@@ -91,12 +93,12 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 
 | İş | Komut |
 |---|---|
-| **Tam doğrulama** | `/kontrol` skill · ya da `sinayici` ajanı (yalnız özet döner) |
-| Biçim | _—_ |
-| Statik analiz | _—_ |
-| Test | _—_ |
-| Dar TDD turu | _—_ (tek paket/dosya) |
-| Çalıştır | _—_ |
+| **Tam doğrulama** | `bin/kontrol > /tmp/k.log 2>&1; echo EXIT=$?` · `/kontrol` · `sinayici` |
+| Biçim | `docker compose run --rm -T core vendor/bin/php-cs-fixer fix` · `… funnel npm run format` |
+| Statik analiz | `… core vendor/bin/phpstan analyse` (max) · `… funnel npm run check` |
+| Test | `docker compose run --rm -T core vendor/bin/phpunit` |
+| Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
+| Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
 
 ---
 
@@ -126,6 +128,8 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§16** | macOS'ta `timeout` yok; `sh` macOS'ta bash, Ubuntu'da dash; BSD `sed` `\|`'yi tanımaz ve **hata vermez**. Taşınabilirliği varsayma, ölç. |
 | **§17** | Log'da "yok" sonucu çoğu zaman **soru** hatasıdır (yanlış etiket, varsayılan zaman penceresi, yanlış log biçimi). Önce log'a yazıldığı bilinen bir kontrol grubunu ara. |
 | **§18** | SwiftUI (ve benzeri bildirimsel UI): değiştirici **boş bir kapsayıcıya** (`Group { if … }`) bağlanırsa koşmaz — `.task`/`onAppear` hiç çalışmaz, hata yoktur. Gerçek kapsayıcı (`ZStack`) kullan. |
+| **§19** | PHPUnit `<server>` gerçek ortam değişkenine **yenilir** (Symfony önce `$_ENV`) — `<env force>` kullan. |
+| **§20** | Renkli çıktıda `grep '^OK'` satırı **sessizce kaybeder**; önce ANSI kodunu ayıkla. |
 
 ---
 

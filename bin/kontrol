@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# Tam doğrulama (/kontrol skill'i, sinayici ajanı). Ucuz kontrol önce,
+# pahalı süit sonra. Her adımın çıkış kodu BORUSUZ alınır (CLAUDE.md
+# kural 8, tuzak §1): çıktı dosyaya, kod ayrı.
+#
+# Kullanım: bin/kontrol     → hepsi; herhangi biri kırmızıysa çıkış 1.
+
+set -u
+cd "$(dirname "$0")/.."
+
+LOG=$(mktemp -d "${TMPDIR:-/tmp}/kontrol.XXXXXX")
+KIRMIZI=0
+
+adim() {
+  local ad=$1; shift
+  local bas=$SECONDS
+  "$@" > "$LOG/$ad.log" 2>&1
+  local kod=$?
+  printf '%-14s EXIT=%s  %ss\n' "$ad" "$kod" "$((SECONDS - bas))"
+  if [ "$kod" -ne 0 ]; then
+    KIRMIZI=1
+    sed -n '1,40p' "$LOG/$ad.log" | sed 's/^/    │ /'
+  fi
+}
+
+core()   { docker compose run --rm -T core   sh -c "$1"; }
+funnel() { docker compose run --rm -T funnel sh -c "$1"; }
+
+# 0 · Ortam (tuzak §14)
+df -h . | tail -1
+adim ortam-db     docker compose up -d --wait db
+
+# 1 · Biçim
+adim core-bicim   core   'vendor/bin/php-cs-fixer check --diff'
+adim funnel-npm   funnel 'npm ci --no-audit --no-fund'
+adim funnel-bicim funnel 'npm run -s format:check'
+
+# 2 · Statik analiz
+adim core-composer core  'composer validate --strict --no-check-publish'
+adim core-stan    core   'vendor/bin/phpstan analyse --no-progress --memory-limit=1G'
+adim funnel-tip   funnel 'npm run -s check'
+
+# 3 · Test + derleme
+adim core-testdb  core   'php bin/console doctrine:database:create --env=test --if-not-exists'
+adim core-test    core   'vendor/bin/phpunit --no-progress'
+adim funnel-derle funnel 'npm run -s build'
+
+# Atlanan test PASS görünür (tuzak §8) — sayıyı ayrıca yaz.
+# Renk kodu satır başında: önce ayıkla, SONRA ara (yoksa satır sessizce kaybolur).
+sed 's/\x1b\[[0-9;]*m//g' "$LOG/core-test.log" | grep -E '^(OK|Tests:|FAILURES)|Skipped' | sed 's/^/core-test      /'
+
+echo "log: $LOG"
+if [ "$KIRMIZI" -ne 0 ]; then echo "KONTROL: KIRMIZI"; exit 1; fi
+echo "KONTROL: YEŞİL"

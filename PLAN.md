@@ -10,14 +10,16 @@
 |---|---|---|
 | Ürün kapsamı | ✅ A1–A3 | `docs/pre-setup.md` §A |
 | Yığın seçimi | ✅ B2 Astro + Symfony | `docs/pre-setup.md` §B2 |
+| İskelet + /kontrol | ✅ 2 test, 7/7 kırma kırmızı | `docs/decisions/iskelet.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
 - [x] **Yığın kararı** — B1, 2026-10-19
-- [ ] **İskelet** — Astro + Symfony + Postgres + Docker; OpenAPI sözleşmesi (R2)
+- [x] **İskelet** — 2026-10-19, `docs/decisions/iskelet.md`
+- [ ] **Sözleşme (R2)** — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10
 - [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
-- [ ] **`/kontrol` skill'ini doldur** — biçim + statik + test komutları
+- [x] **`/kontrol`** — `bin/kontrol`, kırma K4–K7
 
 ## 2. Backlog
 

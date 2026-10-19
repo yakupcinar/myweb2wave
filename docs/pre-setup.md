@@ -90,6 +90,21 @@ kalitesi.
 sözleşmesi; A/B testi için her varyant ayrı sayfa, atamayı çekirdek yapar;
 A1 değişip huniler panelde tanımlanırsa statik üretim yetmez.
 
+**B3 · Sürümler ve çalışma ortamı** (2026-10-19, iskelet bloğu).
+- **Symfony 7.4 LTS** (hata 2028-11, güvenlik 2029-11) · PHP **8.4** ·
+  Postgres **18.6** · Astro **7.3.8** · TypeScript **6.0.3** · Node **24.21.0**.
+- **Her araç Docker'da** (FrankenPHP 1.13.1 çekirdek imajı + Node 24 araç
+  imajı); taban imajlar **digest'e sabit**, npm paketleri tam sürüm,
+  Composer `^` + `composer.lock`.
+- Neden: geliştirme = CI = üretim tabanı; makinedeki PHP/Node sürümü
+  ölçümü değiştirmesin (ölçüldü: makinede Node 22.15, `undici` ≥22.19 istiyor).
+**Reddedilen:** Symfony 8.1 — LTS değil, desteği 2027-01'de biter ·
+TypeScript 7 — `@astrojs/check` desteklemiyor (peer ölçümü) · makineye PHP
+kurmak — sürüm kayması, CI'dan farklı ortam · etiketle (digest'siz) sabitleme
+— etiketler yeniden derleniyor · Astro 7.4.0 — 4 günlük `.0`.
+
+**C3 sona erdi** (2026-10-19): depoda kod var; kapı artık `bin/kontrol`.
+
 ## §C — Araç ortamı
 
 **C1 · Ritüel skill'leri projede yaşar, kullanıcı düzeyi `ritual` eklentisi
