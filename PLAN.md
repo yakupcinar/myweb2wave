@@ -9,7 +9,7 @@
 | Katman | Durum | Kanıt |
 |---|---|---|
 | Ürün kapsamı | ✅ A1–A3 | `docs/pre-setup.md` §A |
-| Yığın seçimi | 🔶 B1 gözden geçiriliyor → öneri B2 (Astro + Go) | `acik-uclar.md` Ç11 |
+| Yığın seçimi | 🔶 B1 gözden geçiriliyor → öneri B2 (Astro + Symfony) | `acik-uclar.md` Ç11 |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
