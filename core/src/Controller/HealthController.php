@@ -37,6 +37,6 @@ final readonly class HealthController
             'status' => $dbOk ? 'ok' : 'degraded',
             'db' => $dbOk ? 'ok' : 'down',
             'version' => $this->version ?? 'unknown',
-        ], $dbOk ? 200 : 503);
+        ], 200);
     }
 }
