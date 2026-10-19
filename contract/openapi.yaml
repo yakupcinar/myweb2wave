@@ -18,8 +18,12 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [plan]
+              required: [app, plan]
               properties:
+                app:
+                  description: Hangi kendi uygulamamız (A4); çekirdek config/packages/uygulamalar.yaml
+                  type: string
+                  enum: [keepchat]
                 plan:
                   type: string
                   enum: [monthly]
@@ -39,7 +43,7 @@ paths:
         "400":
           description: Gövde JSON değil
         "422":
-          description: Bilinmeyen plan
+          description: Bilinmeyen uygulama ya da plan
           content:
             application/json:
               schema:
@@ -59,4 +63,4 @@ components:
       properties:
         error:
           type: string
-          enum: [unknown_plan, payment_provider_unavailable]
+          enum: [unknown_app, unknown_plan, payment_provider_unavailable]

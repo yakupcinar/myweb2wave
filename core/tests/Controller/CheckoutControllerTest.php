@@ -30,7 +30,7 @@ final class CheckoutControllerTest extends WebTestCase
     public function testAylikPlanIcinAbonelikOturumuAcar(): void
     {
         $client = static::createClient();
-        $client->jsonRequest('POST', '/checkout/sessions', ['plan' => 'monthly']);
+        $client->jsonRequest('POST', '/checkout/sessions', ['app' => 'keepchat', 'plan' => 'monthly']);
 
         self::assertResponseStatusCodeSame(201);
         Sozlesme::yanitiDogrula('POST', '/checkout/sessions', $client->getResponse());
@@ -45,9 +45,12 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertSame('post', $istek['method']);
         self::assertStringEndsWith('/v1/checkout/sessions', $istek['url']);
         self::assertSame('subscription', $istek['params']['mode']);
-        self::assertSame([['price' => 'price_test_aylik', 'quantity' => 1]], $istek['params']['line_items']);
-        self::assertSame('https://huni.test/basarili?session_id={CHECKOUT_SESSION_ID}', $istek['params']['success_url']);
-        self::assertSame('https://huni.test/iptal', $istek['params']['cancel_url']);
+        self::assertSame([['price' => 'price_test_keepchat_aylik', 'quantity' => 1]], $istek['params']['line_items']);
+        self::assertSame('https://huni.test/keepchat/basarili?session_id={CHECKOUT_SESSION_ID}', $istek['params']['success_url']);
+        self::assertSame('https://huni.test/keepchat/iptal', $istek['params']['cancel_url']);
+        // Webhook aboneliğin hangi uygulamaya ait olduğunu BURADAN okur (A4).
+        self::assertSame(['app' => 'keepchat'], $istek['params']['metadata']);
+        self::assertSame(['metadata' => ['app' => 'keepchat']], $istek['params']['subscription_data']);
     }
 
     public function testBozukJson400VeStripeaIstekGitmez(): void
@@ -64,7 +67,7 @@ final class CheckoutControllerTest extends WebTestCase
         // Ç16: 500 yerine ne olduğunu söyleyen 502; huni mesaj gösterir.
         $this->stripe->firlat = new ApiConnectionException('baglanti yok');
         $client = static::createClient();
-        $client->jsonRequest('POST', '/checkout/sessions', ['plan' => 'monthly']);
+        $client->jsonRequest('POST', '/checkout/sessions', ['app' => 'keepchat', 'plan' => 'monthly']);
 
         self::assertResponseStatusCodeSame(502);
         self::assertSame(['error' => 'payment_provider_unavailable'], json_decode((string) $client->getResponse()->getContent(), true));
@@ -99,12 +102,24 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertNull($client->getResponse()->headers->get('Access-Control-Allow-Origin'));
     }
 
+    public function testBilinmeyenUygulama422VeStripeaIstekGitmez(): void
+    {
+        $client = static::createClient();
+        $client->jsonRequest('POST', '/checkout/sessions', ['app' => 'olmayan', 'plan' => 'monthly']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['error' => 'unknown_app'], json_decode((string) $client->getResponse()->getContent(), true));
+        Sozlesme::yanitiDogrula('POST', '/checkout/sessions', $client->getResponse());
+        self::assertCount(0, $this->stripe->istekler);
+    }
+
     public function testBilinmeyenPlan422VeStripeaIstekGitmez(): void
     {
         $client = static::createClient();
-        $client->jsonRequest('POST', '/checkout/sessions', ['plan' => 'yillik']);
+        $client->jsonRequest('POST', '/checkout/sessions', ['app' => 'keepchat', 'plan' => 'yillik']);
 
         self::assertResponseStatusCodeSame(422);
+        self::assertSame(['error' => 'unknown_plan'], json_decode((string) $client->getResponse()->getContent(), true));
         Sozlesme::yanitiDogrula('POST', '/checkout/sessions', $client->getResponse());
         self::assertCount(0, $this->stripe->istekler);
     }

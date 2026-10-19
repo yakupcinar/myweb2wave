@@ -22,6 +22,23 @@ Kullanıcı teyidi (2026-10-19): test Stripe'la sürer; canlıda başka sağlay�
 çıkarsa entegrasyonun yeniden yazılması kabul. Alıcılar **uluslararası** →
 vergi/hukuk etkisi `odeme-saglayici-arastirmasi.md`, doğrulama Ç12.
 
+**A4 · Birden çok kendi uygulamamız: çekirdekte UYGULAMA boyutu**
+(2026-10-19, kullanıcı: "KeepChat'e bağlarım ama başka app'lerim de olacak").
+A1 değişmez (hâlâ tek kiracı, SaaS değil); ama abonelik, fiyat ve huni artık
+**hangi uygulamaya ait** olduğunu taşır. A1'de "tenant_id ölçülmemiş ihtiyaç"
+diye reddedilen şey bu değil: ihtiyaç kullanıcıdan geldi, müşteri değil
+uygulama boyutu.
+- **Kimlik çekirdekte, tek kişi tüm uygulamalarda aynı** (e-posta kodu,
+  sonra Apple, Google — kullanıcı kararı 2026-10-19); **hak (entitlement)
+  uygulama başına**.
+- **KeepChat'in kullanıcılarında e-posta yok** (ölçüm: `users` = username +
+  bcrypt). KeepChat kendi girişini korur; uygulamada bir kez "aboneliğimi
+  bağla" (e-posta → kod) ile KeepChat kullanıcısı çekirdek kimliğine bağlanır.
+  Yeni uygulamalar kendi kimlik sistemi kurmadan doğrudan çekirdeği kullanır.
+- Reddedilen: (a) her uygulama kendi aboneliğini tutar — web ödemesi tek
+  yerde (Stripe), hak da tek yerde olmalı; (b) KeepChat'in girişini çekirdeğe
+  taşımak — çalışan bir sistemin kimliğini değiştirmek, ayrı ve büyük karar.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

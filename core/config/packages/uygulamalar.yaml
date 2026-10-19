@@ -1,0 +1,7 @@
+# A4: Kendi uygulamalarımız ve planları. Fiyat kimliği ortama göre (test /
+# canlı) değiştiği için ortam değişkeninden. Yeni uygulama = buraya bir blok
+# + sözleşmede (contract/openapi.yaml) app enum'una bir değer.
+parameters:
+    uygulamalar:
+        keepchat:
+            monthly: '%env(STRIPE_PRICE_KEEPCHAT_MONTHLY)%'
