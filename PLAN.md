@@ -15,6 +15,7 @@
 | Stripe çekirdek | ✅ 12 test, kırma 10/10, gerçek Stripe test API + yeniden gönderim | `docs/decisions/stripe-odeme.md` |
 | Huni paywall + R2 | ✅ 15 test, kırma 8/8, tarayıcıda E1–E8 | `docs/decisions/huni-paywall.md` |
 | Uygulama boyutu | ✅ 19 test, kırma 7/7, gerçek ödeme `metadata.app` | `docs/decisions/uygulama-boyutu.md` |
+| Rakip araştırması | ✅ 5 araç × 3 soru, 4 bulgu → Ç24–Ç27 (kod yok) | `docs/decisions/rakip-arastirmasi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -24,7 +25,8 @@
 - [x] **Stripe test ödemesi (çekirdek)** — 2026-10-19, `docs/decisions/stripe-odeme.md`
 - [x] **Huni paywall + sözleşme (R2)** — 2026-10-19, `docs/decisions/huni-paywall.md` (E1–E8)
 - [x] **Uygulama boyutu (A4)** — 2026-10-19, `docs/decisions/uygulama-boyutu.md`
-- [ ] **Kimlik + e-posta kodu + hak ucu** (A4 blok 2)
+- [x] **Rakip araştırması** — 2026-10-19, `docs/decisions/rakip-arastirmasi.md` (Ç24–Ç27)
+- [ ] **Kimlik + e-posta kodu + hak ucu** (A4 blok 2) — önce Ç24, Ç26
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10
