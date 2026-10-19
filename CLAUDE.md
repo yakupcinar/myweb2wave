@@ -146,6 +146,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | [docs/pre-setup.md](docs/pre-setup.md) | **Kararlar ve NEDEN'leri** + reddedilen alternatifler + risk tablosu |
 | [docs/decisions/acik-uclar.md](docs/decisions/acik-uclar.md) | Karara dönüşmemiş gözlemler (Ç-no) |
 | [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzakların tam metni, ölçümü ve doğrusu |
+| [docs/yontem/](docs/yontem/README.md) | **Yöntem el kitabı** (okuyucu için, bölümlü): nasıl ve neden böyle çalışıyoruz; kayıtlara bağlantı verir, kopyalamaz |
 | `.claude/skills/` | `blok` (işin dokuz adımı) · `kirma` (testin ölçtüğünü kanıtla) · `belge` (bilgiyi depoya yaz) · `kontrol` (tam doğrulama — **yığına göre doldur**) |
 | `.claude/agents/` | `sinayici` (kontrolü koşturur, özet döner) · `prompt-elestirmeni` (promptu harcamadan önce denetler) |
 | `.claude/hooks/` | `git-checkout-engel` (kural 3) |
@@ -163,6 +164,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | Şu an yapılan / sıradaki iş | `PLAN.md` §1-§2 |
 | Fark ettim ama karar vermedim | `docs/decisions/acik-uclar.md` (Ç-no) + tetiklediği blok |
 | Bir ajanın **kalıcı** bilmesi gereken şey | `.claude/agents/<ad>.md` ya da skill |
+| Yeni yöntem / ders (okuyucu için anlatım) | `docs/yontem/<bölüm>.md` 1–5 satır + `07-yolculuk.md` tek satır |
 
 ⚠️ **Kapanış denetimi:** turu bitirmeden, kapanış mesajındaki her
 "fark ettim / karar vermedim" cümlesi için `grep` ile depodaki karşılığını

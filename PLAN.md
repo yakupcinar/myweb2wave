@@ -26,8 +26,9 @@
 - [x] **Huni paywall + sözleşme (R2)** — 2026-10-19, `docs/decisions/huni-paywall.md` (E1–E8)
 - [x] **Uygulama boyutu (A4)** — 2026-10-19, `docs/decisions/uygulama-boyutu.md`
 - [x] **Rakip araştırması** — 2026-10-19, `docs/decisions/rakip-arastirmasi.md` (Ç24–Ç27)
-- [ ] **Araştırma sonrası kararlar (kullanıcı):** Ç24 past_due · Ç25 bağlama bağlantısı · Ç26 sorguyu kim yapar · Ç27 MMP · **A6 (Ç28): analitik ve reklam atfı — hangi araç, kendi panel var mı, ne zaman (canlıdan önce)**
-- [ ] **Kimlik + e-posta kodu + hak ucu** (A4 blok 2) — önce Ç24, Ç26
+- [x] **Araştırma sonrası kararlar** — A5 (Ç24–Ç27), A6 (Ç28), 2026-10-19
+- [ ] **Kimlik + e-posta kodu + hak ucu** (A4 blok 2) — A5'e göre; kişiye kalıcı UUID (Ç29, `appAccountToken`)
+- [ ] **Analitik + reklam atfı + çerez onayı** (A6) — canlıdan önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10
