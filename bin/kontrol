@@ -20,7 +20,9 @@ adim() {
   printf '%-14s EXIT=%s  %ss\n' "$ad" "$kod" "$((SECONDS - bas))"
   if [ "$kod" -ne 0 ]; then
     KIRMIZI=1
-    sed -n '1,40p' "$LOG/$ad.log" | sed 's/^/    │ /'
+    # Hata SONDA yazılır; baştaki satırlar imaj derleme gürültüsü. İlk 40
+    # satır basılınca CI'da Composer'ın asıl hatası görünmedi (2026-10-19).
+    tail -40 "$LOG/$ad.log" | sed 's/^/    │ /'
   fi
 }
 

@@ -33,7 +33,7 @@ B3). Ön koşul: Docker Desktop açık.
 | 3 | core-testdb / core-goc / core-test | `doctrine:database:create --env=test` · `doctrine:migrations:migrate --env=test` · `phpunit` | **passed/skipped sayısı** ayrıca basılır (tuzak §8, §20) |
 | 3 | funnel-derle | `astro build` | |
 
-Kırmızı adımın günlüğünün ilk 40 satırı ekrana basılır; tamamı betiğin
+Kırmızı adımın günlüğünün **son** 40 satırı ekrana basılır (hata sonda; ilk 40 satır CI'da Composer hatasını gizledi); tamamı betiğin
 yazdığı `log:` dizininde.
 
 ## Rapor
