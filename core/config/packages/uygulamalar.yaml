@@ -5,3 +5,6 @@ parameters:
     uygulamalar:
         keepchat:
             monthly: '%env(STRIPE_PRICE_KEEPCHAT_MONTHLY)%'
+    # A5: uygulamanın SUNUCUSU çekirdeğe bununla sorar; uygulamanın içinde yok.
+    uygulama_anahtarlari:
+        keepchat: '%env(UYGULAMA_ANAHTARI_KEEPCHAT)%'

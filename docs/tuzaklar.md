@@ -60,3 +60,11 @@ sonra işi tetikle.
 geçersiz aralıkta durur, `-s` hatayı yutar. **Doğrusu:** `curl -g` (glob
 kapalı) ya da parametreyi `--data-urlencode` + `-G`; boş çıktıyı sonuç
 saymadan önce aracın hata verip vermediğini ölç (tuzak §17).
+
+## §24 — `MAILER_DSN=null://null` e-postayı sessizce atar, uç yine 202 döner
+**Belirti:** kod isteği 202, kod veritabanında, kullanıcıya hiçbir şey
+gelmiyor; hata yok. **Sebep:** Symfony mailer tarifi `.env`'e (yani
+geliştirmeye de) `null://null` yazar; null taşıyıcı gönderimi "başarılı"
+sayar. **Ölçüm (2026-10-19):** aynı istek `null://null` ile → 202, DB'de 1
+kod, Mailpit'te 0 ileti. **Doğrusu:** geliştirmede yakalayıcı (Mailpit),
+testte `null` + `assertEmailCount`; tarif varsayılanını okumadan geçme.

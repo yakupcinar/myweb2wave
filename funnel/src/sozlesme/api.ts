@@ -21,17 +21,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/apps/{app}/baglama/kod": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uygulamanın SUNUCUSU kullanıcının e-postasına 6 haneli kod gönderir (A5) */
+        post: operations["requestLinkCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/{app}/baglama/dogrula": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kod doğruysa uygulamadaki kullanıcıyı kişiye bağlar */
+        post: operations["verifyLinkCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/{app}/kullanicilar/{kullanici}/hak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bu kullanıcının bu uygulamada aktif aboneliği var mı (A5 erişim kuralı) */
+        get: operations["getEntitlement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Hata: {
             /** @enum {string} */
-            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable";
+            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user";
         };
     };
-    responses: never;
-    parameters: never;
+    responses: {
+        /** @description Anahtar yok, yanlış ya da başka uygulamanın */
+        Yetkisiz: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Hata"];
+            };
+        };
+        /** @description Geçersiz alan ya da kod */
+        IstekHatasi: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Hata"];
+            };
+        };
+    };
+    parameters: {
+        App: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -89,6 +161,135 @@ export interface operations {
             };
             /** @description Ödeme sağlayıcısına ulaşılamadı */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    requestLinkCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Kod gönderildi (e-postanın varlığı dışarıdan anlaşılmaz) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Yetkisiz"];
+            422: components["responses"]["IstekHatasi"];
+            /** @description Bu e-postaya 10 dakikada 3'ten fazla kod */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    verifyLinkCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    kod: string;
+                    /** @description Uygulamadaki kullanıcı kimliği */
+                    kullanici: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Bağlandı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description Kalıcı kişi kimliği (ileride StoreKit appAccountToken)
+                         */
+                        kisi: string;
+                    };
+                };
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Yetkisiz"];
+            422: components["responses"]["IstekHatasi"];
+        };
+    };
+    getEntitlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+                kullanici: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hak */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        aktif: boolean;
+                        /** @description En iyi aboneliğin Stripe durumu; abonelik yoksa null */
+                        durum: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Yetkisiz"];
+            /** @description Kullanıcı hiçbir kişiye bağlanmamış */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

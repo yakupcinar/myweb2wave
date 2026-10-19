@@ -16,6 +16,7 @@
 | Huni paywall + R2 | ✅ 15 test, kırma 8/8, tarayıcıda E1–E8 | `docs/decisions/huni-paywall.md` |
 | Uygulama boyutu | ✅ 19 test, kırma 7/7, gerçek ödeme `metadata.app` | `docs/decisions/uygulama-boyutu.md` |
 | Rakip araştırması | ✅ 5 araç × 4 soru + akış özeti, 5 bulgu → Ç24–Ç28 (kod yok) | `docs/decisions/rakip-arastirmasi.md` |
+| Kimlik + hak | ✅ 41 test, kırma 11/11 (2'si eksik testi buldu), web ödemesi → bağlama → hak uçtan uca | `docs/decisions/kimlik-hak.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -27,7 +28,8 @@
 - [x] **Uygulama boyutu (A4)** — 2026-10-19, `docs/decisions/uygulama-boyutu.md`
 - [x] **Rakip araştırması** — 2026-10-19, `docs/decisions/rakip-arastirmasi.md` (Ç24–Ç27)
 - [x] **Araştırma sonrası kararlar** — A5 (Ç24–Ç27), A6 (Ç28), 2026-10-19
-- [ ] **Kimlik + e-posta kodu + hak ucu** (A4 blok 2) — A5'e göre; kişiye kalıcı UUID (Ç29, `appAccountToken`)
+- [x] **Kimlik + e-posta kodu + hak ucu** — 2026-10-19, `docs/decisions/kimlik-hak.md`
+- [ ] **KeepChat "aboneliğimi bağla"** — KeepChat deposunda (sunucu bu uçlara sorar)
 - [ ] **Analitik + reklam atfı + çerez onayı** (A6) — canlıdan önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
