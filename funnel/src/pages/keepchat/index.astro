@@ -1,5 +1,5 @@
 ---
-// Paywall. Sayfa statik; tek etkileşim ödeme düğmesi. Plan adını
+// KeepChat paywall'u (A4: her uygulamanın kendi yolu). Sayfa statik; tek etkileşim ödeme düğmesi. Plan adını
 // çekirdeğe gönderir, dönen Stripe Checkout adresine yönlenir.
 ---
 
@@ -22,7 +22,7 @@
     </main>
 
     <script>
-      import { cekirdek } from "../lib/cekirdek";
+      import { cekirdek } from "../../lib/cekirdek";
 
       const dugme = document.querySelector<HTMLButtonElement>("#abone-ol");
       const hata = document.querySelector<HTMLParagraphElement>("#hata");
@@ -40,7 +40,7 @@
         try {
           const { data, error, response } = await cekirdek.POST(
             "/checkout/sessions",
-            { body: { plan: "monthly" } },
+            { body: { app: "keepchat", plan: "monthly" } },
           );
           if (data) {
             window.location.assign(data.url);

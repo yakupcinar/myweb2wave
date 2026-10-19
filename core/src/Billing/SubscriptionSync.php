@@ -6,6 +6,7 @@ namespace App\Billing;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Psr\Log\LoggerInterface;
 use Stripe\Event;
 
 /**
@@ -16,11 +17,15 @@ use Stripe\Event;
  * - Sıra: Stripe sırayı garanti etmiyor (tuzak §13). Durumu yalnız abonelik
  *   olayları yazar ve daha eski olay daha yeniyi ezmez (status_event_created).
  * - checkout.session.completed durum YAZMAZ, yalnız e-postayı bağlar.
+ * - Uygulama (A4) nesnenin metadata.app'inden; yoksa olay işlendi sayılır
+ *   ama UYGULANMAZ — uygulamasız abonelik hiçbir uygulamayı açmasın.
  */
 final readonly class SubscriptionSync
 {
-    public function __construct(private Connection $db)
-    {
+    public function __construct(
+        private Connection $db,
+        private LoggerInterface $logger,
+    ) {
     }
 
     public function apply(Event $event): void
@@ -30,12 +35,21 @@ final readonly class SubscriptionSync
                 $db->insert('processed_webhook_events', ['event_id' => $event->id, 'type' => $event->type]);
 
                 $nesne = $event->data->object->toArray();
+                $ilgili = \in_array($event->type, ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'], true);
+                if (!$ilgili) {
+                    return;
+                }
+                $metadata = $nesne['metadata'] ?? null;
+                $app = \is_array($metadata) ? ($metadata['app'] ?? null) : null;
+                if (!\is_string($app) || '' === $app) {
+                    $this->logger->warning('Stripe olayında metadata.app yok; uygulanmadı', ['event' => $event->id, 'type' => $event->type]);
+
+                    return;
+                }
+
                 match ($event->type) {
-                    'checkout.session.completed' => $this->linkEmail($db, $nesne),
-                    'customer.subscription.created',
-                    'customer.subscription.updated',
-                    'customer.subscription.deleted' => $this->applyStatus($db, $nesne, $event->created),
-                    default => null,
+                    'checkout.session.completed' => $this->linkEmail($db, $nesne, $app),
+                    default => $this->applyStatus($db, $nesne, $event->created, $app),
                 };
             });
         } catch (UniqueConstraintViolationException) {
@@ -44,7 +58,7 @@ final readonly class SubscriptionSync
     }
 
     /** @param array<mixed> $session */
-    private function linkEmail(Connection $db, array $session): void
+    private function linkEmail(Connection $db, array $session, string $app): void
     {
         $sub = $session['subscription'] ?? null;
         $cus = $session['customer'] ?? null;
@@ -55,15 +69,15 @@ final readonly class SubscriptionSync
         $email = \is_array($detay) && \is_string($detay['email'] ?? null) ? $detay['email'] : null;
 
         $db->executeStatement(
-            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, email)
-             VALUES (:sub, :cus, :email)
+            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, email, app)
+             VALUES (:sub, :cus, :email, :app)
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET email = EXCLUDED.email, updated_at = now()',
-            ['sub' => $sub, 'cus' => $cus, 'email' => $email],
+            ['sub' => $sub, 'cus' => $cus, 'email' => $email, 'app' => $app],
         );
     }
 
     /** @param array<mixed> $sub */
-    private function applyStatus(Connection $db, array $sub, int $eventCreated): void
+    private function applyStatus(Connection $db, array $sub, int $eventCreated, string $app): void
     {
         $id = $sub['id'] ?? null;
         $cus = $sub['customer'] ?? null;
@@ -73,8 +87,8 @@ final readonly class SubscriptionSync
         }
 
         $db->executeStatement(
-            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created)
-             VALUES (:id, :cus, :status, :created)
+            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created, app)
+             VALUES (:id, :cus, :status, :created, :app)
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET
                  stripe_customer_id = EXCLUDED.stripe_customer_id,
                  status = EXCLUDED.status,
@@ -82,7 +96,7 @@ final readonly class SubscriptionSync
                  updated_at = now()
              WHERE subscriptions.status_event_created IS NULL
                 OR subscriptions.status_event_created <= EXCLUDED.status_event_created',
-            ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated],
+            ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated, 'app' => $app],
         );
     }
 }

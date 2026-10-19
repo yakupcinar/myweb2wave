@@ -27,7 +27,7 @@ export interface components {
     schemas: {
         Hata: {
             /** @enum {string} */
-            error: "unknown_plan" | "payment_provider_unavailable";
+            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable";
         };
     };
     responses: never;
@@ -48,6 +48,11 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /**
+                     * @description Hangi kendi uygulamamız (A4); çekirdek config/packages/uygulamalar.yaml
+                     * @enum {string}
+                     */
+                    app: "keepchat";
                     /** @enum {string} */
                     plan: "monthly";
                 };
@@ -73,7 +78,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bilinmeyen plan */
+            /** @description Bilinmeyen uygulama ya da plan */
             422: {
                 headers: {
                     [name: string]: unknown;

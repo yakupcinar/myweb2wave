@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -37,7 +38,7 @@ final class StripeWebhookControllerTest extends WebTestCase
         $this->gonder($this->abonelikOlayi('evt_1', 100, 'active'));
 
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(['status' => 'active', 'stripe_customer_id' => 'cus_1'], $this->abonelik());
+        self::assertSame(['status' => 'active', 'stripe_customer_id' => 'cus_1', 'app' => 'keepchat'], $this->abonelik());
     }
 
     public function testAyniOlayIkiKezGelirseBirKezIslenir(): void
@@ -66,6 +67,7 @@ final class StripeWebhookControllerTest extends WebTestCase
             'id' => 'cs_1', 'object' => 'checkout.session', 'mode' => 'subscription',
             'subscription' => 'sub_1', 'customer' => 'cus_1',
             'customer_details' => ['email' => 'ayse@example.com'],
+            'metadata' => ['app' => 'keepchat'],
         ]));
         $this->gonder($this->abonelikOlayi('evt_1', 100, 'active'));
 
@@ -84,12 +86,43 @@ final class StripeWebhookControllerTest extends WebTestCase
             'id' => 'cs_1', 'object' => 'checkout.session', 'mode' => 'subscription',
             'subscription' => 'sub_1', 'customer' => 'cus_1',
             'customer_details' => ['email' => 'ayse@example.com'],
+            'metadata' => ['app' => 'keepchat'],
         ]));
 
         self::assertSame(
             ['email' => 'ayse@example.com', 'status' => 'past_due'],
             $this->db->fetchAssociative("SELECT email, status FROM subscriptions WHERE stripe_subscription_id = 'sub_1'"),
         );
+    }
+
+    public function testUygulamasizAbonelikOlayiUygulanmaz(): void
+    {
+        // A4: Uygulaması bilinmeyen abonelik kaydedilmez (ör. CLI ile
+        // tetiklenen olay). Olay yine "işlendi" sayılır, Stripe tekrar denemez.
+        $this->gonder($this->abonelikOlayi('evt_1', 100, 'active', []));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(0, $this->say('subscriptions'));
+        self::assertSame(1, $this->say('processed_webhook_events'));
+    }
+
+    public function testUygulamasizOdemeOlayiUygulanmaz(): void
+    {
+        $this->gonder($this->olay('evt_cs', 'checkout.session.completed', 90, [
+            'id' => 'cs_1', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_1', 'customer' => 'cus_1',
+            'customer_details' => ['email' => 'ayse@example.com'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(0, $this->say('subscriptions'));
+    }
+
+    public function testUygulamasizAbonelikKisitiUygulamasizDaDuser(): void
+    {
+        // A4 kapısı kısıt: kod bir gün app'siz INSERT yazarsa DB reddeder.
+        $this->expectException(NotNullConstraintViolationException::class);
+        $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_k', 'stripe_customer_id' => 'cus_k']);
     }
 
     public function testOlayKimligiKisitiUygulamasizDaDuser(): void
@@ -111,10 +144,12 @@ final class StripeWebhookControllerTest extends WebTestCase
         ], $govde);
     }
 
-    private function abonelikOlayi(string $id, int $zaman, string $durum): string
+    /** @param array<string, string> $metadata */
+    private function abonelikOlayi(string $id, int $zaman, string $durum, array $metadata = ['app' => 'keepchat']): string
     {
         return $this->olay($id, 'customer.subscription.updated', $zaman, [
             'id' => 'sub_1', 'object' => 'subscription', 'customer' => 'cus_1', 'status' => $durum,
+            'metadata' => $metadata,
         ]);
     }
 
@@ -137,6 +172,6 @@ final class StripeWebhookControllerTest extends WebTestCase
     /** @return array<string, mixed>|false */
     private function abonelik(): array|false
     {
-        return $this->db->fetchAssociative("SELECT status, stripe_customer_id FROM subscriptions WHERE stripe_subscription_id = 'sub_1'");
+        return $this->db->fetchAssociative("SELECT status, stripe_customer_id, app FROM subscriptions WHERE stripe_subscription_id = 'sub_1'");
     }
 }
