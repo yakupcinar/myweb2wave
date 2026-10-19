@@ -54,7 +54,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Hata"
+  /apps/{app}/baglama/kod:
+    post:
+      operationId: requestLinkCode
+      summary: Uygulamanın SUNUCUSU kullanıcının e-postasına 6 haneli kod gönderir (A5)
+      security: [{ uygulamaAnahtari: [] }]
+      parameters: [{ $ref: "#/components/parameters/App" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "202": { description: Kod gönderildi (e-postanın varlığı dışarıdan anlaşılmaz) }
+        "400": { description: Gövde JSON değil }
+        "401": { $ref: "#/components/responses/Yetkisiz" }
+        "422": { $ref: "#/components/responses/IstekHatasi" }
+        "429":
+          description: Bu e-postaya 10 dakikada 3'ten fazla kod
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /apps/{app}/baglama/dogrula:
+    post:
+      operationId: verifyLinkCode
+      summary: Kod doğruysa uygulamadaki kullanıcıyı kişiye bağlar
+      security: [{ uygulamaAnahtari: [] }]
+      parameters: [{ $ref: "#/components/parameters/App" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, kod, kullanici]
+              properties:
+                email: { type: string, format: email }
+                kod: { type: string, pattern: "^[0-9]{6}$" }
+                kullanici: { type: string, minLength: 1, description: Uygulamadaki kullanıcı kimliği }
+      responses:
+        "200":
+          description: Bağlandı
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [kisi]
+                properties:
+                  kisi: { type: string, format: uuid, description: Kalıcı kişi kimliği (ileride StoreKit appAccountToken) }
+        "400": { description: Gövde JSON değil }
+        "401": { $ref: "#/components/responses/Yetkisiz" }
+        "422": { $ref: "#/components/responses/IstekHatasi" }
+  /apps/{app}/kullanicilar/{kullanici}/hak:
+    get:
+      operationId: getEntitlement
+      summary: Bu kullanıcının bu uygulamada aktif aboneliği var mı (A5 erişim kuralı)
+      security: [{ uygulamaAnahtari: [] }]
+      parameters:
+        - $ref: "#/components/parameters/App"
+        - { name: kullanici, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Hak
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [aktif, durum]
+                properties:
+                  aktif: { type: boolean }
+                  durum: { type: [string, "null"], description: En iyi aboneliğin Stripe durumu; abonelik yoksa null }
+        "401": { $ref: "#/components/responses/Yetkisiz" }
+        "404":
+          description: Kullanıcı hiçbir kişiye bağlanmamış
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
 components:
+  securitySchemes:
+    uygulamaAnahtari:
+      type: http
+      scheme: bearer
+      description: Uygulama başına gizli anahtar; YALNIZ uygulamanın sunucusunda (A5)
+  parameters:
+    App:
+      name: app
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Yetkisiz:
+      description: Anahtar yok, yanlış ya da başka uygulamanın
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Hata" }
+    IstekHatasi:
+      description: Geçersiz alan ya da kod
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Hata" }
   schemas:
     Hata:
       type: object
@@ -63,4 +169,4 @@ components:
       properties:
         error:
           type: string
-          enum: [unknown_app, unknown_plan, payment_provider_unavailable]
+          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user]

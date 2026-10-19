@@ -11,7 +11,7 @@ Bu bölüm para akışının **güvenlik ve doğruluk kararlarını** anlatır.
 | Huni | adımlar, paywall | ✅ paywall · ❌ quiz adımları |
 | Ödeme | Stripe Checkout, webhook ile kayıt | ✅ test modu |
 | Reklam ağına dönüşüm | sunucudan Meta CAPI / TikTok Events API | ❌ (A6) |
-| Uygulamaya geçiş | e-posta koduyla bağlama, hak sorgusu | ❌ (sıradaki blok, A5) |
+| Uygulamaya geçiş | e-posta koduyla bağlama, hak sorgusu | ✅ çekirdek uçları · ❌ KeepChat tarafı |
 
 ## Ödeme oturumu: istemciye güvenme
 
@@ -59,3 +59,13 @@ Gerçek anahtarlar yalnız `core/.env.local` (git dışı, ölçüldü); testler
 `.env.test` ile **sahte** Stripe'a (stripe-mock) gider, gerçek anahtarı hiç
 görmez. Depo herkese açık → her commit'ten önce anahtar deseni taraması
 (bölüm 6).
+
+## Bağlama ve hak: kod ve anahtar güvenliği (`kimlik-hak.md`)
+
+- Kod düz saklanmaz (HMAC özeti), 10 dk, 5 deneme, tek kullanım; yeni kod
+  eskileri geçersiz kılar — yoksa yeni kod kullanılınca eski kod yeniden
+  "en son aktif" olurdu (kırma I7'nin bulduğu sıra).
+- Yapılandırılmamış uygulama anahtarı her zaman reddedilir: boş jeton
+  `hash_equals('', '')` ile geçerdi (kırma I1).
+- Kod isteği her zaman 202: e-postanın sistemde olup olmadığı sızmaz.
+

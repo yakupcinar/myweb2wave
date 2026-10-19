@@ -35,7 +35,9 @@ test yazıldı, deneme tekrarlandı, düştü — ve bir saat sonra gerçek
 Stripe olayları tam o "kötü" sırayla geldi (`stripe-odeme.md`, `huni-paywall.md` E1).
 
 Bu projedeki sayılar: iskelet 7/7, Stripe çekirdeği 10/10, huni 8/8,
-uygulama boyutu 7/7, CI 1/1, kontrol günlüğü 1/1 kırmızı.
+uygulama boyutu 7/7, kimlik 11/11, CI 1/1, kontrol günlüğü 1/1 kırmızı.
+Kimlikte iki deneme ilk seferde tutmadı ve iki eksik güvenlik testini buldu
+(boş jeton, eski kodun yeniden geçerli olması).
 
 ## Çıkış kodu borusuz alınır
 
@@ -57,6 +59,7 @@ mesajı **yoktu** ama sonuç yanlıştı. Bu projede doğanlar:
 | 21 | push olmadıysa CI'da ESKİ koşunun sonucu yeni sanıldı |
 | 22 | `docker compose run -d` 0 döndü, içindeki süreç ölmüştü |
 | 23 | `curl -s` köşeli parantezli adreste sessizce boş döndü |
+| 24 | e-posta tarifi geliştirmeye `null://null` yazdı: uç 202, e-posta hiç gitmedi |
 
 Ders: her biri bir **yanlış güven** anıydı; yakalayan şey hep bağımsız
 bir ikinci ölçümdü (sayım, düz sabit beklenti, "uygulandı mı" satırı).
