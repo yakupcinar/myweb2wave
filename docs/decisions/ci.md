@@ -33,3 +33,13 @@ ikisi de "uygulandı?" satırıyla görüldü ve "koşulmadı" sayıldı.
 ## Ölçüm
 CI süresi ~1,5 dk (core-kur 55 sn, imaj derleme dahil). Ortam: ubuntu-24.04,
 Docker 28.0.4, disk 86 GB boş.
+
+## Sonradan — main koşusu kırmızı, sebep görünmedi (2026-10-19, PR #3 sonrası)
+- Main koşusu 39250747376: `core-kur` EXIT=100; aynı kod PR'da yeşildi.
+  Yeniden koşu (aynı kod) **yeşil** → büyük ihtimalle Composer'ın GitHub'dan
+  indirmesinde geçici ağ hatası. **KANITLANMADI**: asıl hata satırı görünmedi (Ç22).
+- Görünmeme sebebi `bin/kontrol`: kırmızı adımın günlüğünün **ilk** 40
+  satırını basıyordu; CI'da onlar imaj derleme gürültüsü. Düzeltme: `tail -40`.
+- Kırma: imaj silinip yeniden derletildi + `composer.json`'a olmayan paket →
+  yeni hâlde hata satırı görünüyor (1), eski hâlde (`sed -n 1,40p`) görünmüyor (0).
+

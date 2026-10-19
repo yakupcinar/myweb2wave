@@ -26,3 +26,5 @@
 | Ç19 | **Stripe Adaptive Pricing açık**: Türkiye'den gelen ziyaretçi Checkout'ta **TRY 577,50** görüyor ("%4 kur dönüşüm ücreti dahil"), paywall "9,99 €" diyor. Fiyat iki yerde, ikisi de farklı; müşteri %4 fazla ödüyor. Kapatılsın mı / paywall yerel parayı mı göstersin? | E1 ekran görüntüsü 2026-10-19 | huni tanımı bloğu (fiyat tek kaynak) |
 | Ç20 | Yenileme başarısızlığı (`past_due`) uçtan uca ölçülmedi: Checkout ilk ödemede `incomplete` üretmiyor (E5); S8'in koruduğu gerçek senaryo yenileme. Stripe test clock ile ölçülebilir | E5 | uygulamaya abonelik doğrulama ucu eklenmeden önce |
 | Ç21 | Paywall'daki fiyat ("9,99 € / ay") koda gömülü; Stripe fiyatı değişirse sessizce yanlış fiyat gösterir (tuzak §12 akrabası) | `index.astro` | Ç19 ile birlikte |
+| Ç22 | CI'da `composer install` bir kez EXIT=100 verdi, yeniden koşuda geçti; sebep (muhtemelen GitHub'dan indirme ağı) kanıtlanmadı. Önlem adayları: Actions'ta Composer önbelleği, `COMPOSER_MAX_PARALLEL_HTTP`/tekrar. Bir kez daha olursa yeni `tail -40` asıl satırı gösterecek | `ci.md` "Sonradan" | ikinci geçici kırmızıda |
+
