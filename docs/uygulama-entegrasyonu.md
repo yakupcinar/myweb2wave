@@ -31,7 +31,9 @@ Uygulama istemcisi ──(kendi oturumu)──► UYGULAMANIN SUNUCUSU ──(uy
    varlığı sızmaz) ya da **429** (10 dk'da 3'ten fazla).
 2. Kullanıcı e-postadaki **6 haneli** kodu girer (10 dk geçerli, 5 deneme).
    Sunucu → `POST /apps/{app}/baglama/dogrula {email, kod, kullanici}`;
-   `kullanici` = uygulamanın **kendi** kullanıcı kimliği (dizge) →
+   `kullanici` = uygulamanın **kendi** kullanıcı kimliği, **dizge** (sayısal
+   kimlik ondalık yazılır: `"42"`). **Kalıcı** olmalı — değişebilen ad değil
+   (KeepChat'te silinen hesabın adı değişir, `id`'si kalır) →
    **200 `{kisi}`** ya da **422** `invalid_code` / `expired_code` / `too_many_attempts`.
 3. Sonra her gerekince: `GET /apps/{app}/kullanicilar/{kullanici}/hak` →
    **200 `{aktif, durum}`** · **404** `unknown_user` (bağlanmamış).
@@ -42,8 +44,11 @@ Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik �
 ## 4 · Uygulamanın sunucusunda yapılması gerekenler
 
 - Bağlamayı **oturum açmış** kullanıcı için yap (kimin bağladığı belli olsun).
-- Hak cevabını kısa süre önbellekle; çekirdeğe her istekte gitme. Çekirdeğe
-  ulaşılamazsa **son bilinen durumu** kullan, kullanıcıyı kilitleme.
+- Bağlantının gerçek kaynağı **çekirdek** (`baglantilar`); uygulamanın
+  bağlantıyı saklaması gerekmez, yalnız hak durumunu önbellekler (göç gerekmez).
+- Önerilen önbellek: başarılı hak cevabı **5 dk**; çekirdeğe ulaşılamazsa son
+  bilinen durum **en çok 24 saat**, sonra "bilinmiyor" — kullanıcıyı
+  kilitleme. Kod/doğrulama uçları önbelleğe alınmaz.
 - Kendi tarafında da oran sınırı koy (Ç31).
 
 ## 5 · ⚠️ App Store kuralları (iOS istemcisi)
