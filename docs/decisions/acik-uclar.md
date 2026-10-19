@@ -19,4 +19,4 @@
 | Ç12 | Uluslararası satışta vergi/hukuk yükümlülükleri (AB OSS, ABD eyaletleri, Türkiye hizmet ihracatı istisnası, cayma hakkı metni, çerez onayı) **mali müşavir + hukukçuya doğrulatılmadı** | `odeme-saglayici-arastirmasi.md` | canlı ödemeden önce; huni metinleri bloğu |
 | Ç13 | Disk: veri bölümü %95 dolu, 11 GB boş (iskelet sonrası; önce ~15 GB). Sahte kırmızı riski (tuzak §14) | `bin/kontrol` ortam satırı 2026-10-19 | sonraki blok başında `df -h`; <8 GB ise `docker system df` + temizlik |
 | Ç14 | Digest/sürüm güncellemeleri elle — Renovate/Dependabot yok; güvenlik yamaları kaçabilir | iskelet B3 | CI kurulunca |
-| Ç15 | CI yok — `bin/kontrol` yalnız yerelde koşuyor; "otorite CI" (blok adım 9) karşılıksız | iskelet | sonraki blok |
+| Ç15 | CI tanımlı (`.github/workflows/kontrol.yml`, PR #1) ama **KOŞMADI**: ilk koşu 4 sn'de "failure", adım sayısı 0; GitHub ek açıklaması: hesap ödemesi başarısız / harcama limiti. Kırmızı kodun değil faturanın — CI kapısı henüz ölçülmedi | run 39234015827, 2026-10-19 | kullanıcı: fatura/limit, ya da kendi runner'ımız |
