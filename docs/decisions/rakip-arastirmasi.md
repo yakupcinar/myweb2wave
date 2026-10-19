@@ -1,9 +1,25 @@
-# Rakip araştırması — web'den uygulamaya bağlama, hak sorgusu, panel — 2026-10-19
+# Rakip araştırması — bağlama, hak sorgusu, analitik/reklam atfı, panel — 2026-10-19
 
 > Kapsam C4: yalnız herkese açık sayfa, belge ve SDK **davranışı**. Bot
 > koruması aşılmadı, panele/API'ye istek atılmadı, **kod alınmadı** (kural 12).
 > Belge alıntıları kısa; davranış kendi cümlemizle. A1 değişmez — panel
-> bilgisi yalnız bilgi içindir. Karar verilmedi; bulgular `acik-uclar.md` Ç24–Ç27.
+> bilgisi yalnız bilgi içindir. Karar verilmedi; bulgular `acik-uclar.md` Ç24–Ç28.
+
+## Akış nasıl işliyor (teknik olmayan özet)
+
+1. **Reklam** — kişi Meta/TikTok reklamına tıklar; adres reklam kimliğini
+   (`fbclid`/`ttclid`) ve kampanya etiketlerini (UTM) taşır. ❌ Bizde: hunide yakalanmıyor.
+2. **Huni** — quiz/onboarding adımları, sonunda paywall. ✅ Bizde: statik
+   KeepChat paywall'u (`/keepchat/`). ❌ Quiz adımları ve adım olayları yok.
+3. **Ödeme** — Stripe ödeme sayfası, abonelik webhook'la kaydedilir.
+   ✅ Bizde: Stripe test + imzalı webhook + uygulama boyutu.
+4. **Reklam ağına dönüşüm** — "bu reklam satış getirdi" bilgisi tarayıcı
+   pikseli + sunucudan (Meta Conversions API, TikTok Events API) gider; ağ
+   reklamı buna göre optimize eder. ❌ Bizde: piksel, sunucu bildirimi ve
+   çerez onayı yok.
+5. **Uygulamaya geçiş** — Universal Link ya da ertelenmiş derin bağlantı
+   kişiyi uygulamaya taşır, uygulama aboneliği tanır. ❌ Bizde: derin bağlantı
+   ve abonelik sorgu ucu yok; e-posta koduyla bağlama tasarımda (Ç9).
 
 ## Lisans ölçümü (kaynak başına)
 
@@ -38,7 +54,15 @@ paused, canceled erişim VERMEZ (arayüzde listelenir). SDK'da aynı:
 `status == "active" || status == "trialing"`.
 Kaynak: playbook §5, §6.1; `Web2Wave.swift` `hasActiveSubscription` (davranış okundu).
 
-**S3 — panel:** ölçülmedi (`app.web2wave.com` → Cloudflare 403, aşılmadı).
+**S3 — analitik / reklam atfı:** Piksel ve erişim jetonları panelde
+"Project → Analytics"te; web2wave dışındaki sayfalar (ör. teşekkür sayfası)
+JS SDK ile `purchase`/`track('Subscribe')` gönderir, web2wave dönüşümü
+**sunucudan** Meta, TikTok ve diğer ağlara iletir ve quiz oturumuna bağlar.
+Amplitude/PostHog/Mixpanel bu sunucu yoluna girmez, yalnız quiz/paywall
+içindeki tarayıcı olaylarını alır. Adım olay adları ve çerez onayı
+**bulunamadı**. Kaynak: <https://docs.web2wave.com/reference/web2wave-js-sdk>.
+
+**S4 — panel:** ölçülmedi (`app.web2wave.com` → Cloudflare 403, aşılmadı).
 Pazarlama sayfasına göre huni/quiz editörü, A/B, analitik
 (<https://www.web2wave.com>); playbook'ta proje ayarları "Deeplinks & Billing →
 Helper", "API & Webhook".
@@ -64,7 +88,21 @@ EXPIRED; `is_active` alanı var, GRACE/RETRY'deki değeri yazılmamış. Grace
 süresi bulunamadı. Kaynak: <https://funnelfox.com/docs/billing/view-subscriptions-billing>,
 <https://funnelfox.com/docs/develop/api-billing.md>.
 
-**S3 — panel:** Huni editörü (+ "AI Chat in Editor"), abonelik listesi
+**S3 — analitik / reklam atfı:** Meta Pixel + **Conversions API**
+(FunnelFox sunucusundan, tarayıcı olayıyla tekilleştirme); `Purchase`
+ödeme sağlayıcısından işlem gelince sunucudan atılır (huniye dönmeyen
+PayPal'ı da yakalar), yalnız deneme ise `StartTrial`. TikTok Pixel +
+**Events API** aynı düzende (`CompletePayment`). Amplitude'a standart huni
+olayları otomatik (`screen_presented` → "Page View"), kimlik FunnelFox
+profil kimliğinden; Mixpanel, PostHog, GA4 de listede. **Çerez onayı:**
+huni öğesi; kategoriler gerekli / analitik / izleme; Google onay
+doğrulamasıyla entegre **değil**; olayların onaya kadar bekletildiği
+**bulunamadı**. Kaynak: <https://funnelfox.com/docs/integrations/tracking/set-up-meta-pixel-integration.md>,
+<https://funnelfox.com/docs/integrations/tracking/set-up-tiktok-pixel.md>,
+<https://funnelfox.com/docs/integrations/analytics/amplitude>,
+<https://funnelfox.com/docs/elements/cookie-consent>.
+
+**S4 — panel:** Huni editörü (+ "AI Chat in Editor"), abonelik listesi
 (e-posta/durum süzgeci, abonelik geçmişi, webhook olayları); gelir raporu
 bulunamadı; A/B bu sayfada yok. Ödeme: Stripe, Solidgate, Paddle.
 Kaynak: <https://funnelfox.com/docs/getting-started/quickstart.md>, <https://funnelfox.com/docs/billing/view-subscriptions-billing>.
@@ -91,7 +129,18 @@ bitiş güncellenir. Forumda "past_due olunca hemen kapatamıyorum" şikâyeti
 <https://www.revenuecat.com/docs/subscription-guidance/how-grace-periods-work>,
 <https://community.revenuecat.com/general-questions-7/cancel-entitlements-during-grade-period-7244>.
 
-**S3 — panel:** Web paywall editörü (barındırılan bağlantı ya da
+**S3 — analitik / reklam atfı:** Huni olayları: adım başladı, adım
+tamamlandı, satın almasız çıkış, satın alma (`rc_workflows_*`); "terk"
+olayı yok. Hedefler: Amplitude, Mixpanel, Segment, Meta (özel olay), GTM
+`dataLayer`. Meta'ya satın alma hem Pixel hem **Conversions API**; abonelik
+olayları Meta adlarına eşlenir (deneme → `StartTrial`, dönüşüm/ilk alım/
+yenileme → `Subscribe`), tekilleştirme için RevenueCat sipariş kimliği.
+UTM: Meta dinamik makrolarıyla reklam başına adres önerisi. **Çerez onayı:**
+`_fbp`/`_fbc` okunuyor, onay mekanizması **bulunamadı**. TikTok, PostHog,
+AppsFlyer bu sayfada yok. Kaynak: <https://www-docs.revenuecat.com/docs/tools/funnels/integrations.md>,
+<https://www.revenuecat.com/docs/integrations/attribution/meta-ads.md>.
+
+**S4 — panel:** Web paywall editörü (barındırılan bağlantı ya da
 `purchases-js`), barındırılan ödeme (Web Purchase Links, "Funnels" altında);
 motorlar RevenueCat Billing (Stripe ağ geçidi), Stripe Billing, Paddle (MoR).
 Müşteri listesi/grafikler web için bulunamadı. Belgeler Stripe Billing
@@ -115,7 +164,16 @@ kullanıcıyı aktif sayar**. Sunucu: profil GET, `Api-Key` gizli anahtar +
 İptal edilen abonelik ödenmiş dönem bitene kadar erişim tutar.
 Kaynak: <https://adapty.io/docs/server-side-api-objects>, <https://adapty.io/docs/web-paywall>.
 
-**S3 — panel:** Web satın alımları App Store/Play geliriyle aynı analitikte,
+**S3 — analitik / reklam atfı:** "Adapty web pixel" her ziyaretçiye **7 gün**
+geçerli bir tıklama kimliği verir; açılış adresinden Meta/TikTok tıklama
+kimliklerini, kampanya/ad set/reklam kimliklerini ve UTM'yi okur; ödemede
+işleme yalnız bu tıklama kimliği eklenir, satın alma Stripe/Paddle
+bağlantısından gelir. Reklam düzeyi için Adapty'nin ürettiği adres
+parametreleri her reklama yapıştırılır. Reklam ağına sunucudan dönüşüm
+(CAPI), huni adım olayları ve çerez onayı **bulunamadı**.
+Kaynak: <https://adapty.io/docs/ua-web-pixel>, <https://adapty.io/docs/ua-tag-ad-urls.md>.
+
+**S4 — panel:** Web satın alımları App Store/Play geliriyle aynı analitikte,
 "Profiles" bölümünde alıcı profili (<https://adapty.io/docs/funnelfox>).
 Web paywall editörü ölçülmedi.
 
@@ -135,17 +193,28 @@ yenilenir. Anahtar türü yazmıyor (ölçülmedi). Web aboneliğinde
 past_due/grace **bulunamadı** ("Handled platform-side" yalnız mağaza için).
 Kaynak: <https://superwall.com/docs/ios/guides/web-checkout/linking-membership-to-iOS-app.md>.
 
-**S3 — panel:** ölçülmedi.
+**S3 — analitik / reklam atfı:** Meta için MMP olarak kurulumu attırır ve
+dönüşümü Meta'ya geri gönderir (iOS, SuperwallKit 4.16+, yeni kurulumlar,
+web veri kümesi şart); ayrı bir **Meta Conversion API** entegrasyonu
+abonelik olaylarını sunucudan iletir (deneme → `StartTrial`, abonelik →
+`Subscribe`, dönüşüm/yenileme → `Purchase`, gelirle). Web checkout için
+panelde "Checkout Conversion" grafiği; atıf etiketleri bağlantıya eklenir
+ve Stripe metadata'sına akar. **Web checkout satın alımlarının Meta'ya
+dönüşüm olarak gittiği bulunamadı**; çerez onayı bulunamadı.
+Kaynak: <https://superwall.com/docs/integrations/meta-ads.md>,
+<https://api.superwall.me/blog/whats-new-august-2026>.
+
+**S4 — panel:** ölçülmedi.
 
 ## Özet tablo
 
-| | Bağlama | Hak sorgusu kimlik doğrulama | past_due / grace |
-|---|---|---|---|
-| web2wave | MMP derin bağlantı → 48 sa parmak izi → geri yükle; e-posta yalnız doğrulamayla | uygulamaya gömülü proje `api-key` (arka uçsuz önerilir) | **erişim yok** (`active`, `trialing`) |
-| FunnelFox | derin bağlantıda `user.id`; Adapty yolunda **doğrulanmamış e-posta** varsayılan | platform SDK'sı; kendi Billing'i gizli anahtar | GRACE erişimli, RETRY belirsiz |
-| RevenueCat | tek kullanımlık 60 dk jetonlu bağlantı | SDK açık anahtar / sunucu `sk_` | Stripe'ta yeniden deneme boyunca **erişim sürer** |
-| Adapty | profil kimlikli URL | SDK / sunucu gizli anahtar, uygulama başına | grace **aktif** |
-| Superwall | kodlu derin bağlantı | istemci SDK'sı, 24 sa yenileme | bulunamadı |
+| | Bağlama | Hak sorgusu kimlik doğrulama | past_due / grace | Reklam ağına dönüşüm | Çerez onayı |
+|---|---|---|---|---|---|
+| web2wave | MMP derin bağlantı → 48 sa parmak izi → geri yükle; e-posta yalnız doğrulamayla | uygulamaya gömülü proje `api-key` (arka uçsuz önerilir) | **erişim yok** (`active`, `trialing`) | sunucudan (Meta, TikTok…) | bulunamadı |
+| FunnelFox | derin bağlantıda `user.id`; Adapty yolunda **doğrulanmamış e-posta** varsayılan | platform SDK'sı; kendi Billing'i gizli anahtar | GRACE erişimli, RETRY belirsiz | Pixel + CAPI, TikTok Events API | huni öğesi (3 kategori) |
+| RevenueCat | tek kullanımlık 60 dk jetonlu bağlantı | SDK açık anahtar / sunucu `sk_` | Stripe'ta yeniden deneme boyunca **erişim sürer** | Pixel + CAPI (Meta) | bulunamadı |
+| Adapty | profil kimlikli URL | SDK / sunucu gizli anahtar, uygulama başına | grace **aktif** | web pikseli (tıklama eşleme); CAPI bulunamadı | bulunamadı |
+| Superwall | kodlu derin bağlantı | istemci SDK'sı, 24 sa yenileme | bulunamadı | MMP (iOS) + CAPI (abonelik); web checkout bulunamadı | bulunamadı |
 
 ## Bu bloğu (kimlik + e-posta kodu + hak ucu) değiştirecek bulgular
 
@@ -167,6 +236,28 @@ Kaynak: <https://superwall.com/docs/ios/guides/web-checkout/linking-membership-t
    AppsFlyer/Adjust); bizde MMP yok. Parmak izi yedeği (web2wave, 48 sa)
    olasılıksal ve Apple'ın parmak izi politikasıyla gerilimli (Ç9'da not) →
    **Ç27**.
+5. **Reklam ağına dönüşüm herkeste SUNUCUDAN gidiyor** (FunnelFox, RevenueCat,
+   web2wave, Superwall abonelik olayları): tarayıcı pikseli tek başına
+   kayıplı, sunucu bildirimi ödeme sağlayıcısının olayından atılıyor ve
+   pikselle tekilleştiriliyor. Huni olayları ise ayrı yolda, ürün
+   analitiği aracına (Amplitude/Mixpanel/PostHog) gidiyor. Çerez onayını
+   açıkça belgeleyen tek araç FunnelFox. Bizde bunların hiçbiri yok → **Ç28**
+   (Ç12'ye bağlı).
+
+## Karar seçenekleri — analitik ve reklam atfı (karar DEĞİL; Ç28)
+
+Her seçenekte ortak: reklam ağına dönüşüm **çekirdekten** (Stripe
+webhook'u geldiğinde Meta CAPI / TikTok Events API) — rakiplerin hepsi böyle
+ve B2'de para akışı zaten çekirdekte. AB ziyaretçisi için çerez onayı her
+seçenekte şart (Ç12).
+
+| | A · Hazır analitik aracı | B · Kendi panelimiz | C · Karışık |
+|---|---|---|---|
+| Ne | Huni olayları PostHog/Amplitude/Mixpanel'e; raporlar orada | Huni olayları çekirdeğe (Postgres), raporları biz yazarız | Olay + tıklama kimliği + UTM **bizim Postgres'te** (gerçeğin kaynağı); görselleştirme hazır araçta ya da basit kendi tablomuzda |
+| Maliyet | olay hacmine göre; ücretsiz katman sınırları **ölçülmedi** | araç ücreti yok; geliştirme ve bakım bizde (huni adımı, terk, kohort raporları) | ikisinin arası |
+| KVKK / GDPR | veri üçüncü tarafta; yurt dışı aktarım + işleyen sözleşmesi; AB/yerel barındırma ya da kendi sunucumuzda çalıştırma seçeneği **ölçülmedi** | veri yalnız bizde; onay yine şart | ham veri bizde, araca yalnız gereken gider |
+| B2'ye etkisi | statik huniye tarayıcı betiği + onay; çekirdek değişmez (CAPI hariç) | çekirdeğe olay ucu (CORS yolu genişler), yeni tablo; huni betiği bize yazar | B + seçilen aracın betiği ya da çekirdekten aktarım |
+| Rakiplerde | FunnelFox, RevenueCat, web2wave (Amplitude/PostHog'a aktarım) | — (panel grafikleri var ama ana analitik dışarıda) | web2wave/Superwall: dönüşüm kendi sistemlerinde, ürün analitiği dışarıda |
 
 ## Yöntem ve ölçüm
 - **Kod yazılmadı → kırma denemesi uygulanmaz.** Ölçüm: her iddianın yanında
@@ -175,5 +266,9 @@ Kaynak: <https://superwall.com/docs/ios/guides/web-checkout/linking-membership-t
 - Tutmayan aramalar: RevenueCat `docs/web/web-billing/overview.md` → **404**;
   Superwall `web-checkout-linking-membership-to-iOS-app` yalnız platform
   seçici (iOS sayfası ayrıca açıldı); `gh api orgs/funnelfox/repos` → 404.
-- `docs.web2wave.com` sayfaları açılmadı; web2wave iddiaları kendi
-  depolarındaki playbook'tan (lisanssız → yalnız davranış).
+- `docs.web2wave.com` sayfaları açılmadı (S3 hariç: JS SDK sayfası arama
+  özetinden); web2wave iddiaları çoğunlukla kendi depolarındaki
+  playbook'tan (lisanssız → yalnız davranış).
+- **2. tur (aynı gün):** 4. soru (analitik/reklam atfı/çerez onayı) ve akış
+  özeti eklendi; eski S3 (panel) → S4. Çerez onayı: web2wave, RevenueCat,
+  Adapty, Superwall için **bulunamadı**.
