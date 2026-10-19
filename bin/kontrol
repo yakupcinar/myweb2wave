@@ -31,6 +31,10 @@ funnel() { docker compose run --rm -T funnel sh -c "$1"; }
 df -h . | tail -1
 adim ortam-db     docker compose up -d --wait db
 
+# Bağımlılıklar: temiz ortamda vendor/ yok. Yerelde var diye atlanınca CI
+# EXIT=127 verdi (2026-10-19) — kapı yerel duruma dayanmamalı.
+adim core-kur     core   'composer install --no-interaction --no-progress'
+
 # 1 · Biçim
 adim core-bicim   core   'vendor/bin/php-cs-fixer check --diff'
 adim funnel-npm   funnel 'npm ci --no-audit --no-fund'

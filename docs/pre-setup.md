@@ -137,6 +137,17 @@ Yasak: bot korumasını aşmak, panel/API'ye yetkisiz istek, derlenmiş kodu
 açmak, lisanssız SDK'dan ya da "güvenlik değerlendirmesinden yeniden
 yapım" türü klon depolardan kod almak (kural 12; kaynağı belirsiz).
 
+**C5 · Depo herkese açık** (2026-10-19, kullanıcı kararı). Neden: özel
+depoda Actions faturalandırma yüzünden koşmadı (Ç15); açık depoda Actions
+ücretsiz. Açmadan önce tüm geçmiş tarandı: API anahtarı/token/özel anahtar
+yok, KeepChat üretim host/IP'si yok. Görünür kalanlar: commit e-postası
+(13 commit), KeepChat'ten iki fonksiyon adı (Graphify tablosu); dev/test
+`APP_SECRET` ve yerel `app/app` DB parolası Symfony varsayılanı.
+**Reddedilen:** faturayı düzeltmek (önerilen, kullanıcı seçmedi) · Mac'te
+self-hosted runner · KeepChat üretim sunucusunda runner (üretim hostunda CI
+kodu — güvenlik riski). **Sonuç:** depoya **asla sır girmez** — sırlar
+`core/.env.local` (git dışı, `git check-ignore` ölçüldü) ve üretim ortamında.
+
 ## Risk tablosu
 
 | Risk | Olasılık | Etki | Ne zaman ölçülür |

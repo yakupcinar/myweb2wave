@@ -125,11 +125,12 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§13** | Yeşil bir süit **ölçülmemiş bir sıra/zaman varsayımı** taşıyabilir; yeni iş onu bozmaz, açığa çıkarır. Kırmızının üç şıkkı: yarış · mantık · **zaman aşımı**. |
 | **§14** | Ölçümden önce **ortamı say**: dolu disk, eşzamanlı ağır koşum, iki test aynı simülatörde/DB'de — hepsi kodu suçlayan sahte kırmızı üretir. `df -h` ilk komut. |
 | **§15** | `kill $!` alt kabuğu öldürür, içindeki komutu değil (öksüz süreç sonraki koşuyu bozar) — alt kabukta `exec`. `pkill -f <desen>` kendi kabuğunu da öldürür. |
-| **§16** | macOS'ta `timeout` yok; `sh` macOS'ta bash, Ubuntu'da dash; BSD `sed` `\|`'yi tanımaz ve **hata vermez**. Taşınabilirliği varsayma, ölç. |
+| **§16** | macOS'ta `timeout` yok; `sh` macOS'ta bash, Ubuntu'da dash; BSD `sed` `\|`'yi tanımaz, düzenli ifadeli `grep` sabit metni **bulamayabilir** (`-F` kullan) — hiçbiri hata vermez. |
 | **§17** | Log'da "yok" sonucu çoğu zaman **soru** hatasıdır (yanlış etiket, varsayılan zaman penceresi, yanlış log biçimi). Önce log'a yazıldığı bilinen bir kontrol grubunu ara. |
 | **§18** | SwiftUI (ve benzeri bildirimsel UI): değiştirici **boş bir kapsayıcıya** (`Group { if … }`) bağlanırsa koşmaz — `.task`/`onAppear` hiç çalışmaz, hata yoktur. Gerçek kapsayıcı (`ZStack`) kullan. |
 | **§19** | PHPUnit `<server>` gerçek ortam değişkenine **yenilir** (Symfony önce `$_ENV`) — `<env force>` kullan. |
 | **§20** | Renkli çıktıda `grep '^OK'` satırı **sessizce kaybeder**; önce ANSI kodunu ayıkla. |
+| **§21** | CI sonucunu SHA ile ararken push **olmadıysa eski koşu** gelir; önce "uygulandı mı" + "SHA yeni mi". |
 
 ---
 

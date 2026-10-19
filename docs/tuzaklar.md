@@ -31,3 +31,17 @@ kalırdı. **Doğrusu:** `<env name="…" force="true"/>`.
 renk kodu aramadan **sonra** ayıklanıyordu. **Doğrusu:** önce
 `sed 's/\x1b\[[0-9;]*m//g'`, sonra `grep`. Atlanan test sayısını taşıyan
 satır budur — kaybolursa `skipped` görünmez (tuzak §8).
+
+## §16 — macOS araçları farklı davranır ve hata vermez
+**Belirti (grep, 2026-10-19):** aynı dosyada `grep -c '], $dbOk ? 200 : 503);'`
+→ **0**, `grep -Fc` aynı metin → **1**; kırma denemesi "bulunamadı" diye
+uygulanmadı. `cat -A` macOS'ta yok, hata çıktıyı yuttu. **Doğrusu:** sabit
+metin ararken `grep -F`; metin değiştirirken düzenli ifadesiz bir betik
+(Python `str.replace` + "tam bir kez geçiyor mu" kontrolü).
+
+## §21 — CI sonucunu SHA ile ararken push olmadıysa ESKİ koşu gelir
+**Belirti:** kırma denemesi "yeşil" döndü; oysa yama hiç uygulanmamış,
+commit/push olmamıştı. **Sebep:** HEAD değişmedi → aynı SHA'nın önceki
+(yeşil) koşusu yeni denemenin sonucu sanıldı. İki kez yaşandı.
+**Doğrusu:** sonucu okumadan önce "uygulandı mı" (grep -F) ve "SHA yeni mi"
+ikisini de bas; biri yoksa sonuç **KOŞULMADI**.
