@@ -36,6 +36,10 @@ yeniden dener.
 **4 · Açık uçlar.** "Fark ettim ama karar vermedim" her cümle
 `docs/decisions/acik-uclar.md`'ye bir Ç-no ile.
 
+**4b · Yöntem el kitabı.** Blokta yeni bir yöntem ya da ders çıktıysa ilgili
+`docs/yontem/<bölüm>.md`'ye 1–5 satır, `07-yolculuk.md`'ye bloğun tek
+satırı. Ölçümü kopyalama, kayda bağlantı ver. Bölüm ~150 satırı geçerse böl.
+
 **5 · Kapanış denetimi (kural 4).** Kapanış mesajındaki her "fark ettim /
 karar vermedim / istersen geri alırım" cümlesi için `grep` ile depodaki
 karşılığını göster. Bulamadığını **yaz**. Türkçe ararken `grep -i` yok

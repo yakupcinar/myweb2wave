@@ -39,6 +39,42 @@ uygulama boyutu.
   yerde (Stripe), hak da tek yerde olmalı; (b) KeepChat'in girişini çekirdeğe
   taşımak — çalışan bir sistemin kimliğini değiştirmek, ayrı ve büyük karar.
 
+**A5 · Abonelik erişimi, bağlama ve sorgu** (2026-10-19, kullanıcı:
+"önerilerinle devam et"; girdi `rakip-arastirmasi.md`).
+- **Erişim (Ç24):** `active`, `trialing` **ve `past_due`** erişim verir;
+  `unpaid`, `canceled`, `incomplete`, `incomplete_expired` vermez. Stripe'ın
+  yeniden deneme süresi kullanıcıya kartını güncelleme zamanı tanır.
+  Reddedilen: yalnız `active`/`trialing` (web2wave yolu) — ödeme bir kez
+  düştüğü anda ücretli kullanıcıyı kilitler; RevenueCat/Adapty/FunnelFox
+  da grace'te erişimi sürdürüyor. ⚠️ Stripe panelinde "tüm denemeler
+  düşünce aboneliği iptal et" ayarı ölçülmeli (Ç20).
+- **Bağlama (Ç25):** şimdilik yalnız **e-posta + 6 haneli kod**. Tek
+  kullanımlık bağlama bağlantısı, Universal Link/derin bağlantı altyapısı
+  kurulunca (Ç27 ile). Reddedilen: şimdi bağlantı — KeepChat'te derin
+  bağlantı altyapısı yok, kod her yerde çalışır.
+- **Sorgu (Ç26):** "aktif mi?" sorusunu **uygulamanın sunucusu** sorar
+  (KeepChat sunucusu → çekirdek), **uygulama başına gizli anahtarla**;
+  uygulamanın içinde sır yok. Reddedilen: uygulamaya gömülü anahtar
+  (web2wave yolu) — anahtar ikili dosyadan çıkarılabilir; kullanıcı
+  jetonuyla uygulamadan sorgu — KeepChat'in kendi oturumu var, iki oturum.
+- **Ertelenmiş derin bağlantı / MMP (Ç27):** şimdi YOK. Ücretli reklama
+  başlamadan önce yeniden karar.
+
+**A6 · Analitik ve reklam atfı: C · karışık** (2026-10-19, kullanıcı:
+"önerilerinle devam et"; seçenekler Ç28, `rakip-arastirmasi.md`).
+- Huni olayları, tıklama kimliği (`fbclid`/`ttclid`) ve UTM **bizim
+  Postgres'te** — gerçeğin kaynağı bizde (KVKK/GDPR: ham veri yurt dışına
+  çıkmaz).
+- Reklam ağına dönüşüm **çekirdekten**, Stripe webhook'u geldiğinde (Meta
+  Conversions API, TikTok Events API) — rakiplerin hepsi böyle.
+- Görselleştirme: önce çekirdekte basit sayım tabloları; hacim gerektirirse
+  AB'de barındırılan ya da kendi sunucumuzda bir araç (ölçülmedi).
+- **Ne zaman:** canlı ödemeden ve ücretli trafikten **önce**; çerez onayı
+  (Ç12) aynı blokta.
+- Reddedilen: A (yalnız hazır araç) — ham veri ve dönüşüm üçüncü tarafta,
+  yurt dışı aktarım; B (yalnız kendi panel) — reklam ağına dönüşüm yine
+  gerekir, rapor yükü baştan bizde.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.
