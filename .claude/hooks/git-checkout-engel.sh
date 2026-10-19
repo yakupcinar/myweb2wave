@@ -37,7 +37,7 @@ if "--" in kuyruk.split():
 for tok in kuyruk.split():
     if tok.startswith("-"):
         continue
-    if "/" in tok or re.search(r"\.(php|md|json|ya?ml|js|vue|css|blade\.php|xml|neon|sh|alloy)$", tok):
+    if "/" in tok or re.search(r"\.(php|md|json|ya?ml|js|vue|css|blade\.php|xml|neon|sh|alloy|txt|go|swift|ts|tsx|jsx|py|rs|java|kt|html|sql|toml|env|lock|mod|sum)$", tok):
         print("evet"); sys.exit(0)
 ')
 
