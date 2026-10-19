@@ -35,6 +35,18 @@ services:
       db:
         condition: service_healthy
 
+  # Testler gerçek Stripe'a değil Stripe'ın resmi sahte API'sine gider (MIT):
+  # parametreleri Stripe'ın OpenAPI tanımına göre doğrular, ağ gerektirmez.
+  stripe-mock:
+    image: stripe/stripe-mock:v0.206.0@sha256:aeb96b83e87a893d2ac005e363ac01ffa6e59a5ad85b49c155dfc9129de02e78
+
+  # Gerçek istekle doğrulama: Stripe test olaylarını yerel çekirdeğe iletir.
+  # `docker compose run --rm stripe-cli listen --forward-to core:80/webhooks/stripe`
+  stripe-cli:
+    image: stripe/stripe-cli:v1.53.1@sha256:11c46caeead82e329f14823dd622d494b4cc8c1b9766f724d122d2af42c97540
+    profiles: ["araclar"]
+    env_file: core/.env.local
+
   # Yalnız araç: `docker compose run --rm funnel npm run check`.
   # node_modules adlandırılmış birimde — macOS'ta kurulan yerel ikililer
   # Linux konteynerinde çalışmaz.
