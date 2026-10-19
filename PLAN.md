@@ -9,12 +9,13 @@
 | Katman | Durum | Kanıt |
 |---|---|---|
 | Ürün kapsamı | ✅ A1–A3 | `docs/pre-setup.md` §A |
-| Yığın seçimi | 🔶 B1 gözden geçiriliyor → öneri B2 (Astro + Symfony) | `acik-uclar.md` Ç11 |
+| Yığın seçimi | ✅ B2 Astro + Symfony | `docs/pre-setup.md` §B2 |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
 - [x] **Yığın kararı** — B1, 2026-10-19
-- [ ] **İskelet** — Next.js + Postgres + Docker; R1'i ölçen ilk test
+- [ ] **İskelet** — Astro + Symfony + Postgres + Docker; OpenAPI sözleşmesi (R2)
+- [ ] **Ödeme sağlayıcısı araştırması** — Ç10
 - [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
 - [ ] **`/kontrol` skill'ini doldur** — biçim + statik + test komutları
 

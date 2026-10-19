@@ -21,7 +21,7 @@ kaynaklar, resmi listeden ölçülmedi) — canlıya geçiş ayrı karar: Ç10.
 
 ## §B — Yığın
 
-**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,
+~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.
 Docker ile kendi sunucumuzda** (2026-10-19). Kullanıcı ölçütü: deneyim
 değil, işe en uygun dil.
 
@@ -52,6 +52,40 @@ değil, işe en uygun dil.
 
 ⚠️ **Risk:** Next.js'in sürümden sürüme değişen önbellek/yönlendirme
 davranışı — sessiz yanlış sonuç adayı; ilk blokta ölçülecek (risk tablosu).
+
+**B2 · Astro (statik huni, CDN) + Symfony (çekirdek API) + Postgres**
+(2026-10-19, kullanıcı onayı; B1'in yerine). Ölçüt: profesyonel şirket
+kalitesi.
+
+**Neden:**
+- **Para akışı herkese açık sayfa sunucusundan ayrı.** B1'de huni, webhook
+  ve uygulama API'si tek Next.js sürecindeydi; self-hosted Next.js'te 18 ayda
+  3 ciddi CVE (2025-29927 middleware bypass, 2025-55182 RSC RCE, 2026-44577
+  SSRF). Huni sayfası statik → sunucusu yok → saldırı yüzeyi yok.
+- **Huniler kodda tanımlı (A1)** → sayfalar derlemede üretilir, CDN'den en
+  hızlı açılış; kullanıcıya özel içerik olmadığı için B1'in R1 önbellek
+  riski ortadan kalktı. Etkileşim React adacıklarıyla.
+- **Çekirdek Symfony:** iyzico'nun resmi SDK'sı yalnız PHP (`gh repo list`
+  ölçümü: Stripe ve Paddle'da Go+PHP var, iyzico'da Go yok) — Türkiye
+  şirketinin üç canlı ödeme yolu da resmi SDK'yla açık. Messenger (webhook
+  kuyruğu, tekrar, başarısız iş deposu), Workflow (abonelik durum makinesi),
+  Doctrine Migrations hazır; para akışında elle yazılan parça az.
+- Zayıf yan ve önlemi: PHP çalışma zamanında dinamik → PHPStan en üst
+  seviye `/kontrol`'de zorunlu.
+
+**Reddedilen:**
+- **B1, tek Next.js** — yukarıdaki ayrım gerekçesi.
+- **Go çekirdek** — iyzico SDK'sı yok; kuyruk/durum makinesi/göç elle
+  birleştirilir; bu iş yükünde hız kazancı kullanılmaz. Ç10 kesin Paddle
+  çıkarsa yeniden tartılır.
+- **Laravel çekirdek** — kullanıcı Symfony'yi seçti; Symfony'nin bileşen
+  sınırları (Messenger, Workflow) çekirdeğin işine daha doğrudan oturuyor.
+- **Huni sayfalarını Symfony/Twig ile sunucuda üretmek** — para sürecini
+  yine herkese açık sayfa trafiğiyle aynı yere koyar.
+
+**Bedeli:** iki dil, iki dağıtım (CDN + container), aralarında OpenAPI
+sözleşmesi; A/B testi için her varyant ayrı sayfa, atamayı çekirdek yapar;
+A1 değişip huniler panelde tanımlanırsa statik üretim yetmez.
 
 ## §C — Araç ortamı
 
@@ -89,4 +123,6 @@ yapım" türü klon depolardan kod almak (kural 12; kaynağı belirsiz).
 
 | Risk | Olasılık | Etki | Ne zaman ölçülür |
 |---|---|---|---|
-| R1 · Next.js önbelleği huni sayfasında bayat/yanlış kişiye ait içerik gösterir | orta | yüksek | ilk huni bloğu: iki farklı kullanıcıyla aynı sayfa |
+| ~~R1 · Next.js önbelleği yanlış kişiye ait içerik gösterir~~ | — | — | B2 ile düştü (statik huni) |
+| R2 · Astro ile Symfony'nin sözleşmesi kayar: huni eski alan adıyla istek atar, çekirdek 4xx/sessiz yok sayar | orta | yüksek | ilk uçtan uca blok: OpenAPI'den üretilen tipler + sözleşme testi |
+| R3 · Webhook iki kez gelir, abonelik iki kez açılır | yüksek | yüksek | ödeme bloğu: aynı olayı iki kez gönderen test |
