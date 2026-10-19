@@ -18,6 +18,9 @@ uygulama olduğu ve web'den ödemenin gerekip gerekmediği açık: Ç9.
 **A3 · Ödeme: Stripe TEST modu** (2026-10-19). Şirket Türkiye'de; gerçek
 ödeme yok. ⚠️ Stripe Türkiye şirketine canlı hesap açmıyor (ikincil
 kaynaklar, resmi listeden ölçülmedi) — canlıya geçiş ayrı karar: Ç10.
+Kullanıcı teyidi (2026-10-19): test Stripe'la sürer; canlıda başka sağlayıcı
+çıkarsa entegrasyonun yeniden yazılması kabul. Alıcılar **uluslararası** →
+vergi/hukuk etkisi `odeme-saglayici-arastirmasi.md`, doğrulama Ç12.
 
 ## §B — Yığın
 
