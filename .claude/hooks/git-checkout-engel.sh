@@ -26,7 +26,7 @@ esac
 # argüman dosya gibi görünüyorsa (yol ayırıcı veya bilinen uzantı) → dosya
 # geri alma.
 DOSYA_GIBI=$(printf '%s' "$KOMUT" | python3 -c '
-import sys, re
+import sys, re, os
 k = sys.stdin.read()
 m = re.search(r"git\s+(checkout|restore)\s+(.*)", k)
 if not m:
@@ -37,7 +37,9 @@ if "--" in kuyruk.split():
 for tok in kuyruk.split():
     if tok.startswith("-"):
         continue
-    if "/" in tok or re.search(r"\.(php|md|json|ya?ml|js|vue|css|blade\.php|xml|neon|sh|alloy|txt|go|swift|ts|tsx|jsx|py|rs|java|kt|html|sql|toml|env|lock|mod|sum)$", tok):
+    # restore hiçbir zaman dal değiştirmez; "." her şeyi geri alır; diskte
+    # var olan ad (Makefile gibi uzantısız) dosyadır.
+    if m.group(1) == "restore" or tok == "." or os.path.exists(tok) or "/" in tok or re.search(r"\.(php|md|json|ya?ml|js|vue|css|blade\.php|xml|neon|sh|alloy|txt|go|swift|ts|tsx|jsx|py|rs|java|kt|html|sql|toml|env|lock|mod|sum)$", tok):
         print("evet"); sys.exit(0)
 ')
 
