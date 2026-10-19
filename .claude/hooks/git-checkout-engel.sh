@@ -2,7 +2,7 @@
 #
 # `git checkout <dosya>` ENGELİ — geri alma `cp` ile yapılır.
 #
-# ★ Bu hook iki gerçek olaydan doğdu, ikisi de aynı oturumda:
+# ★ Bu hook KeepChat'te iki gerçek olaydan doğdu, ikisi de aynı oturumda:
 #   · 4.6X.1 / 4.6Y — İZLENEN dosyada `checkout` FAZLASINI geri aldı:
 #     o oturumda yazılan ama commit'lenmemiş kod sessizce gitti.
 #   · B5 — İZLENMEYEN dosyada HİÇBİR ŞEY yapmadı: kırık kod beş kırma
@@ -48,7 +48,7 @@ if [ "$DOSYA_GIBI" = "evet" ]; then
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "deny",
-      permissionDecisionReason: ("git ile DOSYA geri alma engellendi.\n\n  " + $k + "\n\nSebep: `git checkout <dosya>` İZLENMEYEN dosyada hiçbir şey yapmıyor, İZLENEN dosyada ise o oturumda yazılmış commitlenmemiş kodu da geri alıyor. İkisi de bu projede yaşandı.\n\nDoğrusu:  cp <dosya> /tmp/x.bak   →  değiştir  →  cp /tmp/x.bak <dosya>")
+      permissionDecisionReason: ("git ile DOSYA geri alma engellendi.\n\n  " + $k + "\n\nSebep: `git checkout <dosya>` İZLENMEYEN dosyada hiçbir şey yapmıyor, İZLENEN dosyada ise o oturumda yazılmış commitlenmemiş kodu da geri alıyor. İkisi de KeepChat projesinde yaşandı.\n\nDoğrusu:  cp <dosya> /tmp/x.bak   →  değiştir  →  cp /tmp/x.bak <dosya>")
     }
   }'
   exit 0

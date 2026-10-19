@@ -1,6 +1,6 @@
 ---
 name: blok
-description: Bir geliştirme bloğunun baştan sona akışı — ölç, karar ver, uygula, test yaz, kır, gerçek istekle doğrula, kontrol et, belgele, commit et. 36 blokta uygulanan ritüelin yazılı hâli. Yeni bir iş parçasına başlarken kullan.
+description: Bir geliştirme bloğunun baştan sona akışı — ölç, karar ver, uygula, test yaz, kır, gerçek istekle doğrula, kontrol et, belgele, commit et. KeepChat'te ~36 blokta oturan ritüelin yazılı hâli. Yeni bir iş parçasına başlarken kullan.
 allowed-tools: Bash, Read, Edit, Write
 ---
 
@@ -12,7 +12,7 @@ Dokuz adım. Sıra önemli: her adım öncekinin çıktısını kullanıyor.
 
 Mevcut durumu **say**. Varsayımla başlayan blok yanlış problemi çözüyor.
 
-Bu oturumdan örnekler: *"sayfa yavaş"* sanılıyordu, ölçüm 57 KB / 0,5 sn
+KeepChat'ten örnekler: *"sayfa yavaş"* sanılıyordu, ölçüm 57 KB / 0,5 sn
 gösterdi — asıl kusur listenin 24'te sessizce kesilmesiydi. *"Günlük
 gidiyor"* sanılıyordu, sayaç **0** gösterdi.
 
@@ -41,41 +41,35 @@ Tutmayan deneme varsa **testi suçla**, ayrıntı `/kirma` skill'inde.
 
 ## 6 · GERÇEK İSTEKLE DOĞRULA
 
-Süitin göremediği şeyler var ve bu projede **defalarca** yaşandı:
+Süitin göremediği şeyler var; KeepChat'te **defalarca** yaşandı:
 
 | Testin göremediği | Neden |
 |---|---|
-| `Accept` başlığı olmayan istemcinin 500 alması | `postJson` başlığı otomatik ekliyor — 425 testin hiçbiri yakalamadı |
-| CSRF hatası | Testler `postJson` kullanıyor |
-| Formda eksik alan | Testler `ornekAdres()` ile **tam veri** gönderiyor |
-| Ekranda ham çeviri anahtarı | Prop'ları ölçen test doğru bulur |
+| Eksik başlıklı istemcinin 500 alması | Test istemcisi başlığı otomatik ekliyor |
+| Formda eksik alan | Testler **tam veri** gönderiyor |
+| Ekranda ham çeviri anahtarı | Veriyi ölçen test doğru bulur, ekranı görmez |
 
 ```bash
-curl -k "https://<uygulamanın-adresi>/…"        # gerçek HTTP
-# tarayıcıda görmek gerekiyorsa erişilebilir bir adres aç
+curl "<uygulamanın-adresi>/…"        # gerçek HTTP
 ```
 
-⚠️ Tarayıcı aracı `.localhost` adresine **ulaşamıyor**; tünel şart. İş
-bitince kapat.
+Ekranda görmek gerekiyorsa tarayıcı aracıyla yürü.
 
 ## 7 · KONTROL — `/kontrol`
 
-Biçim + statik analiz + tam süit. `make kontrol` bu işi eksik yapıyor.
-Uzun sürdüğü için `sinayici` ajanına devredilebilir.
+Biçim + statik analiz + tam süit. Uzun sürdüğü için `sinayici` ajanına
+devredilebilir.
 
-## 8 · BELGELE — bilgi sohbette değil depoda durur
+## 8 · BELGELE — `/belge`
+
+Yerler CLAUDE.md §6'da; özetle:
 
 | Ne | Nereye |
 |---|---|
-| Karar + gerekçe + kırma denemeleri | `PLAN.md` |
-| Blok özeti | `docs/summary.md` |
-| Hata vermeden yanlış sonuç üreten şey | `CLAUDE.md` ya da ilgili `.claude/rules/*.md` |
-| Kullanıcıya bakan kusur/çözüm | `README.md` |
-
-⚠️ Tuzak eklersen `TuzakSayimiTest`'teki sayıyı da artır — **bilerek**.
-Düşürmek bir tuzağın sessizce kaybolması demek.
-
-⚠️ **Süit koşarken bu dosyalara dokunma**: testler onları okuyor.
+| Karar + gerekçe + kırma denemeleri + ölçüm | `docs/decisions/<konu>.md` |
+| Durum satırı | `PLAN.md` §0-§1 |
+| Hata vermeden yanlış sonuç üreten şey | `docs/tuzaklar.md` + CLAUDE.md §4 tek satır |
+| Fark ettim ama karar vermedim | `docs/decisions/acik-uclar.md` |
 
 ## 9 · COMMIT + CI
 
@@ -85,8 +79,7 @@ Mesaj kararı ve ölçümü anlatır, değişikliği listelemez. İmza satırı 
 git push && curl -s ".../commits/main/check-runs"
 ```
 
-⚠️ **Otorite CI.** Yerel yeşil ≠ CI yeşil; bu bir kez biçimlendiricide, bir kez
-tuzak sayımı yüzünden yaşandı.
+⚠️ **Otorite CI.** Yerel yeşil ≠ CI yeşil.
 
 ## Durdurma koşulu
 

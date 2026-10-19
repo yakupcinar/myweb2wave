@@ -18,11 +18,11 @@ Sırayla, tamamını:
 
 | Dosya | Ne çıkarırsın |
 |---|---|
-| `PLAN.md` | **Aktif sprint**: §1 şu anki 3-4 görev, §2 backlog ve sırası, §4 geçmiş kataloğu. ⚠️ 2026-09-15'te BÖLÜNDÜ — bitmiş blok kayıtları artık burada DEĞİL |
-| `docs/decisions/acik-uclar.md` | **Açık uçlar (Ç-no)** — eskiden `PLAN.md § Açık uçlar`dı. Taslak prompt bu gözlemlerden birine dokunuyorsa söyle: karara bağlanmamış bir şeyi sessizce varsaymak promptu boşa harcatır |
+| `PLAN.md` | **Aktif sprint**: §0 durum, §1 şu anki 3-4 görev, §2 backlog ve sırası. Bitmiş blok kayıtları burada DEĞİL, `docs/decisions/<konu>.md`'de |
+| `docs/decisions/acik-uclar.md` | **Açık uçlar (Ç-no)**. Taslak prompt bu gözlemlerden birine dokunuyorsa söyle: karara bağlanmamış bir şeyi sessizce varsaymak promptu boşa harcatır |
 | `CLAUDE.md` | 15 değişmez kural + **tuzak indeksi** (§4, tek satırlık iddialarla) |
 | `docs/tuzaklar.md` | Tuzakların **tam metni** — CLAUDE.md'de yalnız tek satır var; ilgili tuzağa dokunan bir taslakta buradan oku |
-| `docs/decisions/archive-summary.md` | Bitmiş işin nerede olduğu. Taslak "bu daha önce yapıldı mı" sorusuna dokunuyorsa önce buradan doğru dosyayı bul |
+| `docs/decisions/` | Bitmiş blokların kayıtları. Taslak "bu daha önce yapıldı mı" sorusuna dokunuyorsa `ls` + `grep` ile doğru dosyayı bul |
 | `docs/pre-setup.md` | Kayıtlı kararlar (A + B), **özellikle reddedilen alternatifler** ve risk tablosu |
 
 `git log --oneline -5` ve `git status --short` ile son durumu doğrula.
@@ -50,15 +50,15 @@ Hepsini kontrol et, ama **yalnızca gerçekten sorun olanları** raporla.
    satırlarına özellikle bak — kullanıcı farkında olmadan elenmiş bir
    alternatifi isteyebilir. Çelişiyorsa **kararı ve gerekçesini alıntıla**;
    kullanıcı yine de isterse bu bir karar değişikliğidir ve pre-setup'a
-   işlenmeli (ör. Laravel→Go geçişi §B0'da böyle kayıtlı).
+   işlenmeli.
 5. **Bilinen bir tuzağa mı giriyor?** CLAUDE.md §4 tuzak indeksi
    (tam metin `docs/tuzaklar.md`) — ör. kontrolü `| tail`'a borulamak, `grep -i` ile Türkçe
    aramak, uygulanmış bir migration'ı düzenleyip "şema değişmedi"ye şaşmak.
 6. **Sıradaki blok mu?** PLAN.md §1 (aktif görevler) ve §2 (backlog
    sırası) atlanıyorsa söyle. Atlamak bazen doğrudur; ama **bilerek**
-   olmalı. Açık blokların tanımı `docs/plan/` altında.
+   olmalı.
 7. **Henüz verilmemiş bir karara mı dayanıyor?** pre-setup risk tablosu
-   (R1–R4) ve `docs/decisions/acik-uclar.md`. Dayanıyorsa doğru iş promptu değil,
+   ve `docs/decisions/acik-uclar.md`. Dayanıyorsa doğru iş promptu değil,
    **önce o karar**.
 8. **Soğuk oturumun ihtiyacı olan bağlam var mı?** Çalışma oturumu bu
    promptu bağlamsız alacaksa hangi dosyaları okuyacağı yazılı olmalı.
