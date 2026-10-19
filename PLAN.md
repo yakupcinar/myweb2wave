@@ -29,7 +29,7 @@
 - [x] **Rakip araştırması** — 2026-10-19, `docs/decisions/rakip-arastirmasi.md` (Ç24–Ç27)
 - [x] **Araştırma sonrası kararlar** — A5 (Ç24–Ç27), A6 (Ç28), 2026-10-19
 - [x] **Kimlik + e-posta kodu + hak ucu** — 2026-10-19, `docs/decisions/kimlik-hak.md`
-- [ ] **KeepChat "aboneliğimi bağla"** — KeepChat deposunda (sunucu bu uçlara sorar)
+- [ ] **KeepChat "aboneliğimi bağla"** — KeepChat deposunda, **KeepChat klasöründe ayrı oturumda** (hook'ları ve kuralları yüklensin). Kullanıcı kararları 2026-10-19: **yalnız durumu göster** (hiçbir özellik kilitlenmez → Ç29'a takılmaz) · **sunucu + iOS** (web sonra). Kılavuz: `docs/uygulama-entegrasyonu.md`
 - [ ] **Analitik + reklam atfı + çerez onayı** (A6) — canlıdan önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
