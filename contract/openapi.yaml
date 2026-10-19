@@ -1,0 +1,62 @@
+# Huni ↔ çekirdek sözleşmesi (R2) — TEK KAYNAK.
+# Çekirdek: testlerde gerçek yanıtlar buna göre doğrulanır.
+# Huni: TypeScript tipleri buradan ÜRETİLİR (contract/ → funnel/src/sozlesme/api.ts);
+# bin/kontrol üretilen dosyanın güncel olduğunu ölçer.
+openapi: 3.1.0
+info:
+  title: MyWeb2Wave çekirdek API
+  version: 0.1.0
+paths:
+  /checkout/sessions:
+    post:
+      operationId: createCheckoutSession
+      summary: Paywall'dan Stripe Checkout oturumu açar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [plan]
+              properties:
+                plan:
+                  type: string
+                  enum: [monthly]
+      responses:
+        "201":
+          description: Oturum açıldı; istemci url'ye yönlenir
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [url]
+                properties:
+                  url:
+                    type: string
+                    format: uri
+        "400":
+          description: Gövde JSON değil
+        "422":
+          description: Bilinmeyen plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hata"
+        "502":
+          description: Ödeme sağlayıcısına ulaşılamadı
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hata"
+components:
+  schemas:
+    Hata:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [unknown_plan, payment_provider_unavailable]

@@ -1,15 +1,64 @@
 ---
-// Yer tutucu: ilk huni, huni tanımı bloğunda gelir.
-const baslik = "MyWeb2Wave";
+// Paywall. Sayfa statik; tek etkileşim ödeme düğmesi. Plan adını
+// çekirdeğe gönderir, dönen Stripe Checkout adresine yönlenir.
 ---
 
 <html lang="tr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{baslik}</title>
+    <title>MyWeb2Wave Pro</title>
   </head>
   <body>
-    <h1>{baslik}</h1>
+    <main>
+      <h1>MyWeb2Wave Pro</h1>
+      <p>
+        Aylık plan · <strong>9,99 € / ay</strong>
+      </p>
+      <button id="abone-ol" type="button">
+        Abone ol
+      </button>
+      <p id="hata" role="alert" hidden></p>
+    </main>
+
+    <script>
+      import { cekirdek } from "../lib/cekirdek";
+
+      const dugme = document.querySelector<HTMLButtonElement>("#abone-ol");
+      const hata = document.querySelector<HTMLParagraphElement>("#hata");
+
+      function hataGoster(metin: string): void {
+        if (hata) {
+          hata.textContent = metin;
+          hata.hidden = false;
+        }
+        if (dugme) dugme.disabled = false;
+      }
+
+      dugme?.addEventListener("click", async () => {
+        dugme.disabled = true;
+        try {
+          const { data, error, response } = await cekirdek.POST(
+            "/checkout/sessions",
+            { body: { plan: "monthly" } },
+          );
+          if (data) {
+            window.location.assign(data.url);
+            return;
+          }
+          hataGoster(
+            response.status === 502 &&
+              error?.error === "payment_provider_unavailable"
+              ? "Ödeme sağlayıcısına şu an ulaşılamıyor. Lütfen biraz sonra tekrar deneyin."
+              : "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+          );
+        } catch {
+          // Ağ hatası: çekirdeğe hiç ulaşılamadı.
+          hataGoster(
+            "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
+          );
+        }
+      });
+    </script>
   </body>
 </html>

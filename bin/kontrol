@@ -26,6 +26,7 @@ adim() {
 
 core()   { docker compose run --rm -T core   sh -c "$1"; }
 funnel() { docker compose run --rm -T funnel sh -c "$1"; }
+sozlesme() { docker compose run --rm -T contract sh -c "$1"; }
 
 # 0 · Ortam (tuzak §14)
 df -h . | tail -1
@@ -39,6 +40,12 @@ adim core-kur     core   'composer install --no-interaction --no-progress'
 adim core-bicim   core   'vendor/bin/php-cs-fixer check --diff'
 adim funnel-npm   funnel 'npm ci --no-audit --no-fund'
 adim funnel-bicim funnel 'npm run -s format:check'
+
+# Sözleşme (R2): üretilen huni tipleri contract/openapi.yaml ile birebir mi?
+# Yeniden üret, depodakiyle karşılaştır — elle düzenleme ya da üretmeyi
+# unutmak burada kırmızı olur.
+adim sozlesme-kur sozlesme 'npm ci --no-audit --no-fund'
+adim sozlesme-guncel sozlesme 'npx openapi-typescript openapi.yaml -o /tmp/api.ts > /dev/null && cmp /tmp/api.ts /funnel/src/sozlesme/api.ts'
 
 # 2 · Statik analiz
 adim core-composer core  'composer validate --strict --no-check-publish'

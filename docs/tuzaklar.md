@@ -53,3 +53,10 @@ ikisini de bas; biri yoksa sonuç **KOŞULMADI**.
 konteyneri başlatır, sürecin yaşadığını söylemez. **Doğrusu:** arka plan
 süreci için `docker ps` durumu + sürecin "hazır" satırını bekle (`Ready`),
 sonra işi tetikle.
+
+## §23 — `curl -s` + köşeli parantezli adres sessizce BOŞ döner
+**Belirti:** `curl -s ".../v1/events?created[gte]=…"` → çıktı yok, hata yok;
+"olay yok" sanılacaktı. **Sebep:** curl `[...]`'ı kendi glob sözdizimi sayar;
+geçersiz aralıkta durur, `-s` hatayı yutar. **Doğrusu:** `curl -g` (glob
+kapalı) ya da parametreyi `--data-urlencode` + `-G`; boş çıktıyı sonuç
+saymadan önce aracın hata verip vermediğini ölç (tuzak §17).
