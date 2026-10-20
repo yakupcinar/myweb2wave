@@ -11,3 +11,5 @@ var/
 tests/
 .phpunit.cache/
 .php-cs-fixer.cache
+editor/node_modules/
+public/varliklar/editor/

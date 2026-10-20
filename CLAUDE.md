@@ -100,7 +100,8 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | Test | `docker compose run --rm -T core vendor/bin/phpunit` |
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
-| Sözleşme → huni tipleri | `docker compose run --rm contract npm run uret` (`contract/openapi.yaml` değişince) |
+| Sözleşme → huni + panel düzenleyicisi tipleri | `docker compose run --rm contract npm run uret` (`contract/openapi.yaml` değişince) |
+| Panel düzenleyicisi (Puck) | `docker compose run --rm editor npm run build` · `… editor npm test` |
 
 ---
 

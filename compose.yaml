@@ -69,6 +69,18 @@ services:
       - ./funnel:/app
       - funnel-node-modules:/app/node_modules
 
+  # Panel huni düzenleyicisi (E2.4, React + Puck): `docker compose run --rm editor npm run build`
+  # çıktıyı core/public/varliklar/editor'a yazar. Huniyle aynı Node imajı.
+  editor:
+    build: ./funnel
+    image: myweb2wave-funnel:dev
+    profiles: ["araclar"]
+    working_dir: /core/editor
+    volumes:
+      - ./core:/core
+      - ./contract:/contract:ro
+      - editor-node-modules:/core/editor/node_modules
+
   # Sözleşmeden huni tiplerini üretir; huni dizinine yazar.
   contract:
     build: ./contract
@@ -77,9 +89,12 @@ services:
     volumes:
       - ./contract:/app
       - ./funnel:/funnel
+      # E2.4: panel düzenleyicisi de aynı tipleri kullanır (R2 — tek kaynak).
+      - ./core/editor/src:/editor-src
       - contract-node-modules:/app/node_modules
 
 volumes:
   db-data:
   funnel-node-modules:
+  editor-node-modules:
   contract-node-modules:

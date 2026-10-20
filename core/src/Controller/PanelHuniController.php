@@ -34,6 +34,8 @@ final class PanelHuniController extends AbstractController
         private readonly string $funnelBaseUrl,
         #[Autowire('%kernel.project_dir%/public/varliklar/huni-duzenleyici.js')]
         private readonly string $duzenleyiciDosyasi,
+        #[Autowire('%kernel.project_dir%/public/varliklar/editor/.vite/manifest.json')]
+        private readonly string $editorManifesti,
     ) {
     }
 
@@ -131,6 +133,34 @@ final class PanelHuniController extends AbstractController
             // Dosyanın Cache-Control'ü yok: tarayıcı tahminle eski kopyayı
             // çalıştırıyordu (ölçüldü, tuzak §30). İçerik özeti değişince adres değişir.
             'duzenleyici_surumu' => substr((string) md5_file($this->duzenleyiciDosyasi), 0, 10),
+        ]));
+    }
+
+    /**
+     * Sürükle-bırak düzenleyici (E2.4, React + Puck). Betik/stil adresleri
+     * Vite manifestinden — içerik özetli adlar (tuzak §30). Derlenmemişse
+     * sessizce boş sayfa değil, açık hata.
+     */
+    #[Route('/{app}/{ad}/surukle', name: 'panel_huni_surukle', methods: ['GET'])]
+    public function surukle(string $app, string $ad): Response
+    {
+        $this->uygulama($app);
+        $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
+        $manifest = is_file($this->editorManifesti) ? json_decode((string) file_get_contents($this->editorManifesti), true) : null;
+        $giris = \is_array($manifest) && \is_array($manifest['src/main.tsx'] ?? null) ? $manifest['src/main.tsx'] : null;
+        if (null === $giris || !\is_string($giris['file'] ?? null)) {
+            return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm editor npm run build', 503));
+        }
+
+        return self::korumali($this->render('panel/huni-surukle.html.twig', [
+            'uygulama' => $app,
+            'huni' => $ad,
+            'taslak' => $taslak,
+            'planlar' => array_keys($this->uygulamalar[$app]),
+            'tema_varsayilan' => Tema::VARSAYILAN,
+            'yazi_tipleri' => Tema::YAZI_TIPLERI,
+            'betik' => '/varliklar/editor/'.$giris['file'],
+            'stiller' => array_map(static fn (mixed $c): string => '/varliklar/editor/'.(\is_string($c) ? $c : ''), \is_array($giris['css'] ?? null) ? $giris['css'] : []),
         ]));
     }
 
