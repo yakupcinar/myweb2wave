@@ -42,6 +42,11 @@ final readonly class ZiyaretController
             $alanlar[$ad] = '' === $deger ? null : $deger;
         }
 
-        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar)], 201);
+        $surum = $govde['surum'] ?? null;
+        if (null !== $surum && (!\is_int($surum) || $surum < 1)) {
+            return new JsonResponse(['error' => 'invalid_request'], 422);
+        }
+
+        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar, $surum)], 201);
     }
 }

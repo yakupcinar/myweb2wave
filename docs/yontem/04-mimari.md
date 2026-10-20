@@ -54,10 +54,13 @@ Görsel huni editörü, çok kiracılı panel (A1); uygulama içi satın alma
 (IAP) doğrulaması sonra ama kendimiz (Ç29) — kimlikte kişiye kalıcı UUID
 (`appAccountToken`) şimdiden.
 
-## Huni = veri + motor (`huni-anket.md`)
+## Huni = veri + motor (`huni-anket.md`, `huni-yayin.md`, A7)
 
-- Her uygulamanın hunisi `funnel/src/huniler/<app>.ts`'te veri: adımlar
-  (tanıtım, soru, paywall). Motor (`components/Huni.astro`) tek sayfada
-  sırayla gösterir; yeni uygulama = yeni veri dosyası + sayfa.
-- Tanım hatası (kimlik biçimi, tekrar, paywall sonda değil) derlemeyi
-  durdurur — çekirdeğin reddedeceği veri yayına çıkmaz.
+- Her uygulamanın hunisi **veritabanında** veri: adımlar (tanıtım, soru,
+  paywall). Taslak düzenlenir; "yayınla" değişmez bir sürüm (v1, v2…) üretir.
+- Motor (`components/HuniKabugu.astro`) statik kabuk: yayınlanmış en son
+  sürümü çalışma anında okur, tek sayfada sırayla gösterir, metni yalnız
+  `textContent` ile basar. Yeni uygulama = veritabanında huni + bir sayfa.
+- Tanım yayından önce çekirdekte doğrulanır (`App\Huni\Tanim`) —
+  çekirdeğin reddedeceği veri yayına çıkmaz. (E1.1'den önce bu kontrol
+  derlemedeydi.)

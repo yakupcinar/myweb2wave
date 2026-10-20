@@ -79,6 +79,7 @@ paths:
                 utm_term: { $ref: "#/components/schemas/AtifAlani" }
                 fbclid: { $ref: "#/components/schemas/AtifAlani" }
                 ttclid: { $ref: "#/components/schemas/AtifAlani" }
+                surum: { type: integer, minimum: 1, description: Görülen huni sürümü (A7); yayınlanmamışsa yok sayılır }
       responses:
         "201":
           description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
@@ -93,6 +94,40 @@ paths:
         "400": { description: Gövde JSON değil }
         "422":
           description: Bilinmeyen uygulama ya da geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /huni/{app}:
+    get:
+      operationId: getPublishedFunnel
+      summary: Uygulamanın yayınlanmış en son huni tanımı (A7); 60 sn önbellek
+      parameters: [{ $ref: "#/components/parameters/App" }]
+      responses:
+        "200":
+          description: Yayındaki sürüm
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HuniYayini" }
+        "404":
+          description: Yayınlanmış huni yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /huni/{app}/taslak:
+    get:
+      operationId: getDraftFunnel
+      summary: İmzalı, süreli önizleme anahtarıyla taslak (A7)
+      parameters:
+        - $ref: "#/components/parameters/App"
+        - { name: anahtar, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Taslak (surum null)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HuniYayini" }
+        "403":
+          description: Anahtar yok, yanlış ya da süresi geçmiş
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -238,6 +273,67 @@ components:
     AtifAlani:
       type: string
       maxLength: 500
+    HuniYayini:
+      type: object
+      additionalProperties: false
+      required: [surum, tanim]
+      properties:
+        surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
+        tanim: { $ref: "#/components/schemas/HuniTanimi" }
+    HuniTanimi:
+      description: Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)
+      type: object
+      additionalProperties: false
+      required: [sayfaBasligi, adimlar]
+      properties:
+        sayfaBasligi: { type: string, minLength: 1, maxLength: 120 }
+        adimlar:
+          type: array
+          minItems: 2
+          maxItems: 50
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/TanitimAdimi"
+              - $ref: "#/components/schemas/SoruAdimi"
+              - $ref: "#/components/schemas/PaywallAdimi"
+    TanitimAdimi:
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik, metin, dugme]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [tanitim] }
+        baslik: { type: string }
+        metin: { type: string }
+        dugme: { type: string }
+    SoruAdimi:
+      type: object
+      additionalProperties: false
+      required: [id, tur, soru, secenekler]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [soru] }
+        soru: { type: string }
+        secenekler:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, metin]
+            properties:
+              id: { $ref: "#/components/schemas/HuniKimligi" }
+              metin: { type: string }
+    PaywallAdimi:
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik, metin, dugme, plan]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [paywall] }
+        baslik: { type: string }
+        metin: { type: string }
+        dugme: { type: string }
+        plan: { type: string, enum: [monthly] }
     HuniKimligi:
       description: Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/)
       type: string
@@ -249,4 +345,4 @@ components:
       properties:
         error:
           type: string
-          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit]
+          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit, forbidden]

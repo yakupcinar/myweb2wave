@@ -1,0 +1,217 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Controller;
+
+use App\Huni\Huniler;
+use App\Huni\Tanim;
+use App\Tests\Support\Sozlesme;
+use Doctrine\DBAL\Connection;
+use DoctrineMigrations\Version20261020180000;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Console\Tester\CommandTester;
+
+/** Huni panelden yönetilir (A7): taslak, değişmez sürümler, önizleme. */
+final class HuniTest extends WebTestCase
+{
+    private KernelBrowser $client;
+    private Connection $db;
+    private Huniler $huniler;
+
+    protected function setUp(): void
+    {
+        $this->client = static::createClient();
+        $db = static::getContainer()->get(Connection::class);
+        self::assertInstanceOf(Connection::class, $db);
+        $this->db = $db;
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $huniler = static::getContainer()->get(Huniler::class);
+        self::assertInstanceOf(Huniler::class, $huniler);
+        $this->huniler = $huniler;
+    }
+
+    public function testYayinlananEnSonSurumOkunurEskisiDegismez(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', self::tanim('Bir')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat'));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', self::tanim('İki')));
+        self::assertSame(2, $this->huniler->yayinla('keepchat'));
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        self::assertResponseStatusCodeSame(200);
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        // assertEquals: JSONB nesne anahtarlarını yeniden sıralar; içerik aynı olmalı.
+        self::assertEquals(['surum' => 2, 'tanim' => self::tanim('İki')], $this->yanit());
+        self::assertResponseHeaderSame('Cache-Control', 'max-age=60, public');
+        self::assertSame(
+            ['Bir', 'İki'],
+            $this->db->fetchFirstColumn("SELECT tanim->>'sayfaBasligi' FROM huni_surumleri WHERE app = 'keepchat' ORDER BY surum"),
+        );
+    }
+
+    public function testYayinYoksa404(): void
+    {
+        $this->client->request('GET', '/huni/keepchat');
+
+        self::assertResponseStatusCodeSame(404);
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
+    public function testGecersizTaslakKaydedilmezYayinlanmaz(): void
+    {
+        $bozuk = self::tanim('X');
+        $bozuk['adimlar'][0]['id'] = 'Büyük';
+
+        self::assertNotSame([], $this->huniler->taslakKaydet('keepchat', $bozuk));
+        self::assertNull($this->huniler->taslak('keepchat'));
+        self::assertSame(['bu uygulamanın taslağı yok'], $this->huniler->yayinla('keepchat'));
+        self::assertSame(['bilinmeyen uygulama'], $this->huniler->taslakKaydet('olmayan', self::tanim('X')));
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('bozuklar')]
+    public function testDogrulamaKurallari(string $beklenen, mixed $bozuk): void
+    {
+        $hatalar = Tanim::hatalar($bozuk, ['monthly']);
+
+        self::assertNotSame([], $hatalar);
+        self::assertStringContainsString($beklenen, implode(' | ', $hatalar));
+    }
+
+    /**
+     * Her örnek geçerli tanımı TEK bir kurala aykırı yapar.
+     *
+     * @return iterable<string, array{string, mixed}>
+     */
+    public static function bozuklar(): iterable
+    {
+        $t = self::tanim('X');
+        yield 'tekrar eden kimlik' => ['tekrar ediyor', self::ile(1, 'id', 'giris')];
+        yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
+        yield 'bilinmeyen tür' => ['tür tanitim, soru ya da paywall', self::ile(0, 'tur', 'html')];
+        yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
+        yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'dugme', null, sil: true)];
+        yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
+        yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
+        yield 'paywall sonda değil' => ['EN SONDA', ['sayfaBasligi' => 'X', 'adimlar' => array_reverse($t['adimlar'])]];
+        yield 'paywall yok' => ['EN SONDA', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][0], $t['adimlar'][1]]]];
+        yield 'bilinmeyen plan' => ['plan bu uygulamada yok', self::ile(2, 'plan', 'yillik')];
+        yield 'tek seçenek' => ['2–8 seçenek', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A']])];
+        yield 'tekrar eden seçenek' => ['geçersiz ya da tekrar ediyor', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']])];
+        yield 'tek adım' => ['2–50', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][2]]]];
+        yield 'fazla üst alan' => ['yalnız sayfaBasligi ve adimlar', $t + ['css' => 'x']];
+    }
+
+    public function testTohumdakiKeepchatHunisiGecerli(): void
+    {
+        // Göç tohumu (v1) doğrulamadan geçmeli — yoksa ilk yayın hiç açılmazdı.
+        // Göçler otomatik yüklemede değil (DoctrineMigrations bundle'ın yolu).
+        require_once \dirname(__DIR__, 2).'/migrations/Version20261020180000.php';
+        $tohum = (new \ReflectionMethod(Version20261020180000::class, 'keepchat'))->invoke(null);
+
+        self::assertSame([], Tanim::hatalar($tohum, ['monthly']));
+    }
+
+    public function testOnizlemeAnahtariTaslagiGosterirSahtesiYaDaEskisiGostermez(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', self::tanim('Taslak'));
+        $iyi = $this->huniler->onizlemeAnahtari('keepchat', time());
+
+        $this->client->request('GET', '/huni/keepchat/taslak', ['anahtar' => $iyi]);
+        self::assertResponseStatusCodeSame(200);
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
+        self::assertEquals(['surum' => null, 'tanim' => self::tanim('Taslak')], $this->yanit());
+        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
+
+        $eski = $this->huniler->onizlemeAnahtari('keepchat', time() - Huniler::ONIZLEME_SN - 1);
+        $baska = $this->huniler->onizlemeAnahtari('baska', time());
+        [$son, $imza] = explode('.', $iyi, 2) + ['', ''];
+        // Süreyi uzatıp imzayı korumak: imza süreyi de kapsamalı.
+        foreach (['', 'bozuk', $eski, $baska, ((int) $son + 999).'.'.$imza] as $anahtar) {
+            $this->client->request('GET', '/huni/keepchat/taslak', ['anahtar' => $anahtar]);
+            self::assertResponseStatusCodeSame(403, $anahtar);
+        }
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
+    }
+
+    public function testZiyaretGorduguSurumuTasirBilinmeyeniNullYazar(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', self::tanim('X'));
+        $this->huniler->yayinla('keepchat');
+
+        foreach ([1 => 1, 7 => null] as $gonderilen => $beklenen) {
+            $this->client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat', 'surum' => $gonderilen]);
+            self::assertResponseStatusCodeSame(201);
+            self::assertSame($beklenen, $this->db->fetchOne('SELECT surum FROM huni_ziyaretleri WHERE id = :id', ['id' => $this->yanit()['ziyaret'] ?? '']) ?: null);
+        }
+        $this->client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat', 'surum' => '1']);
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testHuniUcundaCorsYalnizGetVeHuniKokeni(): void
+    {
+        $this->client->request('OPTIONS', '/huni/keepchat', [], [], [
+            'HTTP_ORIGIN' => 'https://huni.test',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
+        ]);
+        self::assertSame('https://huni.test', $this->client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+
+        $this->client->request('OPTIONS', '/huni/keepchat', [], [], [
+            'HTTP_ORIGIN' => 'https://kotu.example',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
+        ]);
+        self::assertNull($this->client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
+    public function testKomutYayinlarGecersizdeDurur(): void
+    {
+        $komut = (new Application(self::$kernel ?? self::bootKernel()))->find('app:huni');
+        $this->huniler->taslakKaydet('keepchat', self::tanim('X'));
+
+        $t = new CommandTester($komut);
+        self::assertSame(0, $t->execute(['islem' => 'yayinla', 'app' => 'keepchat']));
+        self::assertStringContainsString('keepchat v1 yayında', $t->getDisplay());
+
+        // Taslak sonradan geçersizleşirse (ör. plan yapılandırmadan kalktı) yayın durur.
+        $this->db->executeStatement("UPDATE huniler SET taslak = jsonb_set(taslak, '{adimlar,2,plan}', '\"yillik\"')");
+        self::assertSame(1, $t->execute(['islem' => 'yayinla', 'app' => 'keepchat']));
+        self::assertSame([1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri'));
+    }
+
+    /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */
+    private static function tanim(string $baslik): array
+    {
+        return [
+            'sayfaBasligi' => $baslik,
+            'adimlar' => [
+                ['id' => 'giris', 'tur' => 'tanitim', 'baslik' => 'Merhaba', 'metin' => 'Kısa', 'dugme' => 'Başla'],
+                ['id' => 'soru1', 'tur' => 'soru', 'soru' => 'Ne?', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]],
+                ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => 'Pro', 'metin' => '9,99 €', 'dugme' => 'Abone ol', 'plan' => 'monthly'],
+            ],
+        ];
+    }
+
+    /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */
+    private static function ile(int $adim, string $alan, mixed $deger, bool $sil = false): array
+    {
+        $t = self::tanim('X');
+        if ($sil) {
+            unset($t['adimlar'][$adim][$alan]);
+        } else {
+            $t['adimlar'][$adim][$alan] = $deger;
+        }
+
+        return $t;
+    }
+
+    /** @return array<mixed> */
+    private function yanit(): array
+    {
+        $j = json_decode((string) $this->client->getResponse()->getContent(), true);
+
+        return \is_array($j) ? $j : [];
+    }
+}
