@@ -111,3 +111,21 @@ korunur. **Ölçüm (2026-10-20, `huni-yayin.md` Y3):** anahtarları sıralı
 karşılaştıran doğrulayıcıyla yayın 3 testte düştü; küme karşılaştırması
 → geçti. **Doğrusu:** nesne anahtarını sırasız karşılaştır (sırala ya da
 küme); testte `assertEquals`; sıranın anlamı varsa liste kullan.
+
+## §29 — Twig şablonuna `app` adlı değişken geçmek global `app`'i ezer
+**Belirti:** panelde "v4 yayında" gibi flaş mesajları hiç görünmüyor; hata
+yok (üretim). **Sebep:** `render(..., ['app' => 'keepchat'])` Twig'in global
+`app`'ini (oturum, flaşlar, kullanıcı) ezer; `app.flashes` dizgede çağrılır.
+Testte `strict_variables` açık → 500; üretimde kapalı → **sessizce boş**.
+**Ölçüm (2026-10-20, `panel-huni.md`):** aynı şablon `strict_variables=false`
+ile `app` dizgeyken `[]`, nesneyken `[tamam]` verdi. **Doğrusu:** şablon
+değişkenine `app`, `_self` gibi ayrılmış ad verme (`uygulama`).
+
+## §30 — Cache-Control'süz statik dosya tarayıcıda ESKİ hâliyle çalışır
+**Belirti:** düzenleyici JS'i değiştirildi, sunucu yenisini veriyor, ama
+panel eski davranışı gösteriyor; hata yok. **Sebep:** dosyada
+`Cache-Control` yok, yalnız `Last-Modified`/`ETag`; tarayıcı tahmini
+tazelikle önbellekteki kopyayı yeniden sormadan kullanır. Her dağıtımdan
+sonra aynı şey olur. **Ölçüm:** sayfadaki betik 7154 bayt (eski), aynı
+adrese elle `fetch` 7253 bayt (yeni). **Doğrusu:** adrese içerik özeti
+(`?v=<md5>`); dosya değişince adres değişir.

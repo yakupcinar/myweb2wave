@@ -62,7 +62,7 @@ final readonly class Huniler
 
     /**
      * Taslağı yeni, değişmez sürüm olarak yayınlar. Taslak geçersizse
-     * (ör. plan yapılandırmadan kalktı) yayınlamaz.
+     * (ör. plan yapılandırmadan kalktı) ya da yayındakiyle aynıysa yayınlamaz.
      *
      * @return int|list<string> yeni sürüm ya da hatalar
      */
@@ -79,6 +79,9 @@ final readonly class Huniler
             if ([] !== $hatalar) {
                 return $hatalar;
             }
+            if (!$this->taslakFarkli($app)) {
+                return ['taslak yayındaki sürümle aynı — yayınlanacak değişiklik yok'];
+            }
             $surum = $db->fetchOne(
                 'INSERT INTO huni_surumleri (app, surum, tanim)
                  SELECT :app, coalesce(max(surum), 0) + 1, CAST(:t AS jsonb) FROM huni_surumleri WHERE app = :app
@@ -88,6 +91,45 @@ final readonly class Huniler
 
             return self::sayi($surum);
         });
+    }
+
+    /**
+     * Yayınlanmış sürümler, en yenisi önce; her biriyle açılan ziyaret sayısı.
+     *
+     * @return list<array{surum: int, zaman: string, ziyaret: int}>
+     */
+    public function surumler(string $app): array
+    {
+        return array_map(static fn (array $s): array => [
+            'surum' => self::sayi($s['surum']),
+            'zaman' => \is_string($s['created_at']) ? $s['created_at'] : '',
+            'ziyaret' => self::sayi($s['ziyaret']),
+        ], $this->db->fetchAllAssociative(
+            'SELECT s.surum, s.created_at,
+                    (SELECT count(*) FROM huni_ziyaretleri z WHERE z.app = s.app AND z.surum = s.surum) AS ziyaret
+             FROM huni_surumleri s WHERE s.app = :app ORDER BY s.surum DESC',
+            ['app' => $app],
+        ));
+    }
+
+    /** Taslak yayındaki son sürümden farklı mı (yayınlanmamış değişiklik). */
+    public function taslakFarkli(string $app): bool
+    {
+        return true === $this->db->fetchOne(
+            'SELECT h.taslak IS DISTINCT FROM (SELECT tanim FROM huni_surumleri s WHERE s.app = h.app ORDER BY surum DESC LIMIT 1)
+             FROM huniler h WHERE h.app = :app',
+            ['app' => $app],
+        );
+    }
+
+    /** Eski bir sürümü taslağa kopyalar (geri alma = geri yükle + yeniden yayınla). */
+    public function surumuTaslagaAl(string $app, int $surum): bool
+    {
+        return 1 === $this->db->executeStatement(
+            'UPDATE huniler SET taslak = s.tanim, updated_at = now()
+             FROM huni_surumleri s WHERE huniler.app = :app AND s.app = :app AND s.surum = :surum',
+            ['app' => $app, 'surum' => $surum],
+        );
     }
 
     /** Taslağı göstermek için süreli, imzalı anahtar (giriş gerektirmez). */

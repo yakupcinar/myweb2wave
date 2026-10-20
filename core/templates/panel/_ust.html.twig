@@ -1,0 +1,11 @@
+<header>
+    <h1>{{ baslik }}</h1>
+    <nav>
+        <a href="{{ path('panel') }}">Rapor</a>
+        <a href="{{ path('panel_huniler') }}">Huniler</a>
+        <a href="{{ path('panel_cikis') }}">Çıkış</a>
+    </nav>
+</header>
+{% for tur, mesajlar in app.flashes %}
+    {% for m in mesajlar %}<p class="bildirim {{ tur }}" role="status">{{ m }}</p>{% endfor %}
+{% endfor %}
