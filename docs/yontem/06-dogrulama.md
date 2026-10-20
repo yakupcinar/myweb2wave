@@ -62,3 +62,13 @@ göndermeyebilir (Stripe'taki oturum sayısıyla ayırt edildi).
 - Depo herkese açık (C5). Açılmadan önce **tüm geçmiş** tarandı; her
   commit öncesi hazırlanan değişiklikte anahtar deseni taraması (0 olmalı).
 - Ajan anahtarı ekrana basmaz: önek + uzunluk ölçülür (`sk_test_`, 107).
+
+## Dağıtım: bitti demek = çalışan sistemden okunan sürüm
+
+- `deploy/dagit.sh` başarıyı komutun çıkışıyla değil, **dışarıdan TLS ile**
+  okunan `/health` sürümünün commit'e eşit olmasıyla ilan eder; eski sürüm
+  ayakta kalırsa durur (ölçüldü — `dagitim.md` K7).
+- Yanlış değerle dağıtmamak için ön kontrol (canlı anahtar, null mailer,
+  kısa sır) **derlemeden önce** — değer basmadan, önek ve uzunlukla.
+- Bir koruma ölçülürken "hangi satır gerçekten koruyor" sorulur: sırrı
+  imajdan uzak tutan dosya sanılan değil, `COPY` listesiydi (K9).

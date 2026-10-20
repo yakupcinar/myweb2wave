@@ -1,0 +1,13 @@
+# Derleme bağlamına girmeyenler. Sırrın (.env.local) imaja girmemesinin
+# İLK bekçisi Dockerfile'daki açık COPY listesi; bu dosya ikincisi —
+# biri COPY . yazarsa .env.local imaja girer, ölçüldü (dagitim.md K9).
+# Üretimde değerler ortam değişkeninden gelir (deploy/README.md).
+.env.local
+.env.*.local
+.env.dev
+.env.test
+vendor/
+var/
+tests/
+.phpunit.cache/
+.php-cs-fixer.cache

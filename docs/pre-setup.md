@@ -201,6 +201,16 @@ self-hosted runner · KeepChat üretim sunucusunda runner (üretim hostunda CI
 kodu — güvenlik riski). **Sonuç:** depoya **asla sır girmez** — sırlar
 `core/.env.local` (git dışı, `git check-ignore` ölçüldü) ve üretim ortamında.
 
+**C6 · Dağıtım: ayrı sunucu, Stripe test modu** (2026-10-20, kullanıcı
+kararı). Çekirdek + huni + Postgres **KeepChat sunucusundan ayrı** yeni bir
+sunucuda (para akışı başka ürünle aynı makinede durmaz — B2'nin gerekçesi);
+TLS ve huni Caddy'de, çekirdek iç ağda. Ödeme **test modunda**: canlı ödeme
+sağlayıcısı (Ç10) ve vergi/hukuk (Ç12) kararı yok; `dagit.sh` `sk_test_`
+dışındaki anahtarla durur. **Reddedilen:** keepchat-vps'e yan yana (ek
+maliyet yok ama canlı KeepChat'e dokunur, ayrımı bozar) · önce plan, sonra
+kurulum (kullanıcı seçmedi) · yönetilen platform (PaaS) — sorulmadı, tek
+sunucu + Docker geliştirme/CI ile aynı taban. Ayrıntı: `decisions/dagitim.md`.
+
 ## Risk tablosu
 
 | Risk | Olasılık | Etki | Ne zaman ölçülür |

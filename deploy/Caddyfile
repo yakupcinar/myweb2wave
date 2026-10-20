@@ -1,0 +1,27 @@
+# Üretim girişi: TLS sertifikası Let's Encrypt'ten otomatik alınır ve
+# yenilenir. Alan adları deploy/.env.uretim'den gelir.
+
+(guvenlik) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+# Çekirdek API — iç ağdaki FrankenPHP'ye.
+{$API_ALANI} {
+	import guvenlik
+	encode zstd gzip
+	reverse_proxy core:8080
+}
+
+# Huni — derlemede üretilmiş statik sayfalar (B2), sunucu kodu yok.
+{$HUNI_ALANI} {
+	import guvenlik
+	header X-Frame-Options "DENY"
+	encode zstd gzip
+	root * /srv
+	file_server
+}

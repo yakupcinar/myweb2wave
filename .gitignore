@@ -12,3 +12,6 @@
 /funnel/.astro/
 
 .DS_Store
+
+# Üretim sırları (deploy/env.uretim.ornek)
+/deploy/.env.uretim
