@@ -1,102 +1,21 @@
 ---
-// KeepChat paywall'u (A4: her uygulamanın kendi yolu). Sayfa statik; tek etkileşim ödeme düğmesi. Plan adını
-// çekirdeğe gönderir, dönen Stripe Checkout adresine yönlenir. Açılışta hangi reklamdan gelindiği çekirdeğe yazılır
-// (A6); çerez ya da tarayıcı deposu yok — kimlik yalnız bu sayfanın belleğinde.
+// KeepChat hunisi (A4: her uygulamanın kendi yolu): anket + tanıtım, sonda
+// paywall. Adımlar src/huniler/keepchat.ts'te; motor components/Huni.astro.
+// Açılışta hangi reklamdan gelindiği, her adım ve cevap çekirdeğe yazılır
+// (A6); çerez ya da tarayıcı deposu yok.
+import Huni from "../../components/Huni.astro";
+import { keepchat } from "../../huniler/keepchat";
 ---
 
-<html lang="tr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MyWeb2Wave Pro</title>
-  </head>
-  <body>
-    <main>
-      <h1>MyWeb2Wave Pro</h1>
-      <p>
-        Aylık plan · <strong>9,99 € / ay</strong>
-      </p>
-      <button id="abone-ol" type="button">
-        Abone ol
-      </button>
-      <p id="hata" role="alert" hidden></p>
-    </main>
-
-    <script>
-      import { cekirdek } from "../../lib/cekirdek";
-      import type { paths } from "../../sozlesme/api";
-
-      // Gövdeler sözleşmeden üretilen tiple kurulur: yanlış alan adı tip
-      // hatasıdır. Nesne yayma (...) fazla alanı DENETLEMEZ — ölçüldü.
-      type Govde<P extends keyof paths> = paths[P] extends {
-        post: { requestBody: { content: { "application/json": infer G } } };
-      }
-        ? G
-        : never;
-
-      // Atıf (A6): URL'deki reklam alanları. Kayıt başarısız olursa ödeme
-      // yine açılır — atıf satışı durdurmaz.
-      const ALANLAR = [
-        "utm_source",
-        "utm_medium",
-        "utm_campaign",
-        "utm_content",
-        "utm_term",
-        "fbclid",
-        "ttclid",
-      ] as const;
-      const adres = new URLSearchParams(window.location.search);
-      const ziyaretGovdesi: Govde<"/huni/ziyaretler"> = { app: "keepchat" };
-      for (const ad of ALANLAR) {
-        const deger = adres.get(ad)?.slice(0, 500);
-        if (deger) ziyaretGovdesi[ad] = deger;
-      }
-      const ziyaretSozu: Promise<string | undefined> = cekirdek
-        .POST("/huni/ziyaretler", { body: ziyaretGovdesi })
-        .then(({ data }) => data?.ziyaret)
-        .catch(() => undefined);
-
-      const dugme = document.querySelector<HTMLButtonElement>("#abone-ol");
-      const hata = document.querySelector<HTMLParagraphElement>("#hata");
-
-      function hataGoster(metin: string): void {
-        if (hata) {
-          hata.textContent = metin;
-          hata.hidden = false;
-        }
-        if (dugme) dugme.disabled = false;
-      }
-
-      dugme?.addEventListener("click", async () => {
-        dugme.disabled = true;
-        try {
-          const govde: Govde<"/checkout/sessions"> = {
-            app: "keepchat",
-            plan: "monthly",
-          };
-          const ziyaret = await ziyaretSozu;
-          if (ziyaret) govde.ziyaret = ziyaret;
-          const { data, error, response } = await cekirdek.POST(
-            "/checkout/sessions",
-            { body: govde },
-          );
-          if (data) {
-            window.location.assign(data.url);
-            return;
-          }
-          hataGoster(
-            response.status === 502 &&
-              error?.error === "payment_provider_unavailable"
-              ? "Ödeme sağlayıcısına şu an ulaşılamıyor. Lütfen biraz sonra tekrar deneyin."
-              : "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
-          );
-        } catch {
-          // Ağ hatası: çekirdeğe hiç ulaşılamadı.
-          hataGoster(
-            "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
-          );
-        }
-      });
-    </script>
-  </body>
-</html>
+<Huni huni={keepchat}>
+  <div slot="paywall">
+    <h1 tabindex="-1">KeepChat Pro</h1>
+    <p>
+      Aylık plan · <strong>9,99 € / ay</strong>
+    </p>
+    <button id="abone-ol" class="ana" type="button" data-plan="monthly">
+      Abone ol
+    </button>
+    <p id="hata" role="alert" hidden></p>
+  </div>
+</Huni>

@@ -90,3 +90,13 @@ compose'ta tırnaksız → konteynere 22 karakter gitti, tek tırnaklı → eşi
 Ayrıca `docker compose config` çıktısı doğru değeri de `$$` diye kaçışlıyor
 — oradan okuyan denetim önce `$$`→`$` yapmalı. **Doğrusu:** özeti TEK
 TIRNAK içinde yaz; dağıtım ön kontrolü özetin biçimini doğrular.
+
+## §27 — Astro bileşen stili yuvadan (slot) gelen öğeye uygulanmaz
+**Belirti:** huninin paywall'undaki "Abone ol" düğmesi tarayıcıda düz,
+stilsiz; `astro check` ve derleme yeşil, hata yok. **Sebep:** bileşenin
+`<style>`'ı kapsamlıdır (yalnız bileşenin kendi öğelerine sınıf ekler);
+sayfanın `slot`'a koyduğu öğe bileşenin kapsamında değildir.
+**Ölçüm (2026-10-20, `huni-anket.md`):** aynı `class="ana"` bileşenin kendi
+düğmelerinde mavi, yuvadakinde stilsiz; `<style is:global>` → ikisi aynı.
+**Doğrusu:** sayfanın tamamını kuran bileşende `is:global`, ya da stili
+yuvayı dolduran dosyaya koy. Görsel sonuç yalnız tarayıcıda ölçülür.

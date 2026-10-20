@@ -25,7 +25,7 @@ final class AtifTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari');
+        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
         ApiRequestor::setHttpClient(new KayitliStripeIstemcisi());
     }
 
@@ -142,6 +142,90 @@ final class AtifTest extends WebTestCase
         $this->db->insert('odeme_oturumlari', [
             'stripe_checkout_session_id' => 'cs_k', 'ziyaret_id' => '00000000-0000-4000-8000-000000000000',
         ]);
+    }
+
+    public function testIlerlemeAdimVeCevapKaydeder(): void
+    {
+        $z = $this->ziyaretAc('keepchat');
+
+        $this->ilerle($z, ['sira' => 0, 'adim' => 'karsilama']);
+        self::assertResponseStatusCodeSame(204);
+        Sozlesme::yanitiDogrula('POST', '/huni/ziyaretler/{ziyaret}/ilerleme', $this->client->getResponse());
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'kiminle', 'cevap' => 'aile']);
+
+        self::assertSame(
+            [['sira' => 0, 'adim' => 'karsilama'], ['sira' => 1, 'adim' => 'kiminle']],
+            $this->db->fetchAllAssociative('SELECT sira, adim FROM huni_adimlari ORDER BY sira'),
+        );
+        self::assertSame([['soru' => 'kiminle', 'secenek' => 'aile']], $this->db->fetchAllAssociative('SELECT soru, secenek FROM huni_cevaplari'));
+    }
+
+    public function testGeriDonupYenidenGelmekBirSayilirSonCevapGecerli(): void
+    {
+        $z = $this->ziyaretAc('keepchat');
+
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'kiminle', 'cevap' => 'aile']);
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'kiminle', 'cevap' => 'is']);
+
+        self::assertSame(1, $this->say('huni_adimlari'));
+        self::assertSame(['is'], $this->db->fetchFirstColumn('SELECT secenek FROM huni_cevaplari'));
+    }
+
+    public function testBilinmeyenZiyaret404VeKayitYok(): void
+    {
+        foreach (['00000000-0000-4000-8000-000000000000', 'bozuk'] as $z) {
+            $this->ilerle($z, ['sira' => 0, 'adim' => 'karsilama', 'cevap' => 'x']);
+            self::assertResponseStatusCodeSame(404, $z);
+        }
+        Sozlesme::yanitiDogrula('POST', '/huni/ziyaretler/{ziyaret}/ilerleme', $this->client->getResponse());
+        self::assertSame(0, $this->say('huni_adimlari') + $this->say('huni_cevaplari'));
+    }
+
+    public function testGecersizIlerleme422VeKayitYok(): void
+    {
+        $z = $this->ziyaretAc('keepchat');
+        foreach ([
+            ['sira' => -1, 'adim' => 'a'], ['sira' => 51, 'adim' => 'a'], ['sira' => '1', 'adim' => 'a'],
+            ['sira' => 0, 'adim' => 'Büyük'], ['sira' => 0, 'adim' => str_repeat('a', 65)], ['sira' => 0],
+            ['sira' => 0, 'adim' => 'a', 'cevap' => 5], ['sira' => 0, 'adim' => 'a', 'cevap' => 'b c'],
+        ] as $govde) {
+            $this->ilerle($z, $govde);
+            self::assertResponseStatusCodeSame(422, (string) json_encode($govde));
+        }
+        $this->ilerle($z, ['sira' => 50, 'adim' => str_repeat('a', 64)]);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame(1, $this->say('huni_adimlari'));
+    }
+
+    public function testIlerlemeUcundaCorsHuniKokenine(): void
+    {
+        $this->client->request('OPTIONS', '/huni/ziyaretler/00000000-0000-4000-8000-000000000000/ilerleme', [], [], [
+            'HTTP_ORIGIN' => 'https://huni.test',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
+            'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'content-type',
+        ]);
+
+        self::assertSame('https://huni.test', $this->client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+    }
+
+    public function testAdimKaydiZiyaretsizOlamaz(): void
+    {
+        // Tuzak §4: uçtaki "ziyaret var mı" sorgusu kısıtı görünmez kılar.
+        $this->expectException(ForeignKeyConstraintViolationException::class);
+        $this->db->insert('huni_adimlari', ['ziyaret_id' => '00000000-0000-4000-8000-000000000000', 'sira' => 0, 'adim' => 'a']);
+    }
+
+    /** @param array<string, mixed> $govde */
+    private function ilerle(string $ziyaret, array $govde): void
+    {
+        $this->client->jsonRequest('POST', "/huni/ziyaretler/{$ziyaret}/ilerleme", $govde);
+    }
+
+    private function say(string $tablo): int
+    {
+        $n = $this->db->fetchOne("SELECT count(*) FROM {$tablo}");
+
+        return is_numeric($n) ? (int) $n : -1;
     }
 
     private function ziyaretAc(string $app): string

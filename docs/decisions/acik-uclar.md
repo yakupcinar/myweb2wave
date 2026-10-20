@@ -40,4 +40,5 @@
 | Ç33 | Üretim yedeği sunucunun kendi diskinde (`/var/backups/myweb2wave`, 14 gün); disk/sunucu kaybında yedek de gider. Sunucu dışı kopya (nesne depolama) ve düzenli geri yükleme denemesi yok | `dagitim.md` | gerçek müşteri verisinden önce |
 | Ç34 | Ziyaret ucu (`/huni/ziyaretler`) anahtarsız ve herkese açık: sahte istekle ziyaret sayıları şişirilebilir; sayfa yenilemesi de yeni ziyaret sayılıyor (ölçüldü: aynı adres iki yüklemede 2 satır). Hız sınırı / tekilleştirme yok. `fbclid`/`ttclid` saklamanın hukuki dayanağı ve çerez onayı Ç12'de | `atif.md` | ücretli trafikten önce |
 | Ç35 | Panel tek yönetici, yalnız şifre (2FA yok); oturumlar konteynerin dosya sisteminde (`var/sessions`) — her dağıtımda yönetici çıkış yapmış olur. Panel API alan adında `/panel` altında; ayrı alan adı/IP kısıtı yok | `panel.md` | gerçek müşteri verisinden önce |
+| Ç36 | Huni anket metni TASLAK (kullanıcı düzeltecek); Pro'nun somut faydası tanımlı değil, paywall yalnız "destek" diyor. Sayfa yenilenince anket baştan başlar (durum bellekte, bilinçli — çerez yok). Fiyat paywall metninde elle (Ç19/Ç21) | `huni-anket.md` | ücretli trafikten önce |
 

@@ -83,6 +83,47 @@ final readonly class Rapor
         return $sayim;
     }
 
+    /**
+     * Anket hunisi: her adıma kaç ziyaret ulaştı (uygulama başına, sıraya göre).
+     * Adım adı huni tanımından gelir; tanım değiştiyse aynı sıradaki en son ad.
+     *
+     * @return list<array{app: string, sira: int, adim: string, ulasan: int}>
+     */
+    public function adimlar(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'app' => self::dizge($s['app']),
+            'sira' => self::sayi($s['sira']),
+            'adim' => self::dizge($s['adim']),
+            'ulasan' => self::sayi($s['ulasan']),
+        ], $this->db->fetchAllAssociative(
+            'SELECT z.app, a.sira, (array_agg(a.adim ORDER BY a.created_at DESC))[1] AS adim, count(*) AS ulasan
+             FROM huni_adimlari a JOIN huni_ziyaretleri z ON z.id = a.ziyaret_id
+             WHERE z.created_at >= now() - make_interval(days => :gun)
+             GROUP BY z.app, a.sira
+             ORDER BY z.app, a.sira',
+            ['gun' => $gun],
+        ));
+    }
+
+    /** @return list<array{app: string, soru: string, secenek: string, sayi: int}> */
+    public function cevaplar(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'app' => self::dizge($s['app']),
+            'soru' => self::dizge($s['soru']),
+            'secenek' => self::dizge($s['secenek']),
+            'sayi' => self::sayi($s['sayi']),
+        ], $this->db->fetchAllAssociative(
+            'SELECT z.app, c.soru, c.secenek, count(*) AS sayi
+             FROM huni_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
+             WHERE z.created_at >= now() - make_interval(days => :gun)
+             GROUP BY z.app, c.soru, c.secenek
+             ORDER BY z.app, c.soru, sayi DESC, c.secenek',
+            ['gun' => $gun],
+        ));
+    }
+
     /** Ekran görüntüsünde kişisel veri sızmasın (kullanıcı kararı): a***@alan.com. */
     public static function maskele(?string $email): ?string
     {

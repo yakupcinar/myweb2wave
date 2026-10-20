@@ -96,6 +96,37 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /huni/ziyaretler/{ziyaret}/ilerleme:
+    post:
+      operationId: recordFunnelProgress
+      summary: Anket adımına ulaşıldı ya da adımın cevabı verildi (A6)
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [sira, adim]
+              properties:
+                sira: { type: integer, minimum: 0, maximum: 50, description: Adımın huni tanımındaki sırası }
+                adim: { $ref: "#/components/schemas/HuniKimligi" }
+                cevap: { $ref: "#/components/schemas/HuniKimligi" }
+      responses:
+        "204": { description: Kaydedildi }
+        "400": { description: Gövde JSON değil }
+        "404":
+          description: Ziyaret yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "422":
+          description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /apps/{app}/baglama/kod:
     post:
       operationId: requestLinkCode
@@ -207,6 +238,10 @@ components:
     AtifAlani:
       type: string
       maxLength: 500
+    HuniKimligi:
+      description: Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/)
+      type: string
+      pattern: "^[a-z0-9_-]{1,64}$"
     Hata:
       type: object
       additionalProperties: false
@@ -214,4 +249,4 @@ components:
       properties:
         error:
           type: string
-          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user]
+          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit]

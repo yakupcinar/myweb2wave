@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/ziyaretler/{ziyaret}/ilerleme": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Anket adımına ulaşıldı ya da adımın cevabı verildi (A6) */
+        post: operations["recordFunnelProgress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/apps/{app}/baglama/kod": {
         parameters: {
             query?: never;
@@ -94,9 +111,11 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AtifAlani: string;
+        /** @description Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/) */
+        HuniKimligi: string;
         Hata: {
             /** @enum {string} */
-            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user";
+            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit";
         };
     };
     responses: {
@@ -236,6 +255,60 @@ export interface operations {
                 content?: never;
             };
             /** @description Bilinmeyen uygulama ya da geçersiz alan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    recordFunnelProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Adımın huni tanımındaki sırası */
+                    sira: number;
+                    adim: components["schemas"]["HuniKimligi"];
+                    cevap?: components["schemas"]["HuniKimligi"];
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Geçersiz alan */
             422: {
                 headers: {
                     [name: string]: unknown;

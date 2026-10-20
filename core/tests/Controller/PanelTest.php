@@ -24,7 +24,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, subscriptions');
+        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -143,6 +143,62 @@ final class PanelTest extends WebTestCase
 
         self::assertStringNotContainsString('<script>alert(1)', $html);
         self::assertStringContainsString('&lt;script&gt;alert(1)', $html);
+    }
+
+    public function testAnketAdimlariUlasanVeOran(): void
+    {
+        $this->anketKur();
+        $this->girisYapmis();
+
+        $this->client->request('GET', '/panel');
+
+        self::assertSame(
+            [['1', 'karsilama', '3', '100 %'], ['2', 'kiminle', '2', '67 %'], ['3', 'cihaz', '1', '33 %']],
+            $this->tablo('adimlar'),
+        );
+        self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '1']], $this->tablo('cevaplar'));
+    }
+
+    public function testAnketAraligiEskiZiyaretinAdiminiSaymaz(): void
+    {
+        $this->anketKur();
+        $eski = $this->ziyaretEkle([], '40 days');
+        $this->db->insert('huni_adimlari', ['ziyaret_id' => $eski, 'sira' => 0, 'adim' => 'karsilama']);
+        $this->girisYapmis();
+
+        $this->client->request('GET', '/panel');
+        self::assertSame('3', $this->tablo('adimlar')[0][2]);
+
+        $this->client->request('GET', '/panel?gun=90');
+        self::assertSame('4', $this->tablo('adimlar')[0][2]);
+    }
+
+    public function testAnketYokkenBolumGorunmez(): void
+    {
+        $this->girisYapmis();
+
+        $this->client->request('GET', '/panel');
+
+        self::assertSelectorNotExists('[data-bolum=adimlar]');
+    }
+
+    /** Üç ziyaret: biri 3 adım, biri 2, biri 1; kiminle → aile, aile, is. */
+    private function anketKur(): void
+    {
+        foreach ([3 => 'aile', 2 => 'aile', 1 => null] as $kac => $cevap) {
+            $z = $this->ziyaretEkle([], '1 hour');
+            foreach (\array_slice(['karsilama', 'kiminle', 'cihaz'], 0, $kac) as $sira => $adim) {
+                $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => $sira, 'adim' => $adim]);
+            }
+            $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => $cevap ?? 'is']);
+        }
+    }
+
+    /** @return list<list<string>> */
+    private function tablo(string $bolum): array
+    {
+        return $this->client->getCrawler()->filter("[data-bolum={$bolum}] tbody tr")
+            ->each(static fn ($tr): array => $tr->filter('td')->each(static fn ($td): string => trim($td->text())));
     }
 
     private function giris(string $ad, string $sifre): void
