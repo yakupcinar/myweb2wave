@@ -27,6 +27,10 @@ paths:
                 plan:
                   type: string
                   enum: [monthly]
+                ziyaret:
+                  description: /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
+                  type: string
+                  format: uuid
       responses:
         "201":
           description: Oturum açıldı; istemci url'ye yönlenir
@@ -54,6 +58,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Hata"
+  /huni/ziyaretler:
+    post:
+      operationId: recordFunnelVisit
+      summary: Huni sayfası açıldı; hangi reklamdan geldiği (A6)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [app]
+              properties:
+                app: { type: string, enum: [keepchat] }
+                utm_source: { $ref: "#/components/schemas/AtifAlani" }
+                utm_medium: { $ref: "#/components/schemas/AtifAlani" }
+                utm_campaign: { $ref: "#/components/schemas/AtifAlani" }
+                utm_content: { $ref: "#/components/schemas/AtifAlani" }
+                utm_term: { $ref: "#/components/schemas/AtifAlani" }
+                fbclid: { $ref: "#/components/schemas/AtifAlani" }
+                ttclid: { $ref: "#/components/schemas/AtifAlani" }
+      responses:
+        "201":
+          description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [ziyaret]
+                properties:
+                  ziyaret: { type: string, format: uuid }
+        "400": { description: Gövde JSON değil }
+        "422":
+          description: Bilinmeyen uygulama ya da geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /apps/{app}/baglama/kod:
     post:
       operationId: requestLinkCode
@@ -162,6 +204,9 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
   schemas:
+    AtifAlani:
+      type: string
+      maxLength: 500
     Hata:
       type: object
       additionalProperties: false

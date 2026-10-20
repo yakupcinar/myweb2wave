@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Atif\Ziyaretler;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -23,6 +24,7 @@ final readonly class CheckoutController
     public function __construct(
         private StripeClient $stripe,
         private LoggerInterface $logger,
+        private Ziyaretler $ziyaretler,
         /** @var array<string, array<string, string>> uygulama → plan → Stripe fiyatı */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
@@ -64,6 +66,13 @@ final readonly class CheckoutController
             $this->logger->error('Stripe Checkout oturumu açılamadı', ['exception' => $e]);
 
             return new JsonResponse(['error' => 'payment_provider_unavailable'], 502);
+        }
+
+        // Atıf (A6): huni ziyaret kimliği gönderdiyse oturum ona bağlanır;
+        // yoksa ya da tanınmazsa ödeme yine açılır.
+        $ziyaret = $govde['ziyaret'] ?? null;
+        if (\is_string($ziyaret)) {
+            $this->ziyaretler->oturumBagla($ziyaret, $app, $session->id);
         }
 
         return new JsonResponse(['url' => $session->url], 201);

@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/ziyaretler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Huni sayfası açıldı; hangi reklamdan geldiği (A6) */
+        post: operations["recordFunnelVisit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/apps/{app}/baglama/kod": {
         parameters: {
             query?: never;
@@ -76,6 +93,7 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AtifAlani: string;
         Hata: {
             /** @enum {string} */
             error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user";
@@ -127,6 +145,11 @@ export interface operations {
                     app: "keepchat";
                     /** @enum {string} */
                     plan: "monthly";
+                    /**
+                     * Format: uuid
+                     * @description /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
+                     */
+                    ziyaret?: string;
                 };
             };
         };
@@ -161,6 +184,59 @@ export interface operations {
             };
             /** @description Ödeme sağlayıcısına ulaşılamadı */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    recordFunnelVisit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    app: "keepchat";
+                    utm_source?: components["schemas"]["AtifAlani"];
+                    utm_medium?: components["schemas"]["AtifAlani"];
+                    utm_campaign?: components["schemas"]["AtifAlani"];
+                    utm_content?: components["schemas"]["AtifAlani"];
+                    utm_term?: components["schemas"]["AtifAlani"];
+                    fbclid?: components["schemas"]["AtifAlani"];
+                    ttclid?: components["schemas"]["AtifAlani"];
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi; ödeme oturumu açarken gönderilecek kimlik */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        ziyaret: string;
+                    };
+                };
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bilinmeyen uygulama ya da geçersiz alan */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -16,7 +16,8 @@ use Stripe\Event;
  *   yazılır; ikinci kopya PK kısıtında düşer, hiçbir şey uygulanmaz.
  * - Sıra: Stripe sırayı garanti etmiyor (tuzak §13). Durumu yalnız abonelik
  *   olayları yazar ve daha eski olay daha yeniyi ezmez (status_event_created).
- * - checkout.session.completed durum YAZMAZ, yalnız e-postayı bağlar.
+ * - checkout.session.completed durum YAZMAZ, yalnız e-postayı bağlar ve
+ *   huni ziyaretinden açılan oturumu ödendi işaretler (A6).
  * - Uygulama (A4) nesnenin metadata.app'inden; yoksa olay işlendi sayılır
  *   ama UYGULANMAZ — uygulamasız abonelik hiçbir uygulamayı açmasın.
  */
@@ -73,6 +74,12 @@ final readonly class SubscriptionSync
              VALUES (:sub, :cus, :email, :app)
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET email = EXCLUDED.email, updated_at = now()',
             ['sub' => $sub, 'cus' => $cus, 'email' => $email, 'app' => $app],
+        );
+        // Atıf (A6): bu oturum bir huni ziyaretinden açıldıysa ödendi say.
+        $db->executeStatement(
+            'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, tamamlandi_at = now()
+             WHERE stripe_checkout_session_id = :oturum',
+            ['sub' => $sub, 'oturum' => $session['id'] ?? null],
         );
     }
 

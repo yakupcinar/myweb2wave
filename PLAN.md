@@ -18,6 +18,7 @@
 | Rakip araştırması | ✅ 5 araç × 4 soru + akış özeti, 5 bulgu → Ç24–Ç28 (kod yok) | `docs/decisions/rakip-arastirmasi.md` |
 | Kimlik + hak | ✅ 41 test, kırma 11/11 (2'si eksik testi buldu), web ödemesi → bağlama → hak uçtan uca | `docs/decisions/kimlik-hak.md` |
 | Dağıtım dosyaları | 🟡 yerelde uçtan uca TLS + sürüm ölçümü, kırma 10/10 (+K9 tutmadı → iki katman ölçüldü); **sunucu bekleniyor** | `docs/decisions/dagitim.md` |
+| Reklam atfı (A6/1) | ✅ 52 test, kırma 13/13 (+A13 tutmadı → tuzak §25), gerçek Stripe ile reklam → ödeme → abonelik | `docs/decisions/atif.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -33,7 +34,9 @@
 - [ ] **KeepChat "aboneliğimi bağla"** — KeepChat deposunda, **KeepChat klasöründe ayrı oturumda** (hook'ları ve kuralları yüklensin). Kullanıcı kararları 2026-10-19: **yalnız durumu göster** (hiçbir özellik kilitlenmez → Ç29'a takılmaz) · **sunucu + iOS** (web sonra). Kılavuz: `docs/uygulama-entegrasyonu.md`
 - [x] KeepChat tarafı yazıldı — KeepChat `7bdc46a` (§A39): sunucu + iOS, Go 12/12 + iOS 4/4, kırma 11/11; çekirdek adresi boş → üretimde KAPALI
 - [ ] **Dağıtım (test modu)** — kullanıcı kararları 2026-10-20: **yeni ayrı sunucu** (keepchat-vps değil, para akışı ayrı — B2) · **Stripe test modu** (canlı ödeme Ç10/Ç12 bekliyor). Kapsam: çekirdek + Postgres + yedek, TLS, huni (statik), Stripe webhook ucu; ölçüt `/health` → `version`. Dosyalar hazır (`deploy/`, `dagitim.md`). Bekleyen: sunucu IP + ssh (kullanıcı açar), iki alan adı, e-posta sağlayıcısı (Ç30), Stripe test webhook uç noktası
-- [ ] **Analitik + reklam atfı + çerez onayı** (A6) — canlıdan önce
+- [x] **Reklam atfı (A6, 1. parça)** — 2026-10-20, `docs/decisions/atif.md`
+- [ ] **İç panel (A6, 2. parça)** — kullanıcı kararları 2026-10-20: **kullanıcı adı + şifre** (tek yönetici, Symfony girişi) · **e-posta maskeli**. İçerik: ziyaret → ödeme → abonelik satırları, kaynak (reklam/organik, kampanya), sayımlar ve dönüşüm oranı
+- [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10
