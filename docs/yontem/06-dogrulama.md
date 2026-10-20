@@ -72,3 +72,9 @@ göndermeyebilir (Stripe'taki oturum sayısıyla ayırt edildi).
   kısa sır) **derlemeden önce** — değer basmadan, önek ve uzunlukla.
 - Bir koruma ölçülürken "hangi satır gerçekten koruyor" sorulur: sırrı
   imajdan uzak tutan dosya sanılan değil, `COPY` listesiydi (K9).
+
+## Kullanıcıdan gelen dosya
+
+- Türü içerikten oku, boyutu ve pikseli ÇÖZMEDEN önce sınırla, sonra
+  yeniden kodla (`gorseller.md`). Uygulama sınırının üstündeki katmanı
+  (PHP `upload_max_filesize`, `memory_limit`) da ölç — tuzak §31.

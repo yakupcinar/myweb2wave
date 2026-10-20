@@ -11,6 +11,7 @@
   const planlar = JSON.parse(kok.dataset.planlar);
   const temaVarsayilan = JSON.parse(kok.dataset.temaVarsayilan);
   const yaziTipleri = JSON.parse(kok.dataset.yaziTipleri);
+  let gorselListesi = [];
   let degisti = false;
 
   const yayinla = document.getElementById("yayinla");
@@ -102,6 +103,7 @@
             ...tasiDugmeleri(adim.secenekler, j),
             oge("button", { type: "button", metin: "Sil", onclick: () => degistir(() => adim.secenekler.splice(j, 1)) }),
           ),
+          gorselSecici(s, `Seçenek ${j + 1} görseli`),
         );
       });
       kutu.append(
@@ -115,6 +117,7 @@
     }
 
     kutu.append(alan("Başlık", adim, "baslik"), alan(paywall ? "Fiyat satırı" : "Metin", adim, "metin", { cok: !paywall }), alan("Düğme", adim, "dugme"));
+    if (adim.tur === "tanitim") kutu.append(gorselSecici(adim, "Kapak görseli"));
     if (paywall) {
       const secim = oge("select", { onchange: () => { adim.plan = secim.value; isaretle(); } }, ...planlar.map((p) => oge("option", { value: p, metin: p })));
       secim.value = adim.plan;
@@ -186,6 +189,57 @@
     );
     oranYaz();
     return kutu;
+  }
+
+  /** E2.3: görsel seç / yükle. Dosya çekirdekte doğrulanıp WebP'ye yeniden kodlanır. */
+  function gorselSecici(nesne, etiket) {
+    const kutu = oge("div", { class: "satir gorsel-secici" });
+    if (nesne.gorsel) kutu.append(oge("img", { src: `/medya/${nesne.gorsel}.webp`, alt: "", class: "kucuk" }));
+    const secim = oge(
+      "select",
+      {},
+      oge("option", { value: "", metin: "— görsel yok —" }),
+      ...gorselListesi.map((g) => oge("option", { value: g.id, metin: `${g.ozgun_ad} (${g.genislik}×${g.yukseklik})` })),
+    );
+    secim.value = nesne.gorsel ?? "";
+    secim.addEventListener("change", () =>
+      degistir(() => {
+        if (secim.value) nesne.gorsel = secim.value;
+        else delete nesne.gorsel;
+      }),
+    );
+    const dosya = oge("input", { type: "file", accept: "image/png,image/jpeg,image/webp" });
+    dosya.addEventListener("change", async () => {
+      const f = dosya.files?.[0];
+      if (!f) return;
+      const govde = new FormData();
+      govde.append("dosya", f);
+      durumYaz("Görsel yükleniyor…");
+      try {
+        const yanit = await fetch(kok.dataset.medya, { method: "POST", headers: { "X-CSRF-Token": kok.dataset.jeton }, body: govde });
+        const j = await yanit.json();
+        if (!yanit.ok) {
+          hataListesi.replaceChildren(...(j.hatalar ?? ["yüklenemedi"]).map((h) => oge("li", { metin: h })));
+          durumYaz("Görsel yüklenmedi — düzelt:", "hata");
+          return;
+        }
+        await gorselleriYukle();
+        degistir(() => (nesne.gorsel = j.id));
+      } catch {
+        durumYaz("Bağlantı hatası — görsel yüklenmedi.", "hata");
+      }
+    });
+    kutu.append(oge("label", {}, oge("span", { metin: etiket }), secim), oge("label", {}, oge("span", { metin: "ya da yükle (PNG/JPEG/WebP, ≤5 MB)" }), dosya));
+    return kutu;
+  }
+
+  async function gorselleriYukle() {
+    try {
+      const yanit = await fetch(kok.dataset.medya);
+      gorselListesi = yanit.ok ? (await yanit.json()).gorseller : [];
+    } catch {
+      gorselListesi = [];
+    }
   }
 
   function ekleDugmesi(metin, uret) {
@@ -263,5 +317,5 @@
   window.addEventListener("beforeunload", (e) => {
     if (degisti) e.preventDefault();
   });
-  kur();
+  gorselleriYukle().then(kur);
 })();

@@ -325,6 +325,7 @@ components:
       properties:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [tanitim] }
+        gorsel: { $ref: "#/components/schemas/GorselKimligi" }
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
@@ -345,6 +346,7 @@ components:
             properties:
               id: { $ref: "#/components/schemas/HuniKimligi" }
               metin: { type: string }
+              gorsel: { $ref: "#/components/schemas/GorselKimligi" }
     PaywallAdimi:
       type: object
       additionalProperties: false
@@ -356,6 +358,10 @@ components:
         metin: { type: string }
         dugme: { type: string }
         plan: { type: string, enum: [monthly] }
+    GorselKimligi:
+      description: "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)"
+      type: string
+      pattern: "^[0-9a-f]{64}$"
     HuniKimligi:
       description: Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/)
       type: string

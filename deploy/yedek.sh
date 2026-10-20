@@ -22,5 +22,21 @@ if [ $kod -ne 0 ] || [ ! -s "$dosya.yarim" ]; then
 fi
 mv "$dosya.yarim" "$dosya"
 chmod 600 "$dosya"
-find "$DIZIN" -name 'app-*.dump' -mtime +"$SAKLA_GUN" -delete
-echo "yedek: $dosya ($(wc -c < "$dosya") bayt)"
+
+# E2.3: görseller (içerik özetli, değişmez dosyalar) — veritabanı satırları
+# bunlara işaret ediyor; biri olmadan öteki eksik geri yüklenir.
+medya="${dosya%.dump}-medya.tar"
+# `run --rm`, `exec` değil: dagit.sh yedeği çekirdek kalkmadan alıyor (ilk kurulum).
+APP_VERSION=${APP_VERSION:-yedek} docker compose --env-file deploy/.env.uretim \
+    -f deploy/compose.yaml run --rm --no-deps -T --entrypoint tar core -C /app/var -cf - medya > "$medya.yarim"
+kod=$?
+if [ $kod -ne 0 ] || [ ! -s "$medya.yarim" ]; then
+    rm -f "$medya.yarim"
+    echo "HATA: görsel yedeği çıkış=$kod"
+    exit 1
+fi
+mv "$medya.yarim" "$medya"
+chmod 600 "$medya"
+
+find "$DIZIN" -name 'app-*' -mtime +"$SAKLA_GUN" -delete
+echo "yedek: $dosya ($(wc -c < "$dosya") bayt), $medya ($(wc -c < "$medya") bayt)"

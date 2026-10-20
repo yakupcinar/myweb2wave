@@ -64,6 +64,24 @@ const { app } = Astro.props;
         text-align: center;
         width: 100%;
       }
+      img.kapak {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: var(--kose);
+        margin-top: 12px;
+      }
+      .secenekler button {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      img.secenek-gorseli {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: calc(var(--kose) / 2);
+      }
       .onizleme {
         background: #fde68a;
         color: #000;
@@ -110,18 +128,31 @@ const { app } = Astro.props;
         return e;
       }
 
+      /** E2.3: görsel çekirdekten, kimlik doğrulanmış (64 hex) — adres dışarıdan kurulamaz. */
+      function gorsel(id: string, sinif: string): HTMLImageElement {
+        const g = oge("img", undefined, sinif);
+        g.src = `${import.meta.env.PUBLIC_CORE_URL}/medya/${id}.webp`;
+        g.alt = "";
+        g.decoding = "async";
+        return g;
+      }
+
       function adimCiz(adim: Adim, sira: number): HTMLElement {
         const bolum = oge("section");
         bolum.dataset["adim"] = adim.id;
         bolum.dataset["sira"] = String(sira);
         bolum.hidden = sira !== 0;
+        if (adim.tur === "tanitim" && adim.gorsel)
+          bolum.append(gorsel(adim.gorsel, "kapak"));
         const baslik = oge("h1", adim.tur === "soru" ? adim.soru : adim.baslik);
         baslik.tabIndex = -1;
         bolum.append(baslik);
         if (adim.tur === "soru") {
           const kutu = oge("div", undefined, "secenekler");
           for (const s of adim.secenekler) {
-            const d = oge("button", s.metin);
+            const d = oge("button");
+            if (s.gorsel) d.append(gorsel(s.gorsel, "secenek-gorseli"));
+            d.append(oge("span", s.metin));
             d.type = "button";
             d.dataset["secenek"] = s.id;
             kutu.append(d);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Huni;
 
+use App\Medya\Medyalar;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -23,6 +24,7 @@ final readonly class Huniler
 
     public function __construct(
         private Connection $db,
+        private Medyalar $medyalar,
         /** @var array<string, array<string, string>> uygulama → plan → Stripe fiyatı */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
@@ -349,7 +351,13 @@ final readonly class Huniler
             return ['bilinmeyen uygulama'];
         }
 
-        return Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->uygulamalar[$app])));
+        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->uygulamalar[$app])));
+        // E2.3: görsel bu uygulamaya yüklenmiş olmalı (başka uygulamanınki ya da silinmiş değil).
+        foreach ($this->medyalar->eksikler($app, Tanim::gorseller($tanim)) as $id) {
+            $hatalar[] = 'görsel '.substr($id, 0, 8).'… bu uygulamada yok';
+        }
+
+        return $hatalar;
     }
 
     private static function kodla(mixed $tanim): string

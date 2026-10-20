@@ -26,6 +26,7 @@
 | Çok huni + kurallar (A8 / E2.1) | ✅ 117 test, kırma 8/8, tarayıcıda tek adres → iki huni | `docs/decisions/cok-huni.md` |
 | Stripe → RevenueCat (A9) | ✅ 126 test, kırma 9/9; gerçek RevenueCat ölçülmedi (Ç43) | `docs/decisions/revenuecat.md` |
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
+| Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -52,7 +53,8 @@
 - [x] **E2.1 çok huni + yönlendirme kuralları** (A8) — 2026-10-20, `docs/decisions/cok-huni.md`
 - [x] **Stripe → RevenueCat aktarımı** (A9) — 2026-10-20, `docs/decisions/revenuecat.md`; gerçek ölçüm Ç43
 - [x] **E2.2 tema** — 2026-10-20, `docs/decisions/tema.md`
-- [ ] **E2.3 görseller** (yükleme, yeniden kodlama, SVG yok) · **E2.4 sürükle-bırak** (Puck) + bileşen kütüphanesi
+- [x] **E2.3 görseller** — 2026-10-21, `docs/decisions/gorseller.md`
+- [ ] **E2.4 sürükle-bırak** (Puck) + bileşen kütüphanesi
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
