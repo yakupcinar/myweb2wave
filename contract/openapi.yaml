@@ -171,6 +171,86 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /huni/giris-baglantisi:
+    post:
+      operationId: createLoginLink
+      summary: Başarı sayfası ödemeden sonra tek kullanımlık giriş bağlantısı ister (Ç46)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [app, oturum]
+              properties:
+                app:
+                  type: string
+                  enum: [keepchat]
+                oturum:
+                  description: Stripe Checkout oturum kimliği (başarı sayfası adresindeki session_id)
+                  type: string
+                  pattern: "^cs_[A-Za-z0-9_]{1,250}$"
+      responses:
+        "201":
+          description: Bağlantı üretildi; tek kullanımlık, süreli
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [uygulama_adresi, son_kullanma]
+                properties:
+                  uygulama_adresi: { type: string, description: "<şema>://giris?jeton=… — uygulamayı açar" }
+                  son_kullanma: { type: string, format: date-time }
+        "400": { description: Gövde JSON değil }
+        "404":
+          description: Ödeme henüz işlenmedi (webhook gelmedi) ya da yok — sayfa yeniden dener
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "410":
+          description: Ödemeden sonraki pencere kapandı; bağlantı e-postada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "422": { $ref: "#/components/responses/IstekHatasi" }
+        "429":
+          description: Bu ödeme için bağlantı sınırı doldu
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /apps/{app}/giris/kullan:
+    post:
+      operationId: redeemLoginLink
+      summary: Uygulamanın SUNUCUSU giriş bağlantısındaki jetonu kullanır; kullanıcıyı kişiye bağlar (Ç46)
+      security: [{ uygulamaAnahtari: [] }]
+      parameters: [{ $ref: "#/components/parameters/App" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [jeton, kullanici]
+              properties:
+                jeton: { type: string, minLength: 1 }
+                kullanici: { type: string, minLength: 1, description: Uygulamadaki kullanıcı kimliği }
+      responses:
+        "200":
+          description: Bağlandı; jeton artık geçersiz
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [kisi]
+                properties:
+                  kisi: { type: string, format: uuid }
+        "400": { description: Gövde JSON değil }
+        "401": { $ref: "#/components/responses/Yetkisiz" }
+        "422": { $ref: "#/components/responses/IstekHatasi" }
   /apps/{app}/baglama/kod:
     post:
       operationId: requestLinkCode
@@ -373,4 +453,4 @@ components:
       properties:
         error:
           type: string
-          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit, forbidden]
+          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit, forbidden, not_ready, link_window_closed, invalid_token, expired_token]

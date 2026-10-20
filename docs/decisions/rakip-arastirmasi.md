@@ -297,3 +297,35 @@ Kaynaklar: <https://funnelfox.com/docs/editor/overview.md>,
 <https://www.revenuecat.com/release/paywalls-on-the-web-2025-11-07>,
 <https://www.revenuecat.com/blog/growth/revenuecat-paywalls-v2>,
 <https://ask.adapty.io/questions/p/custom-web-paywall>.
+
+## Ek 2026-10-20 — ödeme sonrası uygulamaya giriş bağlantısı (Ç46)
+
+Soru: "Lazy Auth" istemindeki gibi ödeme kimliğini bağlantıyla uygulamaya
+taşıyıp şifresiz giriş yapan var mı; bağlantı tek kullanımlık mı, süreli mi,
+uygulama yüklü değilse ne oluyor? Belgeler 2026-10-20'de açıldı (WebFetch).
+
+| Araç | Bağlantıda ne var | Şema | Tek kullanım / süre | Uygulama yüklü değilse | E-postayla |
+|---|---|---|---|---|---|
+| RevenueCat Redemption Links | rastgele `redemption_token` | **özel şema** (`<şema>://redeem_web_purchase?redemption_token=…`); masaüstü QR'ı HTTP(S) yönlendirme olabilir | **tek kullanım, 60 dk**; süresi dolunca yenisi fatura e-postasına | bağlantı **başarısız** olur; başarı sayfası "uygulamayı kurduktan sonra telefonda aç" der — ertelenmiş derin bağlantı YOK | evet (başarı sayfası + satın alma e-postası) |
+| Superwall Web Checkout (Redeem) | kullanım kodu | belirtilmemiş (SDK derin bağlantıya dayanır) | süre **var** (`expiredCode`), tek kullanım yazmıyor | mağazaya yedek; kodun kurulumu aşıp aşmadığı yazmıyor | evet, otomatik; süresi dolanda yeniden |
+| web2wave özel deeplink sayfası | **`user_id` (GUID) + `email`** | HTTPS sayfa → **özel şema** (`<şema>://web2wave?user_id=…&email=…`) | **yazmıyor** (tek kullanım/süre yok) | mağazaya yönlendirir; parametrenin kurulumu aşıp aşmadığı yazmıyor | bulunamadı |
+| web2wave ertelenmiş eşleme | (bağlantı yok) uygulama ilk açılışta `identify()` | — | son **48 sa** oturumları; tek kullanım yazmıyor | asıl amacı bu: IP + cihaz parmak izi, belirsizse `no_match`/`ambiguous_fingerprint` | — |
+
+Kaynaklar: <https://www.revenuecat.com/docs/web/redemption-links>,
+<https://superwall.com/docs/ios/guides/web-checkout/post-checkout-redirecting>,
+<https://docs.web2wave.com/reference/pass-subscription-from-web2web-to-app>,
+<https://docs.web2wave.com/reference/web2wave-deferred-deeplinks>.
+
+Bulgular:
+1. **İstemin modeli web2wave'in deeplink sayfası** (kalıcı kimlik + e-posta
+   adreste, özel şema, süre/tek kullanım yok). Ödeme işlem kimliğini
+   kullanıcı kimliği yapan araç **bulunamadı** — web2wave bile kendi
+   GUID'ini taşıyor, Stripe kimliğini değil.
+2. **Ödeme sağlayıcısı tarafındaki iki araç (RevenueCat, Superwall) süreli,
+   tek kullanımlık jeton/kod kullanıyor** ve süresi dolanı e-postayla
+   yeniliyor — Ç46 önerisiyle aynı çizgi.
+3. **Özel şema sektörde olağan** (RevenueCat da kullanıyor) — sorun şema
+   değil, bağlantıdaki değerin kalıcı ve tekrar kullanılabilir olması.
+4. **Kurulumu aşan bağlantıyı belgelenmiş biçimde yapan yok**; RevenueCat
+   açıkça "kurduktan sonra yeniden dokun" diyor. Kurulumu aşmanın tek yolu
+   web2wave'in parmak izi eşlemesi ya da MMP (Ç27).

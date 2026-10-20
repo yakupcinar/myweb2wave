@@ -1,6 +1,9 @@
 ---
 // Stripe ödeme sonrası buraya döner (?session_id=…). Aboneliğin gerçek
-// durumu webhook'la çekirdeğe yazılır; bu sayfa yalnız teşekkür eder.
+// durumu webhook'la çekirdeğe yazılır. Sayfa çekirdekten tek kullanımlık
+// giriş bağlantısı ister (Ç46); webhook sayfadan geç gelebilir → birkaç
+// kez yeniden dener. Bağlantı alınamazsa e-posta ve "Aboneliğimi bağla"
+// yolu kalır.
 ---
 
 <html lang="tr">
@@ -12,10 +15,70 @@
   <body>
     <main>
       <h1>Teşekkürler!</h1>
-      <p>
-        Aboneliğiniz başlatılıyor. KeepChat'te Ayarlar → Abonelik → Aboneliğimi
-        bağla'ya gidip ödemede yazdığınız e-postayı girin.
+      <p id="durum">Aboneliğiniz başlatılıyor…</p>
+      <p id="giris" hidden>
+        <a id="giris-baglantisi" href="#">
+          KeepChat'i aç ve giriş yap
+        </a>
+      </p>
+      <p id="kurulum" hidden>
+        KeepChat telefonunuzda kurulu değilse önce App Store'dan kurun, sonra bu
+        sayfaya dönüp bağlantıya yeniden dokunun. Aynı bağlantıyı e-postanıza da
+        gönderdik; tek kullanımlıktır, 24 saat geçerlidir.
+      </p>
+      <p id="yedek" hidden>
+        Giriş bağlantısını e-postanıza gönderdik. Bulamazsanız KeepChat'te
+        Ayarlar → Abonelik → Aboneliğimi bağla'ya gidip ödemede yazdığınız
+        e-postayı girin.
       </p>
     </main>
+    <script>
+      import { cekirdek } from "../../lib/cekirdek";
+
+      const DENEME = 8;
+      const ARALIK_MS = 1500;
+
+      const oturum = new URLSearchParams(window.location.search).get(
+        "session_id",
+      );
+      // Ödeme kimliği adreste kalmasın: geçmişe ve sayfadaki betiklere
+      // sızmasın (Ç46). Yalnız bu sayfanın belleğinde yaşar.
+      if (oturum)
+        window.history.replaceState(null, "", window.location.pathname);
+
+      const goster = (id: string) => {
+        const el = document.getElementById(id);
+        if (el) el.hidden = false;
+      };
+      const durum = document.getElementById("durum");
+
+      async function iste(): Promise<string | undefined> {
+        if (!oturum?.startsWith("cs_")) return undefined;
+        for (let i = 0; i < DENEME; i++) {
+          const { data, response } = await cekirdek
+            .POST("/huni/giris-baglantisi", {
+              body: { app: "keepchat", oturum },
+            })
+            .catch(() => ({ data: undefined, response: undefined }));
+          if (data) return data.uygulama_adresi;
+          // Yalnız "webhook henüz gelmedi" yeniden denenir.
+          if (response?.status !== 404) return undefined;
+          await new Promise((r) => setTimeout(r, ARALIK_MS));
+        }
+        return undefined;
+      }
+
+      void iste().then((adres) => {
+        if (durum) durum.textContent = "Ödemeniz alındı.";
+        const a = document.getElementById("giris-baglantisi");
+        if (adres && a) {
+          a.setAttribute("href", adres);
+          goster("giris");
+          goster("kurulum");
+        } else {
+          goster("yedek");
+        }
+      });
+    </script>
   </body>
 </html>
