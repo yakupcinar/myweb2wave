@@ -37,4 +37,5 @@
 | Ç30 | Kod e-postası için gerçek gönderim sağlayıcısı (SMTP/Postmark/SES…) ve alan adı doğrulaması (SPF, DKIM, DMARC) seçilmedi; spam'e düşen kod = bağlanamayan müşteri | `kimlik-hak.md` | canlıdan önce |
 | Ç31 | Kod hız sınırı yalnız (uygulama, e-posta) başına; çok sayıda farklı adrese kod gönderimiyle e-posta itibarı düşürülebilir. Uçlar uygulama sunucusunun arkasında olduğu için risk düşük, ölçülmedi | `kimlik-hak.md` | uygulamanın kendi sunucusunda hız sınırı tasarlanırken |
 | Ç32 | Aynı uygulama kullanıcısı başka bir e-postayla yeniden bağlanırsa eski bağ ezilir (bilinçli: yeni e-postanın sahipliği kodla kanıtlandı); bağlama geçmişi/denetim kaydı yok | `kimlik-hak.md` | ilk destek talebi ya da hesap silme bloğu |
+| Ç33 | Üretim yedeği sunucunun kendi diskinde (`/var/backups/myweb2wave`, 14 gün); disk/sunucu kaybında yedek de gider. Sunucu dışı kopya (nesne depolama) ve düzenli geri yükleme denemesi yok | `dagitim.md` | gerçek müşteri verisinden önce |
 

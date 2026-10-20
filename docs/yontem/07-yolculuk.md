@@ -22,3 +22,4 @@
 | 15 | Kararlar A5 (erişim, bağlama, sorgu), A6 (analitik); App Store sorusu | IAP'siz yalnız web çoğu ülkede ret riski; tek hak merkezi | `pre-setup` A5, A6; Ç29 |
 | 16 | Bu el kitabı | bilgi bölümlere ayrılır, kopyalanmaz | `docs/yontem/` |
 | 17 | Kimlik + e-posta kodu + hak ucu | iki tutmayan kırma iki güvenlik testini buldu; tarif e-postayı sessizce atıyordu (§24); web ödemesi → bağlama → hak uçtan uca | `kimlik-hak.md` |
+| 18 | Dağıtım dosyaları (test modu) | korunduğunu sandığın şeyi koruyan dosya başkası çıkabilir (K9); cron'dan koşan betik dağıtım içinden koşandan farklı ortam görür | `dagitim.md`, C6 |

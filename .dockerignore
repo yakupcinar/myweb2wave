@@ -1,0 +1,7 @@
+# Yalnız deploy/web.Dockerfile kökü bağlam olarak kullanır: huni + Caddyfile.
+*
+!funnel
+!deploy/Caddyfile
+funnel/node_modules
+funnel/dist
+funnel/.astro
