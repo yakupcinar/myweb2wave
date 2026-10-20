@@ -139,6 +139,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§25** | TypeScript **nesne yaymada (`...`) fazla alanı denetlemez** — yanlış alan adı tip denetiminden geçer; gövdeyi üretilen tipten kur. |
 | **§26** | Şifre özetindeki **`$` tırnaksız ortam dosyasında sessizce bozulur** (dotenv ve compose) — giriş yalnız "yanlış şifre" der; tek tırnak. |
 | **§27** | Astro bileşen **stili yuvadan (slot) gelen öğeye uygulanmaz** — derleme yeşil, düğme stilsiz; `is:global` ya da stili yuvayı dolduran dosyaya. |
+| **§28** | Postgres **JSONB nesne anahtarlarının sırasını değiştirir** — sıraya bakan karşılaştırma geri okunan geçerli veriyi reddeder; anahtarı küme olarak karşılaştır. |
 
 ---
 

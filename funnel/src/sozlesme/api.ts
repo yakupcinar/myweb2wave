@@ -38,6 +38,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/{app}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uygulamanın yayınlanmış en son huni tanımı (A7); 60 sn önbellek */
+        get: operations["getPublishedFunnel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/huni/{app}/taslak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** İmzalı, süreli önizleme anahtarıyla taslak (A7) */
+        get: operations["getDraftFunnel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/huni/ziyaretler/{ziyaret}/ilerleme": {
         parameters: {
             query?: never;
@@ -111,11 +145,49 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         AtifAlani: string;
+        HuniYayini: {
+            /** @description Yayınlanmış sürüm; taslakta null */
+            surum: number | null;
+            tanim: components["schemas"]["HuniTanimi"];
+        };
+        /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
+        HuniTanimi: {
+            sayfaBasligi: string;
+            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["PaywallAdimi"])[];
+        };
+        TanitimAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "tanitim";
+            baslik: string;
+            metin: string;
+            dugme: string;
+        };
+        SoruAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "soru";
+            soru: string;
+            secenekler: {
+                id: components["schemas"]["HuniKimligi"];
+                metin: string;
+            }[];
+        };
+        PaywallAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "paywall";
+            baslik: string;
+            metin: string;
+            dugme: string;
+            /** @enum {string} */
+            plan: "monthly";
+        };
         /** @description Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/) */
         HuniKimligi: string;
         Hata: {
             /** @enum {string} */
-            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit";
+            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit" | "forbidden";
         };
     };
     responses: {
@@ -231,6 +303,8 @@ export interface operations {
                     utm_term?: components["schemas"]["AtifAlani"];
                     fbclid?: components["schemas"]["AtifAlani"];
                     ttclid?: components["schemas"]["AtifAlani"];
+                    /** @description Görülen huni sürümü (A7); yayınlanmamışsa yok sayılır */
+                    surum?: number;
                 };
             };
         };
@@ -256,6 +330,70 @@ export interface operations {
             };
             /** @description Bilinmeyen uygulama ya da geçersiz alan */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    getPublishedFunnel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Yayındaki sürüm */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HuniYayini"];
+                };
+            };
+            /** @description Yayınlanmış huni yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    getDraftFunnel: {
+        parameters: {
+            query: {
+                anahtar: string;
+            };
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Taslak (surum null) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HuniYayini"];
+                };
+            };
+            /** @description Anahtar yok, yanlış ya da süresi geçmiş */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,21 +1,7 @@
 ---
-// KeepChat hunisi (A4: her uygulamanın kendi yolu): anket + tanıtım, sonda
-// paywall. Adımlar src/huniler/keepchat.ts'te; motor components/Huni.astro.
-// Açılışta hangi reklamdan gelindiği, her adım ve cevap çekirdeğe yazılır
-// (A6); çerez ya da tarayıcı deposu yok.
-import Huni from "../../components/Huni.astro";
-import { keepchat } from "../../huniler/keepchat";
+// KeepChat hunisi (A4: her uygulamanın kendi yolu). İçerik panelden
+// yönetilir ve çalışma anında okunur (A7); burada yalnız kabuk.
+import HuniKabugu from "../../components/HuniKabugu.astro";
 ---
 
-<Huni huni={keepchat}>
-  <div slot="paywall">
-    <h1 tabindex="-1">KeepChat Pro</h1>
-    <p>
-      Aylık plan · <strong>9,99 € / ay</strong>
-    </p>
-    <button id="abone-ol" class="ana" type="button" data-plan="monthly">
-      Abone ol
-    </button>
-    <p id="hata" role="alert" hidden></p>
-  </div>
-</Huni>
+<HuniKabugu app="keepchat" />

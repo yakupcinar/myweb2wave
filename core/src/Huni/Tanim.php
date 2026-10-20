@@ -1,0 +1,135 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Huni;
+
+/**
+ * Huni tanımının biçimi (A7) — yayından ÖNCE burada doğrulanır; huni
+ * sayfası yalnız buradan geçmiş tanımı görür. Sözleşme: contract
+ * `HuniTanimi`. Serbest HTML yok: metinler düz metin olarak gösterilir.
+ */
+final class Tanim
+{
+    public const KIMLIK = '/^[a-z0-9_-]{1,64}$/';
+    public const AZAMI_ADIM = 50;
+
+    /** Alan → [en az, en çok] karakter. */
+    private const UZUNLUK = [
+        'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
+        'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
+    ];
+
+    /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
+    private const TURLER = [
+        'tanitim' => ['baslik', 'metin', 'dugme'],
+        'soru' => ['soru'],
+        'paywall' => ['baslik', 'metin', 'dugme'],
+    ];
+
+    /**
+     * @param list<string> $planlar bu uygulamanın planları (config uygulamalar)
+     *
+     * @return list<string> boşsa geçerli
+     */
+    public static function hatalar(mixed $tanim, array $planlar): array
+    {
+        if (!\is_array($tanim) || !self::anahtarlar($tanim, ['sayfaBasligi', 'adimlar'])) {
+            return ['tanım yalnız sayfaBasligi ve adimlar içermeli'];
+        }
+        $h = [];
+        self::metin($tanim['sayfaBasligi'], 'sayfaBasligi', 'sayfaBasligi', $h);
+        $adimlar = $tanim['adimlar'];
+        if (!\is_array($adimlar) || !array_is_list($adimlar) || \count($adimlar) < 2 || \count($adimlar) > self::AZAMI_ADIM) {
+            return [...$h, 'adimlar 2–'.self::AZAMI_ADIM.' öğeli bir liste olmalı'];
+        }
+
+        $gorulen = [];
+        foreach ($adimlar as $i => $adim) {
+            $yer = 'adım '.($i + 1);
+            $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
+            if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
+                $h[] = "{$yer}: tür tanitim, soru ya da paywall olmalı";
+                continue;
+            }
+            $id = $adim['id'] ?? null;
+            if (!\is_string($id) || 1 !== preg_match(self::KIMLIK, $id)) {
+                $h[] = "{$yer}: kimlik küçük harf, rakam, - ve _ (1–64)";
+            } elseif (isset($gorulen[$id])) {
+                $h[] = "{$yer}: kimlik '{$id}' tekrar ediyor";
+            } else {
+                $gorulen[$id] = true;
+            }
+            $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
+                'soru' => ['secenekler'], 'paywall' => ['plan'], default => [],
+            }];
+            if (!self::anahtarlar($adim, $beklenen)) {
+                $h[] = "{$yer}: alanlar tam olarak ".implode(', ', $beklenen).' olmalı';
+                continue;
+            }
+            foreach (self::TURLER[$tur] as $alan) {
+                self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
+            }
+            if ('soru' === $tur) {
+                self::secenekler($adim['secenekler'], $yer, $h);
+            }
+            if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
+                $h[] = "{$yer}: plan bu uygulamada yok";
+            }
+            if (('paywall' === $tur) !== ($i === \count($adimlar) - 1)) {
+                $h[] = "{$yer}: paywall tam bir kez ve EN SONDA olmalı";
+            }
+        }
+
+        return $h;
+    }
+
+    /**
+     * Anahtar KÜMESİ eşit mi — sıra değil: Postgres JSONB nesne anahtarlarını
+     * yeniden sıralar, veritabanından dönen tanım sıra yüzünden reddedilmesin.
+     *
+     * @param array<mixed> $dizi
+     * @param list<string> $beklenen
+     */
+    private static function anahtarlar(array $dizi, array $beklenen): bool
+    {
+        $var = array_map(strval(...), array_keys($dizi));
+        sort($var);
+        sort($beklenen);
+
+        return $var === $beklenen;
+    }
+
+    /** @param list<string> $h */
+    private static function metin(mixed $deger, string $tur, string $yer, array &$h): void
+    {
+        [$en_az, $en_cok] = self::UZUNLUK[$tur];
+        if (!\is_string($deger) || mb_strlen(trim($deger)) < $en_az || mb_strlen($deger) > $en_cok) {
+            $h[] = "{$yer}: {$en_az}–{$en_cok} karakter metin olmalı";
+        }
+    }
+
+    /** @param list<string> $h */
+    private static function secenekler(mixed $secenekler, string $yer, array &$h): void
+    {
+        if (!\is_array($secenekler) || !array_is_list($secenekler) || \count($secenekler) < 2 || \count($secenekler) > 8) {
+            $h[] = "{$yer}: 2–8 seçenek olmalı";
+
+            return;
+        }
+        $gorulen = [];
+        foreach ($secenekler as $j => $s) {
+            $sy = "{$yer} seçenek ".($j + 1);
+            if (!\is_array($s) || !self::anahtarlar($s, ['id', 'metin'])) {
+                $h[] = "{$sy}: yalnız id ve metin";
+                continue;
+            }
+            if (!\is_string($s['id']) || 1 !== preg_match(self::KIMLIK, $s['id']) || isset($gorulen[$s['id']])) {
+                $h[] = "{$sy}: kimlik geçersiz ya da tekrar ediyor";
+            } else {
+                $gorulen[$s['id']] = true;
+            }
+            self::metin($s['metin'], 'secenek', "{$sy} metin", $h);
+        }
+    }
+}

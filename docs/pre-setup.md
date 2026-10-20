@@ -7,7 +7,8 @@
 ## §A — Ürün
 
 **A1 · Tek kiracı: kendi uygulamalarımız için** (2026-10-19, kullanıcı
-kararı). Huniler kodda tanımlanır, görsel editör yok. Reddedilen: başka
+kararı). ~~Huniler kodda tanımlanır, görsel editör yok.~~ → **A7 ile değişti
+(2026-10-20): huni panelden yönetilir.** Tek kiracı geçerli. Reddedilen: başka
 geliştiricilere SaaS — çok kiracılı, editörlü, aylar süren iş ve web2wave'le
 doğrudan rekabet; "önce kendim sonra SaaS" — şimdiden tenant_id taşımak
 ölçülmemiş bir ihtiyaca altyapı kurmak.
@@ -74,6 +75,19 @@ uygulama boyutu.
 - Reddedilen: A (yalnız hazır araç) — ham veri ve dönüşüm üçüncü tarafta,
   yurt dışı aktarım; B (yalnız kendi panel) — reklam ağına dönüşüm yine
   gerekir, rapor yükü baştan bizde.
+
+**A7 · Huni panelden yönetilir: E1'den başla, hedef E2** (2026-10-20,
+kullanıcı; araştırma `decisions/huni-editoru-arastirmasi.md`, Ç37). A1'in
+"huniler kodda, görsel editör yok" kısmını **değiştirir**; tek kiracı
+aynen kalır. Huni tanımı veritabanında; yayınlanan sürüm değişmez anlık
+görüntü; tanım yayından önce çekirdekte doğrulanır; huni sayfası statik
+kabuk + yayınlanmış tanımı çalışma anında okur (yayın anında canlı; ilk
+boyama ölçülecek, kötüyse FunnelFox gibi yayında statik derlemeye geçilir).
+Önizleme imzalı, süreli bağlantıyla. Serbest HTML yok — ölçüm motoru
+(adım, cevap, reklam, ödeme) her bileşende otomatik kalır. **Reddedilen:**
+E3'e doğrudan gitmek (A/B, çok dil çerez/KVKK ister, trafik yok) ·
+serbest HTML editör (GrapesJS: ölçümü ve sözleşmeyi atlar, XSS) · yayında
+statik derleme ile başlamak (sunucuda derleme hattı; sunucu bile yok).
 
 ## §B — Yığın
 

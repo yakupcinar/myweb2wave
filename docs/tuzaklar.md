@@ -100,3 +100,14 @@ sayfanın `slot`'a koyduğu öğe bileşenin kapsamında değildir.
 düğmelerinde mavi, yuvadakinde stilsiz; `<style is:global>` → ikisi aynı.
 **Doğrusu:** sayfanın tamamını kuran bileşende `is:global`, ya da stili
 yuvayı dolduran dosyaya koy. Görsel sonuç yalnız tarayıcıda ölçülür.
+
+## §28 — Postgres JSONB nesne anahtarlarının sırasını DEĞİŞTİRİR
+**Belirti:** taslak doğrulamadan geçip kaydedildi, aynı taslak veritabanından
+okunup yayınlanırken "alanlar tam olarak … olmalı" diye reddedildi; testte
+`assertSame` aynı içerikli iki diziyi "farklı" dedi. **Sebep:** `jsonb`
+anahtarları kendi düzenine göre (uzunluk, sonra alfabe) saklar; geri
+okunan nesnenin anahtar sırası yazılanla aynı değil. Liste (dizi) sırası
+korunur. **Ölçüm (2026-10-20, `huni-yayin.md` Y3):** anahtarları sıralı
+karşılaştıran doğrulayıcıyla yayın 3 testte düştü; küme karşılaştırması
+→ geçti. **Doğrusu:** nesne anahtarını sırasız karşılaştır (sırala ya da
+küme); testte `assertEquals`; sıranın anlamı varsa liste kullan.

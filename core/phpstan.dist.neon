@@ -8,3 +8,6 @@ parameters:
         - public/
         - src/
         - tests/
+    # Göçler analiz edilmez ama sınıfları tanınır (testler tohumu doğrular).
+    scanDirectories:
+        - migrations/
