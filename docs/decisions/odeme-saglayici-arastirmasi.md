@@ -68,3 +68,32 @@ yasal metin alanları, çekirdeğe vergi dahil/hariç fiyat ve onay kaydı girer
 **Sağlayıcı seçimine etkisi:** uluslararası tüketiciye satışta vergi
 kayıtlarını (AB OSS, İngiltere, ABD eyaletleri…) kendimiz yapmak ağır bir
 yük; Paddle gibi MoR bunu üstlenir. Bu, canlıda MoR lehine en güçlü argüman.
+
+## web2wave sağlayıcıyı nasıl yönetiyor + bizde değiştirmek ne kadar (2026-10-20)
+
+**web2wave (yalnız herkese açık belge; panel ölçülmedi, C4):**
+- Çok sağlayıcı: Stripe, Paddle, PayPal, Primer, Solidgate, Unlimit; Mayıs
+  2026'da Zotlo, FastSpring ve Stripe Managed Payments (MoR) eklendi.
+- **Müşterinin kendi hesabı:** anahtarlar proje ayarlarına girilir ("you are
+  the owner of the account"); Stripe için yalnız bu iş için ayrı hesap
+  öneriliyor (webhook'lar başka uçlara gitmesin).
+- Abonelik bilgisi müşterinin sunucusuna tek bir webhook biçiminde gidiyor
+  (sağlayıcıdan bağımsız ortak biçim olduğu ima ediliyor, açıkça yazılmamış).
+- Huni/fiyat/ülke başına sağlayıcı seçimi, yedek sağlayıcı: **bulunamadı**.
+- Kaynaklar: docs.web2wave.com `getting-started-with-your-api`,
+  `pass-subscription-from-web2web-to-app`, `paypal-integration`;
+  web2wave.com `may-2026-product-updates`.
+
+**Bizde (kod ölçümü):** huni ↔ çekirdek sözleşmesi zaten sağlayıcıdan
+bağımsız — huni `{app, plan}` gönderir, `{url}`'e yönlenir; huni ve
+sözleşmede "Stripe" yalnız yorumlarda geçiyor. Stripe'a bağlı olan:
+`CheckoutController` (oturum açma), `StripeWebhookController` +
+`SubscriptionSync` (olay → durum), tablo sütun adları (`stripe_*`),
+`odeme_oturumlari` / panel sorgusu, ve hak ucunun `durum` değeri (Stripe
+sözlüğü: active / trialing / past_due — KeepChat bunu okuyor).
+
+**Karar (kural 6):** şimdi soyutlama YAZILMAZ — tek uygulamalı bir arayüz
+yanlış yerden bölünür. İkinci sağlayıcı seçildiğinde (Ç10) aynı blokta:
+`OdemeSaglayici` arayüzü (oturum aç → adres; webhook → ortak olay),
+sütunlar `saglayici` + `harici_id`'ye göç, durum sözlüğü bizim sabitimiz
+(Stripe'ınki değil) — iki gerçek uygulamayla. Huni ve KeepChat değişmez.
