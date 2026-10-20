@@ -15,3 +15,7 @@
 
 # Üretim sırları (deploy/env.uretim.ornek)
 /deploy/.env.uretim
+
+# Panel huni düzenleyicisi (E2.4): derleme çıktısı ve bağımlılıklar
+/core/editor/node_modules/
+/core/public/varliklar/editor/

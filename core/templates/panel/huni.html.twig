@@ -9,6 +9,7 @@
         <a href="{{ onizleme }}" target="_blank" rel="noopener">Taslağı önizle ↗</a>
         <a href="{{ huni_adresi }}" target="_blank" rel="noopener">Yayındakini aç ↗</a>
         <a href="{{ path('panel_huniler') }}">← Huniler ve kurallar</a>
+        <a href="{{ path('panel_huni_surukle', {app: uygulama, ad: huni}) }}">Sürükle-bırak düzenleyici ↗</a>
         <form method="post" action="{{ path('panel_huni_yayinla', {app: uygulama, ad: huni}) }}">
             <input type="hidden" name="_token" value="{{ csrf_token('huni-' ~ uygulama) }}">
             <button type="submit" id="yayinla" class="ana">Yayınla{% if not farkli %} (değişiklik yok){% endif %}</button>

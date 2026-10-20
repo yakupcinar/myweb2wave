@@ -27,6 +27,7 @@
 | Stripe → RevenueCat (A9) | ✅ 126 test, kırma 9/9; gerçek RevenueCat ölçülmedi (Ç43) | `docs/decisions/revenuecat.md` |
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
+| Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -54,7 +55,8 @@
 - [x] **Stripe → RevenueCat aktarımı** (A9) — 2026-10-20, `docs/decisions/revenuecat.md`; gerçek ölçüm Ç43
 - [x] **E2.2 tema** — 2026-10-20, `docs/decisions/tema.md`
 - [x] **E2.3 görseller** — 2026-10-21, `docs/decisions/gorseller.md`
-- [ ] **E2.4 sürükle-bırak** (Puck) + bileşen kütüphanesi
+- [x] **E2.4a sürükle-bırak (Puck)** — 2026-10-21, `docs/decisions/puck.md`
+- [ ] **E2.4b yeni bileşen türleri** (ör. yorum/sosyal kanıt, çoklu seçim, metin girişi) — çekirdek Tanim + sözleşme + huni + Puck
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile

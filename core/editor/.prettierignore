@@ -1,0 +1,4 @@
+node_modules
+package-lock.json
+# Sözleşmeden ÜRETİLİR (contract `npm run uret`); bin/kontrol bayt bayt karşılaştırır.
+src/sozlesme.ts
