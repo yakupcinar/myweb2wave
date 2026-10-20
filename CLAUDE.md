@@ -137,6 +137,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§23** | `curl -s` + `[...]`'lı adres **sessizce boş** döner (glob) — `curl -g`. |
 | **§24** | `MAILER_DSN=null://null` e-postayı **sessizce atar**, uç yine 202 — geliştirmede Mailpit. |
 | **§25** | TypeScript **nesne yaymada (`...`) fazla alanı denetlemez** — yanlış alan adı tip denetiminden geçer; gövdeyi üretilen tipten kur. |
+| **§26** | Şifre özetindeki **`$` tırnaksız ortam dosyasında sessizce bozulur** (dotenv ve compose) — giriş yalnız "yanlış şifre" der; tek tırnak. |
 
 ---
 

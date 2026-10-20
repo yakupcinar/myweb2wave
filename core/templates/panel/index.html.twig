@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <header>
+        <h1>MyWeb2Wave panel</h1>
+        <nav>
+            {% for g in gunler %}
+                {% if g == gun %}<strong>Son {{ g }} gün</strong>{% else %}<a href="{{ path('panel', {gun: g}) }}">Son {{ g }} gün</a>{% endif %}
+            {% endfor %}
+            <a href="{{ path('panel_cikis') }}">Çıkış</a>
+        </nav>
+    </header>
+
+    <section class="kartlar">
+        {% for ad, s in sayimlar %}
+            <div class="kart" data-kaynak="{{ ad }}">
+                <h2>{{ ad == 'reklam' ? 'Reklamdan gelen' : 'Organik / doğrudan' }}</h2>
+                <dl>
+                    <dt>Sayfayı gördü</dt><dd>{{ s.ziyaret }}</dd>
+                    <dt>Ödemeye geçti</dt><dd>{{ s.odemeye_gecti }}</dd>
+                    <dt>Ödedi</dt><dd>{{ s.odedi }}</dd>
+                    <dt>Dönüşüm</dt><dd>{{ s.ziyaret > 0 ? ((s.odedi / s.ziyaret * 100)|number_format(1, ',') ~ ' %') : '—' }}</dd>
+                </dl>
+            </div>
+        {% endfor %}
+    </section>
+
+    <div class="tablo">
+        <table>
+            <thead>
+                <tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Kaynak</th><th>Kampanya</th><th>Aşama</th><th>Abonelik</th><th>E-posta</th></tr>
+            </thead>
+            <tbody>
+                {% for s in satirlar %}
+                    <tr>
+                        <td>{{ s.zaman|date('Y-m-d H:i', 'UTC') }}</td>
+                        <td>{{ s.app }}</td>
+                        <td>{% if s.reklam %}<span class="reklam">reklam</span> · {% endif %}{{ s.kaynak }}</td>
+                        <td>{{ s.kampanya ?? '—' }}</td>
+                        <td{% if s.asama == 'ödedi' %} class="odedi"{% endif %}>{{ s.asama }}</td>
+                        <td>{{ s.durum ?? '—' }}</td>
+                        <td>{{ s.email ?? '—' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="soluk">Bu aralıkta ziyaret yok.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if satirlar|length == azami %}<p class="soluk">En yeni {{ azami }} ziyaret gösteriliyor; sayımlar tüm aralığı kapsar.</p>{% endif %}
+{% endblock %}

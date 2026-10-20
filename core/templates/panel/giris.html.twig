@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Giriş · MyWeb2Wave panel{% endblock %}
+
+{% block body %}
+    <form class="giris" method="post" action="{{ path('panel_giris') }}">
+        <h1>MyWeb2Wave panel</h1>
+        {% if hata %}
+            <p class="hata" role="alert">{{ hata }}</p>
+        {% endif %}
+        <label>Kullanıcı adı
+            <input type="text" name="_username" value="{{ son_ad }}" autocomplete="username" required autofocus>
+        </label>
+        <label>Şifre
+            <input type="password" name="_password" autocomplete="current-password" required>
+        </label>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        <button type="submit">Giriş</button>
+    </form>
+{% endblock %}

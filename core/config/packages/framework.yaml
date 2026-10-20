@@ -13,3 +13,11 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+
+# Üretimde çekirdek Caddy'nin arkasında düz HTTP görür; 'auto' bu yüzden
+# panel çerezine Secure koymuyordu (ölçüldü, panel.md). Tarayıcıya giden
+# her bağlantı HTTPS.
+when@prod:
+    framework:
+        session:
+            cookie_secure: true

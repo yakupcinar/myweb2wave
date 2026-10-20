@@ -39,4 +39,5 @@
 | Ç32 | Aynı uygulama kullanıcısı başka bir e-postayla yeniden bağlanırsa eski bağ ezilir (bilinçli: yeni e-postanın sahipliği kodla kanıtlandı); bağlama geçmişi/denetim kaydı yok | `kimlik-hak.md` | ilk destek talebi ya da hesap silme bloğu |
 | Ç33 | Üretim yedeği sunucunun kendi diskinde (`/var/backups/myweb2wave`, 14 gün); disk/sunucu kaybında yedek de gider. Sunucu dışı kopya (nesne depolama) ve düzenli geri yükleme denemesi yok | `dagitim.md` | gerçek müşteri verisinden önce |
 | Ç34 | Ziyaret ucu (`/huni/ziyaretler`) anahtarsız ve herkese açık: sahte istekle ziyaret sayıları şişirilebilir; sayfa yenilemesi de yeni ziyaret sayılıyor (ölçüldü: aynı adres iki yüklemede 2 satır). Hız sınırı / tekilleştirme yok. `fbclid`/`ttclid` saklamanın hukuki dayanağı ve çerez onayı Ç12'de | `atif.md` | ücretli trafikten önce |
+| Ç35 | Panel tek yönetici, yalnız şifre (2FA yok); oturumlar konteynerin dosya sisteminde (`var/sessions`) — her dağıtımda yönetici çıkış yapmış olur. Panel API alan adında `/panel` altında; ayrı alan adı/IP kısıtı yok | `panel.md` | gerçek müşteri verisinden önce |
 

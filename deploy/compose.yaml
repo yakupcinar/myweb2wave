@@ -38,6 +38,8 @@ services:
       MAILER_DSN: ${MAILER_DSN:?}
       MAIL_GONDEREN: ${MAIL_GONDEREN:?}
       UYGULAMA_ANAHTARI_KEEPCHAT: ${UYGULAMA_ANAHTARI_KEEPCHAT:?}
+      PANEL_KULLANICI: ${PANEL_KULLANICI:?}
+      PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
     depends_on:
       db:
         condition: service_healthy

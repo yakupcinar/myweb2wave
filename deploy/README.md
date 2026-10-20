@@ -35,7 +35,10 @@ cd /opt/myweb2wave
 cp deploy/env.uretim.ornek deploy/.env.uretim && chmod 600 deploy/.env.uretim
 ```
 
-Doldur; rastgele değerler `openssl rand -hex 32`. `UYGULAMA_ANAHTARI_KEEPCHAT`
+Doldur; rastgele değerler `openssl rand -hex 32`. Panel şifresinin
+**özeti**: `docker compose -f deploy/compose.yaml run --rm core php bin/console security:hash-password`
+→ `PANEL_SIFRE_OZETI='…'` (**tek tırnak**, tuzak §26). Panel:
+`https://<API_ALANI>/panel`. `UYGULAMA_ANAHTARI_KEEPCHAT`
 KeepChat sunucusundakiyle **aynı**. Sırlar sohbete, depoya yazılmaz.
 
 ## 4 · Her dağıtım
