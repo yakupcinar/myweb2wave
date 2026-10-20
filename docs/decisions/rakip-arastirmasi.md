@@ -272,3 +272,28 @@ seçenekte şart (Ç12).
 - **2. tur (aynı gün):** 4. soru (analitik/reklam atfı/çerez onayı) ve akış
   özeti eklendi; eski S3 (panel) → S4. Çerez onayı: web2wave, RevenueCat,
   Adapty, Superwall için **bulunamadı**.
+
+## Ek (2026-10-20): huni/paywall editörü ne kadar kapsamlı
+
+Yalnız herkese açık belgeler (C4; paneller ölçülmedi).
+
+| Araç | Editör | Bulunan kapsam |
+|---|---|---|
+| FunnelFox | görsel, sürükle-bırak + AI sohbet | öğe kütüphanesi (düğme, metin, görsel, ödeme, sayaç, açılır pencere, plan seçici, yorumlar…), 10 şablon (niş: astroloji, beslenme…), huni geneli özel kod (`<style>`/`<script>` her ekranın head'ine; görsel editörün stilleri yüksek özgüllükte → `!important`), ekran başına Raw HTML, yayından önce "hata kontrolü"; Safari'de çalışmıyor |
+| web2wave | görsel quiz + paywall editörü, Wavy AI (beta) | soru türleri, yorumlar, uzman görüşü, paywall; soru sırasının A/B testi. Özel CSS/tema/bileşen kütüphanesi **bulunamadı**. Kendi uyarısı: AI'ın canlı huniyi sessizce değiştirebileceği, önce kopyala |
+| RevenueCat | yerel paywall editörüyle aynı (web de) | şablon ya da boş sayfa; metin, görsel, fiyat blokları, CTA; hazır bileşenler (karusel, geri sayım, zaman çizelgesi, sosyal kanıt); ülke/platform/sürüm/segment hedefleme |
+| Adapty | yerel editör kodsuz; **web paywall'u FunnelFox üzerinden** | şablonlar, düğme rengi ve şekline kadar; web için kendi sayfanı SDK'yla bağlama da var |
+
+Yazı tipi denetimi hiçbir kaynakta açıkça bulunamadı.
+**Bize etkisi:** A1 (görsel editör kapsam dışı) değişmedi. Rakiplerin
+hepsinde ortak çekirdek: hazır bileşen + şablon + metin/görsel/renk
+düzenleme + hedefleme/A/B; ileri kullanıcı için özel kod kaçışı.
+
+Kaynaklar: <https://funnelfox.com/docs/editor/overview.md>,
+<https://funnelfox.com/docs/editor/coding-funnel-wide.md>,
+<https://funnelfox.com/docs/editor/templates>,
+<https://funnelfox.com/docs/elements/overview.md>,
+<https://docs.web2wave.com/reference/wavy-ai>, <https://www.web2wave.com>,
+<https://www.revenuecat.com/release/paywalls-on-the-web-2025-11-07>,
+<https://www.revenuecat.com/blog/growth/revenuecat-paywalls-v2>,
+<https://ask.adapty.io/questions/p/custom-web-paywall>.
