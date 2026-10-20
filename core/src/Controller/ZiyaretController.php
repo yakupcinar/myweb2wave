@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Atif\Ziyaretler;
+use App\Huni\Tanim;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,11 +43,13 @@ final readonly class ZiyaretController
             $alanlar[$ad] = '' === $deger ? null : $deger;
         }
 
+        $huni = $govde['huni'] ?? null;
         $surum = $govde['surum'] ?? null;
-        if (null !== $surum && (!\is_int($surum) || $surum < 1)) {
+        if ((null !== $surum && (!\is_int($surum) || $surum < 1))
+            || (null !== $huni && (!\is_string($huni) || 1 !== preg_match(Tanim::KIMLIK, $huni)))) {
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
 
-        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar, $surum)], 201);
+        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum)], 201);
     }
 }

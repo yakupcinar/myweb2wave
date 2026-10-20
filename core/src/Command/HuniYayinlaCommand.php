@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * Taslağı yayınlar ya da önizleme bağlantısı üretir (A7). Panel ekranı
  * (E1.2) gelene kadar tek yol; sonra da sunucuda elle kullanılabilir.
  */
-#[AsCommand('app:huni', 'Huni: yayinla <app> | onizleme <app>')]
+#[AsCommand('app:huni', 'Huni: yayinla <app> [<huni>] | onizleme <app> [<huni>]')]
 final readonly class HuniYayinlaCommand
 {
     public function __construct(
@@ -29,9 +29,10 @@ final readonly class HuniYayinlaCommand
         SymfonyStyle $io,
         #[Argument('yayinla ya da onizleme')] string $islem,
         #[Argument('uygulama, ör. keepchat')] string $app,
+        #[Argument('huni adı (A8)')] string $huni = 'genel',
     ): int {
         if ('onizleme' === $islem) {
-            $io->writeln($this->funnelBaseUrl.'/'.$app.'/?onizleme='.$this->huniler->onizlemeAnahtari($app, time()));
+            $io->writeln($this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $huni, time()));
 
             return Command::SUCCESS;
         }
@@ -40,13 +41,13 @@ final readonly class HuniYayinlaCommand
 
             return Command::INVALID;
         }
-        $sonuc = $this->huniler->yayinla($app);
+        $sonuc = $this->huniler->yayinla($app, $huni);
         if (\is_array($sonuc)) {
             $io->error(['Yayınlanmadı:', ...$sonuc]);
 
             return Command::FAILURE;
         }
-        $io->success("{$app} v{$sonuc} yayında");
+        $io->success("{$app}/{$huni} v{$sonuc} yayında");
 
         return Command::SUCCESS;
     }

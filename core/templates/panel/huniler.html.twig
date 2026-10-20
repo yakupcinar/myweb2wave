@@ -4,19 +4,95 @@
 
 {% block body %}
     {% include 'panel/_ust.html.twig' with {baslik: 'Huniler'} %}
-    <div class="tablo">
-        <table>
-            <thead><tr><th>Uygulama</th><th>Yayında</th><th>Taslak</th><th></th></tr></thead>
-            <tbody>
-                {% for h in huniler %}
-                    <tr data-app="{{ h.app }}">
-                        <td>{{ h.app }}</td>
-                        <td>{{ h.yayinda ? 'v' ~ h.yayinda : '—' }}</td>
-                        <td>{% if not h.taslak_var %}<span class="soluk">yok</span>{% elseif h.farkli %}<span class="reklam">yayınlanmamış değişiklik</span>{% else %}<span class="soluk">yayındakiyle aynı</span>{% endif %}</td>
-                        <td><a href="{{ path('panel_huni', {app: h.app}) }}">Düzenle</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+    {% for u in uygulamalar %}
+        {% set jeton = csrf_token('huni-' ~ u.ad) %}
+        <section data-uygulama="{{ u.ad }}">
+            <h2>{{ u.ad }}</h2>
+            <p class="soluk">Reklam adresi tek: <code>{{ u.adres }}</code> — hangi huninin açılacağını aşağıdaki kurallar seçer; hiçbiri tutmazsa varsayılan.</p>
+
+            <div class="tablo">
+                <table data-bolum="huniler">
+                    <thead><tr><th>Huni</th><th>Yayında</th><th>Taslak</th><th></th></tr></thead>
+                    <tbody>
+                        {% for h in u.huniler %}
+                            <tr data-huni="{{ h.ad }}">
+                                <td>{{ h.ad }}{% if h.varsayilan %} <span class="odedi">varsayılan</span>{% endif %}</td>
+                                <td>{{ h.yayinda ? 'v' ~ h.yayinda : '—' }}</td>
+                                <td>{% if h.farkli %}<span class="reklam">yayınlanmamış değişiklik</span>{% else %}<span class="soluk">yayındakiyle aynı</span>{% endif %}</td>
+                                <td class="eylemler">
+                                    <a href="{{ path('panel_huni', {app: u.ad, ad: h.ad}) }}">Düzenle</a>
+                                    {% if not h.varsayilan %}
+                                        <form method="post" action="{{ path('panel_huni_varsayilan', {app: u.ad, ad: h.ad}) }}">
+                                            <input type="hidden" name="_token" value="{{ jeton }}">
+                                            <button type="submit">Varsayılan yap</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="soluk">Henüz huni yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <form method="post" action="{{ path('panel_huni_yeni', {app: u.ad}) }}" class="eylemler" data-form="yeni-huni">
+                <input type="hidden" name="_token" value="{{ jeton }}">
+                <label>Yeni huni adı <input name="ad" required pattern="[a-z0-9_\-]{1,64}" placeholder="fitness"></label>
+                <label>Kopyala
+                    <select name="kaynak">
+                        <option value="">boş başla</option>
+                        {% for h in u.huniler %}<option value="{{ h.ad }}">{{ h.ad }}</option>{% endfor %}
+                    </select>
+                </label>
+                <button type="submit">Huni aç</button>
+            </form>
+
+            <h3>Yönlendirme kuralları (üstten alta, ilk tutan kazanır)</h3>
+            <div class="tablo">
+                <table data-bolum="kurallar">
+                    <thead><tr><th>#</th><th>Adreste</th><th>→ Huni</th><th></th></tr></thead>
+                    <tbody>
+                        {% for k in u.kurallar %}
+                            <tr data-kural="{{ k.id }}">
+                                <td>{{ loop.index }}</td>
+                                <td><code>{{ k.parametre }}={{ k.deger }}</code></td>
+                                <td>{{ k.huni }}</td>
+                                <td class="eylemler">
+                                    {% for yon, isaret in {yukari: '↑', asagi: '↓'} %}
+                                        <form method="post" action="{{ path('panel_kural_tasi', {app: u.ad, id: k.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ jeton }}">
+                                            <input type="hidden" name="yon" value="{{ yon }}">
+                                            <button type="submit" {{ (yon == 'yukari' and loop.parent.loop.first) or (yon == 'asagi' and loop.parent.loop.last) ? 'disabled' }}>{{ isaret }}</button>
+                                        </form>
+                                    {% endfor %}
+                                    <form method="post" action="{{ path('panel_kural_sil', {app: u.ad, id: k.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ jeton }}">
+                                        <button type="submit">Sil</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="soluk">Kural yok — herkes varsayılan huniyi görür.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if u.huniler is not empty %}
+                <form method="post" action="{{ path('panel_kural_ekle', {app: u.ad}) }}" class="eylemler" data-form="kural">
+                    <input type="hidden" name="_token" value="{{ jeton }}">
+                    <label>Adreste
+                        <select name="parametre">{% for p in parametreler %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
+                    </label>
+                    <label>= <input name="deger" required maxlength="200" placeholder="fitness"></label>
+                    <label>→
+                        <select name="huni">{% for h in u.huniler %}<option value="{{ h.ad }}">{{ h.ad }}</option>{% endfor %}</select>
+                    </label>
+                    <button type="submit">Kural ekle</button>
+                </form>
+                <p class="soluk">Örnek reklam adresi: <code>{{ u.adres }}?k=fitness</code> ya da Meta'da <code>utm_campaign={{ '{{campaign.name}}' }}</code>. Büyük/küçük harf fark etmez. Yayınlanmamış huniyi gösteren kural atlanır.</p>
+            {% endif %}
+        </section>
+    {% endfor %}
 {% endblock %}

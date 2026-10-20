@@ -25,13 +25,13 @@ final readonly class Rapor
     }
 
     /**
-     * @return list<array{zaman: string, app: string, kaynak: string, kampanya: string|null, reklam: bool,
+     * @return list<array{zaman: string, app: string, huni: string|null, kaynak: string, kampanya: string|null, reklam: bool,
      *                    asama: string, durum: string|null, email: string|null}>
      */
     public function satirlar(int $gun): array
     {
         $satirlar = $this->db->fetchAllAssociative(
-            'SELECT z.created_at, z.app, z.utm_source, z.utm_campaign, z.fbclid, z.ttclid, '.self::REKLAM.' AS reklam,
+            'SELECT z.created_at, z.app, z.huni, z.utm_source, z.utm_campaign, z.fbclid, z.ttclid, '.self::REKLAM.' AS reklam,
                     EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id) AS odemeye_gecti,
                     od.ziyaret_id IS NOT NULL AS odedi, od.status, od.email
              FROM huni_ziyaretleri z
@@ -50,6 +50,7 @@ final readonly class Rapor
         return array_map(static fn (array $s): array => [
             'zaman' => self::dizge($s['created_at']),
             'app' => self::dizge($s['app']),
+            'huni' => self::dizgeYaDaNull($s['huni']),
             'kaynak' => self::kaynak($s),
             'kampanya' => self::dizgeYaDaNull($s['utm_campaign']),
             'reklam' => true === $s['reklam'],
@@ -84,24 +85,25 @@ final readonly class Rapor
     }
 
     /**
-     * Anket hunisi: her adıma kaç ziyaret ulaştı (uygulama başına, sıraya göre).
+     * Anket hunisi: her adıma kaç ziyaret ulaştı (uygulama + huni başına, A8).
      * Adım adı huni tanımından gelir; tanım değiştiyse aynı sıradaki en son ad.
      *
-     * @return list<array{app: string, sira: int, adim: string, ulasan: int}>
+     * @return list<array{app: string, huni: string, sira: int, adim: string, ulasan: int}>
      */
     public function adimlar(int $gun): array
     {
         return array_map(static fn (array $s): array => [
             'app' => self::dizge($s['app']),
+            'huni' => self::dizgeYaDaNull($s['huni']) ?? '—',
             'sira' => self::sayi($s['sira']),
             'adim' => self::dizge($s['adim']),
             'ulasan' => self::sayi($s['ulasan']),
         ], $this->db->fetchAllAssociative(
-            'SELECT z.app, a.sira, (array_agg(a.adim ORDER BY a.created_at DESC))[1] AS adim, count(*) AS ulasan
+            'SELECT z.app, z.huni, a.sira, (array_agg(a.adim ORDER BY a.created_at DESC))[1] AS adim, count(*) AS ulasan
              FROM huni_adimlari a JOIN huni_ziyaretleri z ON z.id = a.ziyaret_id
              WHERE z.created_at >= now() - make_interval(days => :gun)
-             GROUP BY z.app, a.sira
-             ORDER BY z.app, a.sira',
+             GROUP BY z.app, z.huni, a.sira
+             ORDER BY z.app, z.huni NULLS LAST, a.sira',
             ['gun' => $gun],
         ));
     }

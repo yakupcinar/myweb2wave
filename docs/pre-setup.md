@@ -89,6 +89,21 @@ E3'e doğrudan gitmek (A/B, çok dil çerez/KVKK ister, trafik yok) ·
 serbest HTML editör (GrapesJS: ölçümü ve sözleşmeyi atlar, XSS) · yayında
 statik derleme ile başlamak (sunucuda derleme hattı; sunucu bile yok).
 
+**A8 · Etikete özel huni: tek adres + panelde kurallar; içerik, tema ve görsel huni başına** (2026-10-20, kullanıcı;
+öneri Ç40). Bir uygulamanın birden çok hunisi olur (ör. `genel`, `fitness`, `is`); her
+birinin kendi soruları, **teması** (renk, yazı tipi, köşe) ve **görselleri**. Reklam
+adresi tektir (`/keepchat/`); hangi huninin açılacağını panelde sıralı **kurallar**
+seçer: adresteki bir parametre (`k`, `utm_source`, `utm_campaign`, `utm_content`)
+şu değere eşitse → şu huni; hiçbiri tutmazsa varsayılan huni. Seçimi **çekirdek**
+yapar (kurallar orada); huni sayfası yalnız bu parametreleri gönderir — `fbclid`
+her tıklamada farklı, tüm adresle seçmek önbelleği öldürür. Her huninin test için
+doğrudan adresi (`?huni=<ad>`). Ziyaret hangi huniyi gördüğünü taşır. **Reddedilen:**
+etiket başına ayrı adres (kampanyayı yönlendirmek reklamı düzenlemeyi ister, Meta
+yeniden incelemeye alabilir) · seçimi tarayıcıda yapmak (kurallar istemciye sızar,
+iki kaynak). **Sıra (E2):** E2.1 çok huni + kurallar · E2.2 tema · E2.3 görseller ·
+E2.4 sürükle-bırak (Puck) ve bileşen kütüphanesi · sonra A/B (aynı kural mekanizması
++ ağırlık).
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

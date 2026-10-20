@@ -64,3 +64,7 @@ Görsel huni editörü, çok kiracılı panel (A1); uygulama içi satın alma
 - Tanım yayından önce çekirdekte doğrulanır (`App\Huni\Tanim`) —
   çekirdeğin reddedeceği veri yayına çıkmaz. (E1.1'den önce bu kontrol
   derlemedeydi.)
+- **Tek adres, çok huni (A8):** bir uygulamanın birden çok hunisi var;
+  panelde sıralı kurallar (`k`, `utm_*` = değer → huni) hangisinin açılacağını
+  çekirdekte seçer. Huni sayfası yalnız seçim parametrelerini gönderir
+  (önbellek). Ziyaret hangi huniyi ve sürümü gördüğünü taşır.

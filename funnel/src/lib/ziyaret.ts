@@ -1,4 +1,4 @@
-// Huni ziyareti ve anket ilerlemesi (A6); ziyaret görülen huni sürümünü taşır (A7). Çerez/tarayıcı deposu yok:
+// Huni ziyareti ve anket ilerlemesi (A6); ziyaret görülen huniyi ve sürümünü taşır (A7, A8). Çerez/tarayıcı deposu yok:
 // ziyaret kimliği yalnız sayfanın belleğinde. Hiçbiri kullanıcıyı
 // durdurmaz — kayıt başarısızsa huni ve ödeme yine çalışır.
 import { cekirdek } from "./cekirdek";
@@ -25,11 +25,15 @@ const ALANLAR = [
 /** Sayfa açılınca bir kez: URL'deki reklam alanlarıyla ziyaret kaydı. */
 export function ziyaretBaslat(
   app: Govde<"/huni/ziyaretler">["app"],
+  huni?: string,
   surum?: number,
 ): Promise<string | undefined> {
   const adres = new URLSearchParams(window.location.search);
   const govde: Govde<"/huni/ziyaretler"> = { app };
-  if (surum) govde.surum = surum;
+  if (huni && surum) {
+    govde.huni = huni;
+    govde.surum = surum;
+  }
   for (const ad of ALANLAR) {
     const deger = adres.get(ad)?.slice(0, 500);
     if (deger) govde[ad] = deger;

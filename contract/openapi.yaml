@@ -79,7 +79,8 @@ paths:
                 utm_term: { $ref: "#/components/schemas/AtifAlani" }
                 fbclid: { $ref: "#/components/schemas/AtifAlani" }
                 ttclid: { $ref: "#/components/schemas/AtifAlani" }
-                surum: { type: integer, minimum: 1, description: Görülen huni sürümü (A7); yayınlanmamışsa yok sayılır }
+                huni: { $ref: "#/components/schemas/HuniKimligi" }
+                surum: { type: integer, minimum: 1, description: "Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır" }
       responses:
         "201":
           description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
@@ -100,8 +101,15 @@ paths:
   /huni/{app}:
     get:
       operationId: getPublishedFunnel
-      summary: Uygulamanın yayınlanmış en son huni tanımı (A7); 60 sn önbellek
-      parameters: [{ $ref: "#/components/parameters/App" }]
+      summary: Kuralların seçtiği huninin yayınlanmış en son tanımı (A7, A8); 60 sn önbellek
+      description: Yalnız seçim parametrelerini gönder (fbclid gibi tıklama kimlikleri önbelleği bozar).
+      parameters:
+        - $ref: "#/components/parameters/App"
+        - { name: k, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: utm_source, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: utm_campaign, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: utm_content, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: huni, in: query, required: false, description: Doğrudan test adresi, schema: { $ref: "#/components/schemas/HuniKimligi" } }
       responses:
         "200":
           description: Yayındaki sürüm
@@ -116,9 +124,10 @@ paths:
   /huni/{app}/taslak:
     get:
       operationId: getDraftFunnel
-      summary: İmzalı, süreli önizleme anahtarıyla taslak (A7)
+      summary: İmzalı, süreli önizleme anahtarıyla bir huninin taslağı (A7)
       parameters:
         - $ref: "#/components/parameters/App"
+        - { name: huni, in: query, required: true, schema: { $ref: "#/components/schemas/HuniKimligi" } }
         - { name: anahtar, in: query, required: true, schema: { type: string } }
       responses:
         "200":
@@ -276,8 +285,9 @@ components:
     HuniYayini:
       type: object
       additionalProperties: false
-      required: [surum, tanim]
+      required: [huni, surum, tanim]
       properties:
+        huni: { $ref: "#/components/schemas/HuniKimligi" }
         surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
         tanim: { $ref: "#/components/schemas/HuniTanimi" }
     HuniTanimi:

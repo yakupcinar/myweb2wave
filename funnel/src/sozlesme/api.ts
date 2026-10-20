@@ -45,7 +45,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Uygulamanın yayınlanmış en son huni tanımı (A7); 60 sn önbellek */
+        /**
+         * Kuralların seçtiği huninin yayınlanmış en son tanımı (A7, A8); 60 sn önbellek
+         * @description Yalnız seçim parametrelerini gönder (fbclid gibi tıklama kimlikleri önbelleği bozar).
+         */
         get: operations["getPublishedFunnel"];
         put?: never;
         post?: never;
@@ -62,7 +65,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** İmzalı, süreli önizleme anahtarıyla taslak (A7) */
+        /** İmzalı, süreli önizleme anahtarıyla bir huninin taslağı (A7) */
         get: operations["getDraftFunnel"];
         put?: never;
         post?: never;
@@ -146,6 +149,7 @@ export interface components {
     schemas: {
         AtifAlani: string;
         HuniYayini: {
+            huni: components["schemas"]["HuniKimligi"];
             /** @description Yayınlanmış sürüm; taslakta null */
             surum: number | null;
             tanim: components["schemas"]["HuniTanimi"];
@@ -303,7 +307,8 @@ export interface operations {
                     utm_term?: components["schemas"]["AtifAlani"];
                     fbclid?: components["schemas"]["AtifAlani"];
                     ttclid?: components["schemas"]["AtifAlani"];
-                    /** @description Görülen huni sürümü (A7); yayınlanmamışsa yok sayılır */
+                    huni?: components["schemas"]["HuniKimligi"];
+                    /** @description Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır */
                     surum?: number;
                 };
             };
@@ -341,7 +346,14 @@ export interface operations {
     };
     getPublishedFunnel: {
         parameters: {
-            query?: never;
+            query?: {
+                k?: string;
+                utm_source?: string;
+                utm_campaign?: string;
+                utm_content?: string;
+                /** @description Doğrudan test adresi */
+                huni?: components["schemas"]["HuniKimligi"];
+            };
             header?: never;
             path: {
                 app: components["parameters"]["App"];
@@ -373,6 +385,7 @@ export interface operations {
     getDraftFunnel: {
         parameters: {
             query: {
+                huni: components["schemas"]["HuniKimligi"];
                 anahtar: string;
             };
             header?: never;

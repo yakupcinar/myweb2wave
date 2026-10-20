@@ -1,14 +1,15 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ uygulama }} hunisi · MyWeb2Wave panel{% endblock %}
+{% block title %}{{ uygulama }}/{{ huni }} · MyWeb2Wave panel{% endblock %}
 
 {% block body %}
-    {% include 'panel/_ust.html.twig' with {baslik: uygulama ~ ' hunisi'} %}
+    {% include 'panel/_ust.html.twig' with {baslik: uygulama ~ ' · ' ~ huni ~ ' hunisi'} %}
 
     <section class="eylemler">
         <a href="{{ onizleme }}" target="_blank" rel="noopener">Taslağı önizle ↗</a>
         <a href="{{ huni_adresi }}" target="_blank" rel="noopener">Yayındakini aç ↗</a>
-        <form method="post" action="{{ path('panel_huni_yayinla', {app: uygulama}) }}">
+        <a href="{{ path('panel_huniler') }}">← Huniler ve kurallar</a>
+        <form method="post" action="{{ path('panel_huni_yayinla', {app: uygulama, ad: huni}) }}">
             <input type="hidden" name="_token" value="{{ csrf_token('huni-' ~ uygulama) }}">
             <button type="submit" id="yayinla" class="ana">Yayınla{% if not farkli %} (değişiklik yok){% endif %}</button>
         </form>
@@ -19,7 +20,7 @@
     <div id="duzenleyici"
          data-taslak="{{ taslak|json_encode }}"
          data-planlar="{{ planlar|json_encode }}"
-         data-kaydet="{{ path('panel_huni_taslak', {app: uygulama}) }}"
+         data-kaydet="{{ path('panel_huni_taslak', {app: uygulama, ad: huni}) }}"
          data-jeton="{{ csrf_token('huni-' ~ uygulama) }}">
         <p class="soluk">Düzenleyici yükleniyor…</p>
     </div>
@@ -35,7 +36,7 @@
                         <td>{{ s.zaman|date('Y-m-d H:i', 'UTC') }}</td>
                         <td>{{ s.ziyaret }}</td>
                         <td>
-                            <form method="post" action="{{ path('panel_huni_geri_yukle', {app: uygulama, surum: s.surum}) }}">
+                            <form method="post" action="{{ path('panel_huni_geri_yukle', {app: uygulama, ad: huni, surum: s.surum}) }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('huni-' ~ uygulama) }}">
                                 <button type="submit">Taslağa geri yükle</button>
                             </form>

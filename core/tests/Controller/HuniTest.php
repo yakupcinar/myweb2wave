@@ -27,25 +27,26 @@ final class HuniTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
+        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'genel', null));
     }
 
     public function testYayinlananEnSonSurumOkunurEskisiDegismez(): void
     {
-        self::assertSame([], $this->huniler->taslakKaydet('keepchat', self::tanim('Bir')));
-        self::assertSame(1, $this->huniler->yayinla('keepchat'));
-        self::assertSame([], $this->huniler->taslakKaydet('keepchat', self::tanim('İki')));
-        self::assertSame(2, $this->huniler->yayinla('keepchat'));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'genel'));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('İki')));
+        self::assertSame(2, $this->huniler->yayinla('keepchat', 'genel'));
 
         $this->client->request('GET', '/huni/keepchat');
 
         self::assertResponseStatusCodeSame(200);
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
         // assertEquals: JSONB nesne anahtarlarını yeniden sıralar; içerik aynı olmalı.
-        self::assertEquals(['surum' => 2, 'tanim' => self::tanim('İki')], $this->yanit());
+        self::assertEquals(['huni' => 'genel', 'surum' => 2, 'tanim' => self::tanim('İki')], $this->yanit());
         self::assertResponseHeaderSame('Cache-Control', 'max-age=60, public');
         self::assertSame(
             ['Bir', 'İki'],
@@ -66,10 +67,11 @@ final class HuniTest extends WebTestCase
         $bozuk = self::tanim('X');
         $bozuk['adimlar'][0]['id'] = 'Büyük';
 
-        self::assertNotSame([], $this->huniler->taslakKaydet('keepchat', $bozuk));
-        self::assertNull($this->huniler->taslak('keepchat'));
-        self::assertSame(['bu uygulamanın taslağı yok'], $this->huniler->yayinla('keepchat'));
-        self::assertSame(['bilinmeyen uygulama'], $this->huniler->taslakKaydet('olmayan', self::tanim('X')));
+        self::assertNotSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $bozuk));
+        self::assertEquals($this->huniler->bosTaslak('keepchat'), $this->huniler->taslak('keepchat', 'genel'));
+        self::assertSame(["'yok' adında huni yok"], $this->huniler->yayinla('keepchat', 'yok'));
+        self::assertNotSame([], $this->huniler->yayinla('keepchat', 'genel'), 'boş şablon doğrulamadan geçmemeli');
+        self::assertSame(['bilinmeyen uygulama'], $this->huniler->taslakKaydet('olmayan', 'genel', self::tanim('X')));
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('bozuklar')]
@@ -117,21 +119,21 @@ final class HuniTest extends WebTestCase
 
     public function testOnizlemeAnahtariTaslagiGosterirSahtesiYaDaEskisiGostermez(): void
     {
-        $this->huniler->taslakKaydet('keepchat', self::tanim('Taslak'));
-        $iyi = $this->huniler->onizlemeAnahtari('keepchat', time());
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Taslak'));
+        $iyi = $this->huniler->onizlemeAnahtari('keepchat', 'genel', time());
 
-        $this->client->request('GET', '/huni/keepchat/taslak', ['anahtar' => $iyi]);
+        $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'genel', 'anahtar' => $iyi]);
         self::assertResponseStatusCodeSame(200);
         Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
-        self::assertEquals(['surum' => null, 'tanim' => self::tanim('Taslak')], $this->yanit());
+        self::assertEquals(['huni' => 'genel', 'surum' => null, 'tanim' => self::tanim('Taslak')], $this->yanit());
         self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
 
-        $eski = $this->huniler->onizlemeAnahtari('keepchat', time() - Huniler::ONIZLEME_SN - 1);
-        $baska = $this->huniler->onizlemeAnahtari('baska', time());
+        $eski = $this->huniler->onizlemeAnahtari('keepchat', 'genel', time() - Huniler::ONIZLEME_SN - 1);
+        $baska = $this->huniler->onizlemeAnahtari('baska', 'genel', time());
         [$son, $imza] = explode('.', $iyi, 2) + ['', ''];
         // Süreyi uzatıp imzayı korumak: imza süreyi de kapsamalı.
         foreach (['', 'bozuk', $eski, $baska, ((int) $son + 999).'.'.$imza] as $anahtar) {
-            $this->client->request('GET', '/huni/keepchat/taslak', ['anahtar' => $anahtar]);
+            $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'genel', 'anahtar' => $anahtar]);
             self::assertResponseStatusCodeSame(403, $anahtar);
         }
         Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
@@ -139,13 +141,13 @@ final class HuniTest extends WebTestCase
 
     public function testZiyaretGorduguSurumuTasirBilinmeyeniNullYazar(): void
     {
-        $this->huniler->taslakKaydet('keepchat', self::tanim('X'));
-        $this->huniler->yayinla('keepchat');
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
+        $this->huniler->yayinla('keepchat', 'genel');
 
-        foreach ([1 => 1, 7 => null] as $gonderilen => $beklenen) {
-            $this->client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat', 'surum' => $gonderilen]);
+        foreach ([[['genel', 1], ['genel', 1]], [['genel', 7], [null, null]], [['baska', 1], [null, null]], [[null, 1], [null, null]]] as [[$huni, $surum], $beklenen]) {
+            $this->client->jsonRequest('POST', '/huni/ziyaretler', array_filter(['app' => 'keepchat', 'huni' => $huni, 'surum' => $surum]));
             self::assertResponseStatusCodeSame(201);
-            self::assertSame($beklenen, $this->db->fetchOne('SELECT surum FROM huni_ziyaretleri WHERE id = :id', ['id' => $this->yanit()['ziyaret'] ?? '']) ?: null);
+            self::assertSame($beklenen, $this->db->fetchNumeric('SELECT huni, surum FROM huni_ziyaretleri WHERE id = :id', ['id' => $this->yanit()['ziyaret'] ?? '']) ?: []);
         }
         $this->client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat', 'surum' => '1']);
         self::assertResponseStatusCodeSame(422);
@@ -169,11 +171,11 @@ final class HuniTest extends WebTestCase
     public function testKomutYayinlarGecersizdeDurur(): void
     {
         $komut = (new Application(self::$kernel ?? self::bootKernel()))->find('app:huni');
-        $this->huniler->taslakKaydet('keepchat', self::tanim('X'));
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
 
         $t = new CommandTester($komut);
         self::assertSame(0, $t->execute(['islem' => 'yayinla', 'app' => 'keepchat']));
-        self::assertStringContainsString('keepchat v1 yayında', $t->getDisplay());
+        self::assertStringContainsString('keepchat/genel v1 yayında', $t->getDisplay());
 
         // Taslak sonradan geçersizleşirse (ör. plan yapılandırmadan kalktı) yayın durur.
         $this->db->executeStatement("UPDATE huniler SET taslak = jsonb_set(taslak, '{adimlar,2,plan}', '\"yillik\"')");
