@@ -27,3 +27,4 @@
 | 20 | İç panel: reklam / organik, ödedi mi | çerçeve başlığımı sessizce eziyordu (önbellek); `$`'lı özet tırnaksız ortam dosyasında bozuluyor (§26); deseni kaldırmak hiçbir şeyi bozmadı → yorum yanlıştı | `panel.md` |
 | 21 | Huniye anket + tanıtım (tek sayfa, adım/cevap panelde) | görsel hata yalnız tarayıcıda göründü (stil yuvaya uygulanmıyordu, §27); tanım hatası derlemede durur | `huni-anket.md` |
 | 22 | Karar A7 + E1.1: huni tanımı veritabanında, değişmez sürümler, imzalı önizleme | JSONB anahtar sırası geçerli veriyi reddettiriyordu (§28); kendi kırma denememin kusuru (Y8) da kayda girer | `huni-yayin.md` |
+| 23 | E1.2 panelde huni düzenleme (kaydet, yayınla, sürümler, geri yükle, önizleme) | ezilen global değişken flaşları üretimde sessizce silerdi (§29); tarayıcı önbelleği eski düzenleyiciyi çalıştırdı (§30) — ikisi de yalnız gerçek kullanımda göründü | `panel-huni.md` |

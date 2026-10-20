@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Huniler · MyWeb2Wave panel{% endblock %}
+
+{% block body %}
+    {% include 'panel/_ust.html.twig' with {baslik: 'Huniler'} %}
+    <div class="tablo">
+        <table>
+            <thead><tr><th>Uygulama</th><th>Yayında</th><th>Taslak</th><th></th></tr></thead>
+            <tbody>
+                {% for h in huniler %}
+                    <tr data-app="{{ h.app }}">
+                        <td>{{ h.app }}</td>
+                        <td>{{ h.yayinda ? 'v' ~ h.yayinda : '—' }}</td>
+                        <td>{% if not h.taslak_var %}<span class="soluk">yok</span>{% elseif h.farkli %}<span class="reklam">yayınlanmamış değişiklik</span>{% else %}<span class="soluk">yayındakiyle aynı</span>{% endif %}</td>
+                        <td><a href="{{ path('panel_huni', {app: h.app}) }}">Düzenle</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

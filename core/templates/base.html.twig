@@ -28,6 +28,23 @@
             form.giris { max-width: 320px; margin: 15vh auto 0; display: grid; gap: 10px; }
             form.giris input, form.giris button { font: inherit; padding: 8px; }
             .hata { color: #cf222e; }
+            .bildirim { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--kenar); }
+            .bildirim.tamam { border-color: var(--iyi); }
+            .bildirim.hata { border-color: #cf222e; }
+            .eylemler { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+            .eylemler form { margin: 0; }
+            button.ana { background: #2563eb; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font: inherit; cursor: pointer; }
+            button:disabled { opacity: .5; cursor: not-allowed; }
+            #duzenleyici fieldset { border: 1px solid var(--kenar); border-radius: 8px; margin: 12px 0; padding: 12px; }
+            #duzenleyici legend { font-weight: 600; }
+            #duzenleyici label { display: grid; gap: 2px; margin: 6px 0; font-size: 14px; }
+            #duzenleyici input, #duzenleyici textarea, #duzenleyici select { font: inherit; padding: 6px; width: 100%; box-sizing: border-box; }
+            #duzenleyici .satir { display: flex; gap: 6px; align-items: end; }
+            #duzenleyici .satir label { flex: 1; }
+            #duzenleyici .kimlik input { font-family: ui-monospace, monospace; font-size: 13px; }
+            #duzenleyici .durum { position: sticky; bottom: 0; background: Canvas; padding: 8px 0; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+            #duzenleyici .durum ul { flex-basis: 100%; margin: 0; padding-left: 20px; max-height: 30vh; overflow-y: auto; }
+            #duzenleyici .durum ul:empty { display: none; }
         </style>
     </head>
     <body>

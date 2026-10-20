@@ -22,6 +22,7 @@
 | İç panel (A6/2) | ✅ 63 test, kırma 13/14 (P5 tutmadı → yorum düzeltildi), tarayıcıda gerçek veriyle | `docs/decisions/panel.md` |
 | Huni anket + tanıtım | ✅ 72 test, kırma 13/13 (3'ü derleme), tarayıcıda geri tuşu + panel | `docs/decisions/huni-anket.md` |
 | Huni yayını (A7 / E1.1) | ✅ 94 test, kırma 13/13 (+Y8 deneme kusuru → Y8b), tarayıcıda önizleme + XSS + sürüm | `docs/decisions/huni-yayin.md` |
+| Panelde huni düzenleme (E1.2) | ✅ 105 test, kırma 8/8, tarayıcıda düzenle → hata → kaydet → yayınla → geri yükle | `docs/decisions/panel-huni.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -41,10 +42,11 @@
 - [x] **Reklam atfı (A6, 1. parça)** — 2026-10-20, `docs/decisions/atif.md`
 - [x] **İç panel (A6, 2. parça)** — 2026-10-20, `docs/decisions/panel.md` (kullanıcı adı + şifre, e-posta maskeli)
 - [x] **Huni anket + tanıtım** — 2026-10-20, `docs/decisions/huni-anket.md`
-- [ ] **Anket metnini kullanıcı düzeltecek** — artık veritabanında; E1.2 panel ekranından (Ç36)
+- [ ] **Anket metnini kullanıcı düzeltecek** — panelde: `/panel/huniler/keepchat` (Ç36)
 - [x] **Huni editörü kararı** — A7: E1'den başla, hedef E2 (2026-10-20)
 - [x] **E1.1 huni yayını** — 2026-10-20, `docs/decisions/huni-yayin.md`
-- [ ] **E1.2 panelde huni düzenleme** — metin, seçenek, sıra, ekle/sil; kaydet (doğrulama hataları), yayınla, sürüm listesi, önizleme bağlantısı
+- [x] **E1.2 panelde huni düzenleme** — 2026-10-20, `docs/decisions/panel-huni.md`
+- [ ] **E2 (hedef, A7)** — bileşen kütüphanesi, tema, Puck ile sürükle-bırak, koşullu gösterim
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
