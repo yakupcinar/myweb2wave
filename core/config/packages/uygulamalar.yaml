@@ -8,3 +8,7 @@ parameters:
     # A5: uygulamanın SUNUCUSU çekirdeğe bununla sorar; uygulamanın içinde yok.
     uygulama_anahtarlari:
         keepchat: '%env(UYGULAMA_ANAHTARI_KEEPCHAT)%'
+    # A9: RevenueCat'teki bu uygulamanın STRIPE uygulaması açık API anahtarı
+    # (Project → Apps → Stripe). Boşsa aktarım KAPALI (hiçbir şey kuyruğa girmez).
+    revenuecat_anahtarlari:
+        keepchat: '%env(REVENUECAT_STRIPE_KEEPCHAT)%'

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Kimlik;
 
+use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
@@ -23,6 +24,7 @@ final readonly class DogrulamaKodu
     public function __construct(
         private Connection $db,
         private MailerInterface $mailer,
+        private Aktarim $revenuecat,
         #[Autowire('%kernel.secret%')]
         private string $sir,
         #[Autowire('%env(MAIL_GONDEREN)%')]
@@ -108,6 +110,8 @@ final readonly class DogrulamaKodu
                  ON CONFLICT (app, harici_kullanici) DO UPDATE SET kisi_id = EXCLUDED.kisi_id',
                 [$app, $kullanici, $kisi],
             );
+            // A9: bu kişinin bu uygulamadaki abonelikleri RevenueCat'e (kullanıcı = kişi UUID'i).
+            $this->revenuecat->kisiyiKuyrugaAl($db, $app, $kisi);
 
             return ['sonuc' => 'baglandi', 'kisi' => $kisi];
         });

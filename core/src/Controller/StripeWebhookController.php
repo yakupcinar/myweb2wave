@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Billing\SubscriptionSync;
+use App\RevenueCat\Aktarim;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -21,6 +22,7 @@ final readonly class StripeWebhookController
 {
     public function __construct(
         private SubscriptionSync $sync,
+        private Aktarim $revenuecat,
         #[Autowire('%env(STRIPE_WEBHOOK_SECRET)%')]
         private string $secret,
     ) {
@@ -39,6 +41,8 @@ final readonly class StripeWebhookController
         }
 
         $this->sync->apply($event);
+        // A9: işlem kapandıktan sonra; başarısızlık atmaz, satır bekler.
+        $this->revenuecat->gonder();
 
         return new Response('', 200);
     }

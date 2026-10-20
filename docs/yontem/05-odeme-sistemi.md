@@ -80,3 +80,10 @@ görmez. Depo herkese açık → her commit'ten önce anahtar deseni taraması
   alanı geçirir (tuzak §25).
 - İç panel (`panel.md`): tek yönetici, şifre özeti ortamda, e-posta maskeli;
   tarif varsayılanları (her yolu kapsayan güvenlik duvarı, CDN betiği) daraltıldı.
+
+## Hak kaynağı RevenueCat (A9, `revenuecat.md`)
+
+- Stripe bizde işlenir, "kim Pro" RevenueCat'te: çekirdek bağlı kişinin
+  aboneliğini aktarır (kullanıcı = kişi UUID'i).
+- Dış servise yazma **giden kutusundan**: satır aynı işlemde, gönderim
+  sonra, başarısız olan bekler — dış kesinti para kaydını durdurmaz.

@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Kimlik\DogrulamaKodu;
 use App\Kimlik\Hak;
 use App\Kimlik\UygulamaYetkisi;
+use App\RevenueCat\Aktarim;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,6 +23,7 @@ final readonly class KimlikController
         private UygulamaYetkisi $yetki,
         private DogrulamaKodu $kodlar,
         private Hak $hak,
+        private Aktarim $revenuecat,
     ) {
     }
 
@@ -57,6 +59,9 @@ final readonly class KimlikController
         }
 
         $sonuc = $this->kodlar->dogrula($app, $email, $kod, $kullanici);
+        if (isset($sonuc['kisi'])) {
+            $this->revenuecat->gonder(); // A9: işlemden sonra; atmaz
+        }
 
         return isset($sonuc['kisi'])
             ? new JsonResponse(['kisi' => $sonuc['kisi']])

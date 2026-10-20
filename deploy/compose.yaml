@@ -40,6 +40,8 @@ services:
       UYGULAMA_ANAHTARI_KEEPCHAT: ${UYGULAMA_ANAHTARI_KEEPCHAT:?}
       PANEL_KULLANICI: ${PANEL_KULLANICI:?}
       PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
+      # A9: boş bırakılabilir (aktarım kapalı); ':-' — zorunlu değil.
+      REVENUECAT_STRIPE_KEEPCHAT: ${REVENUECAT_STRIPE_KEEPCHAT:-}
     depends_on:
       db:
         condition: service_healthy

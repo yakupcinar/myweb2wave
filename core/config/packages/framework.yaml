@@ -13,6 +13,9 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+        # Dış HTTP (RevenueCat, A9) testte hiç ağa çıkmaz; istekler kaydedilir.
+        http_client:
+            mock_response_factory: App\Tests\Support\SahteRevenueCat
 
 # Üretimde çekirdek Caddy'nin arkasında düz HTTP görür; 'auto' bu yüzden
 # panel çerezine Secure koymuyordu (ölçüldü, panel.md). Tarayıcıya giden

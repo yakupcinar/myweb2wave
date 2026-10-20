@@ -50,6 +50,9 @@ echo "== depo + yedek dizini + günlük yedek"
 chown -R "$KULLANICI:$KULLANICI" "$DIZIN"
 install -d -m 700 -o "$KULLANICI" -g "$KULLANICI" /var/backups/myweb2wave
 echo "15 3 * * * $KULLANICI $DIZIN/deploy/yedek.sh >> /var/log/myweb2wave-yedek.log 2>&1" > /etc/cron.d/myweb2wave-yedek
-touch /var/log/myweb2wave-yedek.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log
+# A9: RevenueCat'e gidemeyen aktarımlar 5 dakikada bir yeniden denenir.
+# APP_VERSION: compose zorunlu tutuyor, exec için yer tutucu (yedek.sh'deki ölçüm, dagitim.md).
+echo "*/5 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:revenuecat:gonder >> /var/log/myweb2wave-revenuecat.log 2>&1" > /etc/cron.d/myweb2wave-revenuecat
+touch /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log
 
 echo "HAZIRLIK TAMAM — sonraki: $KULLANICI ile gir, deploy/.env.uretim'i doldur, deploy/dagit.sh"
