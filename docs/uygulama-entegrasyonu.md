@@ -41,6 +41,25 @@ Uygulama istemcisi ──(kendi oturumu)──► UYGULAMANIN SUNUCUSU ──(uy
 
 Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik → **401**.
 
+## 3b · Akış: ödeme sonrası giriş bağlantısı (A10)
+
+Web'de ödeyen kişi e-posta yazmadan girer. Başarı sayfası ve ödeme e-postası
+uygulamayı **`<şema>://giris?jeton=<jeton>`** ile açar (KeepChat: `keepchat`,
+çekirdekte `uygulama_semalari`).
+
+1. iOS: Info.plist'e şema (`CFBundleURLTypes`); `onOpenURL`'de `giris` ana
+   bilgisayarını ve `jeton` sorgusunu oku. Jeton **gizlidir**: günlüğe yazma,
+   analitiğe gönderme.
+2. İstemci → uygulama sunucusu: jeton. Sunucu → `POST /apps/{app}/giris/kullan
+   {jeton, kullanici}` (`kullanici` §3'teki gibi kalıcı kimlik; giriş yapmamış
+   kullanıcı için önce uygulamanın kendi anonim hesabı açılır) →
+   **200 `{kisi}`** · **422** `invalid_token` (bilinmiyor ya da kullanılmış) /
+   `expired_token` (24 sa geçti) / `invalid_request`.
+3. 200'de `kisi` saklanır, `Purchases.logIn(kisi)` (§4b). 422'de "Aboneliğimi
+   bağla" (e-posta kodu, §3) önerilir.
+
+Jeton **tek kullanımlıktır**: ikinci cihaz için e-posta kodu yolu.
+
 ## 4 · Uygulamanın sunucusunda yapılması gerekenler
 
 - Bağlamayı **oturum açmış** kullanıcı için yap (kimin bağladığı belli olsun).

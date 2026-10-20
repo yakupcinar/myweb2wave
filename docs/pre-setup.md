@@ -122,6 +122,19 @@ sürüm farkları — tekerleği yeniden icat) · web alıcısına satın almada
 RevenueCat kimliği verip sonra birleştirmek (takma ad yönetimi; kişi UUID'i
 zaten var).
 
+**A10 · Ödeme sonrası tek kullanımlık giriş bağlantısı** (2026-10-21, kullanıcı;
+Ç46, Ç25'in sırası geldi). Başarı sayfası ve ödeme e-postası uygulamayı
+`<şema>://giris?jeton=…` ile açar; uygulamanın sunucusu jetonu çekirdekte
+kişiye çevirir, uygulama `Purchases.logIn(kisi)` yapar — e-posta yazmadan,
+şifresiz. Jeton rastgele 256 bit, özeti saklanır, **tek kullanımlık, 24 sa**;
+başarı sayfası yalnız ödemeden sonraki 60 dk'da, oturum başına en çok 3 jeton.
+E-posta kodu (A5) kurtarma yolu olarak kalır. **Reddedilen:** Stripe işlem
+kimliğini RevenueCat kimliği yapıp bağlantıyla taşımak ("Lazy Auth" istemi —
+kimlik adreste, süresiz, çok kullanımlık; A9'un reddettiği takma ad
+birleştirmesi) · Universal Link (aynı alandan açılmaz, Team ID + AASA ister;
+sonra Ç47) · parmak izi / MMP ile kurulumu aşmak (Ç27). Kayıt:
+`docs/decisions/giris-baglantisi.md`.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

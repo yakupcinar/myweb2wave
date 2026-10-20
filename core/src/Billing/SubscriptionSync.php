@@ -73,11 +73,15 @@ final readonly class SubscriptionSync
         $detay = $session['customer_details'] ?? null;
         $email = \is_array($detay) && \is_string($detay['email'] ?? null) ? $detay['email'] : null;
 
+        // Ç46: ödeme oturumu + tamamlanma anı — giriş bağlantısının penceresi
+        // ve e-postası buradan.
         $db->executeStatement(
-            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, email, app)
-             VALUES (:sub, :cus, :email, :app)
-             ON CONFLICT (stripe_subscription_id) DO UPDATE SET email = EXCLUDED.email, updated_at = now()',
-            ['sub' => $sub, 'cus' => $cus, 'email' => $email, 'app' => $app],
+            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, email, app, stripe_checkout_session_id, odeme_tamamlandi_at)
+             VALUES (:sub, :cus, :email, :app, :oturum, now())
+             ON CONFLICT (stripe_subscription_id) DO UPDATE SET email = EXCLUDED.email,
+                 stripe_checkout_session_id = EXCLUDED.stripe_checkout_session_id,
+                 odeme_tamamlandi_at = EXCLUDED.odeme_tamamlandi_at, updated_at = now()',
+            ['sub' => $sub, 'cus' => $cus, 'email' => $email, 'app' => $app, 'oturum' => $session['id'] ?? null],
         );
         $this->revenuecat->aboneligiKuyrugaAl($db, $app, $sub);
         // Atıf (A6): bu oturum bir huni ziyaretinden açıldıysa ödendi say.

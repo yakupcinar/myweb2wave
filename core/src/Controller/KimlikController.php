@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Kimlik\DogrulamaKodu;
+use App\Kimlik\GirisBaglantisi;
 use App\Kimlik\Hak;
 use App\Kimlik\UygulamaYetkisi;
 use App\RevenueCat\Aktarim;
@@ -14,7 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Uygulamanın SUNUCUSU için uçlar (A5): bağlama kodu, doğrulama, hak.
+ * Uygulamanın SUNUCUSU için uçlar (A5): bağlama kodu, doğrulama, giriş
+ * bağlantısı jetonu (Ç46), hak.
  * Hepsi uygulama anahtarı ister; tarayıcıya açık değil (CORS yok).
  */
 final readonly class KimlikController
@@ -22,6 +24,7 @@ final readonly class KimlikController
     public function __construct(
         private UygulamaYetkisi $yetki,
         private DogrulamaKodu $kodlar,
+        private GirisBaglantisi $giris,
         private Hak $hak,
         private Aktarim $revenuecat,
     ) {
@@ -59,6 +62,29 @@ final readonly class KimlikController
         }
 
         $sonuc = $this->kodlar->dogrula($app, $email, $kod, $kullanici);
+        if (isset($sonuc['kisi'])) {
+            $this->revenuecat->gonder(); // A9: işlemden sonra; atmaz
+        }
+
+        return isset($sonuc['kisi'])
+            ? new JsonResponse(['kisi' => $sonuc['kisi']])
+            : self::hata($sonuc['sonuc'], 422);
+    }
+
+    #[Route('/apps/{app}/giris/kullan', name: 'giris_kullan', methods: ['POST'])]
+    public function girisKullan(Request $request, string $app): Response
+    {
+        if (!$this->yetki->izinli($request, $app)) {
+            return self::hata('unauthorized', 401);
+        }
+        $govde = $request->toArray();
+        $jeton = $govde['jeton'] ?? null;
+        $kullanici = $govde['kullanici'] ?? null;
+        if (!\is_string($jeton) || '' === $jeton || !\is_string($kullanici) || '' === $kullanici) {
+            return self::hata('invalid_request', 422);
+        }
+
+        $sonuc = $this->giris->kullan($app, $jeton, $kullanici);
         if (isset($sonuc['kisi'])) {
             $this->revenuecat->gonder(); // A9: işlemden sonra; atmaz
         }

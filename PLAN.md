@@ -28,6 +28,7 @@
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
+| Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -56,6 +57,8 @@
 - [x] **E2.2 tema** — 2026-10-20, `docs/decisions/tema.md`
 - [x] **E2.3 görseller** — 2026-10-21, `docs/decisions/gorseller.md`
 - [x] **E2.4a sürükle-bırak (Puck)** — 2026-10-21, `docs/decisions/puck.md`
+- [x] **Ödeme sonrası giriş bağlantısı** (A10, Ç46) — 2026-10-21, `docs/decisions/giris-baglantisi.md`
+- [ ] **KeepChat: giriş bağlantısı** — KeepChat deposunda ayrı oturumda: `keepchat://` şeması + dinleyici + sunucuda `/apps/keepchat/giris/kullan` + `Purchases.logIn(kisi)` (Ç47, kılavuz `docs/uygulama-entegrasyonu.md` §3b)
 - [ ] **E2.4b yeni bileşen türleri** (ör. yorum/sosyal kanıt, çoklu seçim, metin girişi) — çekirdek Tanim + sözleşme + huni + Puck
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme

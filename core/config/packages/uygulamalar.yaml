@@ -12,3 +12,7 @@ parameters:
     # (Project → Apps → Stripe). Boşsa aktarım KAPALI (hiçbir şey kuyruğa girmez).
     revenuecat_anahtarlari:
         keepchat: '%env(REVENUECAT_STRIPE_KEEPCHAT)%'
+    # Ç46: ödeme sonrası giriş bağlantısı uygulamayı bu özel URL şemasıyla
+    # açar (<şema>://giris?jeton=…). Uygulama Info.plist'inde aynısı olmalı.
+    uygulama_semalari:
+        keepchat: keepchat

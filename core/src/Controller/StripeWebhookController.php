@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Billing\SubscriptionSync;
+use App\Kimlik\GirisBaglantisi;
 use App\RevenueCat\Aktarim;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
@@ -23,6 +24,7 @@ final readonly class StripeWebhookController
     public function __construct(
         private SubscriptionSync $sync,
         private Aktarim $revenuecat,
+        private GirisBaglantisi $giris,
         #[Autowire('%env(STRIPE_WEBHOOK_SECRET)%')]
         private string $secret,
     ) {
@@ -43,6 +45,8 @@ final readonly class StripeWebhookController
         $this->sync->apply($event);
         // A9: işlem kapandıktan sonra; başarısızlık atmaz, satır bekler.
         $this->revenuecat->gonder();
+        // Ç46: ödeme sonrası giriş bağlantısı e-postası; atmaz, gitmeyen bekler.
+        $this->giris->epostalariGonder();
 
         return new Response('', 200);
     }

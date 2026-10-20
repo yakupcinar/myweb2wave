@@ -92,6 +92,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/giris-baglantisi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Başarı sayfası ödemeden sonra tek kullanımlık giriş bağlantısı ister (Ç46) */
+        post: operations["createLoginLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/{app}/giris/kullan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uygulamanın SUNUCUSU giriş bağlantısındaki jetonu kullanır; kullanıcıyı kişiye bağlar (Ç46) */
+        post: operations["redeemLoginLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/apps/{app}/baglama/kod": {
         parameters: {
             query?: never;
@@ -205,7 +239,7 @@ export interface components {
         HuniKimligi: string;
         Hata: {
             /** @enum {string} */
-            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit" | "forbidden";
+            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit" | "forbidden" | "not_ready" | "link_window_closed" | "invalid_token" | "expired_token";
         };
     };
     responses: {
@@ -482,6 +516,117 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+        };
+    };
+    createLoginLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    app: "keepchat";
+                    /** @description Stripe Checkout oturum kimliği (başarı sayfası adresindeki session_id) */
+                    oturum: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Bağlantı üretildi; tek kullanımlık, süreli */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description <şema>://giris?jeton=… — uygulamayı açar */
+                        uygulama_adresi: string;
+                        /** Format: date-time */
+                        son_kullanma: string;
+                    };
+                };
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ödeme henüz işlenmedi (webhook gelmedi) ya da yok — sayfa yeniden dener */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Ödemeden sonraki pencere kapandı; bağlantı e-postada */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            422: components["responses"]["IstekHatasi"];
+            /** @description Bu ödeme için bağlantı sınırı doldu */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    redeemLoginLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    jeton: string;
+                    /** @description Uygulamadaki kullanıcı kimliği */
+                    kullanici: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Bağlandı; jeton artık geçersiz */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        kisi: string;
+                    };
+                };
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Yetkisiz"];
+            422: components["responses"]["IstekHatasi"];
         };
     };
     requestLinkCode: {

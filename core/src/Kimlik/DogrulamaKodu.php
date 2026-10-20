@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Kimlik;
 
-use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
@@ -24,7 +23,7 @@ final readonly class DogrulamaKodu
     public function __construct(
         private Connection $db,
         private MailerInterface $mailer,
-        private Aktarim $revenuecat,
+        private Baglama $baglama,
         #[Autowire('%kernel.secret%')]
         private string $sir,
         #[Autowire('%env(MAIL_GONDEREN)%')]
@@ -98,20 +97,7 @@ final readonly class DogrulamaKodu
             }
 
             $db->executeStatement('UPDATE dogrulama_kodlari SET kullanildi_at = now() WHERE id = ?', [$satir['id']]);
-            $kisi = $db->fetchOne(
-                'INSERT INTO kisiler (email) VALUES (?) ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email RETURNING id',
-                [$email],
-            );
-            if (!\is_string($kisi)) {
-                throw new \LogicException('kisiler INSERT … RETURNING id dizge döndürmedi');
-            }
-            $db->executeStatement(
-                'INSERT INTO baglantilar (app, harici_kullanici, kisi_id) VALUES (?, ?, ?)
-                 ON CONFLICT (app, harici_kullanici) DO UPDATE SET kisi_id = EXCLUDED.kisi_id',
-                [$app, $kullanici, $kisi],
-            );
-            // A9: bu kişinin bu uygulamadaki abonelikleri RevenueCat'e (kullanıcı = kişi UUID'i).
-            $this->revenuecat->kisiyiKuyrugaAl($db, $app, $kisi);
+            $kisi = $this->baglama->bagla($db, $app, $email, $kullanici);
 
             return ['sonuc' => 'baglandi', 'kisi' => $kisi];
         });
