@@ -218,6 +218,27 @@ kurmak — sürüm kayması, CI'dan farklı ortam · etiketle (digest'siz) sabit
 
 **C3 sona erdi** (2026-10-19): depoda kod var; kapı artık `bin/kontrol`.
 
+**B4 · Huni oynatıcısı React; sunucusuz** (2026-10-21, kullanıcı; Ç48). Anket
+çalışma zamanı düz TypeScript'ten **React tabanlı huni oynatıcısına** geçer;
+blok bileşenleri **tek kaynak**: Puck düzenleyicisinde görünen ile yayındaki
+ankette çalışan aynı React bileşeni (bugün iki çizim: `HuniKabugu.astro` ve
+`core/editor/src/yapilandirma.tsx`). Herkese açık Node sunucusu YOK (B2'nin
+gerekçesi kalır): ya Astro sayfasında tek React adacığı ya saf Vite SPA,
+ikisi de CDN'den statik. Adım geçişleri sayfa yenilemeden; merkezi durum;
+piksel/olay bildirimi tek noktadan. Gerekçe (kullanıcı): çift çizimin bakım
+yükü ve önizleme–huni kayması; anket bir durum makinesi (dallanma, skor,
+geçiş, doğrulama, ödeme) ve düz TS'te büyümesi yavaş; rakiplerde anket React
+(Next.js: RevenueCat, BetterMe; Vite + React SPA: WalkFit, Muscle Booster),
+Astro yalnız pazarlama sayfasında (`huni-cati-arastirmasi.md`).
+**Reddedilen:** Next.js (herkese açık Node süreci, CVE yüzeyi, maliyet — B2) ·
+düz TS'te kalmak (çift çizim). **Ölçülmemiş varsayımlar** (geçişin ilk adımı
+ölçer, kural 1): "boş kabuk → içerik isteği ilk boyamayı geciktiriyor"
+(süresi ölçülmedi); Simple'ın çatısı (Vite SPA ölçüldü, React DEĞİL —
+tanımlanamadı); rakiplerin React'i animasyon/durum için seçtiği (çıkarım).
+**Bedeli:** huni JS'i ~12 KB → React ile büyür (bütçe ölçülerek konur);
+yeni ortak paket, iki tüketici (huni + düzenleyici) ve Docker bağlaması.
+Geçiş planı: `PLAN.md` §1 (H0–H6).
+
 ## §C — Araç ortamı
 
 **C1 · Ritüel skill'leri projede yaşar, kullanıcı düzeyi `ritual` eklentisi
