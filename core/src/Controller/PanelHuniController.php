@@ -16,9 +16,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Panelde huni düzenleme (A7 / E1.2): taslak, yayınla, sürümler, önizleme.
- * Giriş security.yaml'da (/panel altı). Her yazma CSRF jetonu ister;
- * doğrulama çekirdekte (Huniler → Tanim), ekran yalnız hatayı gösterir.
+ * Panelde huniler (A7, A8): uygulama başına huniler, yönlendirme kuralları,
+ * varsayılan; huni başına taslak, yayınla, sürümler, önizleme. Giriş
+ * security.yaml'da (/panel altı). Her yazma CSRF jetonu ister; doğrulama
+ * çekirdekte (Huniler → Tanim), ekran yalnız hatayı gösterir.
  */
 #[Route('/panel/huniler')]
 final class PanelHuniController extends AbstractController
@@ -38,83 +39,164 @@ final class PanelHuniController extends AbstractController
     #[Route('', name: 'panel_huniler', methods: ['GET'])]
     public function liste(): Response
     {
-        $huniler = [];
+        $uygulamalar = [];
         foreach (array_keys($this->uygulamalar) as $app) {
             $app = (string) $app;
-            $surumler = $this->huniler->surumler($app);
-            $huniler[] = [
-                'app' => $app,
-                'yayinda' => $surumler[0]['surum'] ?? null,
-                'taslak_var' => null !== $this->huniler->taslak($app),
-                'farkli' => $this->huniler->taslakFarkli($app),
+            $uygulamalar[] = [
+                'ad' => $app,
+                'adres' => $this->funnelBaseUrl.'/'.$app.'/',
+                'huniler' => $this->huniler->huniler($app),
+                'kurallar' => $this->huniler->kurallar($app),
             ];
         }
 
-        return self::korumali($this->render('panel/huniler.html.twig', ['huniler' => $huniler]));
+        return self::korumali($this->render('panel/huniler.html.twig', [
+            'uygulamalar' => $uygulamalar,
+            'parametreler' => Huniler::SECIM_PARAMETRELERI,
+        ]));
     }
 
-    #[Route('/{app}', name: 'panel_huni', methods: ['GET'])]
-    public function duzenle(string $app): Response
+    #[Route('/{app}/yeni', name: 'panel_huni_yeni', methods: ['POST'])]
+    public function yeni(Request $request, string $app): RedirectResponse
     {
         $this->uygulama($app);
+        $ad = trim($request->request->getString('ad'));
+        $kaynak = $request->request->getString('kaynak');
+        $tamam = $this->islem($request, $app, fn (): array => $this->huniler->yeniHuni($app, $ad, '' === $kaynak ? null : $kaynak), "'{$ad}' hunisi açıldı. Düzenleyip yayınla.");
+
+        return $tamam ? $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]) : $this->redirectToRoute('panel_huniler');
+    }
+
+    #[Route('/{app}/kurallar', name: 'panel_kural_ekle', methods: ['POST'])]
+    public function kuralEkle(Request $request, string $app): RedirectResponse
+    {
+        $this->uygulama($app);
+        $this->islem($request, $app, fn (): array => $this->huniler->kuralEkle(
+            $app,
+            $request->request->getString('parametre'),
+            $request->request->getString('deger'),
+            $request->request->getString('huni'),
+        ), 'Kural eklendi.');
+
+        return $this->redirectToRoute('panel_huniler');
+    }
+
+    #[Route('/{app}/kurallar/{id}/sil', name: 'panel_kural_sil', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function kuralSil(Request $request, string $app, int $id): RedirectResponse
+    {
+        $this->uygulama($app);
+        $this->islem($request, $app, fn (): array => $this->huniler->kuralSil($app, $id) ? [] : ['kural yok'], 'Kural silindi.');
+
+        return $this->redirectToRoute('panel_huniler');
+    }
+
+    #[Route('/{app}/kurallar/{id}/tasi', name: 'panel_kural_tasi', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function kuralTasi(Request $request, string $app, int $id): RedirectResponse
+    {
+        $this->uygulama($app);
+        $yon = 'yukari' === $request->request->getString('yon') ? -1 : 1;
+        $this->islem($request, $app, fn (): array => $this->huniler->kuralTasi($app, $id, $yon) ? [] : ['taşınamadı'], null);
+
+        return $this->redirectToRoute('panel_huniler');
+    }
+
+    #[Route('/{app}/{ad}/varsayilan', name: 'panel_huni_varsayilan', methods: ['POST'])]
+    public function varsayilan(Request $request, string $app, string $ad): RedirectResponse
+    {
+        $this->uygulama($app);
+        $this->islem($request, $app, fn (): array => $this->huniler->varsayilanYap($app, $ad) ? [] : ["'{$ad}' yok"], "Varsayılan huni artık '{$ad}'.");
+
+        return $this->redirectToRoute('panel_huniler');
+    }
+
+    #[Route('/{app}/{ad}', name: 'panel_huni', methods: ['GET'])]
+    public function duzenle(string $app, string $ad): Response
+    {
+        $this->uygulama($app);
+        $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
 
         return self::korumali($this->render('panel/huni.html.twig', [
             // 'app' DEĞİL: Twig'in global app'ini ezer, flaşlar üretimde sessizce kaybolur (tuzak §29).
             'uygulama' => $app,
-            'taslak' => $this->huniler->taslak($app) ?? self::bos(),
+            'huni' => $ad,
+            'taslak' => $taslak,
             'planlar' => array_keys($this->uygulamalar[$app]),
-            'surumler' => $this->huniler->surumler($app),
-            'farkli' => $this->huniler->taslakFarkli($app),
-            'onizleme' => $this->funnelBaseUrl.'/'.$app.'/?onizleme='.$this->huniler->onizlemeAnahtari($app, time()),
-            'huni_adresi' => $this->funnelBaseUrl.'/'.$app.'/',
+            'surumler' => $this->huniler->surumler($app, $ad),
+            'farkli' => $this->huniler->taslakFarkli($app, $ad),
+            'onizleme' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $ad, time()),
+            'huni_adresi' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad,
             // Dosyanın Cache-Control'ü yok: tarayıcı tahminle eski kopyayı
-            // çalıştırıyordu (ölçüldü). İçerik özeti değişince adres değişir.
+            // çalıştırıyordu (ölçüldü, tuzak §30). İçerik özeti değişince adres değişir.
             'duzenleyici_surumu' => substr((string) md5_file($this->duzenleyiciDosyasi), 0, 10),
         ]));
     }
 
     /** Düzenleyicinin JSON kaydı: 200 ya da 422 + hatalar. */
-    #[Route('/{app}/taslak', name: 'panel_huni_taslak', methods: ['POST'])]
-    public function taslakKaydet(Request $request, string $app): JsonResponse
+    #[Route('/{app}/{ad}/taslak', name: 'panel_huni_taslak', methods: ['POST'])]
+    public function taslakKaydet(Request $request, string $app, string $ad): JsonResponse
     {
         $this->uygulama($app);
         if (!$this->isCsrfTokenValid('huni-'.$app, $request->headers->get('X-CSRF-Token', ''))) {
             return new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403);
         }
-        $hatalar = $this->huniler->taslakKaydet($app, $request->toArray()['tanim'] ?? null);
+        $hatalar = $this->huniler->taslakKaydet($app, $ad, $request->toArray()['tanim'] ?? null);
 
         return new JsonResponse(['hatalar' => $hatalar], [] === $hatalar ? 200 : 422);
     }
 
-    #[Route('/{app}/yayinla', name: 'panel_huni_yayinla', methods: ['POST'])]
-    public function yayinla(Request $request, string $app): RedirectResponse
+    #[Route('/{app}/{ad}/yayinla', name: 'panel_huni_yayinla', methods: ['POST'])]
+    public function yayinla(Request $request, string $app, string $ad): RedirectResponse
     {
         $this->uygulama($app);
-        if (!$this->isCsrfTokenValid('huni-'.$app, $request->request->getString('_token'))) {
-            $this->addFlash('hata', 'Oturum jetonu geçersiz — sayfayı yenileyin.');
-        } else {
-            $sonuc = $this->huniler->yayinla($app);
-            \is_int($sonuc)
-                ? $this->addFlash('tamam', "v{$sonuc} yayında. Ziyaretçiler en geç 1 dakika içinde görür.")
-                : $this->addFlash('hata', 'Yayınlanmadı: '.implode(' · ', $sonuc));
+        $surum = 0;
+        $tamam = $this->islem($request, $app, function () use ($app, $ad, &$surum): array {
+            $sonuc = $this->huniler->yayinla($app, $ad);
+            if (\is_array($sonuc)) {
+                return $sonuc;
+            }
+            $surum = $sonuc;
+
+            return [];
+        }, null);
+        if ($tamam) {
+            $this->addFlash('tamam', "{$ad} v{$surum} yayında. Ziyaretçiler en geç 1 dakika içinde görür.");
         }
 
-        return $this->redirectToRoute('panel_huni', ['app' => $app]);
+        return $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]);
     }
 
-    #[Route('/{app}/surumler/{surum}/taslaga', name: 'panel_huni_geri_yukle', methods: ['POST'], requirements: ['surum' => '\d+'])]
-    public function geriYukle(Request $request, string $app, int $surum): RedirectResponse
+    #[Route('/{app}/{ad}/surumler/{surum}/taslaga', name: 'panel_huni_geri_yukle', methods: ['POST'], requirements: ['surum' => '\d+'])]
+    public function geriYukle(Request $request, string $app, string $ad, int $surum): RedirectResponse
     {
         $this->uygulama($app);
+        $this->islem($request, $app, fn (): array => $this->huniler->surumuTaslagaAl($app, $ad, $surum) ? [] : ["v{$surum} bulunamadı."], "v{$surum} taslağa alındı. Yayınlamak için \"Yayınla\".");
+
+        return $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]);
+    }
+
+    /**
+     * CSRF'i denetler, işlemi koşar, sonucu flaş olarak yazar.
+     *
+     * @param callable(): list<string> $islem hatalar; boşsa başarılı
+     */
+    private function islem(Request $request, string $app, callable $islem, ?string $tamam): bool
+    {
         if (!$this->isCsrfTokenValid('huni-'.$app, $request->request->getString('_token'))) {
             $this->addFlash('hata', 'Oturum jetonu geçersiz — sayfayı yenileyin.');
-        } elseif ($this->huniler->surumuTaslagaAl($app, $surum)) {
-            $this->addFlash('tamam', "v{$surum} taslağa alındı. Yayınlamak için \"Yayınla\".");
-        } else {
-            $this->addFlash('hata', "v{$surum} bulunamadı.");
+
+            return false;
+        }
+        $hatalar = $islem();
+        if ([] !== $hatalar) {
+            $this->addFlash('hata', implode(' · ', $hatalar));
+
+            return false;
+        }
+        if (null !== $tamam) {
+            $this->addFlash('tamam', $tamam);
         }
 
-        return $this->redirectToRoute('panel_huni', ['app' => $app]);
+        return true;
     }
 
     private function uygulama(string $app): void
@@ -122,19 +204,6 @@ final class PanelHuniController extends AbstractController
         if (!isset($this->uygulamalar[$app])) {
             throw new NotFoundHttpException();
         }
-    }
-
-    /**
-     * Hiç hunisi olmayan uygulama için başlangıç taslağı.
-     *
-     * @return array<string, mixed>
-     */
-    private static function bos(): array
-    {
-        return ['sayfaBasligi' => '', 'adimlar' => [
-            ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => '', 'metin' => '', 'dugme' => 'Başla'],
-            ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => '', 'metin' => '', 'dugme' => 'Abone ol', 'plan' => 'monthly'],
-        ]];
     }
 
     private static function korumali(Response $yanit): Response

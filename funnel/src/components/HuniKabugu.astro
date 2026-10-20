@@ -134,12 +134,38 @@ const { app } = Astro.props;
         return bolum;
       }
 
+      // Seçimi çekirdek yapar (A8); YALNIZ seçim parametreleri gider —
+      // fbclid gibi her tıklamada farklı değerler önbelleği bozardı.
+      const adres = new URLSearchParams(window.location.search);
+      const secim: {
+        k?: string;
+        utm_source?: string;
+        utm_campaign?: string;
+        utm_content?: string;
+        huni?: string;
+      } = {};
+      for (const ad of [
+        "k",
+        "utm_source",
+        "utm_campaign",
+        "utm_content",
+        "huni",
+      ] as const) {
+        const deger = adres.get(ad);
+        if (deger) secim[ad] = deger.slice(0, 200);
+      }
+
       async function tanimiAl(): Promise<Yayin | undefined> {
         const { data } = onizleme
           ? await cekirdek.GET("/huni/{app}/taslak", {
-              params: { path: { app }, query: { anahtar: onizleme } },
+              params: {
+                path: { app },
+                query: { huni: secim.huni ?? "", anahtar: onizleme },
+              },
             })
-          : await cekirdek.GET("/huni/{app}", { params: { path: { app } } });
+          : await cekirdek.GET("/huni/{app}", {
+              params: { path: { app }, query: secim },
+            });
         return data;
       }
 
@@ -164,7 +190,7 @@ const { app } = Astro.props;
         // Önizlemede ölçüm yok: ziyaret açılmaz, adım/cevap gitmez.
         const ziyaretSozu: Promise<string | undefined> = onizleme
           ? Promise.resolve(undefined)
-          : ziyaretBaslat(app, yayin.surum ?? undefined);
+          : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined);
         let mevcut = 0;
 
         function goster(sira: number, gecmiseEkle: boolean): void {

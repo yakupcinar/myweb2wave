@@ -33,19 +33,20 @@ final readonly class Ziyaretler
     }
 
     /**
-     * Ziyaretin gördüğü huni sürümü yayınlanmış değilse null yazılır —
-     * atıf ziyareti asla durdurmaz.
+     * Ziyaretin gördüğü huni ve sürüm (A8) yayınlanmış bir çift değilse ikisi
+     * de null yazılır — atıf ziyareti asla durdurmaz.
      *
      * @param array<value-of<self::ALANLAR>, string|null> $alanlar
      */
-    public function kaydet(string $app, array $alanlar, ?int $surum = null): string
+    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null): string
     {
         $id = $this->db->fetchOne(
-            'INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, surum)
+            'WITH s AS (SELECT ad, surum FROM huni_surumleri WHERE app = :app AND ad = :huni AND surum = CAST(:surum AS int))
+             INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum)
              VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :utm_content, :utm_term, :fbclid, :ttclid,
-                     (SELECT surum FROM huni_surumleri WHERE app = :app AND surum = CAST(:surum AS int)))
+                     (SELECT ad FROM s), (SELECT surum FROM s))
              RETURNING id',
-            ['app' => $app, 'surum' => $surum] + $alanlar,
+            ['app' => $app, 'huni' => $huni, 'surum' => $surum] + $alanlar,
         );
         \assert(\is_string($id));
 

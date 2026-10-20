@@ -24,7 +24,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -129,7 +129,7 @@ final class PanelTest extends WebTestCase
         $html = (string) $this->client->getResponse()->getContent();
 
         $odeyen = $this->client->getCrawler()->filter('tbody tr')->first()->filter('td')->each(static fn ($td): string => trim($td->text()));
-        self::assertSame(['keepchat', 'reklam · meta', 'ekim-1', 'ödedi', 'active', 'a***@example.com'], \array_slice($odeyen, 1));
+        self::assertSame(['keepchat', '—', 'reklam · meta', 'ekim-1', 'ödedi', 'active', 'a***@example.com'], \array_slice($odeyen, 1));
         self::assertStringNotContainsString('ayse@example.com', $html);
     }
 
@@ -153,7 +153,7 @@ final class PanelTest extends WebTestCase
         $this->client->request('GET', '/panel');
 
         self::assertSame(
-            [['1', 'karsilama', '3', '100 %'], ['2', 'kiminle', '2', '67 %'], ['3', 'cihaz', '1', '33 %']],
+            [['—', '1', 'karsilama', '3', '100 %'], ['—', '2', 'kiminle', '2', '67 %'], ['—', '3', 'cihaz', '1', '33 %']],
             $this->tablo('adimlar'),
         );
         self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '1']], $this->tablo('cevaplar'));
@@ -167,10 +167,10 @@ final class PanelTest extends WebTestCase
         $this->girisYapmis();
 
         $this->client->request('GET', '/panel');
-        self::assertSame('3', $this->tablo('adimlar')[0][2]);
+        self::assertSame('3', $this->tablo('adimlar')[0][3]);
 
         $this->client->request('GET', '/panel?gun=90');
-        self::assertSame('4', $this->tablo('adimlar')[0][2]);
+        self::assertSame('4', $this->tablo('adimlar')[0][3]);
     }
 
     public function testAnketYokkenBolumGorunmez(): void

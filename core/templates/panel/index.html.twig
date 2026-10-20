@@ -31,16 +31,18 @@
             <div class="kart" data-bolum="adimlar">
                 <h2>Anket adımları — kaç ziyaret ulaştı</h2>
                 <table>
-                    <thead><tr><th>#</th><th>Adım</th><th>Ulaşan</th><th>İlk adıma göre</th></tr></thead>
+                    <thead><tr><th>Huni</th><th>#</th><th>Adım</th><th>Ulaşan</th><th>İlk adıma göre</th></tr></thead>
                     <tbody>
                         {% set ilk = {} %}
                         {% for a in adimlar %}
-                            {% if ilk[a.app] is not defined %}{% set ilk = ilk|merge({(a.app): a.ulasan}) %}{% endif %}
+                            {% set anahtar = a.app ~ '/' ~ a.huni %}
+                            {% if ilk[anahtar] is not defined %}{% set ilk = ilk|merge({(anahtar): a.ulasan}) %}{% endif %}
                             <tr>
+                                <td>{{ a.huni }}{% if a.app != 'keepchat' %} <span class="soluk">({{ a.app }})</span>{% endif %}</td>
                                 <td>{{ a.sira + 1 }}</td>
-                                <td>{{ a.adim }}{% if a.app != 'keepchat' %} <span class="soluk">({{ a.app }})</span>{% endif %}</td>
+                                <td>{{ a.adim }}</td>
                                 <td>{{ a.ulasan }}</td>
-                                <td>{{ (a.ulasan / ilk[a.app] * 100)|number_format(0, ',') }} %</td>
+                                <td>{{ (a.ulasan / ilk[anahtar] * 100)|number_format(0, ',') }} %</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -65,13 +67,14 @@
     <div class="tablo">
         <table>
             <thead>
-                <tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Kaynak</th><th>Kampanya</th><th>Aşama</th><th>Abonelik</th><th>E-posta</th></tr>
+                <tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Huni</th><th>Kaynak</th><th>Kampanya</th><th>Aşama</th><th>Abonelik</th><th>E-posta</th></tr>
             </thead>
             <tbody>
                 {% for s in satirlar %}
                     <tr>
                         <td>{{ s.zaman|date('Y-m-d H:i', 'UTC') }}</td>
                         <td>{{ s.app }}</td>
+                        <td>{{ s.huni ?? '—' }}</td>
                         <td>{% if s.reklam %}<span class="reklam">reklam</span> · {% endif %}{{ s.kaynak }}</td>
                         <td>{{ s.kampanya ?? '—' }}</td>
                         <td{% if s.asama == 'ödedi' %} class="odedi"{% endif %}>{{ s.asama }}</td>
@@ -79,7 +82,7 @@
                         <td>{{ s.email ?? '—' }}</td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="7" class="soluk">Bu aralıkta ziyaret yok.</td></tr>
+                    <tr><td colspan="8" class="soluk">Bu aralıkta ziyaret yok.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

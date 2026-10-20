@@ -25,7 +25,7 @@ final class AtifTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huniler');
+        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler');
         ApiRequestor::setHttpClient(new KayitliStripeIstemcisi());
     }
 
