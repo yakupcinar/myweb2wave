@@ -27,6 +27,7 @@ COPY config config/
 COPY migrations migrations/
 COPY public public/
 COPY src src/
+COPY templates templates/
 
 RUN composer dump-autoload --no-dev --classmap-authoritative \
     && php bin/console cache:warmup \

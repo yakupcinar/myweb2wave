@@ -79,3 +79,14 @@ taşıyabilir. **Ölçüm (2026-10-20, `atif.md` A13):** yayma ile kırma
 TUTMADI (EXIT=0); gövde sözleşmeden üretilen tipe bağlanıp alan atamayla
 kurulunca iki kırma da `ts(2551)` ile düştü. **Doğrusu:** istek gövdesini
 üretilen tipten bir değişkene kur, isteğe bağlı alanı atamayla ekle.
+
+## §26 — Şifre özetindeki `$` ortam dosyasında sessizce bozulur
+**Belirti:** panel girişi doğru şifreyle "Kullanıcı adı ya da şifre yanlış"
+diyor; hata, uyarı yok. **Sebep:** bcrypt özeti (`$2y$13$…`) `$` içerir;
+Symfony dotenv de, docker compose'un `--env-file`'ı da tırnaksız değerde
+`$…`'ı değişken sayıp boşla değiştirir. **Ölçüm (2026-10-20, `panel.md`):**
+`.env.test`'te tırnaksız → giriş testi düştü (60 karakterlik özet bozuldu);
+compose'ta tırnaksız → konteynere 22 karakter gitti, tek tırnaklı → eşit.
+Ayrıca `docker compose config` çıktısı doğru değeri de `$$` diye kaçışlıyor
+— oradan okuyan denetim önce `$$`→`$` yapmalı. **Doğrusu:** özeti TEK
+TIRNAK içinde yaz; dağıtım ön kontrolü özetin biçimini doğrular.

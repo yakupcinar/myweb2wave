@@ -22,7 +22,7 @@ echo "== sürüm $APP_VERSION"
 # ama YANLIŞ değerler. Değerler ekrana basılmaz.
 yapi=$(dc config --format json) || dur "compose yapılandırması geçersiz (boş değer?)"
 printf '%s' "$yapi" | python3 -c '
-import json, sys
+import json, re, sys
 e = json.load(sys.stdin)["services"]["core"]["environment"]
 h = []
 if not e["STRIPE_SECRET_KEY"].startswith("sk_test_"):
@@ -33,6 +33,9 @@ if len(e["APP_SECRET"]) < 32:
     h.append("APP_SECRET 32 karakterden kısa (kod özetlerinin anahtarı)")
 if len(e["UYGULAMA_ANAHTARI_KEEPCHAT"]) < 32:
     h.append("UYGULAMA_ANAHTARI_KEEPCHAT 32 karakterden kısa")
+# `config` çıktısı $'ı $$ diye kaçışlar; konteynere giden değer tek $ (ölçüldü).
+if not re.fullmatch(r"\$2y\$\d\d\$[./A-Za-z0-9]{53}|\$argon2id?\$\S+", e["PANEL_SIFRE_OZETI"].replace("$$", "$")):
+    h.append("PANEL_SIFRE_OZETI geçerli bir özet değil — tek tırnak unutuldu mu? (tuzak §26)")
 if e["MAILER_DSN"].startswith("null:"):
     h.append("MAILER_DSN null — e-posta sessizce atılır (tuzak §24)")
 for x in h:

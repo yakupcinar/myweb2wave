@@ -1,0 +1,36 @@
+{# Panel düzeni. Dış betik/stil yok: yönetim sayfasına üçüncü taraf kod girmez
+   (tarifin şablonu sürümü sabitlenmemiş bir CDN betiği yüklüyordu). #}
+<!DOCTYPE html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <title>{% block title %}MyWeb2Wave panel{% endblock %}</title>
+        <style>
+            :root { color-scheme: light dark; --kenar: #8884; --soluk: #888; --iyi: #1a7f37; --reklam: #9a6700; }
+            body { font: 15px/1.45 system-ui, sans-serif; margin: 0 auto; padding: 16px; max-width: 1100px; }
+            h1 { font-size: 20px; margin: 0; }
+            header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+            nav a { margin-right: 10px; }
+            .kartlar { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 20px; }
+            .kart { border: 1px solid var(--kenar); border-radius: 8px; padding: 12px; }
+            .kart h2 { font-size: 14px; margin: 0 0 8px; color: var(--soluk); font-weight: 600; }
+            .kart dl { display: grid; grid-template-columns: 1fr auto; margin: 0; gap: 2px 12px; }
+            .kart dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+            .tablo { overflow-x: auto; }
+            table { border-collapse: collapse; width: 100%; font-size: 14px; }
+            th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--kenar); white-space: nowrap; }
+            th { color: var(--soluk); font-weight: 600; }
+            .reklam { color: var(--reklam); font-weight: 600; }
+            .odedi { color: var(--iyi); font-weight: 600; }
+            .soluk { color: var(--soluk); }
+            form.giris { max-width: 320px; margin: 15vh auto 0; display: grid; gap: 10px; }
+            form.giris input, form.giris button { font: inherit; padding: 8px; }
+            .hata { color: #cf222e; }
+        </style>
+    </head>
+    <body>
+        {% block body %}{% endblock %}
+    </body>
+</html>

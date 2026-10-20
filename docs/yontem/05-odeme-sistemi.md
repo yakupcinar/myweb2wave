@@ -78,3 +78,5 @@ görmez. Depo herkese açık → her commit'ten önce anahtar deseni taraması
   aracı gelir yolunu asla kesmez (kırma A6 ölçtü).
 - Huni gövdeleri sözleşmeden üretilen tiple kurulur; nesne yayma yanlış
   alanı geçirir (tuzak §25).
+- İç panel (`panel.md`): tek yönetici, şifre özeti ortamda, e-posta maskeli;
+  tarif varsayılanları (her yolu kapsayan güvenlik duvarı, CDN betiği) daraltıldı.
