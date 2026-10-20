@@ -41,6 +41,7 @@
 - [x] **İç panel (A6, 2. parça)** — 2026-10-20, `docs/decisions/panel.md` (kullanıcı adı + şifre, e-posta maskeli)
 - [x] **Huni anket + tanıtım** — 2026-10-20, `docs/decisions/huni-anket.md`
 - [ ] **Anket metnini kullanıcı düzeltecek** — `funnel/src/huniler/keepchat.ts` (Ç36)
+- [ ] **Huni editörü kararı (Ç37)** — araştırma `docs/decisions/huni-editoru-arastirmasi.md`; E1 / E2 / E3, kullanıcı seçecek
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
