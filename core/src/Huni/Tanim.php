@@ -64,6 +64,11 @@ final class Tanim
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
                 'soru' => ['secenekler'], 'paywall' => ['plan'], default => [],
             }];
+            // E2.3: tanıtım adımında isteğe bağlı görsel.
+            if ('tanitim' === $tur && \array_key_exists('gorsel', $adim)) {
+                $beklenen[] = 'gorsel';
+                self::gorsel($adim['gorsel'], $yer, $h);
+            }
             if (!self::anahtarlar($adim, $beklenen)) {
                 $h[] = "{$yer}: alanlar tam olarak ".implode(', ', $beklenen).' olmalı';
                 continue;
@@ -101,6 +106,38 @@ final class Tanim
         return $var === $beklenen;
     }
 
+    /**
+     * Tanımdaki bütün görsel kimlikleri (Huniler bunların bu uygulamaya
+     * yüklenmiş olduğunu ayrıca denetler).
+     *
+     * @return list<string>
+     */
+    public static function gorseller(mixed $tanim): array
+    {
+        $k = [];
+        $adimlar = \is_array($tanim) && \is_array($tanim['adimlar'] ?? null) ? $tanim['adimlar'] : [];
+        foreach ($adimlar as $adim) {
+            if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {
+                $k[] = $adim['gorsel'];
+            }
+            foreach (\is_array($adim) && \is_array($adim['secenekler'] ?? null) ? $adim['secenekler'] : [] as $s) {
+                if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
+                    $k[] = $s['gorsel'];
+                }
+            }
+        }
+
+        return array_values(array_unique($k));
+    }
+
+    /** @param list<string> $h */
+    private static function gorsel(mixed $deger, string $yer, array &$h): void
+    {
+        if (!\is_string($deger) || 1 !== preg_match('/^[0-9a-f]{64}$/', $deger)) {
+            $h[] = "{$yer}: görsel kimliği geçersiz";
+        }
+    }
+
     /** @param list<string> $h */
     private static function metin(mixed $deger, string $tur, string $yer, array &$h): void
     {
@@ -121,9 +158,12 @@ final class Tanim
         $gorulen = [];
         foreach ($secenekler as $j => $s) {
             $sy = "{$yer} seçenek ".($j + 1);
-            if (!\is_array($s) || !self::anahtarlar($s, ['id', 'metin'])) {
-                $h[] = "{$sy}: yalnız id ve metin";
+            if (!\is_array($s) || !self::anahtarlar($s, \array_key_exists('gorsel', $s) ? ['id', 'metin', 'gorsel'] : ['id', 'metin'])) {
+                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel";
                 continue;
+            }
+            if (\array_key_exists('gorsel', $s)) {
+                self::gorsel($s['gorsel'], $sy, $h);
             }
             if (!\is_string($s['id']) || 1 !== preg_match(self::KIMLIK, $s['id']) || isset($gorulen[$s['id']])) {
                 $h[] = "{$sy}: kimlik geçersiz ya da tekrar ediyor";

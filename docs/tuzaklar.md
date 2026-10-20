@@ -129,3 +129,15 @@ tazelikle önbellekteki kopyayı yeniden sormadan kullanır. Her dağıtımdan
 sonra aynı şey olur. **Ölçüm:** sayfadaki betik 7154 bayt (eski), aynı
 adrese elle `fetch` 7253 bayt (yeni). **Doğrusu:** adrese içerik özeti
 (`?v=<md5>`); dosya değişince adres değişir.
+
+## §31 — PHP'nin `upload_max_filesize` (2M) sınırı uygulamanın sınırını görünmez kılar
+**Belirti:** kod "en çok 5 MB" diyor, 3–5 MB'lık fotoğraf yine reddediliyor —
+mesaj "dosya gelmedi", 5 MB mesajı hiç çıkmıyor; hata günlüğü yok.
+**Sebep:** PHP isteği uygulamaya gelmeden keser (`UPLOAD_ERR_INI_SIZE`);
+FrankenPHP imajında varsayılan `upload_max_filesize = 2M`. **Ölçüm
+(2026-10-21, `gorseller.md`):** konteynerde `ini_get` → 2M; testte 5 MB+1
+bayt "dosya gelmedi" döndü. `conf.d/myweb2wave.ini` (6M/8M) sonrası 4,6 MB
+JPEG gerçek HTTP ile 201. **Doğrusu:** uygulama sınırı yazınca PHP'nin
+sınırını da ölç ve üstüne ayarla; `UPLOAD_ERR_INI_SIZE`'ı uygulamanın
+mesajına çevir. Bellek de öyle: `memory_limit` 128M, GD piksel başına ~4
+bayt — piksel sınırı buna göre (16 Mpx).

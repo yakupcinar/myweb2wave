@@ -42,6 +42,10 @@ services:
       PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
       # A9: boş bırakılabilir (aktarım kapalı); ':-' — zorunlu değil.
       REVENUECAT_STRIPE_KEEPCHAT: ${REVENUECAT_STRIPE_KEEPCHAT:-}
+    volumes:
+      # E2.3: yüklenen görseller. Birim ilk açılışta imajdaki dizinin
+      # sahipliğini (cekirdek) alır.
+      - medya-data:/app/var/medya
     depends_on:
       db:
         condition: service_healthy
@@ -71,5 +75,6 @@ services:
 
 volumes:
   db-data:
+  medya-data:
   caddy-data:
   caddy-config:

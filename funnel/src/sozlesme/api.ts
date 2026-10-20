@@ -173,6 +173,7 @@ export interface components {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */
             tur: "tanitim";
+            gorsel?: components["schemas"]["GorselKimligi"];
             baslik: string;
             metin: string;
             dugme: string;
@@ -185,6 +186,7 @@ export interface components {
             secenekler: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
+                gorsel?: components["schemas"]["GorselKimligi"];
             }[];
         };
         PaywallAdimi: {
@@ -197,6 +199,8 @@ export interface components {
             /** @enum {string} */
             plan: "monthly";
         };
+        /** @description Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3) */
+        GorselKimligi: string;
         /** @description Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/) */
         HuniKimligi: string;
         Hata: {

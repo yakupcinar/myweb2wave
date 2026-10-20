@@ -3,7 +3,8 @@
 # tekrarlanabilir değil.
 FROM dunglas/frankenphp:1.13.1-php8.4-bookworm@sha256:14007e6207a57651cb402970a44e5f2df15bfeffcbdeb5bbb322271949878b07 AS taban
 
-RUN install-php-extensions pdo_pgsql intl opcache zip
+RUN install-php-extensions pdo_pgsql intl opcache zip gd
+COPY docker/myweb2wave.ini $PHP_INI_DIR/conf.d/myweb2wave.ini
 
 COPY --from=composer:2.10.3 /usr/bin/composer /usr/bin/composer
 
@@ -32,6 +33,7 @@ COPY templates templates/
 RUN composer dump-autoload --no-dev --classmap-authoritative \
     && php bin/console cache:warmup \
     && useradd --system --no-create-home cekirdek \
+    && mkdir -p /app/var/medya \
     && chown -R cekirdek /app/var /data/caddy /config/caddy
 
 USER cekirdek
