@@ -27,3 +27,7 @@ services:
         arguments:
             - api_key: '%env(STRIPE_SECRET_KEY)%'
               api_base: '%env(STRIPE_API_BASE)%'
+
+when@test:
+    services:
+        App\Tests\Support\SahteRevenueCat: ~

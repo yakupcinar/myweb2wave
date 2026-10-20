@@ -104,6 +104,24 @@ iki kaynak). **Sıra (E2):** E2.1 çok huni + kurallar · E2.2 tema · E2.3 gör
 E2.4 sürükle-bırak (Puck) ve bileşen kütüphanesi · sonra A/B (aynı kural mekanizması
 + ağırlık).
 
+**A9 · Hak kaynağı RevenueCat** (2026-10-20, kullanıcı; Ç42). "Kim Pro" bilgisinin
+tek kaynağı web + App Store için RevenueCat; uygulama içi satın alma (IAP)
+doğrulamasını ve Apple bildirimlerini RevenueCat yapar (Ç29'daki "kendimiz
+yazarız" kalktı). Bizde kalır: huni, atıf, ödeme sayfası, Stripe webhook'ları,
+panel. Aktarım: Stripe abonelik olayı geldiğinde, e-postası bu uygulamada bir
+kişiye bağlıysa çekirdek aboneliği RevenueCat'e yollar
+(`POST /v1/receipts`, `X-Platform: stripe`, `fetch_token` = `sub_…`,
+`app_user_id` = kişi UUID'i); bağlama (e-posta kodu) başarılı olduğunda o
+e-postanın abonelikleri de yollanır. Gönderim önce aynı işlemde **giden
+kutusuna** yazılır, sonra denenir; başarısız olan komutla yeniden denenir —
+RevenueCat'in kesintisi Stripe kaydımızı durdurmaz. Uygulama RevenueCat
+SDK'sında `appUserID` = kişi UUID'i kullanır. Bizim hak ucumuz (A5) uygulama
+RevenueCat'e geçene kadar yedek olarak kalır. **Reddedilen:** hak kaynağı
+bizde kalsın + IAP'ı kendimiz doğrulayalım (Ç29; Apple bildirimleri, iade,
+sürüm farkları — tekerleği yeniden icat) · web alıcısına satın almada rastgele
+RevenueCat kimliği verip sonra birleştirmek (takma ad yönetimi; kişi UUID'i
+zaten var).
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

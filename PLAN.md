@@ -24,6 +24,7 @@
 | Huni yayını (A7 / E1.1) | ✅ 94 test, kırma 13/13 (+Y8 deneme kusuru → Y8b), tarayıcıda önizleme + XSS + sürüm | `docs/decisions/huni-yayin.md` |
 | Panelde huni düzenleme (E1.2) | ✅ 105 test, kırma 8/8, tarayıcıda düzenle → hata → kaydet → yayınla → geri yükle | `docs/decisions/panel-huni.md` |
 | Çok huni + kurallar (A8 / E2.1) | ✅ 117 test, kırma 8/8, tarayıcıda tek adres → iki huni | `docs/decisions/cok-huni.md` |
+| Stripe → RevenueCat (A9) | ✅ 126 test, kırma 9/9; gerçek RevenueCat ölçülmedi (Ç43) | `docs/decisions/revenuecat.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
 
@@ -48,6 +49,7 @@
 - [x] **E1.1 huni yayını** — 2026-10-20, `docs/decisions/huni-yayin.md`
 - [x] **E1.2 panelde huni düzenleme** — 2026-10-20, `docs/decisions/panel-huni.md`
 - [x] **E2.1 çok huni + yönlendirme kuralları** (A8) — 2026-10-20, `docs/decisions/cok-huni.md`
+- [x] **Stripe → RevenueCat aktarımı** (A9) — 2026-10-20, `docs/decisions/revenuecat.md`; gerçek ölçüm Ç43
 - [ ] **E2.2 tema** (huni başına renk, yazı tipi, köşe) · **E2.3 görseller** (yükleme, yeniden kodlama, SVG yok) · **E2.4 sürükle-bırak** (Puck) + bileşen kütüphanesi
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme

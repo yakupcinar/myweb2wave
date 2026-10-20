@@ -29,3 +29,4 @@
 | 22 | Karar A7 + E1.1: huni tanımı veritabanında, değişmez sürümler, imzalı önizleme | JSONB anahtar sırası geçerli veriyi reddettiriyordu (§28); kendi kırma denememin kusuru (Y8) da kayda girer | `huni-yayin.md` |
 | 23 | E1.2 panelde huni düzenleme (kaydet, yayınla, sürümler, geri yükle, önizleme) | ezilen global değişken flaşları üretimde sessizce silerdi (§29); tarayıcı önbelleği eski düzenleyiciyi çalıştırdı (§30) — ikisi de yalnız gerçek kullanımda göründü | `panel-huni.md` |
 | 24 | Karar A8 + E2.1: tek adres, kurallar seçer; uygulama başına çok huni | aracın ağ kaydı 503 dedi, DB ve günlük 204 dedi — önce kimin cevap verdiğine bak (§11) | `cok-huni.md` |
+| 25 | Karar A9 + Stripe → RevenueCat aktarımı (giden kutusu) | test beklentimi Stripe'ın gerçek olay sırası düzeltti; cron satırı ölçülmüş bir tuzağı tekrarlayacaktı | `revenuecat.md` |

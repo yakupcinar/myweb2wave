@@ -21,7 +21,7 @@ final class StripeWebhookControllerTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE subscriptions, processed_webhook_events, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, subscriptions, processed_webhook_events, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler');
     }
 
     public function testGecersizImza400VeHicbirSeyYazilmaz(): void

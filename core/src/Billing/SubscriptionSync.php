@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Billing;
 
+use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Log\LoggerInterface;
@@ -20,12 +21,15 @@ use Stripe\Event;
  *   huni ziyaretinden açılan oturumu ödendi işaretler (A6).
  * - Uygulama (A4) nesnenin metadata.app'inden; yoksa olay işlendi sayılır
  *   ama UYGULANMAZ — uygulamasız abonelik hiçbir uygulamayı açmasın.
+ * - Hak kaynağı RevenueCat (A9): abonelik bağlı bir kişininse aynı işlemde
+ *   RevenueCat giden kutusuna yazılır; gönderim işlemden sonra (webhook ucu).
  */
 final readonly class SubscriptionSync
 {
     public function __construct(
         private Connection $db,
         private LoggerInterface $logger,
+        private Aktarim $revenuecat,
     ) {
     }
 
@@ -75,6 +79,7 @@ final readonly class SubscriptionSync
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET email = EXCLUDED.email, updated_at = now()',
             ['sub' => $sub, 'cus' => $cus, 'email' => $email, 'app' => $app],
         );
+        $this->revenuecat->aboneligiKuyrugaAl($db, $app, $sub);
         // Atıf (A6): bu oturum bir huni ziyaretinden açıldıysa ödendi say.
         $db->executeStatement(
             'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, tamamlandi_at = now()
@@ -105,5 +110,6 @@ final readonly class SubscriptionSync
                 OR subscriptions.status_event_created <= EXCLUDED.status_event_created',
             ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated, 'app' => $app],
         );
+        $this->revenuecat->aboneligiKuyrugaAl($db, $app, $id);
     }
 }

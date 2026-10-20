@@ -51,6 +51,21 @@ Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik �
   kilitleme. Kod/doğrulama uçları önbelleğe alınmaz.
 - Kendi tarafında da oran sınırı koy (Ç31).
 
+## 4b · Hak kaynağı RevenueCat (A9)
+
+- "Kim Pro" bilgisinin tek kaynağı **RevenueCat**: web (Stripe) + App Store.
+- Çekirdek, Stripe aboneliğini RevenueCat'e kendisi aktarır — e-postası bu
+  uygulamada bir kişiye **bağlıysa**; bağlama sonrası eski abonelikler de
+  gider. RevenueCat'te kullanıcı kimliği = bağlamanın döndürdüğü **`kisi`**
+  (UUID).
+- Uygulama: bağlama başarılı olunca `kisi`'yi saklar ve RevenueCat SDK'sında
+  `Purchases.logIn(kisi)` ile o kimliğe geçer; hakkı SDK'dan sorar. App Store
+  satın alması da aynı kimliğe düşer → web + iOS tek hak.
+- RevenueCat Offering'deki ürün kimliği Stripe ürün kimliğiyle **aynı**
+  olmalı; Stripe iptali RevenueCat'e en geç ~2 saatte yansır (yeniden
+  gönderimle hemen — çekirdek her durum değişikliğinde yeniden gönderir).
+- Bizim hak ucumuz (§3, `…/hak`) uygulama RevenueCat'e geçene kadar yedek.
+
 ## 5 · ⚠️ App Store kuralları (iOS istemcisi)
 
 - Web'de alınan aboneliği uygulamada **açmak**, aynı ürün uygulama içi

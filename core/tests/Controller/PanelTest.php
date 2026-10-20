@@ -24,7 +24,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void

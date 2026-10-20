@@ -30,7 +30,7 @@ final class KimlikControllerTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE baglantilar, kisiler, dogrulama_kodlari, subscriptions, processed_webhook_events');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, baglantilar, kisiler, dogrulama_kodlari, subscriptions, processed_webhook_events');
     }
 
     // --- yetki ---
