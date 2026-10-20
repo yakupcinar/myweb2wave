@@ -34,10 +34,11 @@ final class Tanim
      */
     public static function hatalar(mixed $tanim, array $planlar): array
     {
-        if (!\is_array($tanim) || !self::anahtarlar($tanim, ['sayfaBasligi', 'adimlar'])) {
-            return ['tanım yalnız sayfaBasligi ve adimlar içermeli'];
+        // tema isteğe bağlı (E2.2): yoksa huni sayfası varsayılanı kullanır.
+        if (!\is_array($tanim) || !self::anahtarlar($tanim, \array_key_exists('tema', $tanim) ? ['sayfaBasligi', 'adimlar', 'tema'] : ['sayfaBasligi', 'adimlar'])) {
+            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema içermeli'];
         }
-        $h = [];
+        $h = \array_key_exists('tema', $tanim) ? Tema::hatalar($tanim['tema']) : [];
         self::metin($tanim['sayfaBasligi'], 'sayfaBasligi', 'sayfaBasligi', $h);
         $adimlar = $tanim['adimlar'];
         if (!\is_array($adimlar) || !array_is_list($adimlar) || \count($adimlar) < 2 || \count($adimlar) > self::AZAMI_ADIM) {

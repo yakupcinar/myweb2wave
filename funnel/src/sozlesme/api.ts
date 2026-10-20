@@ -157,7 +157,17 @@ export interface components {
         /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
         HuniTanimi: {
             sayfaBasligi: string;
+            tema?: components["schemas"]["HuniTemasi"];
             adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["PaywallAdimi"])[];
+        };
+        /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
+        HuniTemasi: {
+            anaRenk: string;
+            arkaPlan: string;
+            metinRengi: string;
+            /** @enum {string} */
+            yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono";
+            kose: number;
         };
         TanitimAdimi: {
             id: components["schemas"]["HuniKimligi"];

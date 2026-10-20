@@ -30,3 +30,4 @@
 | 23 | E1.2 panelde huni düzenleme (kaydet, yayınla, sürümler, geri yükle, önizleme) | ezilen global değişken flaşları üretimde sessizce silerdi (§29); tarayıcı önbelleği eski düzenleyiciyi çalıştırdı (§30) — ikisi de yalnız gerçek kullanımda göründü | `panel-huni.md` |
 | 24 | Karar A8 + E2.1: tek adres, kurallar seçer; uygulama başına çok huni | aracın ağ kaydı 503 dedi, DB ve günlük 204 dedi — önce kimin cevap verdiğine bak (§11) | `cok-huni.md` |
 | 25 | Karar A9 + Stripe → RevenueCat aktarımı (giden kutusu) | test beklentimi Stripe'ın gerçek olay sırası düzeltti; cron satırı ölçülmüş bir tuzağı tekrarlayacaktı | `revenuecat.md` |
+| 26 | E2.2 huni başına tema (renk, yazı tipi, köşe; kontrast yayından önce) | okunurluk öneri değil kural; kontrast koddan değil bilinen WCAG değerlerinden ölçüldü | `tema.md` |
