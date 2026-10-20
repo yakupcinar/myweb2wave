@@ -1,6 +1,7 @@
 ---
 // KeepChat paywall'u (A4: her uygulamanın kendi yolu). Sayfa statik; tek etkileşim ödeme düğmesi. Plan adını
-// çekirdeğe gönderir, dönen Stripe Checkout adresine yönlenir.
+// çekirdeğe gönderir, dönen Stripe Checkout adresine yönlenir. Açılışta hangi reklamdan gelindiği çekirdeğe yazılır
+// (A6); çerez ya da tarayıcı deposu yok — kimlik yalnız bu sayfanın belleğinde.
 ---
 
 <html lang="tr">
@@ -23,6 +24,37 @@
 
     <script>
       import { cekirdek } from "../../lib/cekirdek";
+      import type { paths } from "../../sozlesme/api";
+
+      // Gövdeler sözleşmeden üretilen tiple kurulur: yanlış alan adı tip
+      // hatasıdır. Nesne yayma (...) fazla alanı DENETLEMEZ — ölçüldü.
+      type Govde<P extends keyof paths> = paths[P] extends {
+        post: { requestBody: { content: { "application/json": infer G } } };
+      }
+        ? G
+        : never;
+
+      // Atıf (A6): URL'deki reklam alanları. Kayıt başarısız olursa ödeme
+      // yine açılır — atıf satışı durdurmaz.
+      const ALANLAR = [
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_content",
+        "utm_term",
+        "fbclid",
+        "ttclid",
+      ] as const;
+      const adres = new URLSearchParams(window.location.search);
+      const ziyaretGovdesi: Govde<"/huni/ziyaretler"> = { app: "keepchat" };
+      for (const ad of ALANLAR) {
+        const deger = adres.get(ad)?.slice(0, 500);
+        if (deger) ziyaretGovdesi[ad] = deger;
+      }
+      const ziyaretSozu: Promise<string | undefined> = cekirdek
+        .POST("/huni/ziyaretler", { body: ziyaretGovdesi })
+        .then(({ data }) => data?.ziyaret)
+        .catch(() => undefined);
 
       const dugme = document.querySelector<HTMLButtonElement>("#abone-ol");
       const hata = document.querySelector<HTMLParagraphElement>("#hata");
@@ -38,9 +70,15 @@
       dugme?.addEventListener("click", async () => {
         dugme.disabled = true;
         try {
+          const govde: Govde<"/checkout/sessions"> = {
+            app: "keepchat",
+            plan: "monthly",
+          };
+          const ziyaret = await ziyaretSozu;
+          if (ziyaret) govde.ziyaret = ziyaret;
           const { data, error, response } = await cekirdek.POST(
             "/checkout/sessions",
-            { body: { app: "keepchat", plan: "monthly" } },
+            { body: govde },
           );
           if (data) {
             window.location.assign(data.url);

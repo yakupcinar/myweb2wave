@@ -69,3 +69,12 @@ görmez. Depo herkese açık → her commit'ten önce anahtar deseni taraması
   `hash_equals('', '')` ile geçerdi (kırma I1).
 - Kod isteği her zaman 202: e-postanın sistemde olup olmadığı sızmaz.
 
+
+## Reklam atfı: ölçüm satışı durdurmaz (`atif.md`)
+
+- Ziyaret (reklam alanları) → ödeme oturumu → abonelik, üçü de bizim
+  Postgres'te; eşleşme oturum kimliğiyle, tahminle değil.
+- Atıf kaydı başarısız olsa da, kimlik tanınmasa da ödeme açılır: ölçüm
+  aracı gelir yolunu asla kesmez (kırma A6 ölçtü).
+- Huni gövdeleri sözleşmeden üretilen tiple kurulur; nesne yayma yanlış
+  alanı geçirir (tuzak §25).

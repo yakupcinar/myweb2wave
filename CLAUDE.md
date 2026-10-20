@@ -136,6 +136,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§22** | `docker compose run -d` **0 döner**, içindeki süreç çoktan ölmüş olabilir — `docker ps` + "hazır" satırını bekle. |
 | **§23** | `curl -s` + `[...]`'lı adres **sessizce boş** döner (glob) — `curl -g`. |
 | **§24** | `MAILER_DSN=null://null` e-postayı **sessizce atar**, uç yine 202 — geliştirmede Mailpit. |
+| **§25** | TypeScript **nesne yaymada (`...`) fazla alanı denetlemez** — yanlış alan adı tip denetiminden geçer; gövdeyi üretilen tipten kur. |
 
 ---
 

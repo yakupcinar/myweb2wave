@@ -21,7 +21,7 @@ final class StripeWebhookControllerTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE subscriptions, processed_webhook_events');
+        $this->db->executeStatement('TRUNCATE subscriptions, processed_webhook_events, huni_ziyaretleri, odeme_oturumlari');
     }
 
     public function testGecersizImza400VeHicbirSeyYazilmaz(): void
@@ -74,6 +74,28 @@ final class StripeWebhookControllerTest extends WebTestCase
         self::assertSame(
             ['email' => 'ayse@example.com', 'status' => 'active'],
             $this->db->fetchAssociative("SELECT email, status FROM subscriptions WHERE stripe_subscription_id = 'sub_1'"),
+        );
+    }
+
+    public function testOdemeTamamlanincaHuniOturumuOdendiOlur(): void
+    {
+        // A6: reklamdan gelen ziyaretin oturumu; başka oturuma dokunulmaz.
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app) VALUES ('keepchat') RETURNING id");
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_1', 'ziyaret_id' => $ziyaret]);
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_2', 'ziyaret_id' => $ziyaret]);
+
+        $this->gonder($this->olay('evt_cs', 'checkout.session.completed', 90, [
+            'id' => 'cs_1', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_1', 'customer' => 'cus_1',
+            'customer_details' => ['email' => 'ayse@example.com'],
+            'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(
+            [['stripe_checkout_session_id' => 'cs_1', 'stripe_subscription_id' => 'sub_1', 'odendi' => true],
+                ['stripe_checkout_session_id' => 'cs_2', 'stripe_subscription_id' => null, 'odendi' => false]],
+            $this->db->fetchAllAssociative('SELECT stripe_checkout_session_id, stripe_subscription_id, tamamlandi_at IS NOT NULL AS odendi FROM odeme_oturumlari ORDER BY 1'),
         );
     }
 

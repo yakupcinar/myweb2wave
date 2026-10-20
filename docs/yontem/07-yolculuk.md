@@ -23,3 +23,4 @@
 | 16 | Bu el kitabı | bilgi bölümlere ayrılır, kopyalanmaz | `docs/yontem/` |
 | 17 | Kimlik + e-posta kodu + hak ucu | iki tutmayan kırma iki güvenlik testini buldu; tarif e-postayı sessizce atıyordu (§24); web ödemesi → bağlama → hak uçtan uca | `kimlik-hak.md` |
 | 18 | Dağıtım dosyaları (test modu) | korunduğunu sandığın şeyi koruyan dosya başkası çıkabilir (K9); cron'dan koşan betik dağıtım içinden koşandan farklı ortam görür | `dagitim.md`, C6 |
+| 19 | Reklam atfı: ziyaret → ödeme oturumu → abonelik | tip denetimi yeşilken yanlış alan adı geçiyordu (§25); kendi yazdığım kırma SQL'i sahte kırmızı verdi (§8) | `atif.md` |

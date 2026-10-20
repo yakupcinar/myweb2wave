@@ -68,3 +68,14 @@ geliştirmeye de) `null://null` yazar; null taşıyıcı gönderimi "başarılı
 sayar. **Ölçüm (2026-10-19):** aynı istek `null://null` ile → 202, DB'de 1
 kod, Mailpit'te 0 ileti. **Doğrusu:** geliştirmede yakalayıcı (Mailpit),
 testte `null` + `assertEmailCount`; tarif varsayılanını okumadan geçme.
+
+## §25 — TypeScript nesne yaymada (`...`) fazla alanı denetlemez
+**Belirti:** huni ödeme gövdesine `...(ziyaret ? { ziyaretId: ziyaret } : {})`
+yazıldı — yanlış alan adı; `astro check` yeşil, çekirdek bilinmeyen alanı
+yok sayıyor, atıf sessizce kayboluyor. **Sebep:** fazla alan denetimi
+yalnız doğrudan nesne değişmezinde çalışır; yayılan nesneye uygulanmaz.
+`Partial<Record<…>>` ile kurulan bir nesne de anahtar yazım hatasını
+taşıyabilir. **Ölçüm (2026-10-20, `atif.md` A13):** yayma ile kırma
+TUTMADI (EXIT=0); gövde sözleşmeden üretilen tipe bağlanıp alan atamayla
+kurulunca iki kırma da `ts(2551)` ile düştü. **Doğrusu:** istek gövdesini
+üretilen tipten bir değişkene kur, isteğe bağlı alanı atamayla ekle.
