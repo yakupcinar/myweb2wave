@@ -1,5 +1,5 @@
 # Tarifin varsayılanı (localhost'un her portu, bütün yollar, DELETE/PUT dahil)
-# fazla genişti. Yalnız huninin kökeni, yalnız huninin iki ucu, yalnız POST.
+# fazla genişti. Yalnız huninin kökeni, yalnız huninin uçları, yalnız POST.
 # Köken FUNNEL_BASE_URL'den — ayrı bir CORS değişkeni iki kaynak demek.
 nelmio_cors:
     defaults:
@@ -9,7 +9,7 @@ nelmio_cors:
         allow_headers: []
         max_age: 3600
     paths:
-        '^/(checkout/sessions|huni/ziyaretler)$':
+        '^/(checkout/sessions|huni/ziyaretler(/[0-9a-f-]{36}/ilerleme)?)$':
             allow_origin: ['%env(FUNNEL_BASE_URL)%']
             allow_methods: ['POST', 'OPTIONS']
             allow_headers: ['Content-Type']

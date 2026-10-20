@@ -53,3 +53,11 @@ reklam ──► Huni (Astro, statik, CDN)          ── sunucusu yok
 Görsel huni editörü, çok kiracılı panel (A1); uygulama içi satın alma
 (IAP) doğrulaması sonra ama kendimiz (Ç29) — kimlikte kişiye kalıcı UUID
 (`appAccountToken`) şimdiden.
+
+## Huni = veri + motor (`huni-anket.md`)
+
+- Her uygulamanın hunisi `funnel/src/huniler/<app>.ts`'te veri: adımlar
+  (tanıtım, soru, paywall). Motor (`components/Huni.astro`) tek sayfada
+  sırayla gösterir; yeni uygulama = yeni veri dosyası + sayfa.
+- Tanım hatası (kimlik biçimi, tekrar, paywall sonda değil) derlemeyi
+  durdurur — çekirdeğin reddedeceği veri yayına çıkmaz.

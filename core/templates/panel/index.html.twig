@@ -25,6 +25,42 @@
         {% endfor %}
     </section>
 
+    {% if adimlar is not empty %}
+        <section class="kartlar">
+            <div class="kart" data-bolum="adimlar">
+                <h2>Anket adımları — kaç ziyaret ulaştı</h2>
+                <table>
+                    <thead><tr><th>#</th><th>Adım</th><th>Ulaşan</th><th>İlk adıma göre</th></tr></thead>
+                    <tbody>
+                        {% set ilk = {} %}
+                        {% for a in adimlar %}
+                            {% if ilk[a.app] is not defined %}{% set ilk = ilk|merge({(a.app): a.ulasan}) %}{% endif %}
+                            <tr>
+                                <td>{{ a.sira + 1 }}</td>
+                                <td>{{ a.adim }}{% if a.app != 'keepchat' %} <span class="soluk">({{ a.app }})</span>{% endif %}</td>
+                                <td>{{ a.ulasan }}</td>
+                                <td>{{ (a.ulasan / ilk[a.app] * 100)|number_format(0, ',') }} %</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="kart" data-bolum="cevaplar">
+                <h2>Cevaplar</h2>
+                <table>
+                    <thead><tr><th>Soru</th><th>Cevap</th><th>Sayı</th></tr></thead>
+                    <tbody>
+                        {% for c in cevaplar %}
+                            <tr><td>{{ c.soru }}</td><td>{{ c.secenek }}</td><td>{{ c.sayi }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="3" class="soluk">Henüz cevap yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
     <div class="tablo">
         <table>
             <thead>
