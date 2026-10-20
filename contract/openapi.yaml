@@ -297,6 +297,7 @@ components:
       required: [sayfaBasligi, adimlar]
       properties:
         sayfaBasligi: { type: string, minLength: 1, maxLength: 120 }
+        tema: { $ref: "#/components/schemas/HuniTemasi" }
         adimlar:
           type: array
           minItems: 2
@@ -306,6 +307,17 @@ components:
               - $ref: "#/components/schemas/TanitimAdimi"
               - $ref: "#/components/schemas/SoruAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
+    HuniTemasi:
+      description: "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)"
+      type: object
+      additionalProperties: false
+      required: [anaRenk, arkaPlan, metinRengi, yaziTipi, kose]
+      properties:
+        anaRenk: { type: string, pattern: "^#[0-9a-f]{6}$" }
+        arkaPlan: { type: string, pattern: "^#[0-9a-f]{6}$" }
+        metinRengi: { type: string, pattern: "^#[0-9a-f]{6}$" }
+        yaziTipi: { type: string, enum: [sistem, serif, yuvarlak, mono] }
+        kose: { type: integer, minimum: 0, maximum: 32 }
     TanitimAdimi:
       type: object
       additionalProperties: false

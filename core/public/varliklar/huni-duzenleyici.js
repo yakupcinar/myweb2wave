@@ -9,6 +9,8 @@
 
   let tanim = JSON.parse(kok.dataset.taslak);
   const planlar = JSON.parse(kok.dataset.planlar);
+  const temaVarsayilan = JSON.parse(kok.dataset.temaVarsayilan);
+  const yaziTipleri = JSON.parse(kok.dataset.yaziTipleri);
   let degisti = false;
 
   const yayinla = document.getElementById("yayinla");
@@ -121,6 +123,71 @@
     return kutu;
   }
 
+  /** WCAG kontrast (çekirdekteki Tema::kontrast ile aynı) — yalnız bilgi; karar çekirdekte. */
+  function kontrast(a, b) {
+    const p = (hex) => {
+      const k = (i) => {
+        const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * k(1) + 0.7152 * k(3) + 0.0722 * k(5);
+    };
+    const [x, y] = [p(a), p(b)];
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+
+  /** Görünüm (E2.2): tema yoksa huni varsayılanla görünür; kutu işaretlenince özel tema. */
+  function temaKur() {
+    const kutu = oge("fieldset", { "data-bolum": "tema" }, oge("legend", { metin: "Görünüm" }));
+    const ozel = oge("input", { type: "checkbox" });
+    ozel.checked = !!tanim.tema;
+    ozel.addEventListener("change", () =>
+      degistir(() => {
+        if (ozel.checked) tanim.tema = { ...temaVarsayilan };
+        else delete tanim.tema;
+      }),
+    );
+    kutu.append(oge("label", { class: "satir" }, ozel, oge("span", { metin: "Bu huniye özel renk ve yazı tipi" })));
+    if (!tanim.tema) return kutu;
+
+    const t = tanim.tema;
+    const oran = oge("span");
+    const oranYaz = () => {
+      const r = kontrast(t.metinRengi, t.arkaPlan);
+      oran.textContent = `Metin okunurluğu ${r.toFixed(2)}:1 ${r >= 4.5 ? "✓" : "— en az 4,5:1 olmalı, yayınlanamaz"}`;
+      oran.className = r >= 4.5 ? "odedi" : "hata";
+    };
+    const renk = (etiket, anahtar) => {
+      const g = oge("input", { type: "color" });
+      g.value = t[anahtar];
+      g.addEventListener("input", () => {
+        t[anahtar] = g.value.toLowerCase();
+        oranYaz();
+        isaretle();
+      });
+      return oge("label", {}, oge("span", { metin: etiket }), g);
+    };
+    const yazi = oge("select", {}, ...yaziTipleri.map((y) => oge("option", { value: y, metin: y })));
+    yazi.value = t.yaziTipi;
+    yazi.addEventListener("change", () => {
+      t.yaziTipi = yazi.value;
+      isaretle();
+    });
+    const kose = oge("input", { type: "number", min: 0, max: 32, step: 1 });
+    kose.value = String(t.kose);
+    kose.addEventListener("input", () => {
+      t.kose = Number.parseInt(kose.value, 10) || 0;
+      isaretle();
+    });
+    kutu.append(
+      oge("div", { class: "satir" }, renk("Ana renk (düğme)", "anaRenk"), renk("Arka plan", "arkaPlan"), renk("Metin", "metinRengi")),
+      oge("div", { class: "satir" }, oge("label", {}, oge("span", { metin: "Yazı tipi" }), yazi), oge("label", {}, oge("span", { metin: "Köşe (px)" }), kose)),
+      oran,
+    );
+    oranYaz();
+    return kutu;
+  }
+
   function ekleDugmesi(metin, uret) {
     return oge("button", {
       type: "button",
@@ -172,6 +239,7 @@
     durumSatiri = oge("span", { metin: degisti ? "Kaydedilmemiş değişiklik var." : "", class: degisti ? "reklam" : "" });
     kok.replaceChildren(
       alan("Sayfa başlığı (tarayıcı sekmesi)", tanim, "sayfaBasligi"),
+      temaKur(),
       ...tanim.adimlar.map(adimKur),
       oge(
         "div",

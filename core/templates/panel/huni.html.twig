@@ -20,6 +20,8 @@
     <div id="duzenleyici"
          data-taslak="{{ taslak|json_encode }}"
          data-planlar="{{ planlar|json_encode }}"
+         data-tema-varsayilan="{{ tema_varsayilan|json_encode }}"
+         data-yazi-tipleri="{{ yazi_tipleri|json_encode }}"
          data-kaydet="{{ path('panel_huni_taslak', {app: uygulama, ad: huni}) }}"
          data-jeton="{{ csrf_token('huni-' ~ uygulama) }}">
         <p class="soluk">Düzenleyici yükleniyor…</p>

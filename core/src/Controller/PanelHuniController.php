@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Huni\Huniler;
+use App\Huni\Tema;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -121,6 +122,8 @@ final class PanelHuniController extends AbstractController
             'huni' => $ad,
             'taslak' => $taslak,
             'planlar' => array_keys($this->uygulamalar[$app]),
+            'tema_varsayilan' => Tema::VARSAYILAN,
+            'yazi_tipleri' => Tema::YAZI_TIPLERI,
             'surumler' => $this->huniler->surumler($app, $ad),
             'farkli' => $this->huniler->taslakFarkli($app, $ad),
             'onizleme' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $ad, time()),

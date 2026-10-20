@@ -68,3 +68,6 @@ Görsel huni editörü, çok kiracılı panel (A1); uygulama içi satın alma
   panelde sıralı kurallar (`k`, `utm_*` = değer → huni) hangisinin açılacağını
   çekirdekte seçer. Huni sayfası yalnız seçim parametrelerini gönderir
   (önbellek). Ziyaret hangi huniyi ve sürümü gördüğünü taşır.
+- **Tema (E2.2):** huni başına renk/yazı tipi/köşe; sınırlı değer kümesi
+  (serbest CSS yok), okunurluk (WCAG AA) çekirdekte yayından önce; yalnız
+  cihaz yazı tipleri (dış font = üçüncü tarafa IP).

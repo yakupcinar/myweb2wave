@@ -54,6 +54,20 @@ final class HuniTest extends WebTestCase
         );
     }
 
+    public function testTemaYayindaDonerSozlesmeyeUyar(): void
+    {
+        $tanim = self::tanim('Temali') + ['tema' => ['anaRenk' => '#16a34a', 'arkaPlan' => '#0b1220', 'metinRengi' => '#f8fafc', 'yaziTipi' => 'yuvarlak', 'kose' => 20]];
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        $yanit = $this->yanit();
+        self::assertIsArray($yanit['tanim'] ?? null);
+        self::assertEquals($tanim['tema'], $yanit['tanim']['tema'] ?? null);
+    }
+
     public function testYayinYoksa404(): void
     {
         $this->client->request('GET', '/huni/keepchat');
@@ -104,7 +118,7 @@ final class HuniTest extends WebTestCase
         yield 'tek seçenek' => ['2–8 seçenek', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A']])];
         yield 'tekrar eden seçenek' => ['geçersiz ya da tekrar ediyor', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']])];
         yield 'tek adım' => ['2–50', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][2]]]];
-        yield 'fazla üst alan' => ['yalnız sayfaBasligi ve adimlar', $t + ['css' => 'x']];
+        yield 'fazla üst alan' => ['yalnız sayfaBasligi, adimlar', $t + ['css' => 'x']];
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void
