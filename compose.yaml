@@ -35,6 +35,8 @@ services:
       - ./core:/app
       # Sözleşme testleri gerçek yanıtları buna göre doğrular (R2).
       - ./contract/openapi.yaml:/contract/openapi.yaml:ro
+      # TemaTest huni bileşenleriyle ortak örnekleri okur (B4/H1).
+      - ./huni-bilesenleri:/huni-bilesenleri:ro
     depends_on:
       db:
         condition: service_healthy
@@ -68,6 +70,8 @@ services:
     volumes:
       - ./funnel:/app
       - funnel-node-modules:/app/node_modules
+      # Ortak tema + CSS (B4/H1); H2'de bileşenler de.
+      - ./huni-bilesenleri:/huni-bilesenleri:ro
 
   # Panel huni düzenleyicisi (E2.4, React + Puck): `docker compose run --rm editor npm run build`
   # çıktıyı core/public/varliklar/editor'a yazar. Huniyle aynı Node imajı.
@@ -80,6 +84,11 @@ services:
       - ./core:/core
       - ./contract:/contract:ro
       - editor-node-modules:/core/editor/node_modules
+      # Ortak huni bileşenleri (B4/H1). Bağımlılıkları yok: düzenleyicinin
+      # node_modules'u oraya da bağlanır (tek React, Ç45). Yazılabilir —
+      # iç bağlama noktası salt okunur dizinde açılamaz.
+      - ./huni-bilesenleri:/huni-bilesenleri
+      - editor-node-modules:/huni-bilesenleri/node_modules
 
   # Sözleşmeden huni tiplerini üretir; huni dizinine yazar.
   contract:

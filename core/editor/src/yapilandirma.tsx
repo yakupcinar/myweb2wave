@@ -1,8 +1,16 @@
 // Puck yapılandırması: üç adım türü (çekirdeğin Tanim'i ile aynı) + kök
-// (sayfa başlığı ve tema). Önizleme huni sayfasının görünümünü taklit eder;
-// gerçek doğrulama çekirdekte — burada yalnız giriş kolaylığı.
+// (sayfa başlığı ve tema). Adımları huni sayfasıyla ORTAK bileşenler ve
+// huni.css çizer (B4/H1); gerçek doğrulama çekirdekte — burada yalnız giriş
+// kolaylığı.
 import { FieldLabel, type Config, type CustomField } from "@puckeditor/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { Paywall, Soru, Tanitim } from "../../../huni-bilesenleri/bilesenler";
+import "../../../huni-bilesenleri/huni.css";
+import {
+    kontrast,
+    temaDegiskenleri,
+    VARSAYILAN_TEMA,
+} from "../../../huni-bilesenleri/tema";
 import type { Bilesenler, KokProps, SecenekProps } from "./donustur";
 
 export type Ortam = {
@@ -17,26 +25,6 @@ type Gorsel = {
     ozgun_ad: string;
     genislik: number;
     yukseklik: number;
-};
-
-const YAZI_YIGINI: Record<string, string> = {
-    sistem: "system-ui, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    yuvarlak: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, sans-serif",
-    mono: "ui-monospace, 'SF Mono', Menlo, monospace",
-};
-
-/** WCAG parlaklığı — huni sayfasındaki ve çekirdekteki formülle aynı. */
-function parlaklik(hex: string): number {
-    const k = (i: number): number => {
-        const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    };
-    return 0.2126 * k(1) + 0.7152 * k(3) + 0.0722 * k(5);
-}
-export const kontrast = (a: string, b: string): number => {
-    const [x, y] = [parlaklik(a), parlaklik(b)];
-    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 };
 
 // Puck özel alanın etiketini kendisi çizmiyor (tarayıcıda görüldü) — FieldLabel ile.
@@ -144,25 +132,7 @@ const gorselAlani = (ortam: Ortam, label: string): CustomField<string> => ({
     ),
 });
 
-const dugmeStili: CSSProperties = {
-    font: "inherit",
-    padding: "12px 16px",
-    borderRadius: "var(--kose)",
-    border: "1px solid var(--ana)",
-    background: "var(--ana)",
-    color: "var(--ana-yazi)",
-    width: "100%",
-};
-const secenekStili: CSSProperties = {
-    ...dugmeStili,
-    background: "transparent",
-    color: "inherit",
-    textAlign: "left",
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    border: "1px solid color-mix(in srgb, var(--metin) 30%, transparent)",
-};
+// Düzenleyicide bütün adımlar alt alta görünür; ayırıcı yalnız burada.
 const kart: CSSProperties = {
     padding: "16px 0 24px",
     borderBottom:
@@ -212,22 +182,16 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 kose,
             }) => {
                 const tema = ozelTema === "evet";
-                const ana = tema ? anaRenk : "#2563eb";
-                const l = parlaklik(ana);
+                // Dış kutu huni sayfasındaki <body>'nin yerine: arka plan
+                // bütün önizlemeyi kaplar, sütun .huni.
                 const degiskenler = {
-                    "--ana": ana,
-                    "--ana-yazi":
-                        1.05 / (l + 0.05) >= (l + 0.05) / 0.05
-                            ? "#ffffff"
-                            : "#000000",
-                    "--arka": tema ? arkaPlan : "#ffffff",
-                    "--metin": tema ? metinRengi : "#111827",
-                    "--kose": `${tema ? kose : 10}px`,
-                    fontFamily: YAZI_YIGINI[tema ? yaziTipi : "sistem"],
+                    ...temaDegiskenleri(
+                        tema
+                            ? { anaRenk, arkaPlan, metinRengi, yaziTipi, kose }
+                            : VARSAYILAN_TEMA,
+                    ),
                     background: "var(--arka)",
-                    color: "var(--metin)",
                     minHeight: "100vh",
-                    padding: 16,
                 } as CSSProperties;
                 const oran = tema ? kontrast(metinRengi, arkaPlan) : 21;
                 return (
@@ -245,9 +209,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                 4,5:1 olmalı, kaydedilemez.
                             </p>
                         ) : null}
-                        <div style={{ maxWidth: 520, margin: "0 auto" }}>
-                            {children}
-                        </div>
+                        <div className="huni">{children}</div>
                     </div>
                 );
             },
@@ -270,23 +232,15 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     gorsel: "",
                 },
                 render: ({ baslik, metin, dugme, gorsel }) => (
-                    <section style={kart}>
-                        {gorsel ? (
-                            <img
-                                src={`/medya/${gorsel}.webp`}
-                                alt=""
-                                style={{
-                                    width: "100%",
-                                    borderRadius: "var(--kose)",
-                                }}
-                            />
-                        ) : null}
-                        <h1>{baslik}</h1>
-                        <p>{metin}</p>
-                        <button type="button" style={dugmeStili}>
-                            {dugme}
-                        </button>
-                    </section>
+                    <div style={kart}>
+                        <Tanitim
+                            baslik={baslik}
+                            metin={metin}
+                            dugme={dugme}
+                            gorsel={gorsel}
+                            medyaKoku=""
+                        />
+                    </div>
                 ),
             },
             Soru: {
@@ -320,31 +274,13 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     ],
                 },
                 render: ({ soru, secenekler }) => (
-                    <section style={kart}>
-                        <h1>{soru}</h1>
-                        <div style={{ display: "grid", gap: 10 }}>
-                            {(secenekler ?? []).map((s, i) => (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    style={secenekStili}
-                                >
-                                    {s.gorsel ? (
-                                        <img
-                                            src={`/medya/${s.gorsel}.webp`}
-                                            alt=""
-                                            style={{
-                                                width: 48,
-                                                height: 48,
-                                                objectFit: "cover",
-                                            }}
-                                        />
-                                    ) : null}
-                                    <span>{s.metin}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </section>
+                    <div style={kart}>
+                        <Soru
+                            soru={soru}
+                            secenekler={secenekler ?? []}
+                            medyaKoku=""
+                        />
+                    </div>
                 ),
             },
             Paywall: {
@@ -371,13 +307,9 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     plan: "monthly",
                 },
                 render: ({ baslik, metin, dugme }) => (
-                    <section style={kart}>
-                        <h1>{baslik}</h1>
-                        <p>{metin}</p>
-                        <button type="button" style={dugmeStili}>
-                            {dugme}
-                        </button>
-                    </section>
+                    <div style={kart}>
+                        <Paywall baslik={baslik} metin={metin} dugme={dugme} />
+                    </div>
                 ),
             },
         },

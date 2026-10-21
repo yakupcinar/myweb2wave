@@ -1,0 +1,11 @@
+{
+    "name": "huni-bilesenleri",
+    "private": true,
+    "type": "module",
+    "//": "Bağımlılık YOK: kullanan kabın node_modules'u compose ile buraya bağlanır (bugün düzenleyici). Tek React sürümü (Ç45) böylece yapı gereği; paketleyen tarafta resolve.dedupe ŞART (vite.config.ts).",
+    "scripts": {
+        "check": "tsc --noEmit",
+        "test": "vitest run",
+        "format:check": "prettier --check ."
+    }
+}

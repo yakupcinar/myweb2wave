@@ -26,6 +26,20 @@ final class TemaTest extends TestCase
         self::assertEqualsWithDelta(4.48, Tema::kontrast('#777777', '#ffffff'), 0.01);
     }
 
+    /** Huni sayfası ve panel temayı huni-bilesenleri/tema.ts ile çizer; tema.test.ts aynı örnekleri okur (B4/H1). */
+    public function testHuniBilesenleriyleOrtakOrnekler(): void
+    {
+        $dosya = \dirname(__DIR__, 3).'/huni-bilesenleri/tema-ornekleri.json';
+        /** @var array{varsayilan: array<string, mixed>, yaziTipleri: list<string>, kontrast: list<array{a: string, b: string, oran: float}>} $o */
+        $o = json_decode((string) file_get_contents($dosya), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame($o['varsayilan'], Tema::VARSAYILAN);
+        self::assertSame($o['yaziTipleri'], Tema::YAZI_TIPLERI);
+        foreach ($o['kontrast'] as ['a' => $a, 'b' => $b, 'oran' => $oran]) {
+            self::assertEqualsWithDelta($oran, Tema::kontrast($a, $b), 0.01, "$a / $b");
+        }
+    }
+
     public function testOkunurlukSiniri(): void
     {
         self::assertSame([], Tema::hatalar(['metinRengi' => '#767676'] + Tema::VARSAYILAN));

@@ -141,3 +141,14 @@ JPEG gerçek HTTP ile 201. **Doğrusu:** uygulama sınırı yazınca PHP'nin
 sınırını da ölç ve üstüne ayarla; `UPLOAD_ERR_INI_SIZE`'ı uygulamanın
 mesajına çevir. Bellek de öyle: `memory_limit` 128M, GD piksel başına ~4
 bayt — piksel sınırı buna göre (16 Mpx).
+
+## §32 — Vitest CSS içe aktarmasını sessizce BOŞ dizgeye çevirir (`?raw` dahil)
+**Belirti:** `import css from "./huni.css?raw"` hata vermiyor, `css` boş
+dizge. CSS'te bir şeyin **olmadığını** iddia eden test (ör. "kapsamsız kural
+yok") boş metinde her zaman yeşil kalır. **Sebep:** Vitest'in `test.css`
+ayarı varsayılan olarak CSS dosyalarını işlemiyor, içeriği boşaltıyor; `?raw`
+sorgusu da bundan kurtulmuyor (Vite'ın kendi derlemesinde dolu gelir).
+**Ölçüm (2026-10-21, `huni-bilesenleri-h1.md`):** `:root` değişkenlerini
+okuyan test `{}` aldı; `test: { css: { include: [/huni\.css/] } }` sonrası
+6 değişken. **Doğrusu:** CSS'i metin olarak okuyan testte `css.include`
+ver; ya da önce dosyanın dolu geldiğini iddia et (ör. seçici sayısı > 5).

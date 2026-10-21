@@ -35,3 +35,4 @@
 | 28 | E2.4a sürükle-bırak (Puck): çekirdek değişmeden, çeviri katmanı + birim testi | kayıpsız çeviri testle; üretilen dosyayı biçimlendirmek kendi denetimimizi kırdı | `puck.md` |
 | 29 | Karar A10: ödeme sonrası tek kullanımlık giriş bağlantısı (dış "Lazy Auth" istemi yerine) | istem önce rakiplerle ölçüldü; birbirinin yedeği iki filtre tek tek bozulunca yeşil kaldı — çift birlikte ölçülür | `giris-baglantisi.md` |
 | 30 | H0: React geçişi öncesi taban ölçümü (boyut, içerik zinciri, 15 davranış) | kararın gerekçesi ("ilk boyama") ölçülünce React o sorunu çözmüyor, uzatıyor çıktı — çözüm erken istek | `huni-oynatici-h0.md` |
+| 31 | H1: ortak huni bileşenleri + tek tema/CSS (Puck ve huni aynı dosyalar; PHP ile ortak örnek dosyası) | iki dilde aynı formül tek JSON'la ölçülür; kontrol adımının grep'i kendi yorumunu yakaladı — kırma denemesi kontrol adımına da uygulanır | `huni-bilesenleri-h1.md` |

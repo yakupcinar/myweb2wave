@@ -1,0 +1,17 @@
+{
+    "aciklama": "Tema formülünün iki dilde (Tema.php, tema.ts) aynı olduğunu ölçen ortak örnekler. Oranlar WCAG tanımından bağımsız hesaplandı (tuzak §3).",
+    "varsayilan": {
+        "anaRenk": "#2563eb",
+        "arkaPlan": "#ffffff",
+        "metinRengi": "#111827",
+        "yaziTipi": "sistem",
+        "kose": 10
+    },
+    "yaziTipleri": ["sistem", "serif", "yuvarlak", "mono"],
+    "kontrast": [
+        { "a": "#000000", "b": "#ffffff", "oran": 21.0 },
+        { "a": "#2563eb", "b": "#2563eb", "oran": 1.0 },
+        { "a": "#767676", "b": "#ffffff", "oran": 4.54 },
+        { "a": "#777777", "b": "#ffffff", "oran": 4.48 }
+    ]
+}

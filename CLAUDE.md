@@ -144,6 +144,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§29** | Twig'e **`app` adlı değişken geçmek global `app`'i ezer** — üretimde flaşlar sessizce kaybolur (testte 500); başka ad. |
 | **§30** | **Cache-Control'süz statik dosya** tarayıcıda eski hâliyle çalışır (dağıtımdan sonra da) — adrese içerik özeti. |
 | **§31** | PHP **`upload_max_filesize` (2M)** isteği uygulamadan önce keser — kodda yazan büyük sınıra hiç ulaşılmaz; PHP sınırını ölç ve ayarla. |
+| **§32** | Vitest CSS içe aktarmasını (**`?raw` dahil**) **boş dizgeye** çevirir — CSS'te "yok" diyen test hep yeşil; `test.css.include`. |
 
 ---
 
