@@ -69,6 +69,10 @@ function Oynatici({
       : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined),
   );
   const [mevcut, setMevcut] = useState(0);
+  // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
+  // (opaklık 0'dan başlasa ilk anlamlı boyama gecikirdi). Adımla aynı
+  // çizimde açılır; effect'te açılsa yeni adım bir kare görünüp titrerdi.
+  const [gecti, setGecti] = useState(false);
   const [odeme, setOdeme] = useState({ suruyor: false, hata: "" });
   const kutu = useRef<HTMLDivElement>(null);
   const ilkAdim = useRef(true);
@@ -85,8 +89,10 @@ function Oynatici({
   // Geri tuşu bir önceki adıma döner, sayfadan çıkmaz.
   useEffect(() => {
     history.replaceState({ adim: 0 }, "");
-    const geri = (e: PopStateEvent): void =>
+    const geri = (e: PopStateEvent): void => {
+      setGecti(true);
       setMevcut((e.state as { adim?: number } | null)?.adim ?? 0);
+    };
     window.addEventListener("popstate", geri);
     return () => window.removeEventListener("popstate", geri);
   }, []);
@@ -107,6 +113,7 @@ function Oynatici({
     const sira = mevcut + 1;
     if (sira >= tanim.adimlar.length) return;
     history.pushState({ adim: sira }, "");
+    setGecti(true);
     setMevcut(sira);
   }
 
@@ -146,7 +153,7 @@ function Oynatici({
         </p>
       ) : null}
       <progress max={tanim.adimlar.length} value={mevcut + 1} />
-      <div ref={kutu}>
+      <div ref={kutu} data-gecis={gecti ? "" : undefined}>
         {tanim.adimlar.map((adim, i) => (
           <div
             key={`${i}-${adim.id}`}

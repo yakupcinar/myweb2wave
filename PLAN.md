@@ -28,7 +28,7 @@
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
-| Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4–H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md` |
+| Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5–H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
@@ -68,7 +68,7 @@
   - [x] **H3** — 2026-10-21, `docs/decisions/huni-onizleme-h3.md`: aynı tanım iki bağımsız yoldan (Puck alanları / tanım → `Adim`) aynı DOM (düzenleyici testi, kırma 6/6); tarayıcıda 9 öğe × 12 hesaplanmış özellik fark 0; geçerli önizleme bağlantısı yürüdü. Klasik düzenleyici kaldı (Ç45, kullanıcı kararı)
   - [x] **b1 · yayınla/önizleme/sürümler Puck'ta** (Ç45) — 2026-10-21, `docs/decisions/puck-yayin-b1.md`: üst çubuk Kaydet · Önizle · Yayınla · Sürümler; 3 JSON ucu; kaydedilmemişken yayın/önizleme/geri yükleme kapalı; kırma 9/10 (+S9 tutmadı → koruma access_control'da, S9b). Sırada **b2** (klasik düzenleyiciyi silmek; önce Safari) — Ç53
   - [x] **Ada önyükleme** (Ç52 (1)) — 2026-10-21, `docs/decisions/ada-onyukleme.md`: derlemede `modulepreload`; ikinci JS turu kalktı, içerik yalnız tanımı bekliyor (ısınmış: ilk bildirim 142 ms, H0 230)
-  - [ ] **H4 · Geçişler** — önce CSS geçişi (`prefers-reduced-motion`'a uyar); animasyon kütüphanesi (Framer Motion) yalnız CSS yetmezse ve H0 bütçesine sığarsa. Tailwind YOK (tema CSS değişkenleriyle; ikinci stil sistemi gerekmez)
+  - [x] **H4** — 2026-10-21, `docs/decisions/huni-gecisler-h4.md`: yalnız CSS (`@keyframes`, 220 ms), ilk adımda yok (`data-gecis`), `prefers-reduced-motion`'a uyar; JS +23 B; kırma 5/5. Kalanlar Ç54
   - [ ] **H5 · Dallanma / skor** — bugün tanımda dallanma YOK (adımlar düz liste, `Tanim.php`). Önce tanım biçimi (çekirdek `Tanim` + sözleşme + Puck alanı), sonra oynatıcı; merkezi durum için XState/Zustand kararı BURADA, `useReducer` yetmediği ölçülürse (kural 6a: imkânsız senaryo için soyutlama yok)
   - [ ] **H6 · Olay/piksel noktası** — tek `olayBildir` (bugünkü `ilerlemeBildir`'in yerine): çekirdek ölçümü + Meta Pixel / TikTok Pixel / GA4. Ön koşul: çerez onayı (Ç12, Ç34) ve sunucu bildirimiyle tekilleştirme (Ç28) — aşağıdaki "Reklam ağına dönüşüm" maddesiyle aynı blok. Başarı sayfasında piksel `session_id`'yi görmemeli (A10, Ç46)
 - [ ] **E2.4b yeni bileşen türleri** (ör. yorum/sosyal kanıt, çoklu seçim, metin girişi) — çekirdek Tanim + sözleşme + Puck + ortak bileşen; **H2'den SONRA** (yeni tür bir kez, ortak bileşen olarak yazılsın)
