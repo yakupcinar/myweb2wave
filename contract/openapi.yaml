@@ -81,6 +81,7 @@ paths:
                 ttclid: { $ref: "#/components/schemas/AtifAlani" }
                 huni: { $ref: "#/components/schemas/HuniKimligi" }
                 surum: { type: integer, minimum: 1, description: "Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır" }
+                izin: { type: boolean, description: "Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz" }
       responses:
         "201":
           description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
@@ -158,6 +159,35 @@ paths:
                 sira: { type: integer, minimum: 0, maximum: 50, description: Adımın huni tanımındaki sırası }
                 adim: { $ref: "#/components/schemas/HuniKimligi" }
                 cevap: { $ref: "#/components/schemas/HuniKimligi" }
+      responses:
+        "204": { description: Kaydedildi }
+        "400": { description: Gövde JSON değil }
+        "404":
+          description: Ziyaret yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "422":
+          description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /huni/ziyaretler/{ziyaret}/izin:
+    post:
+      operationId: grantMeasurementConsent
+      summary: Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                fbclid: { $ref: "#/components/schemas/AtifAlani" }
+                ttclid: { $ref: "#/components/schemas/AtifAlani" }
       responses:
         "204": { description: Kaydedildi }
         "400": { description: Gövde JSON değil }

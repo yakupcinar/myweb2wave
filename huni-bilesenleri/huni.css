@@ -86,3 +86,22 @@
         transform: translateY(8px);
     }
 }
+/* Reklam ölçümü onay şeridi (H6a, yalnız huni sayfası). Akışta, üstte. */
+.huni .izin-seridi {
+    font-size: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: var(--kose);
+    border: 1px solid color-mix(in srgb, var(--metin) 30%, transparent);
+}
+.huni .izin-seridi p {
+    margin: 0 0 8px;
+}
+.huni .izin-dugmeleri {
+    display: flex;
+    gap: 8px;
+}
+.huni .izin-dugmeleri button {
+    flex: 1;
+    text-align: center;
+}

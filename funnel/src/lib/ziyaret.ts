@@ -1,5 +1,6 @@
-// Huni ziyareti ve anket ilerlemesi (A6); ziyaret görülen huniyi ve sürümünü taşır (A7, A8). Çerez/tarayıcı deposu yok:
-// ziyaret kimliği yalnız sayfanın belleğinde. Hiçbiri kullanıcıyı
+// Huni ziyareti ve anket ilerlemesi (A6); ziyaret görülen huniyi ve sürümünü taşır (A7, A8). Çerez yok:
+// ziyaret kimliği yalnız sayfanın belleğinde. Tıklama kimlikleri (fbclid, ttclid) yalnız reklam ölçümü
+// izniyle gider (H6a, A12; izin seçimi lib/izin.ts). Hiçbiri kullanıcıyı
 // durdurmaz — kayıt başarısızsa huni ve ödeme yine çalışır.
 import { cekirdek } from "./cekirdek";
 import type { paths } from "../sozlesme/api";
@@ -18,15 +19,26 @@ const ALANLAR = [
   "utm_campaign",
   "utm_content",
   "utm_term",
-  "fbclid",
-  "ttclid",
 ] as const;
+/** Kişiye bağlanabilen tıklama kimlikleri: yalnız izinle (A12). */
+const TIKLAMA = ["fbclid", "ttclid"] as const;
+
+function tiklamaKimlikleri(): { fbclid?: string; ttclid?: string } {
+  const adres = new URLSearchParams(window.location.search);
+  const k: { fbclid?: string; ttclid?: string } = {};
+  for (const ad of TIKLAMA) {
+    const deger = adres.get(ad)?.slice(0, 500);
+    if (deger) k[ad] = deger;
+  }
+  return k;
+}
 
 /** Sayfa açılınca bir kez: URL'deki reklam alanlarıyla ziyaret kaydı. */
 export function ziyaretBaslat(
   app: Govde<"/huni/ziyaretler">["app"],
   huni?: string,
   surum?: number,
+  izin = false,
 ): Promise<string | undefined> {
   const adres = new URLSearchParams(window.location.search);
   const govde: Govde<"/huni/ziyaretler"> = { app };
@@ -38,6 +50,7 @@ export function ziyaretBaslat(
     const deger = adres.get(ad)?.slice(0, 500);
     if (deger) govde[ad] = deger;
   }
+  if (izin) Object.assign(govde, tiklamaKimlikleri(), { izin: true });
   return cekirdek
     .POST("/huni/ziyaretler", { body: govde })
     .then(({ data }) => data?.ziyaret)
@@ -60,6 +73,21 @@ export function ilerlemeBildir(
       };
       if (cevap) govde.cevap = cevap;
       return cekirdek.POST("/huni/ziyaretler/{ziyaret}/ilerleme", {
+        params: { path: { ziyaret } },
+        body: govde,
+      });
+    })
+    .catch(() => undefined);
+}
+
+/** Onay şeridinde "Kabul": izin + o anki tıklama kimlikleri. Beklenmez, hata yutulur. */
+export function izinBildir(ziyaretSozu: Promise<string | undefined>): void {
+  void ziyaretSozu
+    .then((ziyaret) => {
+      if (!ziyaret) return;
+      const govde: Govde<"/huni/ziyaretler/{ziyaret}/izin"> =
+        tiklamaKimlikleri();
+      return cekirdek.POST("/huni/ziyaretler/{ziyaret}/izin", {
         params: { path: { ziyaret } },
         body: govde,
       });

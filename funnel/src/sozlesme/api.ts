@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/ziyaretler/{ziyaret}/izin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri */
+        post: operations["grantMeasurementConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/huni/giris-baglantisi": {
         parameters: {
             query?: never;
@@ -362,6 +379,8 @@ export interface operations {
                     huni?: components["schemas"]["HuniKimligi"];
                     /** @description Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır */
                     surum?: number;
+                    /** @description Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz */
+                    izin?: boolean;
                 };
             };
         };
@@ -484,6 +503,58 @@ export interface operations {
                     sira: number;
                     adim: components["schemas"]["HuniKimligi"];
                     cevap?: components["schemas"]["HuniKimligi"];
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Geçersiz alan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    grantMeasurementConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fbclid?: components["schemas"]["AtifAlani"];
+                    ttclid?: components["schemas"]["AtifAlani"];
                 };
             };
         };

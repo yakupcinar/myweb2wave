@@ -7,7 +7,15 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "vitest";
 import type { components } from "../sozlesme/api";
 import Huni from "./Huni";
 
@@ -119,6 +127,7 @@ beforeEach(() => {
     return { durum: 404 };
   };
   delete window.huniTanimi;
+  window.localStorage.clear(); // izin seçimi testler arasında sızmasın
   document.documentElement.removeAttribute("style");
   document.title = "";
 });
@@ -429,6 +438,102 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     expect(history.state).toEqual({ adim: 3 });
     devam();
     expect(gorunenBaslik()).toBe("Pro");
+  });
+});
+
+describe("H6a — reklam ölçümü izni (A12)", () => {
+  const ADRES = "?utm_source=meta&fbclid=IwAR0abc&ttclid=E.C.P.x";
+  const ziyaretGovdesi = (): unknown =>
+    istekler("POST", "/huni/ziyaretler")[0]?.govde;
+  const izinler = (): Istek[] => istekler("POST", `/huni/ziyaretler/${Z}/izin`);
+  const bekleZiyaret = (): Promise<void> =>
+    waitFor(() => expect(ilerlemeler()).toHaveLength(1));
+
+  it("ilk ziyaret: şerit var, tıklama kimliği gitmez (UTM gider)", async () => {
+    kur(ADRES);
+    await yuklendi();
+    await bekleZiyaret();
+    expect(
+      screen.getByRole("complementary", { name: "Reklam ölçümü izni" }),
+    ).toBeTruthy();
+    expect(ziyaretGovdesi()).toEqual({
+      app: "keepchat",
+      huni: "varsayilan",
+      surum: 4,
+      utm_source: "meta",
+    });
+  });
+
+  it("Kabul: kimlikler izin ucuna gider, şerit kalkar, seçim hatırlanır", async () => {
+    kur(ADRES);
+    await yuklendi();
+    fireEvent.click(screen.getByText("Kabul et"));
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    expect(izinler()[0]?.govde).toEqual({
+      fbclid: "IwAR0abc",
+      ttclid: "E.C.P.x",
+    });
+    expect(screen.queryByText("Kabul et")).toBeNull();
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("evet");
+  });
+
+  it("Reddet: izin isteği yok, şerit kalkar, seçim hatırlanır", async () => {
+    kur(ADRES);
+    await yuklendi();
+    fireEvent.click(screen.getByText("Reddet"));
+    await bekleZiyaret();
+    expect(izinler()).toEqual([]);
+    expect(screen.queryByText("Reddet")).toBeNull();
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
+  });
+
+  it("önceden izin verilmiş: şerit yok, kimlikler ziyaretle birlikte", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    kur(ADRES);
+    await yuklendi();
+    await bekleZiyaret();
+    expect(screen.queryByText("Kabul et")).toBeNull();
+    expect(ziyaretGovdesi()).toMatchObject({
+      fbclid: "IwAR0abc",
+      ttclid: "E.C.P.x",
+      izin: true,
+    });
+    expect(izinler()).toEqual([]);
+  });
+
+  it("önceden reddedilmiş: şerit yok, kimlik yok", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "hayir");
+    kur(ADRES);
+    await yuklendi();
+    await bekleZiyaret();
+    expect(screen.queryByText("Kabul et")).toBeNull();
+    expect(ziyaretGovdesi()).not.toHaveProperty("fbclid");
+  });
+
+  it("önizlemede şerit yok", async () => {
+    kur(`?onizleme=abc&${ADRES.slice(1)}`);
+    await yuklendi();
+    expect(screen.queryByText("Kabul et")).toBeNull();
+  });
+
+  it("tarayıcı deposu yoksa şerit yine çalışır", async () => {
+    // Gizli pencere / engelli site verisi: localStorage'a ERİŞMEK hata verir.
+    // (Storage.prototype sahtesi happy-dom'da tutmadı — kırma V10.)
+    const asil = Object.getOwnPropertyDescriptor(window, "localStorage");
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get: () => {
+        throw new DOMException("engelli", "SecurityError");
+      },
+    });
+    onTestFinished(() => {
+      if (asil) Object.defineProperty(window, "localStorage", asil);
+    });
+    kur(ADRES);
+    await yuklendi();
+    fireEvent.click(screen.getByText("Kabul et"));
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    expect(screen.queryByText("Kabul et")).toBeNull();
   });
 });
 

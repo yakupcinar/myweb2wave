@@ -37,8 +37,9 @@ final class AtifTest extends WebTestCase
 
     public function testZiyaretReklamAlanlariylaKaydedilir(): void
     {
+        // H6a: tıklama kimliği yalnız izinle — önceden izin vermiş ziyaretçi.
         $this->client->jsonRequest('POST', '/huni/ziyaretler', [
-            'app' => 'keepchat', 'utm_source' => 'meta', 'utm_campaign' => 'ekim-1', 'fbclid' => 'IwAR0abc',
+            'app' => 'keepchat', 'utm_source' => 'meta', 'utm_campaign' => 'ekim-1', 'fbclid' => 'IwAR0abc', 'izin' => true,
         ]);
 
         self::assertResponseStatusCodeSame(201);
@@ -48,6 +49,57 @@ final class AtifTest extends WebTestCase
             'utm_source' => 'meta', 'utm_medium' => null, 'utm_campaign' => 'ekim-1',
             'utm_content' => null, 'utm_term' => null, 'fbclid' => 'IwAR0abc', 'ttclid' => null,
         ], $this->db->fetchAssociative('SELECT id, app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid FROM huni_ziyaretleri'));
+        self::assertSame(1, $this->say('huni_ziyaretleri WHERE izin_at IS NOT NULL'));
+    }
+
+    /** H6a (A12): izin yoksa tıklama kimlikleri atılır — eski önbellekli betik gönderse bile; UTM kalır. */
+    public function testIzinsizZiyaretTiklamaKimligiSaklamaz(): void
+    {
+        $this->client->jsonRequest('POST', '/huni/ziyaretler', [
+            'app' => 'keepchat', 'utm_source' => 'meta', 'fbclid' => 'IwAR0abc', 'ttclid' => 'E.C.P.x',
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(
+            ['utm_source' => 'meta', 'fbclid' => null, 'ttclid' => null, 'izin_at' => null],
+            $this->db->fetchAssociative('SELECT utm_source, fbclid, ttclid, izin_at FROM huni_ziyaretleri'),
+        );
+
+        $this->client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat', 'izin' => 'evet']);
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testSonradanVerilenIzinKimlikleriYazarEskisiniSilmez(): void
+    {
+        $ziyaret = $this->ziyaretAc('keepchat');
+
+        $this->client->jsonRequest('POST', "/huni/ziyaretler/{$ziyaret}/izin", ['fbclid' => 'IwAR0abc']);
+        self::assertResponseStatusCodeSame(204);
+        Sozlesme::yanitiDogrula('POST', '/huni/ziyaretler/{ziyaret}/izin', $this->client->getResponse());
+        $ilk = $this->db->fetchOne('SELECT izin_at FROM huni_ziyaretleri');
+        self::assertIsString($ilk);
+
+        // İkinci izin (ör. başka sekmede): ilk an ve fbclid korunur, ttclid eklenir.
+        $this->client->jsonRequest('POST', "/huni/ziyaretler/{$ziyaret}/izin", ['ttclid' => 'E.C.P.x']);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame(
+            ['fbclid' => 'IwAR0abc', 'ttclid' => 'E.C.P.x', 'izin_at' => $ilk],
+            $this->db->fetchAssociative('SELECT fbclid, ttclid, izin_at FROM huni_ziyaretleri'),
+        );
+    }
+
+    public function testIzinGecersizGovde422BilinmeyenZiyaret404(): void
+    {
+        $ziyaret = $this->ziyaretAc('keepchat');
+        foreach ([['utm_source' => 'x'], ['fbclid' => ''], ['fbclid' => ['dizi']], ['fbclid' => str_repeat('a', 501)]] as $govde) {
+            $this->client->jsonRequest('POST', "/huni/ziyaretler/{$ziyaret}/izin", $govde);
+            self::assertResponseStatusCodeSame(422, (string) json_encode($govde));
+        }
+        self::assertSame(0, $this->say('huni_ziyaretleri WHERE izin_at IS NOT NULL'));
+
+        $this->client->jsonRequest('POST', '/huni/ziyaretler/00000000-0000-4000-8000-000000000000/izin', []);
+        self::assertResponseStatusCodeSame(404);
+        Sozlesme::yanitiDogrula('POST', '/huni/ziyaretler/{ziyaret}/izin', $this->client->getResponse());
     }
 
     public function testReklamsizZiyaretDeKaydedilirBosAlanNullOlur(): void
@@ -197,9 +249,12 @@ final class AtifTest extends WebTestCase
         self::assertSame(1, $this->say('huni_adimlari'));
     }
 
-    public function testIlerlemeUcundaCorsHuniKokenine(): void
+    /** H6a: izin ucu tarayıcıda CORS yüzünden düşüyordu (durum 0) — happy-dom testleri bunu görmez. */
+    #[\PHPUnit\Framework\Attributes\TestWith(['ilerleme'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['izin'])]
+    public function testZiyaretAltUclarindaCorsHuniKokenine(string $uc): void
     {
-        $this->client->request('OPTIONS', '/huni/ziyaretler/00000000-0000-4000-8000-000000000000/ilerleme', [], [], [
+        $this->client->request('OPTIONS', "/huni/ziyaretler/00000000-0000-4000-8000-000000000000/{$uc}", [], [], [
             'HTTP_ORIGIN' => 'https://huni.test',
             'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
             'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'content-type',

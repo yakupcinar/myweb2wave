@@ -191,3 +191,14 @@ ve veritabanı hiç değişmemişti; buna dayanan "düzeltme" geri alındı.
 **Doğrusu:** değişikliğin uygulamaya ulaştığını önce uygulamanın kendi
 göstergesinden oku (durum notu, kayıt, ağ isteği); gerçek klavye/fare olayı
 (`computer` aracı) ya da `form_input` kullan.
+
+## §36 — CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer
+**Belirti:** yeni huni ucu sunucu testlerinde ve happy-dom testlerinde
+yeşil; tarayıcıda ekranda her şey normal (şerit kalkıyor, seçim kaydoluyor)
+ama veritabanına hiçbir şey yazılmıyor. **Sebep:** `nelmio_cors` yalnız
+listedeki yollara izin veriyor; ön kontrol başarısız → `fetch` hata verir,
+huni bildirim hatalarını bilerek yutar (akış durmasın). Sunucu testinde
+köken yok, happy-dom'da CORS yok. **Ölçüm (2026-10-21, `huni-izin-h6a.md`):**
+Resource Timing'de izin isteği **durum 0**, `izin_at` boş; yol listesine
+eklenince 204. **Doğrusu:** tarayıcıdan çağrılan her yeni uç için önce
+`OPTIONS` + `Origin` ile CORS testi (kırmızı), sonra listeye ekle.

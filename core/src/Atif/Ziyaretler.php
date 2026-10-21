@@ -16,6 +16,9 @@ final readonly class Ziyaretler
     /** Huninin URL'sinden okunan alanlar; başka alan kabul edilmez. */
     public const ALANLAR = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'ttclid'];
 
+    /** Kişiye bağlanabilen tıklama kimlikleri: yalnız izinle saklanır (H6a). */
+    public const TIKLAMA = ['fbclid', 'ttclid'];
+
     /** fbclid ~200 karakter; üstü kötüye kullanım. */
     public const AZAMI_UZUNLUK = 500;
 
@@ -36,21 +39,48 @@ final readonly class Ziyaretler
      * Ziyaretin gördüğü huni ve sürüm (A8) yayınlanmış bir çift değilse ikisi
      * de null yazılır — atıf ziyareti asla durdurmaz.
      *
+     * Tıklama kimlikleri yalnız $izin ile yazılır (H6a): izinsiz gelen
+     * kimlik — örneğin önbellekteki eski huni betiğinden — sessizce atılır.
+     *
      * @param array<value-of<self::ALANLAR>, string|null> $alanlar
      */
-    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null): string
+    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null, bool $izin = false): string
     {
+        if (!$izin) {
+            $alanlar = array_merge($alanlar, array_fill_keys(self::TIKLAMA, null));
+        }
         $id = $this->db->fetchOne(
             'WITH s AS (SELECT ad, surum FROM huni_surumleri WHERE app = :app AND ad = :huni AND surum = CAST(:surum AS int))
-             INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum)
+             INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at)
              VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :utm_content, :utm_term, :fbclid, :ttclid,
-                     (SELECT ad FROM s), (SELECT surum FROM s))
+                     (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :izin THEN now() END)
              RETURNING id',
-            ['app' => $app, 'huni' => $huni, 'surum' => $surum] + $alanlar,
+            ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'izin' => $izin] + $alanlar,
+            ['izin' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
         \assert(\is_string($id));
 
         return $id;
+    }
+
+    /**
+     * Onay şeridinde "Kabul" (H6a): izin anı + o anda adresteki tıklama
+     * kimlikleri (önceden yazılmışı silmez). Ziyaret yoksa false.
+     *
+     * @param array<value-of<self::TIKLAMA>, string|null> $tiklama
+     */
+    public function izinVer(string $ziyaret, array $tiklama): bool
+    {
+        if (1 !== preg_match(self::UUID, $ziyaret)) {
+            return false;
+        }
+
+        return 1 === $this->db->executeStatement(
+            'UPDATE huni_ziyaretleri SET izin_at = coalesce(izin_at, now()),
+                    fbclid = coalesce(:fbclid, fbclid), ttclid = coalesce(:ttclid, ttclid)
+             WHERE id = :id',
+            ['id' => $ziyaret, 'fbclid' => $tiklama['fbclid'] ?? null, 'ttclid' => $tiklama['ttclid'] ?? null],
+        );
     }
 
     /** Ziyaret bu uygulamanınsa oturumu ona bağlar; değilse hiçbir şey yazmaz. */

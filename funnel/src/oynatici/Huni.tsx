@@ -8,9 +8,16 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Adim } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
-import { ilerlemeBildir, ziyaretBaslat, type Govde } from "../lib/ziyaret";
+import { izinOku, izinYaz, type Izin } from "../lib/izin";
+import {
+  ilerlemeBildir,
+  izinBildir,
+  ziyaretBaslat,
+  type Govde,
+} from "../lib/ziyaret";
 import type { components } from "../sozlesme/api";
 import { tanimIstegi } from "./erken-istek";
+import IzinSeridi from "./IzinSeridi";
 
 type Yayin = components["schemas"]["HuniYayini"];
 type App = Govde<"/huni/ziyaretler">["app"];
@@ -62,11 +69,19 @@ function Oynatici({
   onizleme: boolean;
 }): ReactNode {
   const { tanim } = yayin;
+  // H6a: reklam ölçümü izni — daha önce seçildiyse bu tarayıcıda hatırlanır.
+  const [izin, setIzin] = useState<Izin | null>(izinOku);
   // Ziyaret bir kez açılır; önizlemede hiç açılmaz, adım/cevap da gitmez.
+  // Tıklama kimlikleri yalnız önceden verilmiş izinle (yoksa Kabul'de ayrıca).
   const [ziyaretSozu] = useState(() =>
     onizleme
       ? Promise.resolve(undefined)
-      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined),
+      : ziyaretBaslat(
+          app,
+          yayin.huni,
+          yayin.surum ?? undefined,
+          izinOku() === "evet",
+        ),
   );
   const [mevcut, setMevcut] = useState(0);
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
@@ -148,8 +163,15 @@ function Oynatici({
     setOdeme({ suruyor: false, hata });
   }
 
+  function izinSec(secim: Izin): void {
+    izinYaz(secim);
+    setIzin(secim);
+    if (secim === "evet") izinBildir(ziyaretSozu);
+  }
+
   return (
     <>
+      {!onizleme && izin === null ? <IzinSeridi onSec={izinSec} /> : null}
       {onizleme ? (
         <p className="onizleme">
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
