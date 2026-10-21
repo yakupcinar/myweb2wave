@@ -78,6 +78,8 @@ adim core-test    core   'vendor/bin/phpunit --no-progress'
 adim funnel-derle funnel 'npm run -s build'
 # Bütçe (B4/H0 (c)): huninin bütün JS'i gzip'te ≤ 90 KB. React 67 KB'ı tek
 # başına yiyor; aşınca kırmızı — Preact ya da bölme kararı (Ç50) burada açılır.
+# Ç52 (1): ada modülleri önden yükleniyor mu (entegrasyon koştu mu).
+adim funnel-onyukleme funnel 'grep -q "rel=\"modulepreload\"" dist/keepchat/index.html'
 adim funnel-butce funnel 'b=$(cat dist/_astro/*.js | gzip -9 | wc -c); echo "JS gzip $b B"; [ "$b" -le 92160 ]'
 
 # Atlanan test PASS görünür (tuzak §8) — sayıyı ayrıca yaz.
