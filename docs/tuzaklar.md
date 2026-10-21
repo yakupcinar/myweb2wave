@@ -179,3 +179,15 @@ duruyor. Aynı sebeple FCP/LCP kaydı da yok (H0, H2). **Ölçüm (2026-10-21,
 çizdirince 18.056 ms, animasyon bitti, opaklık 1. **Doğrusu:** zamanlamaya
 bağlı her ölçümden önce `visibilityState` ve `document.timeline.currentTime`
 yaz; gizliyse sonuç "ölçülmedi"dir, "bozuk" değil.
+
+## §35 — Betikle doldurulan alanın DOM değeri uygulamanın durumu değildir
+**Belirti:** tarayıcı aracında `input.value = …` + `input` olayı; alan yeni
+değeri gösteriyor, ardından basılan düğme **eski** veriyle çalışıyor —
+"uygulama gecikmeli / hatalı" sonucuna varılır. **Sebep:** olay uygulamanın
+dinlediği öğeye ulaşmadı (Puck aynı alanı iki kez çiziyor; görünmeyen kopyaya
+yazıldı) — DOM değişti, uygulamanın deposu değişmedi. **Ölçüm (2026-10-21,
+`huni-dallanma-h5.md`):** "eski taslak yayınlandı" gözlemi bu yüzdendi; not
+ve veritabanı hiç değişmemişti; buna dayanan "düzeltme" geri alındı.
+**Doğrusu:** değişikliğin uygulamaya ulaştığını önce uygulamanın kendi
+göstergesinden oku (durum notu, kayıt, ağ isteği); gerçek klavye/fare olayı
+(`computer` aracı) ya da `form_input` kullan.

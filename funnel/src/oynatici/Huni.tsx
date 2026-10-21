@@ -109,9 +109,12 @@ function Oynatici({
       ?.focus();
   }, [mevcut, tanim, ziyaretSozu]);
 
-  function ileri(): void {
-    const sira = mevcut + 1;
-    if (sira >= tanim.adimlar.length) return;
+  /** H5: hedef varsa o adıma (çekirdek yalnız ileriyi kabul eder), yoksa sıradakine. */
+  function ileri(hedef?: string): void {
+    const sira = hedef
+      ? tanim.adimlar.findIndex((a) => a.id === hedef)
+      : mevcut + 1;
+    if (sira <= mevcut || sira >= tanim.adimlar.length) return;
     history.pushState({ adim: sira }, "");
     setGecti(true);
     setMevcut(sira);
@@ -164,7 +167,9 @@ function Oynatici({
             <Adim
               adim={adim}
               medyaKoku={KOK}
-              onIleri={ileri}
+              onIleri={() =>
+                ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
+              }
               onSecim={(s) => {
                 if (adim.tur !== "soru") return;
                 ilerlemeBildir(
@@ -173,7 +178,7 @@ function Oynatici({
                   adim.id,
                   adim.secenekler[s]?.id,
                 );
-                ileri();
+                ileri(adim.secenekler[s]?.hedef);
               }}
               odeme={{
                 kapali: onizleme || odeme.suruyor,
