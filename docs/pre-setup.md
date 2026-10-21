@@ -135,6 +135,17 @@ birleştirmesi) · Universal Link (aynı alandan açılmaz, Team ID + AASA ister
 sonra Ç47) · parmak izi / MMP ile kurulumu aşmak (Ç27). Kayıt:
 `docs/decisions/giris-baglantisi.md`.
 
+**A11 · Huni dallanması: seçenek → hedef adım, yalnız ileri; skor yok**
+(2026-10-21, kullanıcı; B4/H5). Soru seçeneği ve tanıtım düğmesi isteğe bağlı
+`hedef` (tanımda **daha sonraki** bir adımın kimliği) taşır; yoksa sıradaki
+adım. Tanıtım düğmesinin hedefi dalların ortak adımda **birleşmesi** için
+(yoksa bir dalın son adımı öteki dala düşerdi). Paywall tam bir kez ve en
+sonda kalır. **Reddedilen:** adım görünürlük koşulu (FunnelFox gibi; VE/VEYA,
+daha karmaşık alan ve doğrulama) · ikisi birden (çelişen kurallar) · geriye
+hedef (döngü; doğrulama tek geçişte biter) · skor (puan + sonuç metni ya da
+puana göre plan — ölçülmüş ihtiyaç yok, kural 6a; puana göre plan ödeme
+kuralını değiştirirdi). Kayıt: `docs/decisions/huni-dallanma-h5.md`.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

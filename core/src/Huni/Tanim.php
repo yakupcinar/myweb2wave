@@ -45,6 +45,13 @@ final class Tanim
             return [...$h, 'adimlar 2–'.self::AZAMI_ADIM.' öğeli bir liste olmalı'];
         }
 
+        // H5: hedef yalnız İLERİ — kimlik → sıra (döngü olamaz, doğrulama tek geçiş).
+        $sira = [];
+        foreach ($adimlar as $i => $adim) {
+            if (\is_array($adim) && \is_string($adim['id'] ?? null) && !isset($sira[$adim['id']])) {
+                $sira[$adim['id']] = $i;
+            }
+        }
         $gorulen = [];
         foreach ($adimlar as $i => $adim) {
             $yer = 'adım '.($i + 1);
@@ -69,6 +76,11 @@ final class Tanim
                 $beklenen[] = 'gorsel';
                 self::gorsel($adim['gorsel'], $yer, $h);
             }
+            // H5: tanıtım düğmesi de atlayabilir — dallar ortak adımda birleşsin.
+            if ('tanitim' === $tur && \array_key_exists('hedef', $adim)) {
+                $beklenen[] = 'hedef';
+                self::hedef($adim['hedef'], $sira, $i, $yer, $h);
+            }
             if (!self::anahtarlar($adim, $beklenen)) {
                 $h[] = "{$yer}: alanlar tam olarak ".implode(', ', $beklenen).' olmalı';
                 continue;
@@ -77,7 +89,7 @@ final class Tanim
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
             if ('soru' === $tur) {
-                self::secenekler($adim['secenekler'], $yer, $h);
+                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h);
             }
             if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
                 $h[] = "{$yer}: plan bu uygulamada yok";
@@ -147,8 +159,11 @@ final class Tanim
         }
     }
 
-    /** @param list<string> $h */
-    private static function secenekler(mixed $secenekler, string $yer, array &$h): void
+    /**
+     * @param array<string, int> $sira
+     * @param list<string>       $h
+     */
+    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h): void
     {
         if (!\is_array($secenekler) || !array_is_list($secenekler) || \count($secenekler) < 2 || \count($secenekler) > 8) {
             $h[] = "{$yer}: 2–8 seçenek olmalı";
@@ -158,9 +173,13 @@ final class Tanim
         $gorulen = [];
         foreach ($secenekler as $j => $s) {
             $sy = "{$yer} seçenek ".($j + 1);
-            if (!\is_array($s) || !self::anahtarlar($s, \array_key_exists('gorsel', $s) ? ['id', 'metin', 'gorsel'] : ['id', 'metin'])) {
-                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel";
+            $istege = \is_array($s) ? array_values(array_intersect(['gorsel', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
+            if (!\is_array($s) || !self::anahtarlar($s, ['id', 'metin', ...$istege])) {
+                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel, hedef";
                 continue;
+            }
+            if (\array_key_exists('hedef', $s)) {
+                self::hedef($s['hedef'], $sira, $i, $sy, $h);
             }
             if (\array_key_exists('gorsel', $s)) {
                 self::gorsel($s['gorsel'], $sy, $h);
@@ -171,6 +190,19 @@ final class Tanim
                 $gorulen[$s['id']] = true;
             }
             self::metin($s['metin'], 'secenek', "{$sy} metin", $h);
+        }
+    }
+
+    /**
+     * H5: atlama hedefi tanımda DAHA SONRAKİ bir adımın kimliği olmalı.
+     *
+     * @param array<string, int> $sira
+     * @param list<string>       $h
+     */
+    private static function hedef(mixed $hedef, array $sira, int $i, string $yer, array &$h): void
+    {
+        if (!\is_string($hedef) || !isset($sira[$hedef]) || $sira[$hedef] <= $i) {
+            $h[] = "{$yer}: hedef sonraki adımlardan birinin kimliği olmalı (yalnız ileri)";
         }
     }
 }

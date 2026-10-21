@@ -211,6 +211,7 @@ export interface components {
             baslik: string;
             metin: string;
             dugme: string;
+            hedef?: components["schemas"]["AdimHedefi"];
         };
         SoruAdimi: {
             id: components["schemas"]["HuniKimligi"];
@@ -221,8 +222,11 @@ export interface components {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
                 gorsel?: components["schemas"]["GorselKimligi"];
+                hedef?: components["schemas"]["AdimHedefi"];
             }[];
         };
+        /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
+        AdimHedefi: components["schemas"]["HuniKimligi"];
         PaywallAdimi: {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */

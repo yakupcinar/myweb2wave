@@ -119,6 +119,23 @@ final class HuniTest extends WebTestCase
         yield 'tekrar eden seçenek' => ['geçersiz ya da tekrar ediyor', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']])];
         yield 'tek adım' => ['2–50', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][2]]]];
         yield 'fazla üst alan' => ['yalnız sayfaBasligi, adimlar', $t + ['css' => 'x']];
+        // H5: hedef yalnız ileri.
+        $sec = static fn (mixed $hedef): array => [['id' => 'a', 'metin' => 'A', 'hedef' => $hedef], ['id' => 'b', 'metin' => 'B']];
+        yield 'seçenek hedefi geriye' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('giris'))];
+        yield 'seçenek hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('soru1'))];
+        yield 'seçenek hedefi yok' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('yok'))];
+        yield 'seçenek hedefi dizge değil' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec(2))];
+        yield 'tanıtım hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(0, 'hedef', 'giris')];
+        yield 'seçenekte fazla alan' => ['yalnız id, metin', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'sonraki' => 'paywall'], ['id' => 'b', 'metin' => 'B']])];
+    }
+
+    /** H5: seçenek ve tanıtım düğmesi ileriki bir adıma atlayabilir. */
+    public function testIleriHedefliDallanmaGecerli(): void
+    {
+        $t = self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'], ['id' => 'b', 'metin' => 'B']]);
+        $t['adimlar'][0]['hedef'] = 'paywall';
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void

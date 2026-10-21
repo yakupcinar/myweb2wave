@@ -341,6 +341,97 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
   });
 });
 
+describe("H5 — dallanma (yalnız ileri)", () => {
+  // giris → kiminle ─aile→ aile-adimi ─(hedef)→ paywall
+  //                 └─iş──→ is-adimi ─────────→ paywall
+  const dallar = (): Yanit => ({
+    durum: 200,
+    govde: yayin({
+      adimlar: [
+        {
+          id: "giris",
+          tur: "tanitim",
+          baslik: "Merhaba",
+          metin: "",
+          dugme: "Başla",
+        },
+        {
+          id: "kiminle",
+          tur: "soru",
+          soru: "Kiminle?",
+          secenekler: [
+            { id: "aile", metin: "Ailemle", hedef: "aile-adimi" },
+            { id: "is", metin: "İş", hedef: "is-adimi" },
+          ],
+        },
+        {
+          id: "aile-adimi",
+          tur: "tanitim",
+          baslik: "Aile",
+          metin: "",
+          dugme: "Devam",
+          hedef: "paywall",
+        },
+        {
+          id: "is-adimi",
+          tur: "tanitim",
+          baslik: "İş için",
+          metin: "",
+          dugme: "Devam",
+        },
+        {
+          id: "paywall",
+          tur: "paywall",
+          baslik: "Pro",
+          metin: "",
+          dugme: "Abone ol",
+          plan: "monthly",
+        },
+      ],
+    }),
+  });
+  const devam = (): void => {
+    const d = document.querySelector<HTMLButtonElement>(
+      "[data-sira]:not([hidden]) button.ana",
+    );
+    if (d) fireEvent.click(d);
+  };
+
+  it("seçenek hedefe atlar; dalın sonu ortak adıma atlar (öteki dal görülmez)", async () => {
+    tanim = dallar();
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunenBaslik()).toBe("Aile");
+    devam();
+    expect(gorunenBaslik()).toBe("Pro");
+    expect(history.state).toEqual({ adim: 4 });
+    const cubuk = document.querySelector("progress") as HTMLProgressElement;
+    expect([cubuk.max, cubuk.value]).toEqual([5, 5]);
+    await waitFor(() => expect(ilerlemeler()).toHaveLength(5));
+    expect(ilerlemeler()).toEqual([
+      { sira: 0, adim: "giris" },
+      { sira: 1, adim: "kiminle" },
+      { sira: 1, adim: "kiminle", cevap: "aile" },
+      { sira: 2, adim: "aile-adimi" },
+      { sira: 4, adim: "paywall" },
+    ]);
+  });
+
+  it("öteki dal kendi adımından sonra sıradakine geçer", async () => {
+    tanim = dallar();
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("İş"));
+    expect(gorunenBaslik()).toBe("İş için");
+    expect(history.state).toEqual({ adim: 3 });
+    devam();
+    expect(gorunenBaslik()).toBe("Pro");
+  });
+});
+
 describe("H4 — geçiş", () => {
   // huni.css animasyonu yalnız [data-gecis] altında: ilk adım opaklık 0'dan
   // başlamasın (ilk anlamlı boyama), sonraki her adım değişiminde başlasın.

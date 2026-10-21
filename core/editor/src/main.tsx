@@ -182,6 +182,24 @@ function Duzenleyici({
 
     const acik = dugmeler(yayin, guncel !== kayitli, mesgul);
 
+    /**
+     * Tıklama anında Puck deposundan bir kez daha denetlenir: düğmenin açık
+     * olması onChange'le güncellenen duruma bağlı ve kaydetmeden sonra bu
+     * durum (gizli sekmede) saniyelerce eski kaldı — ölçüldü,
+     * huni-dallanma-h5.md. Doğruluğun kaynağı depo.
+     */
+    function kaydedilmis(veri: HuniVerisi): boolean {
+        const simdi = imza(veri);
+        if (simdi === kayitli) return true;
+        setGuncel(simdi);
+        setDurum({
+            tur: "hata",
+            metin: "Kaydedilmemiş değişiklik var — önce kaydet.",
+            hatalar: [],
+        });
+        return false;
+    }
+
     return (
         <>
             {durum ? (
@@ -213,8 +231,12 @@ function Duzenleyici({
                             acik={acik}
                             yayin={yayin}
                             onKaydet={(veri) => void kaydet(veri)}
-                            onYayinla={() => void yayinla()}
-                            onGeriYukle={(s) => void geriYukle(s)}
+                            onYayinla={(veri) => {
+                                if (kaydedilmis(veri)) void yayinla();
+                            }}
+                            onGeriYukle={(s, veri) => {
+                                if (kaydedilmis(veri)) void geriYukle(s);
+                            }}
                         />
                     ),
                 }}
@@ -233,18 +255,19 @@ function UstCubuk({
     acik: ReturnType<typeof dugmeler>;
     yayin: YayinDurumu | null;
     onKaydet: (veri: HuniVerisi) => void;
-    onYayinla: () => void;
-    onGeriYukle: (surum: number) => void;
+    onYayinla: (veri: HuniVerisi) => void;
+    onGeriYukle: (surum: number, veri: HuniVerisi) => void;
 }) {
     // Güncel veri Puck'ın deposundan, tıklama anında.
     const getPuck = useGetPuck();
+    const guncelVeri = (): HuniVerisi => getPuck().appState.data as HuniVerisi;
     return (
         <div className="puck-ust-cubuk">
             <span className="puck-not">{acik.not}</span>
             <button
                 type="button"
                 disabled={!acik.kaydet}
-                onClick={() => onKaydet(getPuck().appState.data as HuniVerisi)}
+                onClick={() => onKaydet(guncelVeri())}
             >
                 Kaydet
             </button>
@@ -261,7 +284,7 @@ function UstCubuk({
                 type="button"
                 className="ana"
                 disabled={!acik.yayinla}
-                onClick={onYayinla}
+                onClick={() => onYayinla(guncelVeri())}
             >
                 Yayınla
             </button>
@@ -278,7 +301,9 @@ function UstCubuk({
                             <button
                                 type="button"
                                 disabled={!acik.geriYukle}
-                                onClick={() => onGeriYukle(s.surum)}
+                                onClick={() =>
+                                    onGeriYukle(s.surum, guncelVeri())
+                                }
                             >
                                 Taslağa geri yükle
                             </button>

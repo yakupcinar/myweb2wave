@@ -11,13 +11,19 @@ type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
 type YaziTipi = Tema["yaziTipi"];
 
-export type SecenekProps = { kimlik: string; metin: string; gorsel: string };
+export type SecenekProps = {
+    kimlik: string;
+    metin: string;
+    gorsel: string;
+    hedef: string;
+};
 export type TanitimProps = {
     kimlik: string;
     baslik: string;
     metin: string;
     dugme: string;
     gorsel: string;
+    hedef: string;
 };
 export type SoruProps = {
     kimlik: string;
@@ -52,6 +58,11 @@ const gorselli = <T extends object>(
     nesne: T,
     gorsel: string,
 ): T & { gorsel?: string } => (gorsel ? { ...nesne, gorsel } : nesne);
+/** H5: boş dize = sıradaki adım (tanımda alan hiç olmaz). */
+const hedefli = <T extends object>(
+    nesne: T,
+    hedef: string,
+): T & { hedef?: string } => (hedef ? { ...nesne, hedef } : nesne);
 
 export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
     const tema = tanim.tema ?? varsayilanTema;
@@ -80,6 +91,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             metin: adim.metin,
                             dugme: adim.dugme,
                             gorsel: adim.gorsel ?? "",
+                            hedef: adim.hedef ?? "",
                         },
                     };
                 case "soru":
@@ -93,6 +105,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 kimlik: s.id,
                                 metin: s.metin,
                                 gorsel: s.gorsel ?? "",
+                                hedef: s.hedef ?? "",
                             })),
                         },
                     };
@@ -119,15 +132,18 @@ export function puckTanim(veri: HuniVerisi): Tanim {
         switch (oge.type) {
             case "Tanitim": {
                 const p = oge.props as TanitimProps;
-                return gorselli(
-                    {
-                        id: p.kimlik,
-                        tur: "tanitim" as const,
-                        baslik: p.baslik,
-                        metin: p.metin,
-                        dugme: p.dugme,
-                    },
-                    p.gorsel,
+                return hedefli(
+                    gorselli(
+                        {
+                            id: p.kimlik,
+                            tur: "tanitim" as const,
+                            baslik: p.baslik,
+                            metin: p.metin,
+                            dugme: p.dugme,
+                        },
+                        p.gorsel,
+                    ),
+                    p.hedef ?? "",
                 );
             }
             case "Soru": {
@@ -137,9 +153,12 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     tur: "soru",
                     soru: p.soru,
                     secenekler: (p.secenekler ?? []).map((s) =>
-                        gorselli(
-                            { id: s.kimlik, metin: s.metin },
-                            s.gorsel ?? "",
+                        hedefli(
+                            gorselli(
+                                { id: s.kimlik, metin: s.metin },
+                                s.gorsel ?? "",
+                            ),
+                            s.hedef ?? "",
                         ),
                     ),
                 };

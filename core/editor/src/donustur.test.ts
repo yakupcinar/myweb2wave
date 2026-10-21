@@ -46,7 +46,7 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
-    it("özel tema ve görseller aynen döner", () => {
+    it("özel tema, görseller ve hedefler (H5) aynen döner", () => {
         const zengin: Tanim = {
             ...temel,
             tema: {
@@ -64,13 +64,19 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
                     metin: "",
                     dugme: "Başla",
                     gorsel: G1,
+                    hedef: "kiminle",
                 },
                 {
                     id: "kiminle",
                     tur: "soru",
                     soru: "Kiminle?",
                     secenekler: [
-                        { id: "aile", metin: "Ailemle", gorsel: G2 },
+                        {
+                            id: "aile",
+                            metin: "Ailemle",
+                            gorsel: G2,
+                            hedef: "paywall",
+                        },
                         { id: "is", metin: "İş" },
                     ],
                 },

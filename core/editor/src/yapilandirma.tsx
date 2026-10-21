@@ -2,7 +2,13 @@
 // (sayfa başlığı ve tema). Adımları huni sayfasıyla ORTAK bileşenler ve
 // huni.css çizer (B4/H1); gerçek doğrulama çekirdekte — burada yalnız giriş
 // kolaylığı.
-import { FieldLabel, type Config, type CustomField } from "@puckeditor/core";
+import {
+    FieldLabel,
+    type AppState,
+    type Config,
+    type CustomField,
+    type SelectField,
+} from "@puckeditor/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Paywall, Soru, Tanitim } from "../../../huni-bilesenleri/bilesenler";
 import "../../../huni-bilesenleri/huni.css";
@@ -139,6 +145,29 @@ const kart: CSSProperties = {
         "1px dashed color-mix(in srgb, var(--metin) 25%, transparent)",
 };
 
+// H5: düğme / seçenek nereye gider — yalnız SONRAKİ adımlar (çekirdek de
+// yalnız ileriyi kabul eder; sıra sonradan değişirse kaydederken hata verir).
+const SIRADAKI = { label: "— sıradaki adım —", value: "" };
+const hedefAlani: SelectField = {
+    type: "select",
+    label: "Nereye gider (dallanma)",
+    options: [SIRADAKI],
+};
+export function hedefSecenekleri(
+    appState: AppState,
+    bilesen: string,
+): SelectField["options"] {
+    const icerik = appState.data.content;
+    const sira = icerik.findIndex((o) => o.props["id"] === bilesen);
+    return [
+        SIRADAKI,
+        ...icerik.slice(sira + 1).map((o) => ({
+            label: `${String(o.props["kimlik"])} (${o.type})`,
+            value: String(o.props["kimlik"]),
+        })),
+    ];
+}
+
 export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
     const kimlikAlani = {
         type: "text" as const,
@@ -223,13 +252,22 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     metin: { type: "textarea", label: "Metin" },
                     dugme: { type: "text", label: "Düğme" },
                     gorsel: gorselAlani(ortam, "Kapak görseli"),
+                    hedef: hedefAlani,
                 },
+                resolveFields: (veri, { fields, appState }) => ({
+                    ...fields,
+                    hedef: {
+                        ...hedefAlani,
+                        options: hedefSecenekleri(appState, veri.props.id),
+                    },
+                }),
                 defaultProps: {
                     kimlik: "tanitim",
                     baslik: "Yeni tanıtım",
                     metin: "",
                     dugme: "Devam",
                     gorsel: "",
+                    hedef: "",
                 },
                 render: ({ baslik, metin, dugme, gorsel }) => (
                     <div style={kart}>
@@ -257,20 +295,52 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             kimlik: "secenek",
                             metin: "",
                             gorsel: "",
+                            hedef: "",
                         },
                         arrayFields: {
                             metin: { type: "text", label: "Metin" },
                             kimlik: { type: "text", label: "Kimlik" },
                             gorsel: gorselAlani(ortam, "Görsel"),
+                            hedef: hedefAlani,
                         },
                     },
+                },
+                resolveFields: (veri, { fields, appState }) => {
+                    const secenekler = fields.secenekler;
+                    if (secenekler.type !== "array") return fields;
+                    return {
+                        ...fields,
+                        secenekler: {
+                            ...secenekler,
+                            arrayFields: {
+                                ...secenekler.arrayFields,
+                                hedef: {
+                                    ...hedefAlani,
+                                    options: hedefSecenekleri(
+                                        appState,
+                                        veri.props.id,
+                                    ),
+                                },
+                            },
+                        },
+                    };
                 },
                 defaultProps: {
                     kimlik: "soru",
                     soru: "Yeni soru",
                     secenekler: [
-                        { kimlik: "secenek-1", metin: "Seçenek 1", gorsel: "" },
-                        { kimlik: "secenek-2", metin: "Seçenek 2", gorsel: "" },
+                        {
+                            kimlik: "secenek-1",
+                            metin: "Seçenek 1",
+                            gorsel: "",
+                            hedef: "",
+                        },
+                        {
+                            kimlik: "secenek-2",
+                            metin: "Seçenek 2",
+                            gorsel: "",
+                            hedef: "",
+                        },
                     ],
                 },
                 render: ({ soru, secenekler }) => (

@@ -409,6 +409,7 @@ components:
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
+        hedef: { $ref: "#/components/schemas/AdimHedefi" }
     SoruAdimi:
       type: object
       additionalProperties: false
@@ -427,6 +428,13 @@ components:
               id: { $ref: "#/components/schemas/HuniKimligi" }
               metin: { type: string }
               gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+              hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    AdimHedefi:
+      description: >-
+        H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma
+        gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz.
+        Yoksa sıradaki adım.
+      allOf: [{ $ref: "#/components/schemas/HuniKimligi" }]
     PaywallAdimi:
       type: object
       additionalProperties: false

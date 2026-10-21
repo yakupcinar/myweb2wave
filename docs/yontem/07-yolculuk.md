@@ -41,3 +41,4 @@
 | 34 | Ada modüllerine derlemede modulepreload | ölçülen açık uç (ikinci JS turu) bir sonraki blokta kapandı; ölçüt aynı araçla aynı tablo | `ada-onyukleme.md` |
 | 35 | b1: yayınla/önizleme/sürümler Puck düzenleyicisinde (rakip ölçümünden sonra) | koruma denemesi tutmadı çünkü koruma başka katmandaydı (route değil access_control) — denemeyi gerçek korumaya uygula | `puck-yayin-b1.md` |
 | 36 | H4: adım geçişleri yalnız CSS, ilk adımda yok | ilk ölçüm kendi kararımızı bozdu (ilk adım da 0'dan başlıyordu → ilk boyama gecikirdi); gizli sekme animasyon ölçümünü yalan söyletti (§34) | `huni-gecisler-h4.md` |
+| 37 | H5: dallanma — seçenek/tanıtım → ileri hedef (A11), skor yok | kullanıcıya rakip modelleriyle soruldu; bir 'düzeltme' kendi ölçüm hatama dayanıyordu (sentetik olay Puck'a ulaşmamıştı) — geri alındı | `huni-dallanma-h5.md` |
