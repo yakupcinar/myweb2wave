@@ -70,8 +70,11 @@ services:
     volumes:
       - ./funnel:/app
       - funnel-node-modules:/app/node_modules
-      # Ortak tema + CSS (B4/H1); H2'de bileşenler de.
-      - ./huni-bilesenleri:/huni-bilesenleri:ro
+      # Ortak bileşenler (B4/H1-H2). Bağımlılıkları yok: hunin node_modules'u
+      # oraya da bağlanır (tek React). Yazılabilir — iç bağlama noktası salt
+      # okunur dizinde açılamaz.
+      - ./huni-bilesenleri:/huni-bilesenleri
+      - funnel-node-modules:/huni-bilesenleri/node_modules
 
   # Panel huni düzenleyicisi (E2.4, React + Puck): `docker compose run --rm editor npm run build`
   # çıktıyı core/public/varliklar/editor'a yazar. Huniyle aynı Node imajı.

@@ -87,3 +87,6 @@ göndermeyebilir (Stripe'taki oturum sayısıyla ayırt edildi).
 - Kontrol adımı da bir iddiadır: `grep` ile "yok" diyen adım yeşil
   durumda da koşturulur. Kendi yorumunu yakalayıp hep kırmızıysa kırma
   denemesi sahtedir (H1 K13).
+- Kaynağından sayfaya gömülen kod (satır içi betik) testte de **kaynağından,
+  yalıtık kapsamda** kurulup çağrılır; modülde çalışıp sayfada `ReferenceError`
+  verecek bağımlılığı yalnız bu yakalar (H2 P20b).

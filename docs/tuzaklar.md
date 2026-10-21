@@ -152,3 +152,16 @@ sorgusu da bundan kurtulmuyor (Vite'ın kendi derlemesinde dolu gelir).
 okuyan test `{}` aldı; `test: { css: { include: [/huni\.css/] } }` sonrası
 6 değişken. **Doğrusu:** CSS'i metin olarak okuyan testte `css.include`
 ver; ya da önce dosyanın dolu geldiğini iddia et (ör. seçici sayısı > 5).
+
+## §33 — Testing Library'de metnin görünmesi `useEffect`'in koştuğunu garanti etmez
+**Belirti:** `await findByText(...)` sonrası `document.title`, kökteki CSS
+değişkeni ya da `history.state` okunuyor. Test çoğu koşuda yeşil, yük
+altında (art arda kırma denemeleri) aralıklı kırmızı; ilgisiz bir kırma
+denemesinde başka test düşüyor. Daha kötüsü, **olumsuz** iddia ("tema yoksa
+değişken yazılmaz", "ilk adımda odak yok") effect koşmadan okununca her
+zaman yeşil. **Sebep:** bu değerler pasif effect'te yazılıyor; DOM'daki metin
+commit'te, effect ondan sonra. **Ölçüm (2026-10-21, `huni-oynatici-h2.md`):**
+P15/P19'da D7, yeşil süitte bir kez D10 düştü. Düzeltmeden sonra 3 koşu
+22/22, kırmalar tekrarlandı ve tuttu. **Doğrusu:** effect'e bağlı olumlu
+iddia `waitFor` içinde. Olumsuz iddiadan önce aynı effect'in başka bir yan
+etkisini bekle (başlık, ilk bildirim), sonra "yok" de.

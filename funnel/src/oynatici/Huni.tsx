@@ -1,0 +1,208 @@
+// Huni oynatıcısı (A7, B4/H2): tanımı çekirdekten okur (yayınlanmış en son
+// sürüm, ya da ?onizleme=<anahtar> ile taslak) ve adımları TEK SAYFADA
+// sırayla gösterir. Adımları panel önizlemesiyle aynı bileşenler çizer
+// (huni-bilesenleri). Ölçüm (ziyaret, adım, cevap, ödeme) oynatıcının işi;
+// tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey kaydedilmez,
+// ödeme kapalı. D1–D15: docs/decisions/huni-oynatici-h0.md (b).
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Paywall, Soru, Tanitim } from "../../../huni-bilesenleri/bilesenler";
+import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
+import { cekirdek } from "../lib/cekirdek";
+import { ilerlemeBildir, ziyaretBaslat, type Govde } from "../lib/ziyaret";
+import type { components } from "../sozlesme/api";
+import { tanimIstegi } from "./erken-istek";
+
+type Yayin = components["schemas"]["HuniYayini"];
+type Adim = Yayin["tanim"]["adimlar"][number];
+type App = Govde<"/huni/ziyaretler">["app"];
+
+declare global {
+  interface Window {
+    /** Sayfadaki satır içi betiğin başlattığı tanım isteği (erken-istek.ts). */
+    huniTanimi?: Promise<unknown>;
+  }
+}
+
+const KOK = import.meta.env.PUBLIC_CORE_URL;
+
+export default function Huni({ app }: { app: App }): ReactNode {
+  const [onizleme] = useState(() =>
+    new URLSearchParams(window.location.search).has("onizleme"),
+  );
+  // undefined: yükleniyor · null: açılamadı
+  const [yayin, setYayin] = useState<Yayin | null>();
+  useEffect(() => {
+    let iptal = false;
+    void (window.huniTanimi ?? tanimIstegi(app, KOK)).then((y) => {
+      if (!iptal) setYayin((y as Yayin | undefined) ?? null);
+    });
+    return () => {
+      iptal = true;
+    };
+  }, [app]);
+
+  if (yayin === undefined) return <p id="durum">Yükleniyor…</p>;
+  if (yayin === null)
+    return (
+      <p id="durum">
+        {onizleme
+          ? "Önizleme açılamadı: bağlantının süresi dolmuş olabilir."
+          : "Sayfa yüklenemedi. Lütfen yenileyin."}
+      </p>
+    );
+  return <Oynatici app={app} yayin={yayin} onizleme={onizleme} />;
+}
+
+function Oynatici({
+  app,
+  yayin,
+  onizleme,
+}: {
+  app: App;
+  yayin: Yayin;
+  onizleme: boolean;
+}): ReactNode {
+  const { tanim } = yayin;
+  // Ziyaret bir kez açılır; önizlemede hiç açılmaz, adım/cevap da gitmez.
+  const [ziyaretSozu] = useState(() =>
+    onizleme
+      ? Promise.resolve(undefined)
+      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined),
+  );
+  const [mevcut, setMevcut] = useState(0);
+  const [odeme, setOdeme] = useState({ suruyor: false, hata: "" });
+  const kutu = useRef<HTMLDivElement>(null);
+  const ilkAdim = useRef(true);
+
+  // Tema: değerler çekirdekte doğrulandı; yine de CSS'e setProperty ile.
+  useEffect(() => {
+    document.title = tanim.sayfaBasligi;
+    if (!tanim.tema) return;
+    const kok = document.documentElement.style;
+    for (const [ad, deger] of Object.entries(temaDegiskenleri(tanim.tema)))
+      kok.setProperty(ad, deger);
+  }, [tanim]);
+
+  // Geri tuşu bir önceki adıma döner, sayfadan çıkmaz.
+  useEffect(() => {
+    history.replaceState({ adim: 0 }, "");
+    const geri = (e: PopStateEvent): void =>
+      setMevcut((e.state as { adim?: number } | null)?.adim ?? 0);
+    window.addEventListener("popstate", geri);
+    return () => window.removeEventListener("popstate", geri);
+  }, []);
+
+  // Her gösterilen adım bildirilir; ilk adım dışında başlığa odak.
+  useEffect(() => {
+    ilerlemeBildir(ziyaretSozu, mevcut, tanim.adimlar[mevcut]?.id ?? "");
+    if (ilkAdim.current) {
+      ilkAdim.current = false;
+      return;
+    }
+    kutu.current
+      ?.querySelector<HTMLElement>(`[data-sira="${mevcut}"] h1`)
+      ?.focus();
+  }, [mevcut, tanim, ziyaretSozu]);
+
+  function ileri(): void {
+    const sira = mevcut + 1;
+    if (sira >= tanim.adimlar.length) return;
+    history.pushState({ adim: sira }, "");
+    setMevcut(sira);
+  }
+
+  // Paywall: plan adını çekirdeğe gönderir, dönen ödeme adresine yönlenir.
+  async function aboneOl(plan: Govde<"/checkout/sessions">["plan"]) {
+    setOdeme({ suruyor: true, hata: "" });
+    let hata: string;
+    try {
+      const govde: Govde<"/checkout/sessions"> = { app, plan };
+      const ziyaret = await ziyaretSozu;
+      if (ziyaret) govde.ziyaret = ziyaret;
+      const { data, error, response } = await cekirdek.POST(
+        "/checkout/sessions",
+        { body: govde },
+      );
+      if (data) {
+        window.location.assign(data.url);
+        return;
+      }
+      hata =
+        response.status === 502 &&
+        error?.error === "payment_provider_unavailable"
+          ? "Ödeme sağlayıcısına şu an ulaşılamıyor. Lütfen biraz sonra tekrar deneyin."
+          : "Bir şeyler ters gitti. Lütfen tekrar deneyin.";
+    } catch {
+      // Ağ hatası: çekirdeğe hiç ulaşılamadı.
+      hata = "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.";
+    }
+    setOdeme({ suruyor: false, hata });
+  }
+
+  function adimCiz(adim: Adim): ReactNode {
+    switch (adim.tur) {
+      case "tanitim":
+        return (
+          <Tanitim
+            baslik={adim.baslik}
+            metin={adim.metin}
+            dugme={adim.dugme}
+            gorsel={adim.gorsel}
+            medyaKoku={KOK}
+            onDugme={ileri}
+          />
+        );
+      case "soru":
+        return (
+          <Soru
+            soru={adim.soru}
+            secenekler={adim.secenekler}
+            medyaKoku={KOK}
+            onSecim={(i) => {
+              ilerlemeBildir(
+                ziyaretSozu,
+                mevcut,
+                adim.id,
+                adim.secenekler[i]?.id,
+              );
+              ileri();
+            }}
+          />
+        );
+      case "paywall":
+        return (
+          <Paywall
+            baslik={adim.baslik}
+            metin={adim.metin}
+            dugme={adim.dugme}
+            kapali={onizleme || odeme.suruyor}
+            hata={odeme.hata}
+            onDugme={() => void aboneOl(adim.plan)}
+          />
+        );
+    }
+  }
+
+  return (
+    <>
+      {onizleme ? (
+        <p className="onizleme">
+          Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
+        </p>
+      ) : null}
+      <progress max={tanim.adimlar.length} value={mevcut + 1} />
+      <div ref={kutu}>
+        {tanim.adimlar.map((adim, i) => (
+          <div
+            key={`${i}-${adim.id}`}
+            data-adim={adim.id}
+            data-sira={i}
+            hidden={i !== mevcut}
+          >
+            {adimCiz(adim)}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
