@@ -40,7 +40,11 @@ describe("huni.css", () => {
     // Puck ana sayfanın stillerini önizleme iframe'ine kopyalıyor: kapsamsız
     // bir kural (ör. "button") düzenleyicinin kendi düğmelerini boyar.
     it("her kural .huni altında (:root yalnız değişken)", () => {
-        const seciciler = [...css.matchAll(/([^{}]+)\{/g)].flatMap((m) =>
+        // @keyframes içi (from/to) seçici değil; @media başlığı atlanır, içi denetlenir.
+        const kurallar = css
+            .replace(/@keyframes[^{]+\{(?:[^{}]*\{[^}]*\})*\s*\}/g, "")
+            .replace(/@media[^{]+\{/g, "");
+        const seciciler = [...kurallar.matchAll(/([^{}]+)\{/g)].flatMap((m) =>
             (m[1] ?? "")
                 .replace(/\/\*[\s\S]*?\*\//g, "")
                 .split(",")
@@ -50,6 +54,23 @@ describe("huni.css", () => {
         for (const s of seciciler) {
             if (s !== ":root") expect(s).toMatch(/^\.huni\b/);
         }
+    });
+
+    // H4: hareket azaltmayı seçen kullanıcıda animasyon YOK — animasyon
+    // yalnız no-preference medya sorgusunun içinde tanımlı olabilir.
+    it("adım animasyonu yalnız prefers-reduced-motion: no-preference altında", () => {
+        const medya =
+            /@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?\})\s*\}/.exec(
+                css,
+            );
+        expect(medya?.[1]).toMatch(
+            /\.huni \[data-gecis\] > \[data-sira\][^}]*animation: huni-adim-gir/,
+        );
+        const disi = css
+            .replace(medya?.[0] ?? "", "")
+            .replace(/\/\*[\s\S]*?\*\//g, "");
+        expect(disi).not.toMatch(/animation\s*:/);
+        expect(disi).toMatch(/@keyframes huni-adim-gir/);
     });
 
     // Tema yokken huni sayfası değişken yazmaz, :root'takiler geçerli;

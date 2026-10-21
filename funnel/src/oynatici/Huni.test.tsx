@@ -341,6 +341,26 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
   });
 });
 
+describe("H4 — geçiş", () => {
+  // huni.css animasyonu yalnız [data-gecis] altında: ilk adım opaklık 0'dan
+  // başlamasın (ilk anlamlı boyama), sonraki her adım değişiminde başlasın.
+  const kutu = (): Element | null =>
+    document.querySelector("[data-sira]")?.parentElement ?? null;
+  it("ilk adımda yok; ileri geçişte var", async () => {
+    kur();
+    await yuklendi();
+    expect(kutu()?.hasAttribute("data-gecis")).toBe(false);
+    fireEvent.click(screen.getByText("Başla"));
+    expect(kutu()?.hasAttribute("data-gecis")).toBe(true);
+  });
+  it("geri tuşuyla da var", async () => {
+    kur();
+    await yuklendi();
+    fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
+    await waitFor(() => expect(kutu()?.hasAttribute("data-gecis")).toBe(true));
+  });
+});
+
 describe("D13 · D14 — ödeme", () => {
   async function odemeyeGel(): Promise<HTMLButtonElement> {
     kur();

@@ -40,3 +40,4 @@
 | 33 | H3: önizleme = huni — aynı tanım iki bağımsız yoldan aynı DOM, tarayıcıda stil farkı 0 | karşılaştırma testi, karşılaştırılanlardan biri diğerinden hesaplanırsa kendini ölçer; ilk kırmızı ürün değil test ortamı farkıydı (SSR önyükleme bağlantısı) | `huni-onizleme-h3.md` |
 | 34 | Ada modüllerine derlemede modulepreload | ölçülen açık uç (ikinci JS turu) bir sonraki blokta kapandı; ölçüt aynı araçla aynı tablo | `ada-onyukleme.md` |
 | 35 | b1: yayınla/önizleme/sürümler Puck düzenleyicisinde (rakip ölçümünden sonra) | koruma denemesi tutmadı çünkü koruma başka katmandaydı (route değil access_control) — denemeyi gerçek korumaya uygula | `puck-yayin-b1.md` |
+| 36 | H4: adım geçişleri yalnız CSS, ilk adımda yok | ilk ölçüm kendi kararımızı bozdu (ilk adım da 0'dan başlıyordu → ilk boyama gecikirdi); gizli sekme animasyon ölçümünü yalan söyletti (§34) | `huni-gecisler-h4.md` |

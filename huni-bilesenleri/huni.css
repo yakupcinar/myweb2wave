@@ -71,3 +71,18 @@
     border-radius: 6px;
     font-size: 14px;
 }
+/* Adım geçişi (B4/H4): yalnız huni oynatıcısında ve ilk geçişten sonra
+   ([data-gecis] — ilk adım hemen görünür). Gösterilen kutu hidden'dan çıkınca
+   animasyon kendiliğinden baştan başlar. Puck önizlemesinde bu kutular yok.
+   Hareket azaltmayı seçen kullanıcıya hiç uygulanmaz. */
+@media (prefers-reduced-motion: no-preference) {
+    .huni [data-gecis] > [data-sira] {
+        animation: huni-adim-gir 220ms ease-out;
+    }
+}
+@keyframes huni-adim-gir {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}

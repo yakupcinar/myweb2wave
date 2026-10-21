@@ -165,3 +165,14 @@ P15/P19'da D7, yeşil süitte bir kez D10 düştü. Düzeltmeden sonra 3 koşu
 22/22, kırmalar tekrarlandı ve tuttu. **Doğrusu:** effect'e bağlı olumlu
 iddia `waitFor` içinde. Olumsuz iddiadan önce aynı effect'in başka bir yan
 etkisini bekle (başlık, ilk bildirim), sonra "yok" de.
+
+## §34 — Gizli sekmede animasyon zaman çizelgesi durur: "içerik görünmez kaldı" yalanı
+**Belirti:** tarayıcı aracıyla ölçülen sayfada CSS animasyonu
+`playState=running`, yüzlerce ms sonra opaklık hâlâ 0 — içerik görünmez
+kalıyor gibi. **Sebep:** sekme arka planda (`document.visibilityState ===
+"hidden"`); Chrome kare çizmiyor, `document.timeline.currentTime` 0'da
+duruyor. Aynı sebeple FCP/LCP kaydı da yok (H0, H2). **Ölçüm (2026-10-21,
+`huni-gecisler-h4.md`):** zaman çizelgesi 0 → ekran görüntüsü bir kare
+çizdirince 18.056 ms, animasyon bitti, opaklık 1. **Doğrusu:** zamanlamaya
+bağlı her ölçümden önce `visibilityState` ve `document.timeline.currentTime`
+yaz; gizliyse sonuç "ölçülmedi"dir, "bozuk" değil.

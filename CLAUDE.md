@@ -146,6 +146,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§31** | PHP **`upload_max_filesize` (2M)** isteği uygulamadan önce keser — kodda yazan büyük sınıra hiç ulaşılmaz; PHP sınırını ölç ve ayarla. |
 | **§32** | Vitest CSS içe aktarmasını (**`?raw` dahil**) **boş dizgeye** çevirir — CSS'te "yok" diyen test hep yeşil; `test.css.include`. |
 | **§33** | Testing Library'de **metnin görünmesi `useEffect`'in koştuğunu garanti etmez** — effect'e bağlı iddia aralıklı kırmızı, olumsuz iddia yalancı yeşil; `waitFor`. |
+| **§34** | **Gizli sekmede animasyon zaman çizelgesi durur** — opaklık 0'da "takılı" görünür, FCP/LCP yok; önce `visibilityState` + `document.timeline.currentTime` oku. |
 
 ---
 
