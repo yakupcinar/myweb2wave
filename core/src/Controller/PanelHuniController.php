@@ -177,6 +177,56 @@ final class PanelHuniController extends AbstractController
         return new JsonResponse(['hatalar' => $hatalar], [] === $hatalar ? 200 : 422);
     }
 
+    /**
+     * Sürükle-bırak düzenleyicinin üst çubuğu (b1): yayın durumu, sürümler,
+     * taze önizleme bağlantısı. Rakiplerde yayınla/sürümler/önizleme
+     * düzenleyicinin içinde (huni-editoru-arastirmasi.md § Ek 2026-10-21).
+     */
+    #[Route('/{app}/{ad}/durum', name: 'panel_huni_durum', methods: ['GET'])]
+    public function durum(string $app, string $ad): Response
+    {
+        $this->uygulama($app);
+        if (null === $this->huniler->taslak($app, $ad)) {
+            throw new NotFoundHttpException();
+        }
+
+        // Önizleme anahtarı taşır: önbelleğe girmesin (no-store).
+        return self::korumali(new JsonResponse([
+            'surumler' => $this->huniler->surumler($app, $ad),
+            'farkli' => $this->huniler->taslakFarkli($app, $ad),
+            'onizleme' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $ad, time()),
+            'yayindaki' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad,
+        ]));
+    }
+
+    /** Kaydedilmiş taslağı yayınlar: 200 {surum} ya da 422 {hatalar}. */
+    #[Route('/{app}/{ad}/durum/yayinla', name: 'panel_huni_durum_yayinla', methods: ['POST'])]
+    public function durumYayinla(Request $request, string $app, string $ad): JsonResponse
+    {
+        $this->uygulama($app);
+        if (!$this->isCsrfTokenValid('huni-'.$app, $request->headers->get('X-CSRF-Token', ''))) {
+            return new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403);
+        }
+        $sonuc = $this->huniler->yayinla($app, $ad);
+
+        return \is_int($sonuc) ? new JsonResponse(['surum' => $sonuc]) : new JsonResponse(['hatalar' => $sonuc], 422);
+    }
+
+    /** Eski sürümü taslağa alır ve yeni taslağı döner (düzenleyici onunla yeniden açılır). */
+    #[Route('/{app}/{ad}/durum/surumler/{surum}/taslaga', name: 'panel_huni_durum_geri_yukle', methods: ['POST'], requirements: ['surum' => '\d+'])]
+    public function durumGeriYukle(Request $request, string $app, string $ad, int $surum): JsonResponse
+    {
+        $this->uygulama($app);
+        if (!$this->isCsrfTokenValid('huni-'.$app, $request->headers->get('X-CSRF-Token', ''))) {
+            return new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403);
+        }
+        if (!$this->huniler->surumuTaslagaAl($app, $ad, $surum)) {
+            return new JsonResponse(['hatalar' => ["v{$surum} bulunamadı."]], 404);
+        }
+
+        return new JsonResponse(['tanim' => $this->huniler->taslak($app, $ad)]);
+    }
+
     #[Route('/{app}/{ad}/yayinla', name: 'panel_huni_yayinla', methods: ['POST'])]
     public function yayinla(Request $request, string $app, string $ad): RedirectResponse
     {
