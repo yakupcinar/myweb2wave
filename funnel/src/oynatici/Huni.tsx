@@ -5,7 +5,7 @@
 // tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey kaydedilmez,
 // ödeme kapalı. D1–D15: docs/decisions/huni-oynatici-h0.md (b).
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Paywall, Soru, Tanitim } from "../../../huni-bilesenleri/bilesenler";
+import { Adim } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { ilerlemeBildir, ziyaretBaslat, type Govde } from "../lib/ziyaret";
@@ -13,7 +13,6 @@ import type { components } from "../sozlesme/api";
 import { tanimIstegi } from "./erken-istek";
 
 type Yayin = components["schemas"]["HuniYayini"];
-type Adim = Yayin["tanim"]["adimlar"][number];
 type App = Govde<"/huni/ziyaretler">["app"];
 
 declare global {
@@ -139,50 +138,6 @@ function Oynatici({
     setOdeme({ suruyor: false, hata });
   }
 
-  function adimCiz(adim: Adim): ReactNode {
-    switch (adim.tur) {
-      case "tanitim":
-        return (
-          <Tanitim
-            baslik={adim.baslik}
-            metin={adim.metin}
-            dugme={adim.dugme}
-            gorsel={adim.gorsel}
-            medyaKoku={KOK}
-            onDugme={ileri}
-          />
-        );
-      case "soru":
-        return (
-          <Soru
-            soru={adim.soru}
-            secenekler={adim.secenekler}
-            medyaKoku={KOK}
-            onSecim={(i) => {
-              ilerlemeBildir(
-                ziyaretSozu,
-                mevcut,
-                adim.id,
-                adim.secenekler[i]?.id,
-              );
-              ileri();
-            }}
-          />
-        );
-      case "paywall":
-        return (
-          <Paywall
-            baslik={adim.baslik}
-            metin={adim.metin}
-            dugme={adim.dugme}
-            kapali={onizleme || odeme.suruyor}
-            hata={odeme.hata}
-            onDugme={() => void aboneOl(adim.plan)}
-          />
-        );
-    }
-  }
-
   return (
     <>
       {onizleme ? (
@@ -199,7 +154,28 @@ function Oynatici({
             data-sira={i}
             hidden={i !== mevcut}
           >
-            {adimCiz(adim)}
+            <Adim
+              adim={adim}
+              medyaKoku={KOK}
+              onIleri={ileri}
+              onSecim={(s) => {
+                if (adim.tur !== "soru") return;
+                ilerlemeBildir(
+                  ziyaretSozu,
+                  mevcut,
+                  adim.id,
+                  adim.secenekler[s]?.id,
+                );
+                ileri();
+              }}
+              odeme={{
+                kapali: onizleme || odeme.suruyor,
+                hata: odeme.hata,
+                onDugme: () => {
+                  if (adim.tur === "paywall") void aboneOl(adim.plan);
+                },
+              }}
+            />
           </div>
         ))}
       </div>

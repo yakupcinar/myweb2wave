@@ -115,3 +115,52 @@ RevenueCat: <https://www.revenuecat.com/release/paywalls-on-the-web-2025-11-07> 
 Adapty: <https://ask.adapty.io/questions/p/custom-web-paywall> ·
 Puck: <https://puckeditor.com/docs> · lisanslar: `gh api repos/<r>`,
 `npm view @puckeditor/core license` (2026-10-20).
+
+## Ek 2026-10-21 — yayınla, önizleme, sürümler nerede? (Ç45, H3 sonrası)
+
+Soru (kullanıcı): klasik düzenleyiciyi kaldırıp yayınla/önizleme/sürümleri
+Puck sayfasına taşımak (seçenek b) daha mı doğru; rakipler nasıl yapmış.
+Yalnız herkese açık belgeler okundu, kod yok.
+
+| Araç | Yayınla | Sürümler | Önizleme | Taslak / geri alma |
+|---|---|---|---|---|
+| **FunnelFox** | düzenleyicide "Publish" düğmesi; "Check for errors" / "Publish now" | düzenleyicinin sol üst menüsünde "Version history"; sol üstte düzenlenen + yayındaki sürüm | kalıcı `…/preview/<id>`, son kaydı gösterir, test ödemesi | yayın değişmez v1, v2…; yerleşik geri alma yok: eski kaydı düzenleyiciye geri yükle, yeniden yayınla |
+| **Superwall** | düzenleyicinin sağ üstünde "Publish"; tıklanabilirse yayınlanmamış değişiklik var | "History" ile geri alma (yeri belgede yok) | tuvalde canlı cihaz önizlemesi | değişiklikler yayına kadar taslak |
+| **RevenueCat** (paywall düzenleyicisi) | düzenleyicide | düzenleyicide sürüm açılır listesi: kim, ne zaman (2026-02); "Current draft" + "Discard" | düzenleyicide canlı + RevenueCat uygulamasıyla gerçek cihazda | — |
+| **web2wave** | düzenleyicide (Wavy AI belgesi) | her quiz/paywall'ın eski sürümleri saklanıyor, geri dönülebilir | "yayından önce mobilde önizle" | yeri belgelenmemiş |
+| Phonely / Voiceflow (genel akış kurucuları) | düzenleyicide | "Publish"in yanındaki menüde; eski sürüm salt okunur önizlenir | — | geri yükleme taslağı değiştirir, yayın ancak yeniden yayınlayınca; Voiceflow yayında canlı ↔ taslak farkını yan yana gösteriyor |
+
+**Ortak kalıp:** yayınla, sürüm geçmişi ve önizleme **tek düzenleyici
+ekranında**; ayrı bir "yayın sayfası" yok. Geri yükleme her yerde bizimki
+gibi: eski sürüm taslağa gelir, canlı ancak yeniden yayınlayınca değişir.
+Düzenleyicide **yayındaki ↔ düzenlenen sürüm** ve **kaydedilmemiş taslak**
+görünür.
+
+**Bizde (ölçüldü, `panel/huni.html.twig`):** klasik sayfada yayınla (+
+"değişiklik yok" durumu), önizleme bağlantısı, yayındakini aç, sürüm
+tablosu (sürüm başına **ziyaret sayısı** + "taslağa geri yükle") ve eski
+form düzenleyicisi (`huni-duzenleyici.js`). Puck sayfasında yalnız
+"Publish" var ve bu bizde **kaydet** demek (Ç45: yanıltıcı). Puck üst
+çubuğa kendi düğmelerimizi eklemeye izin veriyor (`overrides.headerActions`,
+varsayılan düğme `children`).
+
+**Değerlendirme (karar DEĞİL):** (b) rakiplerin kalıbı ve bizdeki iki kod
+yolunu (iki düzenleyici, iki kaydetme yolu) bire indirir. Önerilen sıra:
+(b1) Puck üst çubuğuna **Kaydet** (bugünkü Publish'in yeniden adı) +
+**Yayınla** + **Önizle** + sürüm menüsü (yayındaki/düzenlenen sürüm,
+kaydedilmemiş değişiklik, geri yükle); çekirdek uçları zaten var. (b2)
+eski form düzenleyicisi ancak Puck gerçek kullanımda ölçülünce silinir;
+ölçülmemiş: Puck'ın **Safari**'de çalışması (FunnelFox'un düzenleyicisi
+Safari'de çalışmıyor) ve Puck'ın 0.x olması (yükseltmede kırılma). Sürüm
+başına ziyaret sayısı analiz; rakipler bunu ayrı panelde tutuyor, sürüm
+menüsünde kalabilir.
+
+Kaynaklar: <https://funnelfox.com/docs/editor/publishing.md>,
+<https://superwall.com/docs/dashboard/dashboard-creating-paywalls/paywall-editor-publishing>,
+<https://superwall.com/features/paywall-editor.md>,
+<https://www.revenuecat.com/changelog/release/see-who-edited-each-paywall-version-and-discard-unsaved-drafts-2026-02-16>,
+<https://www.revenuecat.com/docs/tools/paywalls/testing-paywalls>,
+<https://docs.web2wave.com/reference/wavy-ai>,
+<https://docs.phonely.ai/flow-editor/versions>,
+<https://www.voiceflow.com/docs/documentation/deploy/environments/publishing>,
+<https://puckeditor.com/docs/api-reference/overrides/header-actions>.

@@ -3,10 +3,12 @@
 // (B4/H2), yalnız tarayıcıda çizilir (client:only).
 import react from "@astrojs/react";
 import { defineConfig } from "astro/config";
+import onyukleme from "./src/onyukleme.ts";
 
 export default defineConfig({
   output: "static",
-  integrations: [react()],
+  // onyukleme: ada modülleri ilk turda iner (Ç52 (1), src/onyukleme.ts).
+  integrations: [react(), onyukleme()],
   vite: {
     // Ortak bileşenler kök dizinin dışında (B4/H1); geliştirme sunucusu
     // izinsiz dosyayı 403 ile reddeder. Derlemede kısıt yok.
