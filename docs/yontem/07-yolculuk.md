@@ -34,3 +34,4 @@
 | 27 | E2.3 görseller (yeniden kodlama, içerik özetli ad, SVG yok) | kodda yazan 5 MB sınırına PHP'nin 2M'si yüzünden hiç ulaşılmıyordu (§31); test süreci belleği gerçek isteği ölçmez — iddia curl ile ölçüldü | `gorseller.md` |
 | 28 | E2.4a sürükle-bırak (Puck): çekirdek değişmeden, çeviri katmanı + birim testi | kayıpsız çeviri testle; üretilen dosyayı biçimlendirmek kendi denetimimizi kırdı | `puck.md` |
 | 29 | Karar A10: ödeme sonrası tek kullanımlık giriş bağlantısı (dış "Lazy Auth" istemi yerine) | istem önce rakiplerle ölçüldü; birbirinin yedeği iki filtre tek tek bozulunca yeşil kaldı — çift birlikte ölçülür | `giris-baglantisi.md` |
+| 30 | H0: React geçişi öncesi taban ölçümü (boyut, içerik zinciri, 15 davranış) | kararın gerekçesi ("ilk boyama") ölçülünce React o sorunu çözmüyor, uzatıyor çıktı — çözüm erken istek | `huni-oynatici-h0.md` |
