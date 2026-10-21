@@ -19,3 +19,7 @@
 # Panel huni düzenleyicisi (E2.4): derleme çıktısı ve bağımlılıklar
 /core/editor/node_modules/
 /core/public/varliklar/editor/
+
+# Ortak huni bileşenleri (B4/H1): kullanan kabın node_modules'u buraya
+# bağlanır (compose); depoda bağımlılık yok.
+/huni-bilesenleri/node_modules/

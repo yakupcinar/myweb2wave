@@ -30,6 +30,8 @@ core()   { docker compose run --rm -T core   sh -c "$1"; }
 funnel() { docker compose run --rm -T funnel sh -c "$1"; }
 editor() { docker compose run --rm -T editor sh -c "$1"; }
 sozlesme() { docker compose run --rm -T contract sh -c "$1"; }
+# Ortak huni bileşenleri (B4/H1) düzenleyici kabında, düzenleyicinin node_modules'uyla.
+bilesen() { docker compose run --rm -T -w /huni-bilesenleri editor sh -c "$1"; }
 
 # 0 · Ortam (tuzak §14)
 df -h . | tail -1
@@ -51,12 +53,16 @@ adim sozlesme-kur sozlesme 'npm ci --no-audit --no-fund'
 adim sozlesme-guncel sozlesme 'npx openapi-typescript openapi.yaml -o /tmp/api.ts > /dev/null && cmp /tmp/api.ts /funnel/src/sozlesme/api.ts && cmp /tmp/api.ts /editor-src/sozlesme.ts'
 adim editor-npm   editor 'npm ci --no-audit --no-fund'
 adim editor-bicim editor 'npm run -s format:check'
+adim bilesen-bicim bilesen 'npm run -s format:check'
 
 # 2 · Statik analiz
 adim core-composer core  'composer validate --strict --no-check-publish'
 adim core-stan    core   'vendor/bin/phpstan analyse --no-progress --memory-limit=1G'
 adim funnel-tip   funnel 'npm run -s check'
 adim editor-tip   editor 'npm run -s check'
+adim bilesen-tip  bilesen 'npm run -s check'
+# D1: tanım HTML taşıyamaz — huniyi ve önizlemeyi çizen kodda HTML enjeksiyonu yok.
+adim html-yok     sh -c '! grep -rnF --exclude-dir=node_modules dangerouslySetInnerHTML huni-bilesenleri core/editor/src funnel/src'
 
 # 3 · Test + derleme
 adim core-testdb  core   'php bin/console doctrine:database:create --env=test --if-not-exists'
@@ -64,6 +70,7 @@ adim core-testdb  core   'php bin/console doctrine:database:create --env=test --
 # kapıyı yalancı yeşil yapar (core-kur dersiyle aynı).
 adim core-goc     core   'php bin/console doctrine:migrations:migrate -n --env=test'
 adim editor-test  editor 'npm run -s test'
+adim bilesen-test bilesen 'npm run -s test'
 # Düzenleyici çekirdek testinden ÖNCE derlenir: panel sayfası manifestten okur.
 adim editor-derle editor 'npm run -s build'
 adim core-test    core   'vendor/bin/phpunit --no-progress'

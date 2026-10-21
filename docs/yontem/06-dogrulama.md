@@ -78,3 +78,12 @@ göndermeyebilir (Stripe'taki oturum sayısıyla ayırt edildi).
 - Türü içerikten oku, boyutu ve pikseli ÇÖZMEDEN önce sınırla, sonra
   yeniden kodla (`gorseller.md`). Uygulama sınırının üstündeki katmanı
   (PHP `upload_max_filesize`, `memory_limit`) da ölç — tuzak §31.
+
+## İki dilde aynı kural
+
+- Aynı formül iki dilde (PHP doğrular, TS çizer) yaşıyorsa ikisi **tek
+  örnek dosyasını** okur; beklenen değerler formülden değil bilinen
+  kaynaktan (WCAG). Biri kayarsa kendi süiti kırmızı (`huni-bilesenleri-h1.md`).
+- Kontrol adımı da bir iddiadır: `grep` ile "yok" diyen adım yeşil
+  durumda da koşturulur. Kendi yorumunu yakalayıp hep kırmızıysa kırma
+  denemesi sahtedir (H1 K13).
