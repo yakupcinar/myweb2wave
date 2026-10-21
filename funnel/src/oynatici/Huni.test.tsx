@@ -356,6 +356,9 @@ describe("H4 — geçiş", () => {
   it("geri tuşuyla da var", async () => {
     kur();
     await yuklendi();
+    // Dinleyici effect'te eklenir (aynı effect replaceState yapar): önce onu
+    // gör, yoksa olay dinleyiciden önce gider — CI'da kırmızıydı (tuzak §33).
+    await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
     fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
     await waitFor(() => expect(kutu()?.hasAttribute("data-gecis")).toBe(true));
   });

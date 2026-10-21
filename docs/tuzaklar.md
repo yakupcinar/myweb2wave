@@ -164,7 +164,10 @@ commit'te, effect ondan sonra. **Ölçüm (2026-10-21, `huni-oynatici-h2.md`):**
 P15/P19'da D7, yeşil süitte bir kez D10 düştü. Düzeltmeden sonra 3 koşu
 22/22, kırmalar tekrarlandı ve tuttu. **Doğrusu:** effect'e bağlı olumlu
 iddia `waitFor` içinde. Olumsuz iddiadan önce aynı effect'in başka bir yan
-etkisini bekle (başlık, ilk bildirim), sonra "yok" de.
+etkisini bekle (başlık, ilk bildirim), sonra "yok" de. **Olay da öyle:**
+effect'te eklenen dinleyiciye (`popstate`) olay göndermeden önce dinleyiciyi
+ekleyen effect'in yan etkisini bekle — H4'te yerelde yeşil, CI'da kırmızıydı
+(`huni-gecisler-h4.md`).
 
 ## §34 — Gizli sekmede animasyon zaman çizelgesi durur: "içerik görünmez kaldı" yalanı
 **Belirti:** tarayıcı aracıyla ölçülen sayfada CSS animasyonu

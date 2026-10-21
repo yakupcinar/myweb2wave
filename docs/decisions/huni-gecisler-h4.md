@@ -52,6 +52,14 @@ kullanıcıya hiç uygulanmıyor. Tailwind ve animasyon kütüphanesi yok.
 - Hareket azaltma tercihi (`reduce`) tarayıcıda **ölçülmedi** — araçta
   medya emülasyonu yok; davranış CSS testinde (Ç54).
 
+## CI kırmızısı (caffdc5) — tuzak §33 yine
+Yerelde 26/26, CI'da "geri tuşuyla da var" kırmızı (`data-gecis` false).
+Test `popstate`'i metin görünür görünmez gönderiyordu; dinleyici `useEffect`'te
+ekleniyor — CI'da henüz eklenmemişti. Kendi bir saat önce yazdığım tuzağın
+aynısı. Düzeltme: önce aynı effect'in yan etkisi (`history.state` = `{adim:
+0}`) beklenir. T4b (geri tuşunda `gecti` yok) tekrarlandı: 🔴. Diğer
+`popstate` testi zaten bekliyordu (D10).
+
 ## Ortam notu
 `huni-dev` b1 sonrasındaki `docker restart`'tan sonra bir dakika içinde
 çıkış 1 ile kapanmıştı (günlükte `SIGTERM` + Vite bağımlılıkları yeniden
