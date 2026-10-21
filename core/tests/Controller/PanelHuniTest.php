@@ -218,6 +218,82 @@ final class PanelHuniTest extends WebTestCase
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
 
+    /** b1: sürükle-bırak üst çubuğu — durum, yayınla, geri yükle JSON ile. */
+    public function testDurumSurumlerFarkVeTazeOnizlemeVerir(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Eski'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->client->request('GET', '/panel/huniler/keepchat/genel/durum');
+        self::assertResponseRedirects('/panel/giris');
+        $this->girisYap();
+
+        $durum = $this->json('GET', '/panel/huniler/keepchat/genel/durum');
+        self::assertFalse($durum['farkli']);
+        self::assertIsArray($durum['surumler']);
+        self::assertSame([1], array_column($durum['surumler'], 'surum'));
+        self::assertSame('https://huni.test/keepchat/?huni=genel', $durum['yayindaki']);
+        $onizleme = $durum['onizleme'];
+        self::assertIsString($onizleme);
+        self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'genel', substr($onizleme, (int) strrpos($onizleme, '=') + 1), time()));
+        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
+
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Yeni'));
+        self::assertTrue($this->json('GET', '/panel/huniler/keepchat/genel/durum')['farkli']);
+    }
+
+    public function testDurumdanYayinlaSurumAcarDegisiklikYoksa422(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
+        $this->girisYap();
+        $jeton = $this->jeton();
+
+        self::assertSame(['surum' => 1], $this->json('POST', '/panel/huniler/keepchat/genel/durum/yayinla', $jeton));
+        $this->json('POST', '/panel/huniler/keepchat/genel/durum/yayinla', $jeton);
+        self::assertResponseStatusCodeSame(422);
+        // PHPStan aynı çağrının sonucunu öncekiyle aynı sayıyor: gövde ayrıca okunur.
+        $govde = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($govde);
+        self::assertSame(['hatalar'], array_keys($govde));
+        self::assertStringContainsString('yayınlanacak değişiklik yok', (string) json_encode($govde['hatalar'], \JSON_UNESCAPED_UNICODE));
+        self::assertSame([1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri'));
+    }
+
+    public function testDurumdanGeriYukleTaslagiDoner(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Eski'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Yeni'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->girisYap();
+        $jeton = $this->jeton();
+
+        $yanit = $this->json('POST', '/panel/huniler/keepchat/genel/durum/surumler/1/taslaga', $jeton);
+        self::assertIsArray($yanit['tanim']);
+        self::assertSame('Eski', $yanit['tanim']['sayfaBasligi']);
+        self::assertSame('Eski', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
+        self::assertSame([2, 1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri ORDER BY surum DESC'), 'geri yükleme yayınlamaz');
+
+        $this->json('POST', '/panel/huniler/keepchat/genel/durum/surumler/9/taslaga', $jeton);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testDurumYayinlaVeGeriYukleCsrfIster(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Y'));
+        $this->girisYap();
+
+        foreach (['', 'yanlis'] as $jeton) {
+            $this->json('POST', '/panel/huniler/keepchat/genel/durum/yayinla', $jeton);
+            self::assertResponseStatusCodeSame(403);
+            $this->json('POST', '/panel/huniler/keepchat/genel/durum/surumler/1/taslaga', $jeton);
+            self::assertResponseStatusCodeSame(403);
+        }
+        self::assertSame([1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri'));
+        self::assertSame('Y', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
+    }
+
     public function testBilinmeyenUygulama404(): void
     {
         $this->girisYap();
@@ -239,6 +315,20 @@ final class PanelHuniTest extends WebTestCase
         $this->client->request('GET', '/panel/huniler/keepchat/genel');
 
         return (string) $this->client->getCrawler()->filter('#duzenleyici')->attr('data-jeton');
+    }
+
+    /** @return array<string, mixed> */
+    private function json(string $yontem, string $adres, string $jeton = ''): array
+    {
+        $this->client->request($yontem, $adres, [], [], ['HTTP_X_CSRF_TOKEN' => $jeton]);
+        $govde = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($govde);
+        $sonuc = [];
+        foreach ($govde as $ad => $deger) {
+            $sonuc[(string) $ad] = $deger;
+        }
+
+        return $sonuc;
     }
 
     /** @param array<string, mixed> $tanim */

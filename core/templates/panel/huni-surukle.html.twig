@@ -16,12 +16,20 @@
             .puck-durum.tamam { border-left: 4px solid #1a7f37; }
             .puck-durum ul { margin: 6px 0 0; padding-left: 18px; }
             .puck-durum button { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 18px; cursor: pointer; }
+            .puck-ust-cubuk { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+            .puck-ust-cubuk button, .puck-dugme { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid #8886; background: #fff; color: #111; cursor: pointer; text-decoration: none; }
+            .puck-ust-cubuk .ana { background: #1a7f37; border-color: #1a7f37; color: #fff; }
+            .puck-ust-cubuk :disabled, .puck-dugme[aria-disabled=true] { opacity: .45; cursor: not-allowed; pointer-events: none; }
+            .puck-not { color: #666; }
+            .puck-surumler { position: relative; }
+            .puck-surumler summary { cursor: pointer; padding: 6px 4px; }
+            .puck-surumler ul { position: absolute; right: 0; z-index: 1000; min-width: 380px; margin: 4px 0 0; padding: 8px; list-style: none; background: #fff; color: #111; border-radius: 8px; box-shadow: 0 4px 20px #0003; }
+            .puck-surumler li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; }
         </style>
     </head>
     <body>
         <nav class="puck-ust">
-            <a href="{{ path('panel_huni', {app: uygulama, ad: huni}) }}">← Klasik düzenleyici, yayınla ve sürümler</a>
-            <span>"Publish" = taslağı kaydet (yayın panelden)</span>
+            <a href="{{ path('panel_huni', {app: uygulama, ad: huni}) }}">← Klasik düzenleyici (yedek)</a>
         </nav>
         <div id="puck-duzenleyici"
              data-taslak="{{ taslak|json_encode }}"
@@ -29,6 +37,7 @@
              data-tema-varsayilan="{{ tema_varsayilan|json_encode }}"
              data-yazi-tipleri="{{ yazi_tipleri|json_encode }}"
              data-kaydet="{{ path('panel_huni_taslak', {app: uygulama, ad: huni}) }}"
+             data-durum="{{ path('panel_huni_durum', {app: uygulama, ad: huni}) }}"
              data-medya="{{ path('panel_medya_liste', {app: uygulama}) }}"
              data-jeton="{{ csrf_token('huni-' ~ uygulama) }}"
              data-baslik="{{ uygulama }} · {{ huni }}"></div>
