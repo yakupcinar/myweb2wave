@@ -1,6 +1,6 @@
-// Huni adımları (B4/H1) — Puck önizlemesi bugün, huni oynatıcısı H2'de bu
-// bileşenleri çizer. DOM huni sayfasındakiyle aynı (HuniKabugu.astro):
-// huni.css aynı sınıfları her iki yerde boyar. Metinler yalnız JSX metni —
+// Huni adımları (B4/H1) — Puck önizlemesi ve huni oynatıcısı (H2,
+// funnel/src/oynatici) aynı bileşenleri çizer; huni.css ikisini de boyar.
+// Etkileşim alanları (on…, kapali, hata) isteğe bağlı: Puck geçmez. Metinler yalnız JSX metni —
 // tanım HTML taşıyamaz (D1); ham HTML basan React özniteliği bin/kontrol'de
 // yasak (html-yok adımı; adı burada yazılsa adım kendini yakalar).
 import type { ReactNode } from "react";
@@ -27,6 +27,7 @@ function Gorsel({
 
 // Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
 type GorselAlani = { gorsel?: string | undefined; medyaKoku: string };
+type Tiklama = { onDugme?: () => void };
 
 export function Tanitim({
     baslik,
@@ -34,11 +35,13 @@ export function Tanitim({
     dugme,
     gorsel,
     medyaKoku,
+    onDugme,
 }: {
     baslik: string;
     metin: string;
     dugme: string;
-} & GorselAlani): ReactNode {
+} & GorselAlani &
+    Tiklama): ReactNode {
     return (
         <section>
             {gorsel ? (
@@ -46,7 +49,7 @@ export function Tanitim({
             ) : null}
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
-            <button type="button" className="ana">
+            <button type="button" className="ana" onClick={onDugme}>
                 {dugme}
             </button>
         </section>
@@ -57,17 +60,24 @@ export function Soru({
     soru,
     secenekler,
     medyaKoku,
+    onSecim,
 }: {
     soru: string;
     secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
     medyaKoku: string;
+    /** Seçeneğin sırası; kimliği çağıran bilir. */
+    onSecim?: (sira: number) => void;
 }): ReactNode {
     return (
         <section>
             <h1 tabIndex={-1}>{soru}</h1>
             <div className="secenekler">
                 {secenekler.map((s, i) => (
-                    <button key={i} type="button">
+                    <button
+                        key={i}
+                        type="button"
+                        onClick={onSecim ? () => onSecim(i) : undefined}
+                    >
                         {s.gorsel ? (
                             <Gorsel
                                 id={s.gorsel}
@@ -87,18 +97,30 @@ export function Paywall({
     baslik,
     metin,
     dugme,
+    onDugme,
+    kapali = false,
+    hata = "",
 }: {
     baslik: string;
     metin: string;
     dugme: string;
-}): ReactNode {
+    /** Önizlemede ve ödeme isteği sürerken (çift tıklama yok, D13). */
+    kapali?: boolean;
+    hata?: string;
+} & Tiklama): ReactNode {
     return (
         <section>
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
-            <button type="button" className="ana">
+            <button
+                type="button"
+                className="ana"
+                onClick={onDugme}
+                disabled={kapali}
+            >
                 {dugme}
             </button>
+            {hata ? <p role="alert">{hata}</p> : null}
         </section>
     );
 }

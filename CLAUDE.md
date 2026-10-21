@@ -97,7 +97,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **Tam doğrulama** | `bin/kontrol > /tmp/k.log 2>&1; echo EXIT=$?` · `/kontrol` · `sinayici` |
 | Biçim | `docker compose run --rm -T core vendor/bin/php-cs-fixer fix` · `… funnel npm run format` |
 | Statik analiz | `… core vendor/bin/phpstan analyse` (max) · `… funnel npm run check` |
-| Test | `docker compose run --rm -T core vendor/bin/phpunit` |
+| Test | `docker compose run --rm -T core vendor/bin/phpunit` · `… funnel npm test` (huni oynatıcısı) |
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
 | Sözleşme → huni + panel düzenleyicisi tipleri | `docker compose run --rm contract npm run uret` (`contract/openapi.yaml` değişince) |
@@ -145,6 +145,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§30** | **Cache-Control'süz statik dosya** tarayıcıda eski hâliyle çalışır (dağıtımdan sonra da) — adrese içerik özeti. |
 | **§31** | PHP **`upload_max_filesize` (2M)** isteği uygulamadan önce keser — kodda yazan büyük sınıra hiç ulaşılmaz; PHP sınırını ölç ve ayarla. |
 | **§32** | Vitest CSS içe aktarmasını (**`?raw` dahil**) **boş dizgeye** çevirir — CSS'te "yok" diyen test hep yeşil; `test.css.include`. |
+| **§33** | Testing Library'de **metnin görünmesi `useEffect`'in koştuğunu garanti etmez** — effect'e bağlı iddia aralıklı kırmızı, olumsuz iddia yalancı yeşil; `waitFor`. |
 
 ---
 

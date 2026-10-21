@@ -1,17 +1,19 @@
 ---
-// Huni motoru (A7): statik kabuk; tanımı çalışma anında çekirdekten okur
-// (yayınlanmış en son sürüm, ya da ?onizleme=<anahtar> ile taslak) ve
-// adımları TEK SAYFADA sırayla gösterir. Metinler yalnız textContent ile
-// basılır — tanım HTML taşıyamaz. Ölçüm (ziyaret, adım, cevap, ödeme)
-// motorun işi; tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey
-// kaydedilmez, ödeme kapalı.
+// Huni kabuğu (A7, B4/H2): statik HTML + tek React adacığı (Huni.tsx).
+// İçerik çalışma anında geldiği için sunucuda çizilecek veri yok →
+// client:only. Tanım isteği satır içi betikle HTML ayrıştırılırken başlar,
+// oynatıcının JS'ini beklemez (H0 bulgusu; erken-istek.ts).
 // Görünüm ve tema formülü panel düzenleyicisiyle ortak (B4/H1).
 import "../../../huni-bilesenleri/huni.css";
+import Huni from "../oynatici/Huni";
+import { tanimIstegi } from "../oynatici/erken-istek";
 
 interface Props {
   app: "keepchat";
 }
 const { app } = Astro.props;
+// Değerler sabit (uygulama adı, derlemedeki çekirdek adresi) — JSON ile kaçışlanır.
+const erken = `window.huniTanimi=(${tanimIstegi.toString()})(${JSON.stringify(app)},${JSON.stringify(import.meta.env.PUBLIC_CORE_URL)});`;
 ---
 
 <html lang="tr">
@@ -19,256 +21,15 @@ const { app } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Yükleniyor…</title>
+    <script is:inline set:html={erken} />
   </head>
   <body class="huni">
-    <main data-huni-app={app}>
-      <p id="durum">Yükleniyor…</p>
+    <main>
+      <Huni client:only="react" app={app}>
+        <p id="durum" slot="fallback">
+          Yükleniyor…
+        </p>
+      </Huni>
     </main>
-
-    <script>
-      import { cekirdek } from "../lib/cekirdek";
-      import {
-        ilerlemeBildir,
-        ziyaretBaslat,
-        type Govde,
-      } from "../lib/ziyaret";
-      import type { components } from "../sozlesme/api";
-      import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
-
-      type Yayin = components["schemas"]["HuniYayini"];
-      type Adim = Yayin["tanim"]["adimlar"][number];
-      type App = Govde<"/huni/ziyaretler">["app"];
-
-      const ana = document.querySelector<HTMLElement>("[data-huni-app]");
-      const durum = document.querySelector<HTMLParagraphElement>("#durum");
-      const app = ana?.dataset["huniApp"] as App;
-      const onizleme = new URLSearchParams(window.location.search).get(
-        "onizleme",
-      );
-
-      /** Düz metinli öğe — innerHTML hiç kullanılmaz. */
-      function oge<K extends keyof HTMLElementTagNameMap>(
-        etiket: K,
-        metin?: string,
-        sinif?: string,
-      ): HTMLElementTagNameMap[K] {
-        const e = document.createElement(etiket);
-        if (metin !== undefined) e.textContent = metin;
-        if (sinif) e.className = sinif;
-        return e;
-      }
-
-      /** E2.3: görsel çekirdekten, kimlik doğrulanmış (64 hex) — adres dışarıdan kurulamaz. */
-      function gorsel(id: string, sinif: string): HTMLImageElement {
-        const g = oge("img", undefined, sinif);
-        g.src = `${import.meta.env.PUBLIC_CORE_URL}/medya/${id}.webp`;
-        g.alt = "";
-        g.decoding = "async";
-        return g;
-      }
-
-      function adimCiz(adim: Adim, sira: number): HTMLElement {
-        const bolum = oge("section");
-        bolum.dataset["adim"] = adim.id;
-        bolum.dataset["sira"] = String(sira);
-        bolum.hidden = sira !== 0;
-        if (adim.tur === "tanitim" && adim.gorsel)
-          bolum.append(gorsel(adim.gorsel, "kapak"));
-        const baslik = oge("h1", adim.tur === "soru" ? adim.soru : adim.baslik);
-        baslik.tabIndex = -1;
-        bolum.append(baslik);
-        if (adim.tur === "soru") {
-          const kutu = oge("div", undefined, "secenekler");
-          for (const s of adim.secenekler) {
-            const d = oge("button");
-            if (s.gorsel) d.append(gorsel(s.gorsel, "secenek-gorseli"));
-            d.append(oge("span", s.metin));
-            d.type = "button";
-            d.dataset["secenek"] = s.id;
-            kutu.append(d);
-          }
-          bolum.append(kutu);
-          return bolum;
-        }
-        bolum.append(oge("p", adim.metin));
-        const d = oge("button", adim.dugme, "ana");
-        d.type = "button";
-        if (adim.tur === "tanitim") d.dataset["ileri"] = "";
-        else {
-          d.id = "abone-ol";
-          d.dataset["plan"] = adim.plan;
-          const hata = oge("p");
-          hata.id = "hata";
-          hata.setAttribute("role", "alert");
-          hata.hidden = true;
-          bolum.append(d, hata);
-          return bolum;
-        }
-        bolum.append(d);
-        return bolum;
-      }
-
-      // Seçimi çekirdek yapar (A8); YALNIZ seçim parametreleri gider —
-      // fbclid gibi her tıklamada farklı değerler önbelleği bozardı.
-      const adres = new URLSearchParams(window.location.search);
-      const secim: {
-        k?: string;
-        utm_source?: string;
-        utm_campaign?: string;
-        utm_content?: string;
-        huni?: string;
-      } = {};
-      for (const ad of [
-        "k",
-        "utm_source",
-        "utm_campaign",
-        "utm_content",
-        "huni",
-      ] as const) {
-        const deger = adres.get(ad);
-        if (deger) secim[ad] = deger.slice(0, 200);
-      }
-
-      async function tanimiAl(): Promise<Yayin | undefined> {
-        const { data } = onizleme
-          ? await cekirdek.GET("/huni/{app}/taslak", {
-              params: {
-                path: { app },
-                query: { huni: secim.huni ?? "", anahtar: onizleme },
-              },
-            })
-          : await cekirdek.GET("/huni/{app}", {
-              params: { path: { app }, query: secim },
-            });
-        return data;
-      }
-
-      /** Değerler çekirdekte doğrulandı; yine de CSS'e dizge birleştirmeyle değil setProperty ile. */
-      function temaUygula(tema: Yayin["tanim"]["tema"]): void {
-        if (!tema) return;
-        const kok = document.documentElement.style;
-        for (const [ad, deger] of Object.entries(temaDegiskenleri(tema)))
-          kok.setProperty(ad, deger);
-      }
-
-      function calistir(yayin: Yayin): void {
-        const { tanim } = yayin;
-        document.title = tanim.sayfaBasligi;
-        temaUygula(tanim.tema);
-        const cubuk = oge("progress");
-        cubuk.max = tanim.adimlar.length;
-        cubuk.value = 1;
-        const bolumler = tanim.adimlar.map(adimCiz);
-        durum?.remove();
-        if (onizleme)
-          ana?.append(
-            oge(
-              "p",
-              "Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.",
-              "onizleme",
-            ),
-          );
-        ana?.append(cubuk, ...bolumler);
-
-        // Önizlemede ölçüm yok: ziyaret açılmaz, adım/cevap gitmez.
-        const ziyaretSozu: Promise<string | undefined> = onizleme
-          ? Promise.resolve(undefined)
-          : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined);
-        let mevcut = 0;
-
-        function goster(sira: number, gecmiseEkle: boolean): void {
-          const bolum = bolumler[sira];
-          if (!bolum) return;
-          bolumler.forEach((b, i) => (b.hidden = i !== sira));
-          mevcut = sira;
-          cubuk.value = sira + 1;
-          if (gecmiseEkle) history.pushState({ adim: sira }, "");
-          bolum.querySelector<HTMLElement>("h1")?.focus();
-          ilerlemeBildir(ziyaretSozu, sira, bolum.dataset["adim"] ?? "");
-        }
-
-        // Geri tuşu bir önceki adıma döner, sayfadan çıkmaz.
-        history.replaceState({ adim: 0 }, "");
-        window.addEventListener("popstate", (e: PopStateEvent) => {
-          goster((e.state as { adim?: number } | null)?.adim ?? 0, false);
-        });
-        ilerlemeBildir(ziyaretSozu, 0, bolumler[0]?.dataset["adim"] ?? "");
-
-        for (const d of document.querySelectorAll<HTMLButtonElement>(
-          "[data-ileri]",
-        )) {
-          d.addEventListener("click", () => goster(mevcut + 1, true));
-        }
-        for (const d of document.querySelectorAll<HTMLButtonElement>(
-          "[data-secenek]",
-        )) {
-          d.addEventListener("click", () => {
-            ilerlemeBildir(
-              ziyaretSozu,
-              mevcut,
-              bolumler[mevcut]?.dataset["adim"] ?? "",
-              d.dataset["secenek"],
-            );
-            goster(mevcut + 1, true);
-          });
-        }
-
-        // Paywall: plan adını çekirdeğe gönderir, dönen ödeme adresine yönlenir.
-        const dugme = document.querySelector<HTMLButtonElement>("#abone-ol");
-        const hata = document.querySelector<HTMLParagraphElement>("#hata");
-        function hataGoster(metin: string): void {
-          if (hata) {
-            hata.textContent = metin;
-            hata.hidden = false;
-          }
-          if (dugme) dugme.disabled = false;
-        }
-        if (onizleme && dugme) dugme.disabled = true;
-        dugme?.addEventListener("click", async () => {
-          dugme.disabled = true;
-          try {
-            const govde: Govde<"/checkout/sessions"> = {
-              app,
-              plan: dugme.dataset[
-                "plan"
-              ] as Govde<"/checkout/sessions">["plan"],
-            };
-            const ziyaret = await ziyaretSozu;
-            if (ziyaret) govde.ziyaret = ziyaret;
-            const { data, error, response } = await cekirdek.POST(
-              "/checkout/sessions",
-              { body: govde },
-            );
-            if (data) {
-              window.location.assign(data.url);
-              return;
-            }
-            hataGoster(
-              response.status === 502 &&
-                error?.error === "payment_provider_unavailable"
-                ? "Ödeme sağlayıcısına şu an ulaşılamıyor. Lütfen biraz sonra tekrar deneyin."
-                : "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
-            );
-          } catch {
-            // Ağ hatası: çekirdeğe hiç ulaşılamadı.
-            hataGoster(
-              "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
-            );
-          }
-        });
-      }
-
-      tanimiAl()
-        .then((yayin) => {
-          if (!yayin) throw new Error("tanım yok");
-          calistir(yayin);
-        })
-        .catch(() => {
-          if (durum)
-            durum.textContent = onizleme
-              ? "Önizleme açılamadı: bağlantının süresi dolmuş olabilir."
-              : "Sayfa yüklenemedi. Lütfen yenileyin.";
-        });
-    </script>
   </body>
 </html>
