@@ -27,7 +27,7 @@ function Gorsel({
 
 // Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
 type GorselAlani = { gorsel?: string | undefined; medyaKoku: string };
-type Tiklama = { onDugme?: () => void };
+type Tiklama = { onDugme?: (() => void) | undefined };
 
 export function Tanitim({
     baslik,
@@ -66,7 +66,7 @@ export function Soru({
     secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
     medyaKoku: string;
     /** Seçeneğin sırası; kimliği çağıran bilir. */
-    onSecim?: (sira: number) => void;
+    onSecim?: ((sira: number) => void) | undefined;
 }): ReactNode {
     return (
         <section>
@@ -123,4 +123,71 @@ export function Paywall({
             {hata ? <p role="alert">{hata}</p> : null}
         </section>
     );
+}
+
+/** Tanımdaki adım (sözleşme HuniTanimi.adimlar[]); fazla alanlar (id, plan) yok sayılır. */
+export type TanimAdimi =
+    | {
+          tur: "tanitim";
+          baslik: string;
+          metin: string;
+          dugme: string;
+          gorsel?: string;
+      }
+    | {
+          tur: "soru";
+          soru: string;
+          secenekler: { metin: string; gorsel?: string }[];
+      }
+    | { tur: "paywall"; baslik: string; metin: string; dugme: string };
+
+/**
+ * Tanımdan adım (B4/H3): huni oynatıcısı bunu çizer. Puck kendi alanlarından
+ * aynı bileşenleri ayrı yoldan çağırır; core/editor/src/onizleme.test.tsx
+ * iki yolun aynı DOM'u verdiğini ölçer (önizleme = huni).
+ */
+export function Adim({
+    adim,
+    medyaKoku,
+    onIleri,
+    onSecim,
+    odeme = {},
+}: {
+    adim: TanimAdimi;
+    medyaKoku: string;
+    onIleri?: () => void;
+    onSecim?: (sira: number) => void;
+    odeme?: { onDugme?: () => void; kapali?: boolean; hata?: string };
+}): ReactNode {
+    switch (adim.tur) {
+        case "tanitim":
+            return (
+                <Tanitim
+                    baslik={adim.baslik}
+                    metin={adim.metin}
+                    dugme={adim.dugme}
+                    gorsel={adim.gorsel}
+                    medyaKoku={medyaKoku}
+                    onDugme={onIleri}
+                />
+            );
+        case "soru":
+            return (
+                <Soru
+                    soru={adim.soru}
+                    secenekler={adim.secenekler}
+                    medyaKoku={medyaKoku}
+                    onSecim={onSecim}
+                />
+            );
+        case "paywall":
+            return (
+                <Paywall
+                    baslik={adim.baslik}
+                    metin={adim.metin}
+                    dugme={adim.dugme}
+                    {...odeme}
+                />
+            );
+    }
 }
