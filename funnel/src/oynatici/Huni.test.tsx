@@ -273,6 +273,7 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
             adim.tur === "soru"
               ? {
                   ...adim,
+                  aciklama: "Birden fazla seçenek seçebilirsin.",
                   secimTuru: "coklu",
                   devamDugmesi: "Seçimleri gönder",
                 }
@@ -285,6 +286,7 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     await yuklendi();
     fireEvent.click(screen.getByText("Başla"));
     await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    screen.getByText("Birden fazla seçenek seçebilirsin.");
 
     const devamDugmesi = screen.getByRole("button", {
       name: "Seçimleri gönder",

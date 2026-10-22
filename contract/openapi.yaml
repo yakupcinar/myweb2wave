@@ -458,6 +458,7 @@ components:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [soru] }
         soru: { type: string }
+        aciklama: { type: string, maxLength: 500 }
         ilerlemeGoster: { type: boolean }
         secimTuru: { type: string, enum: [tekli, coklu] }
         devamDugmesi: { type: string }

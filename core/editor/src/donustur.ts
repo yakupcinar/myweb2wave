@@ -29,6 +29,7 @@ export type TanitimProps = {
 export type SoruProps = {
     kimlik: string;
     soru: string;
+    aciklama: string;
     secenekler: SecenekProps[];
     secimTuru: "tekli" | "coklu";
     devamDugmesi: string;
@@ -117,6 +118,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             id,
                             kimlik: adim.id,
                             soru: adim.soru,
+                            aciklama: adim.aciklama ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                             secimTuru: adim.secimTuru ?? "tekli",
                             devamDugmesi: adim.devamDugmesi ?? "Devam",
@@ -189,6 +191,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     id: p.kimlik,
                     tur: "soru",
                     soru: p.soru,
+                    ...(p.aciklama ? { aciklama: p.aciklama } : {}),
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),

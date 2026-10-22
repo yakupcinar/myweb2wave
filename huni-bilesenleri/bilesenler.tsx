@@ -58,6 +58,7 @@ export function Tanitim({
 
 export function Soru({
     soru,
+    aciklama = "",
     secenekler,
     secimTuru = "tekli",
     secili = [],
@@ -68,6 +69,7 @@ export function Soru({
     onDevam,
 }: {
     soru: string;
+    aciklama?: string | undefined;
     secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
     secimTuru?: "tekli" | "coklu" | undefined;
     secili?: number[] | undefined;
@@ -81,6 +83,7 @@ export function Soru({
     return (
         <section>
             <h1 tabIndex={-1}>{soru}</h1>
+            {aciklama ? <p className="yardim-metni">{aciklama}</p> : null}
             <div className="secenekler">
                 {secenekler.map((s, i) => (
                     <button
@@ -201,6 +204,7 @@ export type TanimAdimi =
     | {
           tur: "soru";
           soru: string;
+          aciklama?: string;
           secimTuru?: "tekli" | "coklu";
           devamDugmesi?: string;
           secenekler: { metin: string; gorsel?: string }[];
@@ -255,6 +259,7 @@ export function Adim({
             return (
                 <Soru
                     soru={adim.soru}
+                    aciklama={adim.aciklama}
                     secenekler={adim.secenekler}
                     secimTuru={adim.secimTuru}
                     devamDugmesi={adim.devamDugmesi}

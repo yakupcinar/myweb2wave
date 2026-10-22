@@ -16,10 +16,11 @@ const tanitim = (gorsel?: string): string =>
             medyaKoku={KOK}
         />,
     );
-const soru = (): string =>
+const soru = (aciklama = ""): string =>
     renderToStaticMarkup(
         <Soru
             soru="Kiminle?"
+            aciklama={aciklama}
             secenekler={[
                 { metin: "Ailemle", gorsel: G },
                 { metin: "İş", gorsel: "" },
@@ -57,6 +58,7 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
             renderToStaticMarkup(
                 <Soru
                     soru={kotu}
+                    aciklama={kotu}
                     secenekler={[{ metin: kotu }]}
                     medyaKoku=""
                 />,
@@ -76,7 +78,7 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
         ].join("");
         expect(html).not.toContain("<b>");
         expect(html).not.toContain("<img src=x");
-        expect(html.split("&lt;b&gt;x&lt;/b&gt;").length - 1).toBe(13);
+        expect(html.split("&lt;b&gt;x&lt;/b&gt;").length - 1).toBe(14);
     });
 });
 
@@ -120,10 +122,16 @@ describe("DOM huni sayfasıyla aynı", () => {
         expect(yorum()).toContain("<strong>Ayşe</strong> · Kullanıcı");
         expect(yorum()).toContain('<button type="button" class="ana">Devam');
     });
+    it("sorudaki ek açıklama varsa gösterir, boşsa ek satır üretmez", () => {
+        expect(soru("Birden fazla seçenek seçebilirsin.")).toContain(
+            '<p class="yardim-metni">Birden fazla seçenek seçebilirsin.</p>',
+        );
+        expect(soru()).not.toContain("yardim-metni");
+    });
     it("bileşenlerin her sınıfı huni.css'te .huni altında boyanır", () => {
         const siniflar = new Set(
             Array.from(
-                [tanitim(G), soru(), yorum(), paywall()]
+                [tanitim(G), soru("Kısa açıklama"), yorum(), paywall()]
                     .join("")
                     .matchAll(/class="([^"]+)"/g),
             ).flatMap((m) => (m[1] ?? "").split(" ")),
@@ -133,6 +141,7 @@ describe("DOM huni sayfasıyla aynı", () => {
             "kapak",
             "secenek-gorseli",
             "secenekler",
+            "yardim-metni",
             "yorum-alinti",
         ]);
         for (const s of siniflar) {

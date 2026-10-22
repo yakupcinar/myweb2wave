@@ -18,7 +18,7 @@ final class Tanim
     private const UZUNLUK = [
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
-        'yazar' => [1, 80], 'unvan' => [0, 100],
+        'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
     ];
 
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
@@ -84,6 +84,10 @@ final class Tanim
                 if (!\in_array($adim['secimTuru'], ['tekli', 'coklu'], true)) {
                     $h[] = "{$yer}: secimTuru tekli ya da coklu olmalı";
                 }
+            }
+            if ('soru' === $tur && \array_key_exists('aciklama', $adim)) {
+                $beklenen[] = 'aciklama';
+                self::metin($adim['aciklama'], 'aciklama', "{$yer} aciklama", $h);
             }
             if ('soru' === $tur && \array_key_exists('devamDugmesi', $adim)) {
                 $beklenen[] = 'devamDugmesi';

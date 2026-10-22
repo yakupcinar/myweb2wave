@@ -68,6 +68,24 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
+    it("soru açıklaması korunur; boş editör alanı tanıma eklenmez", () => {
+        const aciklamali: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim) =>
+                adim.tur === "soru"
+                    ? {
+                          ...adim,
+                          aciklama: "Birden fazla seçenek seçebilirsin.",
+                      }
+                    : adim,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(aciklamali, VARSAYILAN))).toStrictEqual(
+            aciklamali,
+        );
+        expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
+    });
+
     it("çoklu seçim metniyle saklanır; seçenek dalları kaldırılır", () => {
         const coklu: Tanim = {
             ...temel,
@@ -126,6 +144,7 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
                     id: "kiminle",
                     tur: "soru",
                     soru: "Kiminle?",
+                    aciklama: "Birden fazla seçenek seçebilirsin.",
                     secenekler: [
                         {
                             id: "aile",

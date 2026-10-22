@@ -61,3 +61,11 @@ describe("müşteri yorumu bileşeni", () => {
         );
     });
 });
+
+describe("soru içeriği", () => {
+    it("isteğe bağlı açıklama alanı düzenlenebilir", () => {
+        expect(
+            yapilandirma(ortam).components.Soru.fields?.aciklama?.label,
+        ).toBe("Açıklama (isteğe bağlı)");
+    });
+});

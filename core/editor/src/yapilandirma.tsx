@@ -1,4 +1,4 @@
-// Puck yapılandırması: üç adım türü (çekirdeğin Tanim'i ile aynı) + kök
+// Puck yapılandırması: adım türleri (çekirdeğin Tanim'i ile aynı) + kök
 // (sayfa başlığı ve tema). Adımları huni sayfasıyla ORTAK bileşenler ve
 // huni.css çizer (B4/H1); gerçek doğrulama çekirdekte — burada yalnız giriş
 // kolaylığı.
@@ -316,6 +316,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 fields: {
                     kimlik: kimlikAlani,
                     soru: { type: "text", label: "Soru" },
+                    aciklama: {
+                        type: "textarea",
+                        label: "Açıklama (isteğe bağlı)",
+                    },
                     ilerlemeGoster: ilerlemeAlani,
                     secimTuru: {
                         type: "radio",
@@ -371,6 +375,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 defaultProps: {
                     kimlik: "soru",
                     soru: "Yeni soru",
+                    aciklama: "",
                     ilerlemeGoster: true,
                     secimTuru: "tekli",
                     devamDugmesi: "Devam",
@@ -389,10 +394,17 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         },
                     ],
                 },
-                render: ({ soru, secenekler, secimTuru, devamDugmesi }) => (
+                render: ({
+                    soru,
+                    aciklama,
+                    secenekler,
+                    secimTuru,
+                    devamDugmesi,
+                }) => (
                     <div style={kart}>
                         <Soru
                             soru={soru}
+                            aciklama={aciklama}
                             secenekler={secenekler ?? []}
                             secimTuru={secimTuru}
                             devamDugmesi={devamDugmesi}

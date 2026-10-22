@@ -236,6 +236,7 @@ export interface components {
             /** @enum {string} */
             tur: "soru";
             soru: string;
+            aciklama?: string;
             ilerlemeGoster?: boolean;
             /** @enum {string} */
             secimTuru?: "tekli" | "coklu";

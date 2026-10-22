@@ -209,6 +209,14 @@ final class HuniTest extends WebTestCase
         self::assertEquals($t, $this->yanit()['tanim'] ?? null);
     }
 
+    public function testSoruAciklamasiIstegeBagliVeUzunluguSinirli(): void
+    {
+        self::assertSame([], Tanim::hatalar(self::tanim('Açıklamasız'), ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::ile(1, 'aciklama', 'Kısa bir açıklama'), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', str_repeat('a', 501)), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', 123), ['monthly']));
+    }
+
     public function testTohumdakiKeepchatHunisiGecerli(): void
     {
         // Göç tohumu (v1) doğrulamadan geçmeli — yoksa ilk yayın hiç açılmazdı.
