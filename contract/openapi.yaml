@@ -440,6 +440,7 @@ components:
         metin: { type: string }
         dugme: { type: string }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+        ilerlemeGoster: { type: boolean }
     SoruAdimi:
       type: object
       additionalProperties: false
@@ -448,6 +449,7 @@ components:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [soru] }
         soru: { type: string }
+        ilerlemeGoster: { type: boolean }
         secenekler:
           type: array
           items:
@@ -475,6 +477,7 @@ components:
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
+        ilerlemeGoster: { type: boolean }
         plan: { type: string, enum: [monthly] }
     GorselKimligi:
       description: "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)"

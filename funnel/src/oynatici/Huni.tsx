@@ -177,7 +177,9 @@ function Oynatici({
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
         </p>
       ) : null}
-      <progress max={tanim.adimlar.length} value={mevcut + 1} />
+      {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+        <progress max={tanim.adimlar.length} value={mevcut + 1} />
+      ) : null}
       <div ref={kutu} data-gecis={gecti ? "" : undefined}>
         {tanim.adimlar.map((adim, i) => (
           <div

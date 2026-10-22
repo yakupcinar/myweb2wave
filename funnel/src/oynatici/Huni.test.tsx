@@ -243,6 +243,23 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     fireEvent.click(screen.getByText("Başla"));
     expect(cubuk.value).toBe(2);
   });
+
+  it("ilerleme çubuğu yalnız kapatıldığı adımda gizlenir", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        adimlar: [
+          { ...yayin().tanim.adimlar[0]!, ilerlemeGoster: false },
+          ...yayin().tanim.adimlar.slice(1),
+        ],
+      }),
+    };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("progress")).toBeNull();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(document.querySelector("progress")).not.toBeNull();
+  });
 });
 
 describe("D7 — tema", () => {

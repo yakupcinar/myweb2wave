@@ -229,12 +229,14 @@ export interface components {
             metin: string;
             dugme: string;
             hedef?: components["schemas"]["AdimHedefi"];
+            ilerlemeGoster?: boolean;
         };
         SoruAdimi: {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */
             tur: "soru";
             soru: string;
+            ilerlemeGoster?: boolean;
             secenekler: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
@@ -251,6 +253,7 @@ export interface components {
             baslik: string;
             metin: string;
             dugme: string;
+            ilerlemeGoster?: boolean;
             /** @enum {string} */
             plan: "monthly";
         };

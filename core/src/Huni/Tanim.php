@@ -71,6 +71,12 @@ final class Tanim
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
                 'soru' => ['secenekler'], 'paywall' => ['plan'], default => [],
             }];
+            if (\array_key_exists('ilerlemeGoster', $adim)) {
+                $beklenen[] = 'ilerlemeGoster';
+                if (!\is_bool($adim['ilerlemeGoster'])) {
+                    $h[] = "{$yer}: ilerlemeGoster true ya da false olmalı";
+                }
+            }
             // E2.3: tanıtım adımında isteğe bağlı görsel.
             if ('tanitim' === $tur && \array_key_exists('gorsel', $adim)) {
                 $beklenen[] = 'gorsel';

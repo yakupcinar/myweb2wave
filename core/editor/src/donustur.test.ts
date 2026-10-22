@@ -46,6 +46,19 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
+    it("ilerleme çubuğu kapatma ayarı tanıma yazılır; varsayılan ayar eklenmez", () => {
+        const kapali: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim, sira) =>
+                sira === 1 ? { ...adim, ilerlemeGoster: false } : adim,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(kapali, VARSAYILAN))).toStrictEqual(
+            kapali,
+        );
+        expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
+    });
+
     it("özel tema, görseller ve hedefler (H5) aynen döner", () => {
         const zengin: Tanim = {
             ...temel,

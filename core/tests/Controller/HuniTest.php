@@ -68,6 +68,24 @@ final class HuniTest extends WebTestCase
         self::assertEquals($tanim['tema'], $yanit['tanim']['tema'] ?? null);
     }
 
+    public function testIlerlemeTercihiYayindaDonerSozlesmeyeUyar(): void
+    {
+        $tanim = self::ile(0, 'ilerlemeGoster', false);
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        $tanimYaniti = $this->yanit()['tanim'] ?? null;
+        self::assertIsArray($tanimYaniti);
+        $adimlar = $tanimYaniti['adimlar'] ?? null;
+        self::assertIsArray($adimlar);
+        $ilkAdim = $adimlar[0] ?? null;
+        self::assertIsArray($ilkAdim);
+        self::assertFalse($ilkAdim['ilerlemeGoster'] ?? null);
+    }
+
     public function testYayinYoksa404(): void
     {
         $this->client->request('GET', '/huni/keepchat');
@@ -109,6 +127,7 @@ final class HuniTest extends WebTestCase
         yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
         yield 'bilinmeyen tür' => ['tür tanitim, soru ya da paywall', self::ile(0, 'tur', 'html')];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
+        yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
         yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'dugme', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
@@ -136,6 +155,14 @@ final class HuniTest extends WebTestCase
         $t['adimlar'][0]['hedef'] = 'paywall';
 
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
+    public function testIlerlemeGostergesiIstegeBagliVeBoolOlmali(): void
+    {
+        $t = self::ile(0, 'ilerlemeGoster', false);
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::tanim('Eski tanım'), ['monthly']));
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void

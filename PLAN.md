@@ -26,6 +26,7 @@
 | Çok huni + kurallar (A8 / E2.1) | ✅ 117 test, kırma 8/8, tarayıcıda tek adres → iki huni | `docs/decisions/cok-huni.md` |
 | Stripe → RevenueCat (A9) | ✅ 126 test, kırma 9/9; gerçek RevenueCat ölçülmedi (Ç43) | `docs/decisions/revenuecat.md` |
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
+| Huni adım ayarları | ✅ 187 çekirdek testi + editör/oynatıcı testleri, kırma 3/3; panel görsel kontrolü bekliyor | `docs/decisions/huni-adim-ayarları.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |

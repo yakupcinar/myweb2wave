@@ -24,11 +24,13 @@ export type TanitimProps = {
     dugme: string;
     gorsel: string;
     hedef: string;
+    ilerlemeGoster: boolean;
 };
 export type SoruProps = {
     kimlik: string;
     soru: string;
     secenekler: SecenekProps[];
+    ilerlemeGoster: boolean;
 };
 export type PaywallProps = {
     kimlik: string;
@@ -36,6 +38,7 @@ export type PaywallProps = {
     metin: string;
     dugme: string;
     plan: Plan;
+    ilerlemeGoster: boolean;
 };
 export type KokProps = {
     sayfaBasligi: string;
@@ -92,6 +95,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             dugme: adim.dugme,
                             gorsel: adim.gorsel ?? "",
                             hedef: adim.hedef ?? "",
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
                 case "soru":
@@ -101,6 +105,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             id,
                             kimlik: adim.id,
                             soru: adim.soru,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                             secenekler: adim.secenekler.map((s) => ({
                                 kimlik: s.id,
                                 metin: s.metin,
@@ -119,6 +124,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             metin: adim.metin,
                             dugme: adim.dugme,
                             plan: adim.plan,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
             }
@@ -140,6 +146,9 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                             baslik: p.baslik,
                             metin: p.metin,
                             dugme: p.dugme,
+                            ...(p.ilerlemeGoster === false
+                                ? { ilerlemeGoster: false }
+                                : {}),
                         },
                         p.gorsel,
                     ),
@@ -152,6 +161,9 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     id: p.kimlik,
                     tur: "soru",
                     soru: p.soru,
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
                     secenekler: (p.secenekler ?? []).map((s) =>
                         hedefli(
                             gorselli(
@@ -172,6 +184,9 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     metin: p.metin,
                     dugme: p.dugme,
                     plan: p.plan,
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
                 };
             }
         }

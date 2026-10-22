@@ -50,6 +50,21 @@ const renkAlani = (label: string): CustomField<string> => ({
     ),
 });
 
+const ilerlemeAlani: CustomField<boolean> = {
+    type: "custom",
+    label: "İlerleme çubuğu",
+    render: ({ value, onChange, id }) => (
+        <FieldLabel label="Bu adımda göster" el="label">
+            <input
+                id={id}
+                type="checkbox"
+                checked={value ?? true}
+                onChange={(e) => onChange(e.target.checked)}
+            />
+        </FieldLabel>
+    ),
+};
+
 /** Görsel seç ya da yükle; yükleme çekirdekte doğrulanıp WebP'ye çevrilir. */
 function GorselSecici({
     value,
@@ -147,11 +162,19 @@ const kart: CSSProperties = {
 
 // H5: düğme / seçenek nereye gider — yalnız SONRAKİ adımlar (çekirdek de
 // yalnız ileriyi kabul eder; sıra sonradan değişirse kaydederken hata verir).
-const SIRADAKI = { label: "— sıradaki adım —", value: "" };
+const SIRADAKI = { label: "Sıradaki adım", value: "" };
 const hedefAlani: SelectField = {
     type: "select",
-    label: "Nereye gider (dallanma)",
-    options: [SIRADAKI],
+    label: "Bu seçilince gidilecek adım",
+    options: [{ label: "Sıradaki adım", value: "" }],
+};
+const tanitimHedefAlani: SelectField = {
+    ...hedefAlani,
+    label: "Devam düğmesiyle gidilecek adım",
+};
+const yanitHedefAlani: SelectField = {
+    ...hedefAlani,
+    label: "Bu yanıt seçilince gidilecek adım",
 };
 export function hedefSecenekleri(
     appState: AppState,
@@ -252,12 +275,13 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     metin: { type: "textarea", label: "Metin" },
                     dugme: { type: "text", label: "Düğme" },
                     gorsel: gorselAlani(ortam, "Kapak görseli"),
-                    hedef: hedefAlani,
+                    ilerlemeGoster: ilerlemeAlani,
+                    hedef: tanitimHedefAlani,
                 },
                 resolveFields: (veri, { fields, appState }) => ({
                     ...fields,
                     hedef: {
-                        ...hedefAlani,
+                        ...tanitimHedefAlani,
                         options: hedefSecenekleri(appState, veri.props.id),
                     },
                 }),
@@ -267,6 +291,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     metin: "",
                     dugme: "Devam",
                     gorsel: "",
+                    ilerlemeGoster: true,
                     hedef: "",
                 },
                 render: ({ baslik, metin, dugme, gorsel }) => (
@@ -286,6 +311,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 fields: {
                     kimlik: kimlikAlani,
                     soru: { type: "text", label: "Soru" },
+                    ilerlemeGoster: ilerlemeAlani,
                     secenekler: {
                         type: "array",
                         label: "Seçenekler",
@@ -301,7 +327,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             metin: { type: "text", label: "Metin" },
                             kimlik: { type: "text", label: "Kimlik" },
                             gorsel: gorselAlani(ortam, "Görsel"),
-                            hedef: hedefAlani,
+                            hedef: yanitHedefAlani,
                         },
                     },
                 },
@@ -315,7 +341,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             arrayFields: {
                                 ...secenekler.arrayFields,
                                 hedef: {
-                                    ...hedefAlani,
+                                    ...yanitHedefAlani,
                                     options: hedefSecenekleri(
                                         appState,
                                         veri.props.id,
@@ -328,6 +354,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 defaultProps: {
                     kimlik: "soru",
                     soru: "Yeni soru",
+                    ilerlemeGoster: true,
                     secenekler: [
                         {
                             kimlik: "secenek-1",
@@ -360,6 +387,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     baslik: { type: "text", label: "Başlık" },
                     metin: { type: "text", label: "Fiyat satırı" },
                     dugme: { type: "text", label: "Düğme" },
+                    ilerlemeGoster: ilerlemeAlani,
                     plan: {
                         type: "select",
                         label: "Plan",
@@ -374,6 +402,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     baslik: "Pro",
                     metin: "",
                     dugme: "Abone ol",
+                    ilerlemeGoster: true,
                     plan: "monthly",
                 },
                 render: ({ baslik, metin, dugme }) => (
