@@ -309,6 +309,42 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
       cevaplar: ["aile", "is"],
     });
   });
+
+  it("yorum adımı alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: [
+            temel.tanim.adimlar[0]!,
+            temel.tanim.adimlar[1]!,
+            {
+              id: "yorum",
+              tur: "yorum",
+              baslik: "Kullanıcı deneyimi",
+              metin: "Günlük işlerim artık daha kolay.",
+              yazar: "Ayşe",
+              unvan: "KeepChat kullanıcısı",
+              dugme: "Devam et",
+            },
+            temel.tanim.adimlar[2]!,
+          ],
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kullanıcı deneyimi"));
+    screen.getByText("Günlük işlerim artık daha kolay.");
+    screen.getByText("Ayşe");
+    fireEvent.click(screen.getByText("Devam et"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+  });
 });
 
 describe("D7 — tema", () => {

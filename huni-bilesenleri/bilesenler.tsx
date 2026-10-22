@@ -158,6 +158,37 @@ export function Paywall({
     );
 }
 
+export function Yorum({
+    baslik,
+    metin,
+    yazar,
+    unvan,
+    dugme,
+    onDugme,
+}: {
+    baslik: string;
+    metin: string;
+    yazar: string;
+    unvan: string;
+    dugme: string;
+} & Tiklama): ReactNode {
+    return (
+        <section>
+            <h1 tabIndex={-1}>{baslik}</h1>
+            <blockquote className="yorum-alinti">
+                <p>{metin}</p>
+                <footer>
+                    <strong>{yazar}</strong>
+                    {unvan ? ` · ${unvan}` : null}
+                </footer>
+            </blockquote>
+            <button type="button" className="ana" onClick={onDugme}>
+                {dugme}
+            </button>
+        </section>
+    );
+}
+
 /** Tanımdaki adım (sözleşme HuniTanimi.adimlar[]); fazla alanlar (id, plan) yok sayılır. */
 export type TanimAdimi =
     | {
@@ -173,6 +204,14 @@ export type TanimAdimi =
           secimTuru?: "tekli" | "coklu";
           devamDugmesi?: string;
           secenekler: { metin: string; gorsel?: string }[];
+      }
+    | {
+          tur: "yorum";
+          baslik: string;
+          metin: string;
+          yazar: string;
+          unvan: string;
+          dugme: string;
       }
     | { tur: "paywall"; baslik: string; metin: string; dugme: string };
 
@@ -233,6 +272,17 @@ export function Adim({
                     metin={adim.metin}
                     dugme={adim.dugme}
                     {...odeme}
+                />
+            );
+        case "yorum":
+            return (
+                <Yorum
+                    baslik={adim.baslik}
+                    metin={adim.metin}
+                    yazar={adim.yazar}
+                    unvan={adim.unvan}
+                    dugme={adim.dugme}
+                    onDugme={onIleri}
                 />
             );
     }

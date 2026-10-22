@@ -125,7 +125,7 @@ final class HuniTest extends WebTestCase
         $t = self::tanim('X');
         yield 'tekrar eden kimlik' => ['tekrar ediyor', self::ile(1, 'id', 'giris')];
         yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
-        yield 'bilinmeyen tür' => ['tür tanitim, soru ya da paywall', self::ile(0, 'tur', 'html')];
+        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum ya da paywall', self::ile(0, 'tur', 'html')];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
         yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli ya da coklu olmalı', self::ile(1, 'secimTuru', 'belirsiz')];
@@ -189,6 +189,24 @@ final class HuniTest extends WebTestCase
             'çoklu seçimde seçenek hedefi kullanılamaz',
             implode(' | ', Tanim::hatalar($t, ['monthly'])),
         );
+    }
+
+    public function testYorumAdimiYayindaSaklanirVeAlaniSinirlanir(): void
+    {
+        $t = self::tanim('Yorum');
+        $t['adimlar'][1] = [
+            'id' => 'yorum', 'tur' => 'yorum', 'baslik' => 'Deneyim',
+            'metin' => 'Çok faydalı', 'yazar' => 'Ayşe', 'unvan' => 'Kullanıcı', 'dugme' => 'Devam',
+        ];
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'yazar', str_repeat('a', 81)), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'fazla', 'alan'), ['monthly']));
+
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $t));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->client->request('GET', '/huni/keepchat');
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        self::assertEquals($t, $this->yanit()['tanim'] ?? null);
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void

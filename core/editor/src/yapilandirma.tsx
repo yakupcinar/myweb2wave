@@ -10,7 +10,12 @@ import {
     type SelectField,
 } from "@puckeditor/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { Paywall, Soru, Tanitim } from "../../../huni-bilesenleri/bilesenler";
+import {
+    Paywall,
+    Soru,
+    Tanitim,
+    Yorum,
+} from "../../../huni-bilesenleri/bilesenler";
 import "../../../huni-bilesenleri/huni.css";
 import {
     kontrast,
@@ -424,6 +429,38 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 render: ({ baslik, metin, dugme }) => (
                     <div style={kart}>
                         <Paywall baslik={baslik} metin={metin} dugme={dugme} />
+                    </div>
+                ),
+            },
+            Yorum: {
+                label: "Müşteri yorumu",
+                fields: {
+                    kimlik: kimlikAlani,
+                    baslik: { type: "text", label: "Başlık" },
+                    metin: { type: "textarea", label: "Yorum" },
+                    yazar: { type: "text", label: "Ad" },
+                    unvan: { type: "text", label: "Açıklama" },
+                    dugme: { type: "text", label: "Devam düğmesi" },
+                    ilerlemeGoster: ilerlemeAlani,
+                },
+                defaultProps: {
+                    kimlik: "yorum",
+                    baslik: "Kullanıcılarımız ne diyor?",
+                    metin: "Bu uygulama günlük rutinimi kolaylaştırdı.",
+                    yazar: "Ayşe",
+                    unvan: "KeepChat kullanıcısı",
+                    dugme: "Devam",
+                    ilerlemeGoster: true,
+                },
+                render: ({ baslik, metin, yazar, unvan, dugme }) => (
+                    <div style={kart}>
+                        <Yorum
+                            baslik={baslik}
+                            metin={metin}
+                            yazar={yazar}
+                            unvan={unvan}
+                            dugme={dugme}
+                        />
                     </div>
                 ),
             },

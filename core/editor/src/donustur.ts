@@ -42,6 +42,15 @@ export type PaywallProps = {
     plan: Plan;
     ilerlemeGoster: boolean;
 };
+export type YorumProps = {
+    kimlik: string;
+    baslik: string;
+    metin: string;
+    yazar: string;
+    unvan: string;
+    dugme: string;
+    ilerlemeGoster: boolean;
+};
 export type KokProps = {
     sayfaBasligi: string;
     ozelTema: "evet" | "hayir";
@@ -54,6 +63,7 @@ export type KokProps = {
 export type Bilesenler = {
     Tanitim: TanitimProps;
     Soru: SoruProps;
+    Yorum: YorumProps;
     Paywall: PaywallProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
@@ -116,6 +126,20 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 gorsel: s.gorsel ?? "",
                                 hedef: s.hedef ?? "",
                             })),
+                        },
+                    };
+                case "yorum":
+                    return {
+                        type: "Yorum" as const,
+                        props: {
+                            id,
+                            kimlik: adim.id,
+                            baslik: adim.baslik,
+                            metin: adim.metin,
+                            yazar: adim.yazar,
+                            unvan: adim.unvan,
+                            dugme: adim.dugme,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
                 default:
@@ -183,6 +207,21 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                             ? secenek
                             : hedefli(secenek, s.hedef ?? "");
                     }),
+                };
+            }
+            case "Yorum": {
+                const p = oge.props as YorumProps;
+                return {
+                    id: p.kimlik,
+                    tur: "yorum",
+                    baslik: p.baslik,
+                    metin: p.metin,
+                    yazar: p.yazar,
+                    unvan: p.unvan,
+                    dugme: p.dugme,
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
                 };
             }
             default: {

@@ -31,6 +31,15 @@ const temel: Tanim = {
             ],
         },
         {
+            id: "yorum",
+            tur: "yorum",
+            baslik: "Deneyim",
+            metin: "Çok faydalı",
+            yazar: "Ayşe",
+            unvan: "Kullanıcı",
+            dugme: "Devam",
+        },
+        {
             id: "paywall",
             tur: "paywall",
             baslik: "Pro",
@@ -144,10 +153,16 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
 
     it("Puck'ta sıra değişirse tanımda da değişir (sürükle-bırak)", () => {
         const veri = tanimdanPuck(temel, VARSAYILAN);
-        veri.content = [veri.content[1]!, veri.content[0]!, veri.content[2]!];
+        veri.content = [
+            veri.content[1]!,
+            veri.content[0]!,
+            veri.content[2]!,
+            veri.content[3]!,
+        ];
         expect(puckTanim(veri).adimlar.map((a) => a.id)).toStrictEqual([
             "kiminle",
             "karsilama",
+            "yorum",
             "paywall",
         ]);
     });
@@ -159,6 +174,7 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(veri.content.map((o) => o.props.kimlik)).toStrictEqual([
             "karsilama",
             "kiminle",
+            "yorum",
             "paywall",
         ]);
     });

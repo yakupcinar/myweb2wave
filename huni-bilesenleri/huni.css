@@ -68,6 +68,19 @@
     object-fit: cover;
     border-radius: calc(var(--kose) / 2);
 }
+.huni .yorum-alinti {
+    margin: 20px 0;
+    padding: 16px;
+    border-left: 3px solid var(--ana);
+    background: color-mix(in srgb, var(--ana) 8%, var(--arka));
+    border-radius: var(--kose);
+}
+.huni .yorum-alinti p {
+    margin: 0 0 12px;
+}
+.huni .yorum-alinti footer {
+    font-size: 14px;
+}
 .huni .onizleme {
     background: #fde68a;
     color: #000;

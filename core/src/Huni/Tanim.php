@@ -18,12 +18,14 @@ final class Tanim
     private const UZUNLUK = [
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
+        'yazar' => [1, 80], 'unvan' => [0, 100],
     ];
 
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
     private const TURLER = [
         'tanitim' => ['baslik', 'metin', 'dugme'],
         'soru' => ['soru'],
+        'yorum' => ['baslik', 'metin', 'yazar', 'unvan', 'dugme'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
@@ -57,7 +59,7 @@ final class Tanim
             $yer = 'adım '.($i + 1);
             $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
             if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
-                $h[] = "{$yer}: tür tanitim, soru ya da paywall olmalı";
+                $h[] = "{$yer}: tür tanitim, soru, yorum ya da paywall olmalı";
                 continue;
             }
             $id = $adim['id'] ?? null;

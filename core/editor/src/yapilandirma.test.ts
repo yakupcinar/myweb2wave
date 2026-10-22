@@ -45,3 +45,19 @@ describe("soru ayarlarının görünürlüğü", () => {
         expect(coklu.devam.visible).toBe(true);
     });
 });
+
+describe("müşteri yorumu bileşeni", () => {
+    it("yorum alanlarını Puck düzenlemesine açar", () => {
+        const yorum = yapilandirma(ortam).components.Yorum;
+        expect(yorum.label).toBe("Müşteri yorumu");
+        expect(Object.keys(yorum.fields ?? {})).toEqual(
+            expect.arrayContaining([
+                "baslik",
+                "metin",
+                "yazar",
+                "unvan",
+                "dugme",
+            ]),
+        );
+    });
+});

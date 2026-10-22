@@ -55,6 +55,15 @@ const tanim: Tanim = {
             ],
         },
         {
+            id: "yorum",
+            tur: "yorum",
+            baslik: "Deneyim",
+            metin: "Çok faydalı",
+            yazar: "Ayşe",
+            unvan: "Kullanıcı",
+            dugme: "Devam",
+        },
+        {
             id: "paywall",
             tur: "paywall",
             baslik: "Pro",

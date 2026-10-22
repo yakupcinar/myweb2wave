@@ -424,6 +424,7 @@ components:
             oneOf:
               - $ref: "#/components/schemas/TanitimAdimi"
               - $ref: "#/components/schemas/SoruAdimi"
+              - $ref: "#/components/schemas/YorumAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
     HuniTemasi:
       description: "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)"
@@ -471,6 +472,20 @@ components:
               metin: { type: string }
               gorsel: { $ref: "#/components/schemas/GorselKimligi" }
               hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    YorumAdimi:
+      description: Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik, metin, yazar, unvan, dugme]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [yorum] }
+        baslik: { type: string, minLength: 1, maxLength: 200 }
+        metin: { type: string, maxLength: 1000 }
+        yazar: { type: string, minLength: 1, maxLength: 80 }
+        unvan: { type: string, maxLength: 100 }
+        dugme: { type: string, minLength: 1, maxLength: 60 }
+        ilerlemeGoster: { type: boolean }
     AdimHedefi:
       description: >-
         H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma

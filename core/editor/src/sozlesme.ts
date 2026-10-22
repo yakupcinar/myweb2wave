@@ -209,7 +209,7 @@ export interface components {
         HuniTanimi: {
             sayfaBasligi: string;
             tema?: components["schemas"]["HuniTemasi"];
-            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["PaywallAdimi"])[];
+            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
         HuniTemasi: {
@@ -246,6 +246,18 @@ export interface components {
                 gorsel?: components["schemas"]["GorselKimligi"];
                 hedef?: components["schemas"]["AdimHedefi"];
             }[];
+        };
+        /** @description Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir */
+        YorumAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "yorum";
+            baslik: string;
+            metin: string;
+            yazar: string;
+            unvan: string;
+            dugme: string;
+            ilerlemeGoster?: boolean;
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
         AdimHedefi: components["schemas"]["HuniKimligi"];
