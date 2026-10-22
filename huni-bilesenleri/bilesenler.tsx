@@ -59,14 +59,24 @@ export function Tanitim({
 export function Soru({
     soru,
     secenekler,
+    secimTuru = "tekli",
+    secili = [],
+    devamDugmesi = "Devam",
     medyaKoku,
     onSecim,
+    onSecenekDegistir,
+    onDevam,
 }: {
     soru: string;
     secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
+    secimTuru?: "tekli" | "coklu" | undefined;
+    secili?: number[] | undefined;
+    devamDugmesi?: string | undefined;
     medyaKoku: string;
     /** Seçeneğin sırası; kimliği çağıran bilir. */
     onSecim?: ((sira: number) => void) | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onDevam?: (() => void) | undefined;
 }): ReactNode {
     return (
         <section>
@@ -76,7 +86,20 @@ export function Soru({
                     <button
                         key={i}
                         type="button"
-                        onClick={onSecim ? () => onSecim(i) : undefined}
+                        aria-pressed={
+                            secimTuru === "coklu"
+                                ? secili.includes(i)
+                                : undefined
+                        }
+                        onClick={
+                            secimTuru === "coklu"
+                                ? onSecenekDegistir
+                                    ? () => onSecenekDegistir(i)
+                                    : undefined
+                                : onSecim
+                                  ? () => onSecim(i)
+                                  : undefined
+                        }
                     >
                         {s.gorsel ? (
                             <Gorsel
@@ -89,6 +112,16 @@ export function Soru({
                     </button>
                 ))}
             </div>
+            {secimTuru === "coklu" ? (
+                <button
+                    type="button"
+                    className="ana"
+                    disabled={secili.length === 0}
+                    onClick={onDevam}
+                >
+                    {devamDugmesi}
+                </button>
+            ) : null}
         </section>
     );
 }
@@ -137,6 +170,8 @@ export type TanimAdimi =
     | {
           tur: "soru";
           soru: string;
+          secimTuru?: "tekli" | "coklu";
+          devamDugmesi?: string;
           secenekler: { metin: string; gorsel?: string }[];
       }
     | { tur: "paywall"; baslik: string; metin: string; dugme: string };
@@ -151,12 +186,18 @@ export function Adim({
     medyaKoku,
     onIleri,
     onSecim,
+    secili,
+    onSecenekDegistir,
+    onCokluDevam,
     odeme = {},
 }: {
     adim: TanimAdimi;
     medyaKoku: string;
     onIleri?: () => void;
     onSecim?: (sira: number) => void;
+    secili?: number[] | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onCokluDevam?: (() => void) | undefined;
     odeme?: { onDugme?: () => void; kapali?: boolean; hata?: string };
 }): ReactNode {
     switch (adim.tur) {
@@ -176,8 +217,13 @@ export function Adim({
                 <Soru
                     soru={adim.soru}
                     secenekler={adim.secenekler}
+                    secimTuru={adim.secimTuru}
+                    devamDugmesi={adim.devamDugmesi}
+                    secili={secili}
                     medyaKoku={medyaKoku}
                     onSecim={onSecim}
+                    onSecenekDegistir={onSecenekDegistir}
+                    onDevam={onCokluDevam}
                 />
             );
         case "paywall":

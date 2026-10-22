@@ -30,6 +30,8 @@ export type SoruProps = {
     kimlik: string;
     soru: string;
     secenekler: SecenekProps[];
+    secimTuru: "tekli" | "coklu";
+    devamDugmesi: string;
     ilerlemeGoster: boolean;
 };
 export type PaywallProps = {
@@ -106,6 +108,8 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             kimlik: adim.id,
                             soru: adim.soru,
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                            secimTuru: adim.secimTuru ?? "tekli",
+                            devamDugmesi: adim.devamDugmesi ?? "Devam",
                             secenekler: adim.secenekler.map((s) => ({
                                 kimlik: s.id,
                                 metin: s.metin,
@@ -164,15 +168,21 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),
-                    secenekler: (p.secenekler ?? []).map((s) =>
-                        hedefli(
-                            gorselli(
-                                { id: s.kimlik, metin: s.metin },
-                                s.gorsel ?? "",
-                            ),
-                            s.hedef ?? "",
-                        ),
-                    ),
+                    ...(p.secimTuru === "coklu"
+                        ? { secimTuru: "coklu" as const }
+                        : {}),
+                    ...(p.devamDugmesi !== "Devam"
+                        ? { devamDugmesi: p.devamDugmesi }
+                        : {}),
+                    secenekler: (p.secenekler ?? []).map((s) => {
+                        const secenek = gorselli(
+                            { id: s.kimlik, metin: s.metin },
+                            s.gorsel ?? "",
+                        );
+                        return p.secimTuru === "coklu"
+                            ? secenek
+                            : hedefli(secenek, s.hedef ?? "");
+                    }),
                 };
             }
             default: {

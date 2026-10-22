@@ -223,6 +223,19 @@ final class AtifTest extends WebTestCase
         self::assertSame(['is'], $this->db->fetchFirstColumn('SELECT secenek FROM huni_cevaplari'));
     }
 
+    public function testCokluCevaplarKaydedilirVeTekrarGonderimdeEskiSecimlerSilinir(): void
+    {
+        $z = $this->ziyaretAc('keepchat');
+
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'kiminle', 'cevaplar' => ['aile', 'is']]);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame(['aile', 'is'], $this->db->fetchFirstColumn('SELECT secenek FROM huni_cevaplari ORDER BY secenek'));
+
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'kiminle', 'cevaplar' => ['is']]);
+        self::assertSame(['is'], $this->db->fetchFirstColumn('SELECT secenek FROM huni_cevaplari'));
+        self::assertSame(1, $this->say('huni_adimlari'));
+    }
+
     public function testBilinmeyenZiyaret404VeKayitYok(): void
     {
         foreach (['00000000-0000-4000-8000-000000000000', 'bozuk'] as $z) {
@@ -240,6 +253,10 @@ final class AtifTest extends WebTestCase
             ['sira' => -1, 'adim' => 'a'], ['sira' => 51, 'adim' => 'a'], ['sira' => '1', 'adim' => 'a'],
             ['sira' => 0, 'adim' => 'Büyük'], ['sira' => 0, 'adim' => str_repeat('a', 65)], ['sira' => 0],
             ['sira' => 0, 'adim' => 'a', 'cevap' => 5], ['sira' => 0, 'adim' => 'a', 'cevap' => 'b c'],
+            ['sira' => 0, 'adim' => 'a', 'cevaplar' => []],
+            ['sira' => 0, 'adim' => 'a', 'cevaplar' => ['a', 'a']],
+            ['sira' => 0, 'adim' => 'a', 'cevaplar' => ['a', []]],
+            ['sira' => 0, 'adim' => 'a', 'cevaplar' => ['a'], 'cevap' => 'a'],
         ] as $govde) {
             $this->ilerle($z, $govde);
             self::assertResponseStatusCodeSame(422, (string) json_encode($govde));

@@ -312,6 +312,15 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     kimlik: kimlikAlani,
                     soru: { type: "text", label: "Soru" },
                     ilerlemeGoster: ilerlemeAlani,
+                    secimTuru: {
+                        type: "radio",
+                        label: "Yanıt biçimi",
+                        options: [
+                            { label: "Tek seçim", value: "tekli" },
+                            { label: "Çoklu seçim", value: "coklu" },
+                        ],
+                    },
+                    devamDugmesi: { type: "text", label: "Devam düğmesi" },
                     secenekler: {
                         type: "array",
                         label: "Seçenekler",
@@ -334,20 +343,23 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 resolveFields: (veri, { fields, appState }) => {
                     const secenekler = fields.secenekler;
                     if (secenekler.type !== "array") return fields;
+                    const arrayFields = {
+                        ...secenekler.arrayFields,
+                        hedef: {
+                            ...yanitHedefAlani,
+                            options: hedefSecenekleri(appState, veri.props.id),
+                            visible: veri.props.secimTuru !== "coklu",
+                        },
+                    };
                     return {
                         ...fields,
+                        devamDugmesi: {
+                            ...fields.devamDugmesi,
+                            visible: veri.props.secimTuru === "coklu",
+                        },
                         secenekler: {
                             ...secenekler,
-                            arrayFields: {
-                                ...secenekler.arrayFields,
-                                hedef: {
-                                    ...yanitHedefAlani,
-                                    options: hedefSecenekleri(
-                                        appState,
-                                        veri.props.id,
-                                    ),
-                                },
-                            },
+                            arrayFields,
                         },
                     };
                 },
@@ -355,6 +367,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     kimlik: "soru",
                     soru: "Yeni soru",
                     ilerlemeGoster: true,
+                    secimTuru: "tekli",
+                    devamDugmesi: "Devam",
                     secenekler: [
                         {
                             kimlik: "secenek-1",
@@ -370,11 +384,13 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         },
                     ],
                 },
-                render: ({ soru, secenekler }) => (
+                render: ({ soru, secenekler, secimTuru, devamDugmesi }) => (
                     <div style={kart}>
                         <Soru
                             soru={soru}
                             secenekler={secenekler ?? []}
+                            secimTuru={secimTuru}
+                            devamDugmesi={devamDugmesi}
                             medyaKoku=""
                         />
                     </div>

@@ -156,7 +156,7 @@ final class PanelTest extends WebTestCase
             [['—', '1', 'karsilama', '3', '100 %'], ['—', '2', 'kiminle', '2', '67 %'], ['—', '3', 'cihaz', '1', '33 %']],
             $this->tablo('adimlar'),
         );
-        self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '1']], $this->tablo('cevaplar'));
+        self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '2']], $this->tablo('cevaplar'));
     }
 
     public function testAnketAraligiEskiZiyaretinAdiminiSaymaz(): void
@@ -182,7 +182,7 @@ final class PanelTest extends WebTestCase
         self::assertSelectorNotExists('[data-bolum=adimlar]');
     }
 
-    /** Üç ziyaret: biri 3 adım, biri 2, biri 1; kiminle → aile, aile, is. */
+    /** Üç ziyaret: biri çoklu aile+iş, biri aile, biri iş seçer. */
     private function anketKur(): void
     {
         foreach ([3 => 'aile', 2 => 'aile', 1 => null] as $kac => $cevap) {
@@ -191,6 +191,9 @@ final class PanelTest extends WebTestCase
                 $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => $sira, 'adim' => $adim]);
             }
             $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => $cevap ?? 'is']);
+            if (3 === $kac) {
+                $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => 'is']);
+            }
         }
     }
 

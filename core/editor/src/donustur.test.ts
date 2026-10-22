@@ -59,6 +59,40 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
+    it("çoklu seçim metniyle saklanır; seçenek dalları kaldırılır", () => {
+        const coklu: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim) =>
+                adim.tur === "soru"
+                    ? {
+                          ...adim,
+                          secimTuru: "coklu",
+                          devamDugmesi: "Seçimleri gönder",
+                          secenekler: adim.secenekler.map((secenek) => ({
+                              ...secenek,
+                              hedef: "paywall",
+                          })),
+                      }
+                    : adim,
+            ),
+        };
+        const veri = tanimdanPuck(coklu, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual({
+            ...coklu,
+            adimlar: coklu.adimlar.map((adim) =>
+                adim.tur === "soru"
+                    ? {
+                          ...adim,
+                          secenekler: adim.secenekler.map(({ id, metin }) => ({
+                              id,
+                              metin,
+                          })),
+                      }
+                    : adim,
+            ),
+        });
+    });
+
     it("özel tema, görseller ve hedefler (H5) aynen döner", () => {
         const zengin: Tanim = {
             ...temel,

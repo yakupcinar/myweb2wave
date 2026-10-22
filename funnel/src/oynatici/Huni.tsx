@@ -84,6 +84,7 @@ function Oynatici({
         ),
   );
   const [mevcut, setMevcut] = useState(0);
+  const [secimler, setSecimler] = useState<Record<string, string[]>>({});
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
   // (opaklık 0'dan başlasa ilk anlamlı boyama gecikirdi). Adımla aynı
   // çizimde açılır; effect'te açılsa yeni adım bir kare görünüp titrerdi.
@@ -181,39 +182,68 @@ function Oynatici({
         <progress max={tanim.adimlar.length} value={mevcut + 1} />
       ) : null}
       <div ref={kutu} data-gecis={gecti ? "" : undefined}>
-        {tanim.adimlar.map((adim, i) => (
-          <div
-            key={`${i}-${adim.id}`}
-            data-adim={adim.id}
-            data-sira={i}
-            hidden={i !== mevcut}
-          >
-            <Adim
-              adim={adim}
-              medyaKoku={KOK}
-              onIleri={() =>
-                ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
-              }
-              onSecim={(s) => {
-                if (adim.tur !== "soru") return;
-                ilerlemeBildir(
-                  ziyaretSozu,
-                  mevcut,
-                  adim.id,
-                  adim.secenekler[s]?.id,
-                );
-                ileri(adim.secenekler[s]?.hedef);
-              }}
-              odeme={{
-                kapali: onizleme || odeme.suruyor,
-                hata: odeme.hata,
-                onDugme: () => {
-                  if (adim.tur === "paywall") void aboneOl(adim.plan);
-                },
-              }}
-            />
-          </div>
-        ))}
+        {tanim.adimlar.map((adim, i) => {
+          const soru = adim.tur === "soru" ? adim : null;
+          const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
+          const secili = soru
+            ? soru.secenekler.flatMap((s, j) =>
+                cevaplar.includes(s.id) ? [j] : [],
+              )
+            : [];
+          return (
+            <div
+              key={`${i}-${adim.id}`}
+              data-adim={adim.id}
+              data-sira={i}
+              hidden={i !== mevcut}
+            >
+              <Adim
+                adim={adim}
+                medyaKoku={KOK}
+                onIleri={() =>
+                  ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
+                }
+                onSecim={(s) => {
+                  if (adim.tur !== "soru") return;
+                  ilerlemeBildir(
+                    ziyaretSozu,
+                    mevcut,
+                    adim.id,
+                    adim.secenekler[s]?.id,
+                  );
+                  ileri(adim.secenekler[s]?.hedef);
+                }}
+                secili={secili}
+                onSecenekDegistir={(s) => {
+                  if (adim.tur !== "soru") return;
+                  const id = adim.secenekler[s]?.id;
+                  if (!id) return;
+                  setSecimler((once) => {
+                    const seciliCevaplar = once[adim.id] ?? [];
+                    return {
+                      ...once,
+                      [adim.id]: seciliCevaplar.includes(id)
+                        ? seciliCevaplar.filter((cevap) => cevap !== id)
+                        : [...seciliCevaplar, id],
+                    };
+                  });
+                }}
+                onCokluDevam={() => {
+                  if (adim.tur !== "soru" || !cevaplar.length) return;
+                  ilerlemeBildir(ziyaretSozu, mevcut, adim.id, cevaplar);
+                  ileri();
+                }}
+                odeme={{
+                  kapali: onizleme || odeme.suruyor,
+                  hata: odeme.hata,
+                  onDugme: () => {
+                    if (adim.tur === "paywall") void aboneOl(adim.plan);
+                  },
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     </>
   );

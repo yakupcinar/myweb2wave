@@ -58,6 +58,10 @@
     align-items: center;
     gap: 12px;
 }
+.huni .secenekler button[aria-pressed="true"] {
+    border-color: var(--ana);
+    background: color-mix(in srgb, var(--ana) 12%, transparent);
+}
 .huni img.secenek-gorseli {
     width: 48px;
     height: 48px;

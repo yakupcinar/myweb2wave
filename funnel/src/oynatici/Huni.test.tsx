@@ -260,6 +260,55 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     fireEvent.click(screen.getByText("Başla"));
     expect(document.querySelector("progress")).not.toBeNull();
   });
+
+  it("çoklu seçimde yanıtları işaretler, düğmeyle gönderir ve sonraki adıma geçer", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.tur === "soru"
+              ? {
+                  ...adim,
+                  secimTuru: "coklu",
+                  devamDugmesi: "Seçimleri gönder",
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+
+    const devamDugmesi = screen.getByRole("button", {
+      name: "Seçimleri gönder",
+    });
+    expect((devamDugmesi as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByText("Ailemle"));
+    fireEvent.click(screen.getByText("İş"));
+    expect(
+      screen
+        .getByRole("button", { name: "Ailemle" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect((devamDugmesi as HTMLButtonElement).disabled).toBe(false);
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    fireEvent.click(devamDugmesi);
+
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    await waitFor(() => expect(ilerlemeler()).toHaveLength(4));
+    expect(ilerlemeler()[2]).toEqual({
+      sira: 1,
+      adim: "kiminle",
+      cevaplar: ["aile", "is"],
+    });
+  });
 });
 
 describe("D7 — tema", () => {

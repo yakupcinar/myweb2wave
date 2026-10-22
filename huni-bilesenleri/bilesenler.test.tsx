@@ -117,3 +117,22 @@ describe("DOM huni sayfasıyla aynı", () => {
         }
     });
 });
+
+describe("çoklu seçim", () => {
+    it("seçim durumunu erişilebilir aktarır ve hiç seçim yokken devamı kapatır", () => {
+        const html = renderToStaticMarkup(
+            <Soru
+                soru="Neler önemli?"
+                secenekler={[{ metin: "Hız" }, { metin: "Fiyat" }]}
+                secimTuru="coklu"
+                devamDugmesi="Seçimleri gönder"
+                medyaKoku=""
+            />,
+        );
+        expect(html).toContain('aria-pressed="false"');
+        expect(html).toContain(
+            '<button type="button" class="ana" disabled="">Seçimleri gönder</button>',
+        );
+        expect(css).toContain('.huni .secenekler button[aria-pressed="true"]');
+    });
+});

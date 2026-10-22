@@ -77,6 +77,16 @@ final class Tanim
                     $h[] = "{$yer}: ilerlemeGoster true ya da false olmalı";
                 }
             }
+            if ('soru' === $tur && \array_key_exists('secimTuru', $adim)) {
+                $beklenen[] = 'secimTuru';
+                if (!\in_array($adim['secimTuru'], ['tekli', 'coklu'], true)) {
+                    $h[] = "{$yer}: secimTuru tekli ya da coklu olmalı";
+                }
+            }
+            if ('soru' === $tur && \array_key_exists('devamDugmesi', $adim)) {
+                $beklenen[] = 'devamDugmesi';
+                self::metin($adim['devamDugmesi'], 'dugme', "{$yer} devamDugmesi", $h);
+            }
             // E2.3: tanıtım adımında isteğe bağlı görsel.
             if ('tanitim' === $tur && \array_key_exists('gorsel', $adim)) {
                 $beklenen[] = 'gorsel';
@@ -95,7 +105,7 @@ final class Tanim
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
             if ('soru' === $tur) {
-                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h);
+                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
             }
             if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
                 $h[] = "{$yer}: plan bu uygulamada yok";
@@ -169,7 +179,7 @@ final class Tanim
      * @param array<string, int> $sira
      * @param list<string>       $h
      */
-    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h): void
+    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h, bool $coklu): void
     {
         if (!\is_array($secenekler) || !array_is_list($secenekler) || \count($secenekler) < 2 || \count($secenekler) > 8) {
             $h[] = "{$yer}: 2–8 seçenek olmalı";
@@ -185,6 +195,9 @@ final class Tanim
                 continue;
             }
             if (\array_key_exists('hedef', $s)) {
+                if ($coklu) {
+                    $h[] = "{$sy}: çoklu seçimde seçenek hedefi kullanılamaz";
+                }
                 self::hedef($s['hedef'], $sira, $i, $sy, $h);
             }
             if (\array_key_exists('gorsel', $s)) {

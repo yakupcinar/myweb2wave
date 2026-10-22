@@ -62,7 +62,7 @@ export function ilerlemeBildir(
   ziyaretSozu: Promise<string | undefined>,
   sira: number,
   adim: string,
-  cevap?: string,
+  cevap?: string | string[],
 ): void {
   void ziyaretSozu
     .then((ziyaret) => {
@@ -71,7 +71,8 @@ export function ilerlemeBildir(
         sira,
         adim,
       };
-      if (cevap) govde.cevap = cevap;
+      if (typeof cevap === "string") govde.cevap = cevap;
+      else if (cevap) govde.cevaplar = cevap;
       return cekirdek.POST("/huni/ziyaretler/{ziyaret}/ilerleme", {
         params: { path: { ziyaret } },
         body: govde,

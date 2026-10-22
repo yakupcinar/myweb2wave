@@ -159,6 +159,14 @@ paths:
                 sira: { type: integer, minimum: 0, maximum: 50, description: Adımın huni tanımındaki sırası }
                 adim: { $ref: "#/components/schemas/HuniKimligi" }
                 cevap: { $ref: "#/components/schemas/HuniKimligi" }
+                cevaplar:
+                  type: array
+                  minItems: 1
+                  maxItems: 8
+                  uniqueItems: true
+                  items: { $ref: "#/components/schemas/HuniKimligi" }
+              not:
+                required: [cevap, cevaplar]
       responses:
         "204": { description: Kaydedildi }
         "400": { description: Gövde JSON değil }
@@ -450,6 +458,8 @@ components:
         tur: { type: string, enum: [soru] }
         soru: { type: string }
         ilerlemeGoster: { type: boolean }
+        secimTuru: { type: string, enum: [tekli, coklu] }
+        devamDugmesi: { type: string }
         secenekler:
           type: array
           items:

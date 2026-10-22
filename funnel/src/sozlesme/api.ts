@@ -237,6 +237,9 @@ export interface components {
             tur: "soru";
             soru: string;
             ilerlemeGoster?: boolean;
+            /** @enum {string} */
+            secimTuru?: "tekli" | "coklu";
+            devamDugmesi?: string;
             secenekler: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
@@ -506,6 +509,7 @@ export interface operations {
                     sira: number;
                     adim: components["schemas"]["HuniKimligi"];
                     cevap?: components["schemas"]["HuniKimligi"];
+                    cevaplar?: components["schemas"]["HuniKimligi"][];
                 };
             };
         };

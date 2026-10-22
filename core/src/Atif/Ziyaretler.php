@@ -101,13 +101,14 @@ final readonly class Ziyaretler
      * Anket ilerlemesi: adıma ulaşıldı (bir kez sayılır), varsa bu adımın
      * cevabı (son cevap geçerli). Ziyaret yoksa false — hiçbir şey yazılmaz.
      */
-    public function ilerle(string $ziyaret, int $sira, string $adim, ?string $cevap): bool
+    /** @param list<string>|null $cevaplar */
+    public function ilerle(string $ziyaret, int $sira, string $adim, ?array $cevaplar): bool
     {
         if (1 !== preg_match(self::UUID, $ziyaret)) {
             return false;
         }
 
-        return $this->db->transactional(function (Connection $db) use ($ziyaret, $sira, $adim, $cevap): bool {
+        return $this->db->transactional(function (Connection $db) use ($ziyaret, $sira, $adim, $cevaplar): bool {
             if (false === $db->fetchOne('SELECT 1 FROM huni_ziyaretleri WHERE id = :id', ['id' => $ziyaret])) {
                 return false;
             }
@@ -116,12 +117,11 @@ final readonly class Ziyaretler
                  ON CONFLICT (ziyaret_id, sira) DO NOTHING',
                 ['z' => $ziyaret, 'sira' => $sira, 'adim' => $adim],
             );
-            if (null !== $cevap) {
-                $db->executeStatement(
-                    'INSERT INTO huni_cevaplari (ziyaret_id, soru, secenek) VALUES (:z, :soru, :secenek)
-                     ON CONFLICT (ziyaret_id, soru) DO UPDATE SET secenek = EXCLUDED.secenek, updated_at = now()',
-                    ['z' => $ziyaret, 'soru' => $adim, 'secenek' => $cevap],
-                );
+            if (null !== $cevaplar) {
+                $db->delete('huni_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim]);
+                foreach ($cevaplar as $secenek) {
+                    $db->insert('huni_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim, 'secenek' => $secenek]);
+                }
             }
 
             return true;

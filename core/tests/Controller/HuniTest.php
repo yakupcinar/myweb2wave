@@ -128,6 +128,7 @@ final class HuniTest extends WebTestCase
         yield 'bilinmeyen tür' => ['tür tanitim, soru ya da paywall', self::ile(0, 'tur', 'html')];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
+        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli ya da coklu olmalı', self::ile(1, 'secimTuru', 'belirsiz')];
         yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'dugme', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
@@ -163,6 +164,31 @@ final class HuniTest extends WebTestCase
 
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
         self::assertSame([], Tanim::hatalar(self::tanim('Eski tanım'), ['monthly']));
+    }
+
+    public function testCokluSecimTanimiGecerliVeDevamDugmesiSinirli(): void
+    {
+        $t = self::ile(1, 'secimTuru', 'coklu');
+        $t['adimlar'][1]['devamDugmesi'] = 'Seçtiklerimle devam et';
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        $t['adimlar'][1]['devamDugmesi'] = str_repeat('x', 61);
+        self::assertNotSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
+    public function testCokluSecimdeSecenekHedefiKullanilamaz(): void
+    {
+        $t = self::tanim('Çoklu');
+        $t['adimlar'][1]['secimTuru'] = 'coklu';
+        $t['adimlar'][1]['secenekler'] = [
+            ['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'],
+            ['id' => 'b', 'metin' => 'B'],
+        ];
+
+        self::assertStringContainsString(
+            'çoklu seçimde seçenek hedefi kullanılamaz',
+            implode(' | ', Tanim::hatalar($t, ['monthly'])),
+        );
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void

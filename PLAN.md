@@ -27,6 +27,7 @@
 | Stripe → RevenueCat (A9) | ✅ 126 test, kırma 9/9; gerçek RevenueCat ölçülmedi (Ç43) | `docs/decisions/revenuecat.md` |
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
 | Huni adım ayarları | ✅ 187 çekirdek testi + editör/oynatıcı testleri, kırma 3/3; panel görsel kontrolü bekliyor | `docs/decisions/huni-adim-ayarları.md` |
+| Huni çoklu seçim (E2.4b) | ✅ 191 çekirdek testi, editör 18 + bileşen 20 + huni 37 test; kırma 4/4; yerel API/DB göçü + HTTP 200 | `docs/decisions/huni-coklu-secim.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
@@ -75,7 +76,8 @@
   - [ ] **H6b · sunucu dönüşümü** — Stripe webhook'unda Meta Conversions API + TikTok Events API, yalnız izinli ziyaretin ödemesi; `event_id` = ödeme oturumundan türetilir (H6c ile aynı); IP/UA ödeme oturumu açılırken saklanır; gerçek ölçüm için kullanıcıdan Meta Pixel ID + erişim anahtarı + test olay kodu, TikTok pixel kodu + anahtar
   - [ ] **H6c · tarayıcı pikselleri** — izinden sonra Meta Pixel + TikTok Pixel; Purchase başarı sayfasında aynı `event_id`; piksel yüklenmeden önce adresten `session_id` silinir (A10)
   - [ ] **H6 · Olay/piksel noktası** (H6a–c'ye bölündü; aşağıdaki eski metin) — tek `olayBildir` (bugünkü `ilerlemeBildir`'in yerine): çekirdek ölçümü + Meta Pixel / TikTok Pixel / GA4. Ön koşul: çerez onayı (Ç12, Ç34) ve sunucu bildirimiyle tekilleştirme (Ç28) — aşağıdaki "Reklam ağına dönüşüm" maddesiyle aynı blok. Başarı sayfasında piksel `session_id`'yi görmemeli (A10, Ç46)
-- [ ] **E2.4b yeni bileşen türleri** (ör. yorum/sosyal kanıt, çoklu seçim, metin girişi) — çekirdek Tanim + sözleşme + Puck + ortak bileşen; **H2'den SONRA** (yeni tür bir kez, ortak bileşen olarak yazılsın)
+- [x] **E2.4b ilk yeni soru türü: çoklu seçim** — 2026-10-22, `docs/decisions/huni-coklu-secim.md`
+- [ ] **E2.4b devamı: sosyal kanıt/yorum ve serbest metin soru türleri** — her türü ayrı kapsamla değerlendir; çekirdek Tanim + sözleşme + Puck + ortak bileşen
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
