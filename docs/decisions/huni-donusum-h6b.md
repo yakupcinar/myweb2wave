@@ -54,8 +54,9 @@ durdurmaz; kuyruk cron'u başarısız gönderimleri tekrar dener.
 
 ## Açık sınırlar
 
-- H6a hukuk metni, gizlilik politikası bağlantısı ve izin geri alma yolu hâlâ
-  açık (Ç56); H6b tamamlanması canlı reklam için hukuki onay değildir.
+- H6a hukuk metni ve gizlilik politikası bağlantısı hâlâ açık (Ç56). İzin
+  geri alma aktif ziyarette var; önceki sekmelerdeki ziyaretleri birleştirmez
+  (`huni-izin-geri-alma.md`). H6b tamamlanması canlı reklam için hukuki onay değildir.
 - H6c tarayıcı pikselleri eklendi (`huni-donusum-h6c.md`). Aynı event ID ile
   tarayıcı ve sunucu tekilleştirmesi gerçek hesapta doğrulanmalı.
 - Başarılı test modu alımı ve Meta/TikTok panelindeki olay kalitesi anahtarlar

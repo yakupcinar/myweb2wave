@@ -689,6 +689,40 @@ describe("H6a — reklam ölçümü izni (A12)", () => {
     expect(ziyaretGovdesi()).not.toHaveProperty("fbclid");
   });
 
+  it("gizlilik ayarından izin geri alınca çekirdeğe silme isteği yollar", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    const oncekiYanitle = ag.yanitla;
+    ag.yanitla = (i) =>
+      i.yontem === "DELETE" ? { durum: 204 } : oncekiYanitle(i);
+    kur(ADRES);
+    await yuklendi();
+
+    fireEvent.click(screen.getByRole("button", { name: "Gizlilik ayarları" }));
+    fireEvent.click(screen.getByText("Reddet"));
+
+    await waitFor(() =>
+      expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
+    );
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
+    expect(screen.queryByText("Reddet")).toBeNull();
+  });
+
+  it("izin geri alma isteği başarısızsa kullanıcı yeniden deneyebilsin diye şeridi açık tutar", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    const oncekiYanitle = ag.yanitla;
+    ag.yanitla = (i) =>
+      i.yontem === "DELETE" ? "ag-hatasi" : oncekiYanitle(i);
+    kur(ADRES);
+    await yuklendi();
+
+    fireEvent.click(screen.getByRole("button", { name: "Gizlilik ayarları" }));
+    fireEvent.click(screen.getByText("Reddet"));
+
+    await screen.findByRole("alert");
+    expect(screen.getByText("Reddet")).toBeTruthy();
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("evet");
+  });
+
   it("önizlemede şerit yok", async () => {
     kur(`?onizleme=abc&${ADRES.slice(1)}`);
     await yuklendi();

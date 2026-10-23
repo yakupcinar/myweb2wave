@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Atif;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
 /**
@@ -81,6 +82,42 @@ final readonly class Ziyaretler
              WHERE id = :id',
             ['id' => $ziyaret, 'fbclid' => $tiklama['fbclid'] ?? null, 'ttclid' => $tiklama['ttclid'] ?? null],
         );
+    }
+
+    /** Ölçüm iznini bu ziyarette geri alır ve bekleyen eşleşme verisini siler. */
+    public function izinGeriAl(string $ziyaret): bool
+    {
+        if (1 !== preg_match(self::UUID, $ziyaret)) {
+            return false;
+        }
+
+        return $this->db->transactional(function (Connection $db) use ($ziyaret): bool {
+            $oturumlar = $db->fetchFirstColumn(
+                'SELECT stripe_checkout_session_id FROM odeme_oturumlari WHERE ziyaret_id = :id',
+                ['id' => $ziyaret],
+            );
+            $var = 1 === $db->executeStatement(
+                'UPDATE huni_ziyaretleri SET izin_at = NULL, fbclid = NULL, ttclid = NULL WHERE id = :id',
+                ['id' => $ziyaret],
+            );
+            if (!$var) {
+                return false;
+            }
+            $db->executeStatement(
+                'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE ziyaret_id = :id',
+                ['id' => $ziyaret],
+            );
+            if ([] !== $oturumlar) {
+                $db->executeStatement(
+                    "UPDATE reklam_donusumleri SET payload = NULL, son_hata = 'izin geri alındı'
+                     WHERE event_id IN (?) AND payload IS NOT NULL AND gonderildi_at IS NULL",
+                    [$oturumlar],
+                    [ArrayParameterType::STRING],
+                );
+            }
+
+            return true;
+        });
     }
 
     /** Ziyaret bu uygulamanınsa oturumu ona bağlar; değilse hiçbir şey yazmaz. */

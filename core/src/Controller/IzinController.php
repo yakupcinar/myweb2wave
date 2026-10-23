@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * ve o anda adresteki tıklama kimlikleri. Anahtarsız; ziyaret kimliği
  * tahmin edilemez UUID (ilerleme ucuyla aynı).
  */
-#[Route('/huni/ziyaretler/{ziyaret}/izin', name: 'huni_izin', methods: ['POST'])]
+#[Route('/huni/ziyaretler/{ziyaret}/izin', name: 'huni_izin', methods: ['POST', 'DELETE'])]
 final readonly class IzinController
 {
     public function __construct(
@@ -25,6 +25,12 @@ final readonly class IzinController
 
     public function __invoke(Request $request, string $ziyaret): Response
     {
+        if ($request->isMethod('DELETE')) {
+            return $this->ziyaretler->izinGeriAl($ziyaret)
+                ? new Response('', 204)
+                : new JsonResponse(['error' => 'unknown_visit'], 404);
+        }
+
         $govde = $request->toArray();
         $tiklama = [];
         foreach (Ziyaretler::TIKLAMA as $ad) {

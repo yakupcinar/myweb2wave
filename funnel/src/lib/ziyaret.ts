@@ -97,3 +97,20 @@ export function izinBildir(ziyaretSozu: Promise<string | undefined>): void {
     })
     .catch(() => undefined);
 }
+
+/** İzni geri alır; çekirdek eski tıklama/IP/UA'yı ve bekleyen event payload'larını siler. */
+export async function izinGeriAl(
+  ziyaretSozu: Promise<string | undefined>,
+): Promise<boolean> {
+  try {
+    const ziyaret = await ziyaretSozu;
+    if (!ziyaret) return true;
+    const { response } = await cekirdek.DELETE(
+      "/huni/ziyaretler/{ziyaret}/izin",
+      { params: { path: { ziyaret } } },
+    );
+    return response.status === 204 || response.status === 404;
+  } catch {
+    return false;
+  }
+}

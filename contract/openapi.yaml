@@ -210,6 +210,18 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+    delete:
+      operationId: revokeMeasurementConsent
+      summary: Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: İzin geri alındı }
+        "404":
+          description: Ziyaret yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /huni/giris-baglantisi:
     post:
       operationId: createLoginLink

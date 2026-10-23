@@ -103,7 +103,8 @@ export interface paths {
         put?: never;
         /** Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri */
         post: operations["grantMeasurementConsent"];
-        delete?: never;
+        /** Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil */
+        delete: operations["revokeMeasurementConsent"];
         options?: never;
         head?: never;
         patch?: never;
@@ -606,6 +607,35 @@ export interface operations {
             };
             /** @description Geçersiz alan */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    revokeMeasurementConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İzin geri alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

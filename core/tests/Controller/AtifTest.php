@@ -25,7 +25,7 @@ final class AtifTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler');
+        $this->db->executeStatement('TRUNCATE reklam_donusumleri, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler');
         ApiRequestor::setHttpClient(new KayitliStripeIstemcisi());
     }
 
@@ -100,6 +100,49 @@ final class AtifTest extends WebTestCase
         $this->client->jsonRequest('POST', '/huni/ziyaretler/00000000-0000-4000-8000-000000000000/izin', []);
         self::assertResponseStatusCodeSame(404);
         Sozlesme::yanitiDogrula('POST', '/huni/ziyaretler/{ziyaret}/izin', $this->client->getResponse());
+    }
+
+    public function testIzinGeriAlTiklamaVeBekleyenPaylasimVerisiniSiler(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, fbclid, ttclid, izin_at) VALUES ('keepchat', 'fb-x', 'tt-x', now()) RETURNING id");
+        self::assertIsString($ziyaret);
+        $this->db->insert('odeme_oturumlari', [
+            'stripe_checkout_session_id' => 'cs_revoke',
+            'ziyaret_id' => $ziyaret,
+            'ip_adresi' => '192.0.2.25',
+            'user_agent' => 'Test browser',
+        ]);
+        $this->db->insert('reklam_donusumleri', [
+            'saglayici' => 'meta', 'event_id' => 'cs_revoke', 'payload' => json_encode(['data' => ['private']]),
+        ]);
+        $this->db->insert('reklam_donusumleri', [
+            'saglayici' => 'tiktok', 'event_id' => 'cs_already_sent', 'payload' => null, 'gonderildi_at' => date('c'),
+        ]);
+
+        $this->client->request('DELETE', "/huni/ziyaretler/{$ziyaret}/izin");
+
+        self::assertResponseStatusCodeSame(204);
+        Sozlesme::yanitiDogrula('DELETE', '/huni/ziyaretler/{ziyaret}/izin', $this->client->getResponse());
+        self::assertSame(
+            ['fbclid' => null, 'ttclid' => null, 'izin_at' => null],
+            $this->db->fetchAssociative('SELECT fbclid, ttclid, izin_at FROM huni_ziyaretleri WHERE id = :id', ['id' => $ziyaret]),
+        );
+        self::assertSame(
+            ['ip_adresi' => null, 'user_agent' => null],
+            $this->db->fetchAssociative('SELECT host(ip_adresi) AS ip_adresi, user_agent FROM odeme_oturumlari WHERE stripe_checkout_session_id = :id', ['id' => 'cs_revoke']),
+        );
+        self::assertSame(
+            ['payload' => null, 'son_hata' => 'izin geri alındı'],
+            $this->db->fetchAssociative('SELECT payload, son_hata FROM reklam_donusumleri WHERE event_id = :id', ['id' => 'cs_revoke']),
+        );
+        self::assertSame(1, $this->say("reklam_donusumleri WHERE event_id = 'cs_already_sent' AND gonderildi_at IS NOT NULL"));
+    }
+
+    public function testIzinGeriAlBilinmeyenZiyaret404(): void
+    {
+        $this->client->request('DELETE', '/huni/ziyaretler/00000000-0000-4000-8000-000000000000/izin');
+        self::assertResponseStatusCodeSame(404);
+        Sozlesme::yanitiDogrula('DELETE', '/huni/ziyaretler/{ziyaret}/izin', $this->client->getResponse());
     }
 
     public function testReklamsizZiyaretDeKaydedilirBosAlanNullOlur(): void
@@ -294,17 +337,19 @@ final class AtifTest extends WebTestCase
     }
 
     /** H6a: izin ucu tarayıcıda CORS yüzünden düşüyordu (durum 0) — happy-dom testleri bunu görmez. */
-    #[\PHPUnit\Framework\Attributes\TestWith(['ilerleme'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['izin'])]
-    public function testZiyaretAltUclarindaCorsHuniKokenine(string $uc): void
+    #[\PHPUnit\Framework\Attributes\TestWith(['ilerleme', 'POST'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['izin', 'POST'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['izin', 'DELETE'])]
+    public function testZiyaretAltUclarindaCorsHuniKokenine(string $uc, string $method): void
     {
         $this->client->request('OPTIONS', "/huni/ziyaretler/00000000-0000-4000-8000-000000000000/{$uc}", [], [], [
             'HTTP_ORIGIN' => 'https://huni.test',
-            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => $method,
             'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'content-type',
         ]);
 
         self::assertSame('https://huni.test', $this->client->getResponse()->headers->get('Access-Control-Allow-Origin'));
+        self::assertStringContainsString($method, $this->client->getResponse()->headers->get('Access-Control-Allow-Methods', ''));
     }
 
     public function testAdimKaydiZiyaretsizOlamaz(): void

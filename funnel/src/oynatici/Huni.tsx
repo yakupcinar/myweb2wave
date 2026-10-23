@@ -12,6 +12,7 @@ import { izinOku, izinYaz, type Izin } from "../lib/izin";
 import {
   ilerlemeBildir,
   izinBildir,
+  izinGeriAl,
   ziyaretBaslat,
   type Govde,
 } from "../lib/ziyaret";
@@ -71,6 +72,9 @@ function Oynatici({
   const { tanim } = yayin;
   // H6a: reklam ölçümü izni — daha önce seçildiyse bu tarayıcıda hatırlanır.
   const [izin, setIzin] = useState<Izin | null>(izinOku);
+  const [geriAlGerekir, setGeriAlGerekir] = useState(false);
+  const [izinKaydediliyor, setIzinKaydediliyor] = useState(false);
+  const [izinHatasi, setIzinHatasi] = useState("");
   // Ziyaret bir kez açılır; önizlemede hiç açılmaz, adım/cevap da gitmez.
   // Tıklama kimlikleri yalnız önceden verilmiş izinle (yoksa Kabul'de ayrıca).
   const [ziyaretSozu] = useState(() =>
@@ -167,15 +171,34 @@ function Oynatici({
     setOdeme({ suruyor: false, hata });
   }
 
-  function izinSec(secim: Izin): void {
+  async function izinSec(secim: Izin): Promise<void> {
+    if (secim === "hayir" && geriAlGerekir) {
+      setIzinKaydediliyor(true);
+      const geriAlindi = await izinGeriAl(ziyaretSozu);
+      setIzinKaydediliyor(false);
+      if (!geriAlindi) {
+        setIzinHatasi(
+          "İzin tercihiniz sunucuya iletilemedi. Lütfen tekrar deneyin.",
+        );
+        return;
+      }
+    }
     izinYaz(secim);
     setIzin(secim);
+    setGeriAlGerekir(false);
+    setIzinHatasi("");
     if (secim === "evet") izinBildir(ziyaretSozu);
   }
 
   return (
     <>
-      {!onizleme && izin === null ? <IzinSeridi onSec={izinSec} /> : null}
+      {!onizleme && izin === null ? (
+        <IzinSeridi
+          onSec={izinSec}
+          bekliyor={izinKaydediliyor}
+          hata={izinHatasi}
+        />
+      ) : null}
       {onizleme ? (
         <p className="onizleme">
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
@@ -267,6 +290,19 @@ function Oynatici({
           );
         })}
       </div>
+      {!onizleme && izin !== null ? (
+        <button
+          className="izin-ayarlari"
+          type="button"
+          onClick={() => {
+            setGeriAlGerekir(izin === "evet");
+            setIzinHatasi("");
+            setIzin(null);
+          }}
+        >
+          Gizlilik ayarları
+        </button>
+      ) : null}
     </>
   );
 }

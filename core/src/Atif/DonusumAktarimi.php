@@ -62,7 +62,9 @@ final readonly class DonusumAktarimi
         $ziyaret = $db->fetchAssociative(
             'SELECT z.fbclid, z.ttclid, z.created_at, host(o.ip_adresi) AS ip_adresi, o.user_agent
              FROM odeme_oturumlari o JOIN huni_ziyaretleri z ON z.id = o.ziyaret_id
-             WHERE o.stripe_checkout_session_id = :oturum AND z.app = :app AND z.izin_at IS NOT NULL',
+             WHERE o.stripe_checkout_session_id = :oturum AND z.app = :app AND z.izin_at IS NOT NULL
+             -- İzin geri almayla yarışırsa sıra belirli olsun; geri alma önceyse olay kuyruğa girmesin.
+             FOR UPDATE OF z',
             ['oturum' => $oturum, 'app' => $app],
         );
         if (!\is_array($ziyaret)) {

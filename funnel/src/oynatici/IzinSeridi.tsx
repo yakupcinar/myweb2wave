@@ -7,8 +7,12 @@ import type { Izin } from "../lib/izin";
 
 export default function IzinSeridi({
   onSec,
+  bekliyor = false,
+  hata,
 }: {
   onSec: (izin: Izin) => void;
+  bekliyor?: boolean;
+  hata?: string;
 }): ReactNode {
   return (
     <aside className="izin-seridi" aria-label="Reklam ölçümü izni">
@@ -18,14 +22,20 @@ export default function IzinSeridi({
         geldiğin ve abone olursan bu satın alma onlarla paylaşılır. İzin
         vermesen de her şey aynı çalışır.
       </p>
+      {hata ? <p role="alert">{hata}</p> : null}
       <div className="izin-dugmeleri">
-        <button type="button" onClick={() => onSec("hayir")}>
+        <button
+          type="button"
+          disabled={bekliyor}
+          onClick={() => onSec("hayir")}
+        >
           Reddet
         </button>
-        <button type="button" onClick={() => onSec("evet")}>
+        <button type="button" disabled={bekliyor} onClick={() => onSec("evet")}>
           Kabul et
         </button>
       </div>
+      {bekliyor ? <p role="status">Tercihiniz kaydediliyor…</p> : null}
     </aside>
   );
 }
