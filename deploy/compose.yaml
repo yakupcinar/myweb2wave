@@ -64,6 +64,8 @@ services:
       dockerfile: deploy/web.Dockerfile
       args:
         PUBLIC_CORE_URL: https://${API_ALANI:?}
+        PUBLIC_META_PIXEL_ID: ${META_PIXEL_ID:-}
+        PUBLIC_TIKTOK_PIXEL_ID: ${TIKTOK_PIXEL_ID:-}
     image: myweb2wave-web:uretim
     restart: unless-stopped
     environment:

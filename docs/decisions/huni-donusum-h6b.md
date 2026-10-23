@@ -25,7 +25,7 @@ aralığı 30 saniyeden başlayıp bir saate kadar artar. Hata kayıtları sağl
 Stripe oturum kimliği ve sınırlı hata sınıfını tutar; token veya tam yanıt gövdesi
 tutmaz.
 
-Meta'ya `Purchase`, TikTok'a `Purchase` gönderilir. Değer Stripe'ın küçük para
+Meta'ya `Purchase`, TikTok'a standart `CompletePayment` gönderilir. Değer Stripe'ın küçük para
 biriminden para biriminin ondalık kuralına göre çevrilir (USD `1299` → `12.99`,
 JPY `1299` → `1299`). IP, User-Agent ve varsa `fbclid` / `ttclid` eşleşme verisi
 yalnız izinli oturumun payload'ına alınır. Ağ yanıtı ödeme webhook'unu

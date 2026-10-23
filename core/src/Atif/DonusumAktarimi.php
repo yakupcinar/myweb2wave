@@ -112,7 +112,7 @@ final readonly class DonusumAktarimi
             'event_source' => 'web',
             'event_source_id' => $this->tiktokPixel,
             'data' => [[
-                'event' => 'Purchase',
+                'event' => 'CompletePayment',
                 'event_time' => $eventTime,
                 'event_id' => $eventId,
                 'user' => $tiktokUser,

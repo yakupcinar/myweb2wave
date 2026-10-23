@@ -136,6 +136,8 @@ final class StripeWebhookControllerTest extends WebTestCase
         self::assertIsArray($tiktokData['properties'] ?? null);
         self::assertSame('cs_h6b', $metaData['event_id'] ?? null);
         self::assertSame('cs_h6b', $tiktokData['event_id'] ?? null);
+        self::assertSame('Purchase', $metaData['event_name'] ?? null);
+        self::assertSame('CompletePayment', $tiktokData['event'] ?? null);
         self::assertSame('tiklama-tt', $tiktokData['user']['ttclid'] ?? null);
         self::assertSame('192.0.2.21', $metaData['user_data']['client_ip_address'] ?? null);
         self::assertSame(12.99, $metaData['custom_data']['value'] ?? null);
