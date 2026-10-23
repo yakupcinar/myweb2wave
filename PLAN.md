@@ -81,7 +81,7 @@
 - [x] **E2.4b ilk yeni soru türü: çoklu seçim** — 2026-10-22, `docs/decisions/huni-coklu-secim.md`
 - [x] **E2.4b müşteri yorumu/sosyal kanıt adımı** — 2026-10-22, `docs/decisions/huni-yorum.md`
 - [x] **E2.4c soru açıklaması** — 2026-10-22, `docs/decisions/huni-soru-aciklamasi.md`
-- [ ] **E2.4b serbest metin soru türü** — kapsam ölçüldü; ham yanıt saklama süresi, panel erişimi ve rapor kararı bekliyor (`docs/decisions/huni-serbest-metin-kapsami.md`, Ç57)
+- [ ] **E2.4b serbest metin soru türü** — rakip araştırması tamamlandı; saklama süresi ve yanıt görünümü erişimi kararı bekliyor (`docs/decisions/huni-serbest-metin-rakipleri.md`, Ç57)
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
