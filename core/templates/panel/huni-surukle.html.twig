@@ -10,7 +10,7 @@
         {% for s in stiller %}<link rel="stylesheet" href="{{ s }}">{% endfor %}
         <style>
             body { margin: 0; font: 15px/1.45 system-ui, sans-serif; }
-            .puck-ust { display: flex; gap: 12px; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid #8884; }
+            .puck-ust { display: flex; flex-wrap: wrap; gap: 12px; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid #8884; }
             .puck-durum { position: fixed; z-index: 1000; right: 16px; bottom: 16px; max-width: 420px; padding: 12px 36px 12px 12px; border-radius: 8px; background: #fff; color: #111; box-shadow: 0 4px 20px #0003; }
             .puck-durum.hata { border-left: 4px solid #cf222e; }
             .puck-durum.tamam { border-left: 4px solid #1a7f37; }
@@ -25,6 +25,20 @@
             .puck-surumler summary { cursor: pointer; padding: 6px 4px; }
             .puck-surumler ul { position: absolute; right: 0; z-index: 1000; min-width: 380px; margin: 4px 0 0; padding: 8px; list-style: none; background: #fff; color: #111; border-radius: 8px; box-shadow: 0 4px 20px #0003; }
             .puck-surumler li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; }
+            @media (max-width: 760px) {
+                #puck-duzenleyici { flex: 1 1 100%; min-width: 0; }
+                .puck-ust-cubuk { flex-wrap: wrap; width: 100%; }
+                .puck-not { flex: 1 0 100%; }
+                .puck-ust-cubuk button, .puck-dugme { min-height: 40px; }
+                .puck-surumler ul { position: fixed; left: 20px; right: 20px; min-width: 0; width: auto; max-height: 65vh; overflow: auto; }
+                .puck-surumler li { flex-wrap: wrap; }
+            }
+            @media (max-width: 420px) {
+                .puck-ust-cubuk { gap: 6px; }
+                .puck-ust-cubuk button, .puck-dugme { padding: 6px 8px; }
+                .puck-surumler { flex-basis: 100%; }
+                .puck-surumler ul { left: 12px; right: 12px; width: auto; }
+            }
         </style>
     </head>
     <body>
