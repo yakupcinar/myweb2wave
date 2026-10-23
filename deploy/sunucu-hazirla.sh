@@ -53,6 +53,8 @@ echo "15 3 * * * $KULLANICI $DIZIN/deploy/yedek.sh >> /var/log/myweb2wave-yedek.
 # A9: RevenueCat'e gidemeyen aktarımlar 5 dakikada bir yeniden denenir.
 # APP_VERSION: compose zorunlu tutuyor, exec için yer tutucu (yedek.sh'deki ölçüm, dagitim.md).
 echo "*/5 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:revenuecat:gonder >> /var/log/myweb2wave-revenuecat.log 2>&1" > /etc/cron.d/myweb2wave-revenuecat
-touch /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log
+# Serbest yanıtların ham metni 90 günden eskiyse silinir; diğer huni analitiği kalır.
+echo "30 3 * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:huni-metin-cevaplari-sil >> /var/log/myweb2wave-metin-cevaplari.log 2>&1" > /etc/cron.d/myweb2wave-metin-cevaplari
+touch /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log /var/log/myweb2wave-metin-cevaplari.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log /var/log/myweb2wave-metin-cevaplari.log
 
 echo "HAZIRLIK TAMAM — sonraki: $KULLANICI ile gir, deploy/.env.uretim'i doldur, deploy/dagit.sh"

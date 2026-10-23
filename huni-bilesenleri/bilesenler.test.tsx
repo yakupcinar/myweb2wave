@@ -32,6 +32,16 @@ const paywall = (): string =>
     renderToStaticMarkup(
         <Paywall baslik="Pro" metin="9,99 €" dugme="Abone ol" />,
     );
+const serbestYanit = (yanitZorunlu = false): string =>
+    renderToStaticMarkup(
+        <Soru
+            soru="Hedefiniz nedir?"
+            secimTuru="metin"
+            yanitZorunlu={yanitZorunlu}
+            devamDugmesi="Devam et"
+            medyaKoku=""
+        />,
+    );
 const yorum = (): string =>
     renderToStaticMarkup(
         <Yorum
@@ -128,10 +138,24 @@ describe("DOM huni sayfasıyla aynı", () => {
         );
         expect(soru()).not.toContain("yardim-metni");
     });
+    it("serbest yanıt alanı 500 karakterle sınırlı, boşken isteğe bağlı gelir", () => {
+        const html = serbestYanit();
+        expect(html).toContain('maxLength="500"');
+        expect(html).toContain("Yanıtınız (isteğe bağlı)");
+        expect(html).toContain('class="ana">Devam et</button>');
+        expect(html).not.toContain('class="secenekler"');
+        expect(serbestYanit(true)).toContain('required=""');
+    });
     it("bileşenlerin her sınıfı huni.css'te .huni altında boyanır", () => {
         const siniflar = new Set(
             Array.from(
-                [tanitim(G), soru("Kısa açıklama"), yorum(), paywall()]
+                [
+                    tanitim(G),
+                    soru("Kısa açıklama"),
+                    serbestYanit(),
+                    yorum(),
+                    paywall(),
+                ]
                     .join("")
                     .matchAll(/class="([^"]+)"/g),
             ).flatMap((m) => (m[1] ?? "").split(" ")),
@@ -141,6 +165,7 @@ describe("DOM huni sayfasıyla aynı", () => {
             "kapak",
             "secenek-gorseli",
             "secenekler",
+            "serbest-yanit",
             "yardim-metni",
             "yorum-alinti",
         ]);

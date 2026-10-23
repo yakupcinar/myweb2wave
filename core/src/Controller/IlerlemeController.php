@@ -31,17 +31,21 @@ final readonly class IlerlemeController
         $cevap = $govde['cevap'] ?? null;
         $cevaplarVar = \array_key_exists('cevaplar', $govde);
         $cevaplar = $cevaplarVar ? self::cevaplariDogrula($govde['cevaplar']) : null;
+        $cevapMetniVar = \array_key_exists('cevapMetni', $govde);
+        $cevapMetni = $govde['cevapMetni'] ?? null;
         if (!\is_int($sira) || $sira < 0 || $sira > Ziyaretler::AZAMI_SIRA
             || !\is_string($adim) || 1 !== preg_match(Ziyaretler::KIMLIK, $adim)
             || ($cevapVar && (!\is_string($cevap) || 1 !== preg_match(Ziyaretler::KIMLIK, $cevap)))
             || ($cevaplarVar && null === $cevaplar)
-            || ($cevapVar && $cevaplarVar)) {
+            || ($cevapVar && $cevaplarVar)
+            || ($cevapMetniVar && (!\is_string($cevapMetni) || mb_strlen($cevapMetni) > 500 || str_contains($cevapMetni, "\0")))
+            || ($cevapMetniVar && ($cevapVar || $cevaplarVar))) {
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
 
         $secenekler = \is_string($cevap) ? [$cevap] : $cevaplar;
 
-        return $this->ziyaretler->ilerle($ziyaret, $sira, $adim, $secenekler)
+        return $this->ziyaretler->ilerle($ziyaret, $sira, $adim, $secenekler, $cevapMetniVar ? $cevapMetni : null)
             ? new Response('', 204)
             : new JsonResponse(['error' => 'unknown_visit'], 404);
     }

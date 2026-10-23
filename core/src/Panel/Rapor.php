@@ -126,6 +126,24 @@ final readonly class Rapor
         ));
     }
 
+    /** @return list<array{zaman: string, app: string, soru: string, cevap: string}> */
+    public function metinCevaplari(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'zaman' => self::dizge($s['created_at']),
+            'app' => self::dizge($s['app']),
+            'soru' => self::dizge($s['soru']),
+            'cevap' => self::dizge($s['cevap']),
+        ], $this->db->fetchAllAssociative(
+            'SELECT z.created_at, z.app, c.soru, c.cevap
+             FROM huni_metin_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
+             WHERE z.created_at >= now() - make_interval(days => :gun)
+             ORDER BY c.updated_at DESC
+             LIMIT '.self::AZAMI_SATIR,
+            ['gun' => $gun],
+        ));
+    }
+
     /** Ekran görüntüsünde kişisel veri sızmasın (kullanıcı kararı): a***@alan.com. */
     public static function maskele(?string $email): ?string
     {

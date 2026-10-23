@@ -27,7 +27,7 @@ final class HuniTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
@@ -128,7 +128,7 @@ final class HuniTest extends WebTestCase
         yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum ya da paywall', self::ile(0, 'tur', 'html')];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
-        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli ya da coklu olmalı', self::ile(1, 'secimTuru', 'belirsiz')];
+        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu ya da metin olmalı', self::ile(1, 'secimTuru', 'belirsiz')];
         yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'dugme', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
@@ -215,6 +215,21 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar(self::ile(1, 'aciklama', 'Kısa bir açıklama'), ['monthly']));
         self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', str_repeat('a', 501)), ['monthly']));
         self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', 123), ['monthly']));
+    }
+
+    public function testSerbestYanittaSecenekYokVeZorunlulukBoolOlarakSecilebilir(): void
+    {
+        $t = self::ile(1, 'secimTuru', 'metin');
+        unset($t['adimlar'][1]['secenekler']);
+        $t['adimlar'][1]['yanitZorunlu'] = false;
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+
+        $t['adimlar'][1]['yanitZorunlu'] = 'evet';
+        self::assertStringContainsString('yanitZorunlu true ya da false', implode(' | ', Tanim::hatalar($t, ['monthly'])));
+
+        $t['adimlar'][1]['yanitZorunlu'] = false;
+        $t['adimlar'][1]['secenekler'] = [['id' => 'a', 'metin' => 'A']];
+        self::assertNotSame([], Tanim::hatalar($t, ['monthly']));
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void

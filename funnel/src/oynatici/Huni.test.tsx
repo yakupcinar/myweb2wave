@@ -312,6 +312,81 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     });
   });
 
+  it("serbest yanıtı yazıp isteğe bağlı Devam ile ayrı alan olarak gönderir", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.tur === "soru"
+              ? {
+                  id: adim.id,
+                  tur: "soru",
+                  soru: adim.soru,
+                  secimTuru: "metin",
+                  devamDugmesi: "Devam et",
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    const alan = screen.getByRole("textbox", { name: "Yanıtınız" });
+    fireEvent.change(alan, { target: { value: "Daha iyi uyumak istiyorum" } });
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    fireEvent.click(screen.getByRole("button", { name: "Devam et" }));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    await waitFor(() => expect(ilerlemeler()).toHaveLength(4));
+    expect(ilerlemeler()[2]).toEqual({
+      sira: 1,
+      adim: "kiminle",
+      cevapMetni: "Daha iyi uyumak istiyorum",
+    });
+  });
+
+  it("zorunlu serbest yanıtta boşken ilerlemez", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.tur === "soru"
+              ? {
+                  id: adim.id,
+                  tur: "soru",
+                  soru: adim.soru,
+                  secimTuru: "metin",
+                  yanitZorunlu: true,
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    const devam = screen.getByRole("button", { name: "Devam" });
+    expect((devam as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(devam);
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    fireEvent.change(screen.getByRole("textbox", { name: "Yanıtınız" }), {
+      target: { value: "Bir cevap" },
+    });
+    expect((devam as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it("yorum adımı alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {
     const temel = yayin();
     tanim = {

@@ -63,6 +63,7 @@ export function ilerlemeBildir(
   sira: number,
   adim: string,
   cevap?: string | string[],
+  cevapMetni?: string,
 ): void {
   void ziyaretSozu
     .then((ziyaret) => {
@@ -73,6 +74,7 @@ export function ilerlemeBildir(
       };
       if (typeof cevap === "string") govde.cevap = cevap;
       else if (cevap) govde.cevaplar = cevap;
+      if (cevapMetni !== undefined) govde.cevapMetni = cevapMetni;
       return cekirdek.POST("/huni/ziyaretler/{ziyaret}/ilerleme", {
         params: { path: { ziyaret } },
         body: govde,

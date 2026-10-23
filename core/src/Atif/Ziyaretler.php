@@ -102,13 +102,13 @@ final readonly class Ziyaretler
      * cevabı (son cevap geçerli). Ziyaret yoksa false — hiçbir şey yazılmaz.
      */
     /** @param list<string>|null $cevaplar */
-    public function ilerle(string $ziyaret, int $sira, string $adim, ?array $cevaplar): bool
+    public function ilerle(string $ziyaret, int $sira, string $adim, ?array $cevaplar, ?string $cevapMetni = null): bool
     {
         if (1 !== preg_match(self::UUID, $ziyaret)) {
             return false;
         }
 
-        return $this->db->transactional(function (Connection $db) use ($ziyaret, $sira, $adim, $cevaplar): bool {
+        return $this->db->transactional(function (Connection $db) use ($ziyaret, $sira, $adim, $cevaplar, $cevapMetni): bool {
             if (false === $db->fetchOne('SELECT 1 FROM huni_ziyaretleri WHERE id = :id', ['id' => $ziyaret])) {
                 return false;
             }
@@ -121,6 +121,16 @@ final readonly class Ziyaretler
                 $db->delete('huni_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim]);
                 foreach ($cevaplar as $secenek) {
                     $db->insert('huni_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim, 'secenek' => $secenek]);
+                }
+            }
+            if (null !== $cevapMetni) {
+                $db->delete('huni_metin_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim]);
+                if ('' !== trim($cevapMetni)) {
+                    $db->insert('huni_metin_cevaplari', [
+                        'ziyaret_id' => $ziyaret,
+                        'soru' => $adim,
+                        'cevap' => $cevapMetni,
+                    ]);
                 }
             }
 

@@ -30,6 +30,7 @@
 | Huni çoklu seçim (E2.4b) | ✅ 191 çekirdek testi, editör 18 + bileşen 20 + huni 37 test; kırma 4/4; yerel API/DB göçü + HTTP 200 | `docs/decisions/huni-coklu-secim.md` |
 | Huni müşteri yorumu (E2.4b) | ✅ 192 çekirdek testi, editör 20 + bileşen 21 + huni 38 test; kırma 3/3; sözleşme, önizleme ve oynatıcı | `docs/decisions/huni-yorum.md` |
 | Soru açıklaması (E2.4c) | ✅ 193 çekirdek testi, editör 22 + bileşen 22 + huni 38 test; kırma 3/3; boşken yok, tanım ↔ Puck ↔ önizleme | `docs/decisions/huni-soru-aciklamasi.md` |
+| Huni serbest yanıt (E2.4b) | ✅ 198 çekirdek testi / 1.239 kontrol; editör 19, bileşen 11, oynatıcı 37; kırma 3/3; göç + gerçek HTTP 204 ve DB kaydı; `bin/kontrol` yeşil | `docs/decisions/huni-serbest-metin.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
@@ -81,7 +82,7 @@
 - [x] **E2.4b ilk yeni soru türü: çoklu seçim** — 2026-10-22, `docs/decisions/huni-coklu-secim.md`
 - [x] **E2.4b müşteri yorumu/sosyal kanıt adımı** — 2026-10-22, `docs/decisions/huni-yorum.md`
 - [x] **E2.4c soru açıklaması** — 2026-10-22, `docs/decisions/huni-soru-aciklamasi.md`
-- [ ] **E2.4b serbest metin soru türü** — rakip araştırması tamamlandı; saklama süresi ve yanıt görünümü erişimi kararı bekliyor (`docs/decisions/huni-serbest-metin-rakipleri.md`, Ç57)
+- [x] **E2.4b serbest metin soru türü** — 2026-10-23, `docs/decisions/huni-serbest-metin.md`
 - [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile

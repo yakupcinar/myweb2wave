@@ -25,7 +25,7 @@ final class AtifTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler');
+        $this->db->executeStatement('TRUNCATE huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler');
         ApiRequestor::setHttpClient(new KayitliStripeIstemcisi());
     }
 
@@ -234,6 +234,33 @@ final class AtifTest extends WebTestCase
         $this->ilerle($z, ['sira' => 1, 'adim' => 'kiminle', 'cevaplar' => ['is']]);
         self::assertSame(['is'], $this->db->fetchFirstColumn('SELECT secenek FROM huni_cevaplari'));
         self::assertSame(1, $this->say('huni_adimlari'));
+    }
+
+    public function testSerbestYanitAyricaSaklanirVeBosYanittaOncekiDegerSilinir(): void
+    {
+        $z = $this->ziyaretAc('keepchat');
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'hedef', 'cevapMetni' => 'Daha iyi uyumak istiyorum']);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame([['soru' => 'hedef', 'cevap' => 'Daha iyi uyumak istiyorum']], $this->db->fetchAllAssociative('SELECT soru, cevap FROM huni_metin_cevaplari'));
+        self::assertSame(0, $this->say('huni_cevaplari'));
+
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'hedef', 'cevapMetni' => '']);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame(0, $this->say('huni_metin_cevaplari'));
+    }
+
+    public function testSerbestYanitSiniriVeTurDogrulanir(): void
+    {
+        $z = $this->ziyaretAc('keepchat');
+        foreach ([['cevapMetni' => str_repeat('a', 501)], ['cevapMetni' => 7], ['cevapMetni' => "x\0y"], ['cevapMetni' => 'x', 'cevap' => 'a']] as $yanit) {
+            $this->ilerle($z, ['sira' => 1, 'adim' => 'hedef'] + $yanit);
+            self::assertResponseStatusCodeSame(422);
+        }
+        $this->ilerle($z, ['sira' => 1, 'adim' => 'hedef', 'cevapMetni' => str_repeat('ı', 500)]);
+        self::assertResponseStatusCodeSame(204);
+        $cevap = $this->db->fetchOne('SELECT cevap FROM huni_metin_cevaplari');
+        self::assertIsString($cevap);
+        self::assertSame(500, mb_strlen($cevap));
     }
 
     public function testBilinmeyenZiyaret404VeKayitYok(): void

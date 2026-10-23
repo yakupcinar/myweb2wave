@@ -29,6 +29,23 @@
     display: grid;
     gap: 10px;
 }
+.huni .serbest-yanit {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+}
+.huni .serbest-yanit textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 112px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--metin) 30%, transparent);
+    border-radius: var(--kose);
+    background: var(--arka);
+    color: var(--metin);
+    font: inherit;
+    resize: vertical;
+}
 .huni p.yardim-metni {
     margin: 8px 0 16px;
 }
@@ -48,6 +65,10 @@
     border-color: var(--ana);
     text-align: center;
     width: 100%;
+}
+.huni button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 .huni img.kapak {
     display: block;

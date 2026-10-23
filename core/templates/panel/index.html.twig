@@ -61,6 +61,19 @@
                     </tbody>
                 </table>
             </div>
+            <div class="kart" data-bolum="serbest-cevaplar">
+                <h2>Serbest yanıtlar <span class="soluk">· 90 gün içinde, en yeni {{ azami }}</span></h2>
+                <table>
+                    <thead><tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Soru</th><th>Yanıt</th></tr></thead>
+                    <tbody>
+                        {% for c in metin_cevaplari %}
+                            <tr><td>{{ c.zaman|date('Y-m-d H:i', 'UTC') }}</td><td>{{ c.app }}</td><td>{{ c.soru }}</td><td class="serbest-cevap">{{ c.cevap }}</td></tr>
+                        {% else %}
+                            <tr><td colspan="4" class="soluk">Henüz serbest yanıt yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
     {% endif %}
 

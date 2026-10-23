@@ -85,6 +85,9 @@ function Oynatici({
   );
   const [mevcut, setMevcut] = useState(0);
   const [secimler, setSecimler] = useState<Record<string, string[]>>({});
+  const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
+    {},
+  );
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
   // (opaklık 0'dan başlasa ilk anlamlı boyama gecikirdi). Adımla aynı
   // çizimde açılır; effect'te açılsa yeni adım bir kare görünüp titrerdi.
@@ -185,8 +188,9 @@ function Oynatici({
         {tanim.adimlar.map((adim, i) => {
           const soru = adim.tur === "soru" ? adim : null;
           const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
+          const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
           const secili = soru
-            ? soru.secenekler.flatMap((s, j) =>
+            ? (soru.secenekler ?? []).flatMap((s, j) =>
                 cevaplar.includes(s.id) ? [j] : [],
               )
             : [];
@@ -209,14 +213,19 @@ function Oynatici({
                     ziyaretSozu,
                     mevcut,
                     adim.id,
-                    adim.secenekler[s]?.id,
+                    adim.secenekler?.[s]?.id,
                   );
-                  ileri(adim.secenekler[s]?.hedef);
+                  ileri(adim.secenekler?.[s]?.hedef);
                 }}
                 secili={secili}
+                cevapMetni={cevapMetni}
+                onMetinDegistir={(metin) => {
+                  if (adim.tur !== "soru" || adim.secimTuru !== "metin") return;
+                  setSerbestYanilar((once) => ({ ...once, [adim.id]: metin }));
+                }}
                 onSecenekDegistir={(s) => {
                   if (adim.tur !== "soru") return;
-                  const id = adim.secenekler[s]?.id;
+                  const id = adim.secenekler?.[s]?.id;
                   if (!id) return;
                   setSecimler((once) => {
                     const seciliCevaplar = once[adim.id] ?? [];
@@ -229,7 +238,20 @@ function Oynatici({
                   });
                 }}
                 onCokluDevam={() => {
-                  if (adim.tur !== "soru" || !cevaplar.length) return;
+                  if (adim.tur !== "soru") return;
+                  if (adim.secimTuru === "metin") {
+                    if (adim.yanitZorunlu && !cevapMetni.trim()) return;
+                    ilerlemeBildir(
+                      ziyaretSozu,
+                      mevcut,
+                      adim.id,
+                      undefined,
+                      cevapMetni,
+                    );
+                    ileri();
+                    return;
+                  }
+                  if (!cevaplar.length) return;
                   ilerlemeBildir(ziyaretSozu, mevcut, adim.id, cevaplar);
                   ileri();
                 }}

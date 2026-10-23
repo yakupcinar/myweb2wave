@@ -71,7 +71,7 @@ final class Tanim
                 $gorulen[$id] = true;
             }
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
-                'soru' => ['secenekler'], 'paywall' => ['plan'], default => [],
+                'soru' => ('metin' === ($adim['secimTuru'] ?? 'tekli')) ? [] : ['secenekler'], 'paywall' => ['plan'], default => [],
             }];
             if (\array_key_exists('ilerlemeGoster', $adim)) {
                 $beklenen[] = 'ilerlemeGoster';
@@ -81,9 +81,19 @@ final class Tanim
             }
             if ('soru' === $tur && \array_key_exists('secimTuru', $adim)) {
                 $beklenen[] = 'secimTuru';
-                if (!\in_array($adim['secimTuru'], ['tekli', 'coklu'], true)) {
-                    $h[] = "{$yer}: secimTuru tekli ya da coklu olmalı";
+                if (!\in_array($adim['secimTuru'], ['tekli', 'coklu', 'metin'], true)) {
+                    $h[] = "{$yer}: secimTuru tekli, coklu ya da metin olmalı";
                 }
+            }
+            $metinYaniti = 'metin' === ($adim['secimTuru'] ?? 'tekli');
+            if ($metinYaniti && \array_key_exists('yanitZorunlu', $adim)) {
+                $beklenen[] = 'yanitZorunlu';
+                if (!\is_bool($adim['yanitZorunlu'])) {
+                    $h[] = "{$yer}: yanitZorunlu true ya da false olmalı";
+                }
+            }
+            if (!$metinYaniti && \array_key_exists('yanitZorunlu', $adim)) {
+                $h[] = "{$yer}: yanitZorunlu yalnız serbest yanıt türünde kullanılabilir";
             }
             if ('soru' === $tur && \array_key_exists('aciklama', $adim)) {
                 $beklenen[] = 'aciklama';
@@ -110,7 +120,7 @@ final class Tanim
             foreach (self::TURLER[$tur] as $alan) {
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
-            if ('soru' === $tur) {
+            if ('soru' === $tur && \array_key_exists('secenekler', $adim)) {
                 self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
             }
             if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {

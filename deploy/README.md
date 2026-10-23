@@ -25,7 +25,8 @@ ssh root@<ip> 'bash sunucu-hazirla.sh > /root/hazirla.log 2>&1; echo EXIT=$?'
 ```
 
 Docker, güvenlik duvarı (22/80/443), `dagitim` kullanıcısı, şifreli ssh ve
-root girişi kapalı, depo `/opt/myweb2wave`, günlük yedek (03:15). Bundan
+root girişi kapalı, depo `/opt/myweb2wave`, günlük yedek (03:15) ve günlük
+serbest yanıt temizliği (03:30; 90 günden eski ziyaretler). Bundan
 sonra giriş: `ssh dagitim@<ip>`.
 
 ## 3 · Değerler (dagitim kullanıcısı)
@@ -58,3 +59,7 @@ dağıtım olmamıştır.
 `/var/backups/myweb2wave/app-*.dump`, 14 gün. Geri yükleme:
 `docker exec -i myweb2wave-uretim-db-1 pg_restore -U app -d <boş_db> < dosya`.
 ⚠️ Yedek aynı diskte (Ç33).
+
+Anket serbest yanıtlarının metni ziyaret tarihinden 90 gün sonra ana DB'den
+silinir (`app:huni-metin-cevaplari-sil`). Günlük yedek temizliği nedeniyle
+silinen metin, yedeklerde en çok yaklaşık 105 güne kadar kalabilir.

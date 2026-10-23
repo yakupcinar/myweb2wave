@@ -59,67 +59,96 @@ export function Tanitim({
 export function Soru({
     soru,
     aciklama = "",
-    secenekler,
+    secenekler = [],
     secimTuru = "tekli",
+    yanitZorunlu = false,
+    cevapMetni = "",
     secili = [],
     devamDugmesi = "Devam",
     medyaKoku,
     onSecim,
     onSecenekDegistir,
+    onMetinDegistir,
     onDevam,
 }: {
     soru: string;
     aciklama?: string | undefined;
-    secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
-    secimTuru?: "tekli" | "coklu" | undefined;
+    secenekler?:
+        ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[] | undefined;
+    secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+    yanitZorunlu?: boolean | undefined;
+    cevapMetni?: string | undefined;
     secili?: number[] | undefined;
     devamDugmesi?: string | undefined;
     medyaKoku: string;
     /** Seçeneğin sırası; kimliği çağıran bilir. */
     onSecim?: ((sira: number) => void) | undefined;
     onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
     onDevam?: (() => void) | undefined;
 }): ReactNode {
     return (
         <section>
             <h1 tabIndex={-1}>{soru}</h1>
             {aciklama ? <p className="yardim-metni">{aciklama}</p> : null}
-            <div className="secenekler">
-                {secenekler.map((s, i) => (
-                    <button
-                        key={i}
-                        type="button"
-                        aria-pressed={
-                            secimTuru === "coklu"
-                                ? secili.includes(i)
-                                : undefined
+            {secimTuru === "metin" ? (
+                <label className="serbest-yanit">
+                    Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
+                    <textarea
+                        aria-label="Yanıtınız"
+                        required={yanitZorunlu}
+                        maxLength={500}
+                        rows={4}
+                        value={cevapMetni}
+                        readOnly={!onMetinDegistir}
+                        onChange={(e) =>
+                            onMetinDegistir?.(e.currentTarget.value)
                         }
-                        onClick={
-                            secimTuru === "coklu"
-                                ? onSecenekDegistir
-                                    ? () => onSecenekDegistir(i)
+                    />
+                </label>
+            ) : (
+                <div className="secenekler">
+                    {secenekler.map((s, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-pressed={
+                                secimTuru === "coklu"
+                                    ? secili.includes(i)
                                     : undefined
-                                : onSecim
-                                  ? () => onSecim(i)
-                                  : undefined
-                        }
-                    >
-                        {s.gorsel ? (
-                            <Gorsel
-                                id={s.gorsel}
-                                medyaKoku={medyaKoku}
-                                sinif="secenek-gorseli"
-                            />
-                        ) : null}
-                        <span>{s.metin}</span>
-                    </button>
-                ))}
-            </div>
-            {secimTuru === "coklu" ? (
+                            }
+                            onClick={
+                                secimTuru === "coklu"
+                                    ? onSecenekDegistir
+                                        ? () => onSecenekDegistir(i)
+                                        : undefined
+                                    : onSecim
+                                      ? () => onSecim(i)
+                                      : undefined
+                            }
+                        >
+                            {s.gorsel ? (
+                                <Gorsel
+                                    id={s.gorsel}
+                                    medyaKoku={medyaKoku}
+                                    sinif="secenek-gorseli"
+                                />
+                            ) : null}
+                            <span>{s.metin}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+            {secimTuru === "coklu" || secimTuru === "metin" ? (
                 <button
                     type="button"
                     className="ana"
-                    disabled={secili.length === 0}
+                    disabled={
+                        (secimTuru === "coklu" && secili.length === 0) ||
+                        (secimTuru === "metin" &&
+                            yanitZorunlu &&
+                            !cevapMetni.trim())
+                    }
                     onClick={onDevam}
                 >
                     {devamDugmesi}
@@ -205,9 +234,10 @@ export type TanimAdimi =
           tur: "soru";
           soru: string;
           aciklama?: string;
-          secimTuru?: "tekli" | "coklu";
+          secimTuru?: "tekli" | "coklu" | "metin";
+          yanitZorunlu?: boolean;
           devamDugmesi?: string;
-          secenekler: { metin: string; gorsel?: string }[];
+          secenekler?: { metin: string; gorsel?: string }[];
       }
     | {
           tur: "yorum";
@@ -232,6 +262,8 @@ export function Adim({
     secili,
     onSecenekDegistir,
     onCokluDevam,
+    cevapMetni,
+    onMetinDegistir,
     odeme = {},
 }: {
     adim: TanimAdimi;
@@ -241,6 +273,8 @@ export function Adim({
     secili?: number[] | undefined;
     onSecenekDegistir?: ((sira: number) => void) | undefined;
     onCokluDevam?: (() => void) | undefined;
+    cevapMetni?: string | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
     odeme?: { onDugme?: () => void; kapali?: boolean; hata?: string };
 }): ReactNode {
     switch (adim.tur) {
@@ -262,12 +296,15 @@ export function Adim({
                     aciklama={adim.aciklama}
                     secenekler={adim.secenekler}
                     secimTuru={adim.secimTuru}
+                    yanitZorunlu={adim.yanitZorunlu}
+                    cevapMetni={cevapMetni}
                     devamDugmesi={adim.devamDugmesi}
                     secili={secili}
                     medyaKoku={medyaKoku}
                     onSecim={onSecim}
                     onSecenekDegistir={onSecenekDegistir}
                     onDevam={onCokluDevam}
+                    onMetinDegistir={onMetinDegistir}
                 />
             );
         case "paywall":

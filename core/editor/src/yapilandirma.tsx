@@ -327,6 +327,15 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         options: [
                             { label: "Tek seçim", value: "tekli" },
                             { label: "Çoklu seçim", value: "coklu" },
+                            { label: "Serbest yanıt", value: "metin" },
+                        ],
+                    },
+                    yanitZorunlu: {
+                        type: "radio",
+                        label: "Serbest yanıt zorunluluğu",
+                        options: [
+                            { label: "İsteğe bağlı", value: "istege_bagli" },
+                            { label: "Zorunlu", value: "zorunlu" },
                         ],
                     },
                     devamDugmesi: { type: "text", label: "Devam düğmesi" },
@@ -362,12 +371,19 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     };
                     return {
                         ...fields,
+                        yanitZorunlu: {
+                            ...fields.yanitZorunlu,
+                            visible: veri.props.secimTuru === "metin",
+                        },
                         devamDugmesi: {
                             ...fields.devamDugmesi,
-                            visible: veri.props.secimTuru === "coklu",
+                            visible: ["coklu", "metin"].includes(
+                                String(veri.props.secimTuru),
+                            ),
                         },
                         secenekler: {
                             ...secenekler,
+                            visible: veri.props.secimTuru !== "metin",
                             arrayFields,
                         },
                     };
@@ -378,6 +394,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     aciklama: "",
                     ilerlemeGoster: true,
                     secimTuru: "tekli",
+                    yanitZorunlu: "istege_bagli",
                     devamDugmesi: "Devam",
                     secenekler: [
                         {
@@ -399,6 +416,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     aciklama,
                     secenekler,
                     secimTuru,
+                    yanitZorunlu,
                     devamDugmesi,
                 }) => (
                     <div style={kart}>
@@ -407,6 +425,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             aciklama={aciklama}
                             secenekler={secenekler ?? []}
                             secimTuru={secimTuru}
+                            yanitZorunlu={yanitZorunlu === "zorunlu"}
                             devamDugmesi={devamDugmesi}
                             medyaKoku=""
                         />

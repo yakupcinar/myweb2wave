@@ -239,9 +239,10 @@ export interface components {
             aciklama?: string;
             ilerlemeGoster?: boolean;
             /** @enum {string} */
-            secimTuru?: "tekli" | "coklu";
+            secimTuru?: "tekli" | "coklu" | "metin";
+            yanitZorunlu?: boolean;
             devamDugmesi?: string;
-            secenekler: {
+            secenekler?: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
                 gorsel?: components["schemas"]["GorselKimligi"];
@@ -523,6 +524,7 @@ export interface operations {
                     adim: components["schemas"]["HuniKimligi"];
                     cevap?: components["schemas"]["HuniKimligi"];
                     cevaplar?: components["schemas"]["HuniKimligi"][];
+                    cevapMetni?: string;
                 };
             };
         };

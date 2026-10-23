@@ -31,7 +31,8 @@ export type SoruProps = {
     soru: string;
     aciklama: string;
     secenekler: SecenekProps[];
-    secimTuru: "tekli" | "coklu";
+    secimTuru: "tekli" | "coklu" | "metin";
+    yanitZorunlu: "istege_bagli" | "zorunlu";
     devamDugmesi: string;
     ilerlemeGoster: boolean;
 };
@@ -121,8 +122,11 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             aciklama: adim.aciklama ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                             secimTuru: adim.secimTuru ?? "tekli",
+                            yanitZorunlu: adim.yanitZorunlu
+                                ? "zorunlu"
+                                : "istege_bagli",
                             devamDugmesi: adim.devamDugmesi ?? "Devam",
-                            secenekler: adim.secenekler.map((s) => ({
+                            secenekler: (adim.secenekler ?? []).map((s) => ({
                                 kimlik: s.id,
                                 metin: s.metin,
                                 gorsel: s.gorsel ?? "",
@@ -198,18 +202,30 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     ...(p.secimTuru === "coklu"
                         ? { secimTuru: "coklu" as const }
                         : {}),
+                    ...(p.secimTuru === "metin"
+                        ? {
+                              secimTuru: "metin" as const,
+                              ...(p.yanitZorunlu === "zorunlu"
+                                  ? { yanitZorunlu: true }
+                                  : {}),
+                          }
+                        : {}),
                     ...(p.devamDugmesi !== "Devam"
                         ? { devamDugmesi: p.devamDugmesi }
                         : {}),
-                    secenekler: (p.secenekler ?? []).map((s) => {
-                        const secenek = gorselli(
-                            { id: s.kimlik, metin: s.metin },
-                            s.gorsel ?? "",
-                        );
-                        return p.secimTuru === "coklu"
-                            ? secenek
-                            : hedefli(secenek, s.hedef ?? "");
-                    }),
+                    ...(p.secimTuru === "metin"
+                        ? {}
+                        : {
+                              secenekler: (p.secenekler ?? []).map((s) => {
+                                  const secenek = gorselli(
+                                      { id: s.kimlik, metin: s.metin },
+                                      s.gorsel ?? "",
+                                  );
+                                  return p.secimTuru === "coklu"
+                                      ? secenek
+                                      : hedefli(secenek, s.hedef ?? "");
+                              }),
+                          }),
                 };
             }
             case "Yorum": {

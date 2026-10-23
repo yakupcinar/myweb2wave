@@ -165,6 +165,7 @@ paths:
                   maxItems: 8
                   uniqueItems: true
                   items: { $ref: "#/components/schemas/HuniKimligi" }
+                cevapMetni: { type: string, maxLength: 500 }
               not:
                 required: [cevap, cevaplar]
       responses:
@@ -453,14 +454,15 @@ components:
     SoruAdimi:
       type: object
       additionalProperties: false
-      required: [id, tur, soru, secenekler]
+      required: [id, tur, soru]
       properties:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [soru] }
         soru: { type: string }
         aciklama: { type: string, maxLength: 500 }
         ilerlemeGoster: { type: boolean }
-        secimTuru: { type: string, enum: [tekli, coklu] }
+        secimTuru: { type: string, enum: [tekli, coklu, metin] }
+        yanitZorunlu: { type: boolean }
         devamDugmesi: { type: string }
         secenekler:
           type: array

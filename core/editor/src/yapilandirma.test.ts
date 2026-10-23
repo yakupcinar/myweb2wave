@@ -9,7 +9,7 @@ const ortam: Ortam = {
     jeton: "",
 };
 
-async function soruAlanlari(secimTuru: "tekli" | "coklu") {
+async function soruAlanlari(secimTuru: "tekli" | "coklu" | "metin") {
     const soru = yapilandirma(ortam).components.Soru;
     const cozumle = soru.resolveFields;
     if (!cozumle) throw new Error("Soru alanlarının dinamik çözümleyicisi yok");
@@ -32,6 +32,8 @@ async function soruAlanlari(secimTuru: "tekli" | "coklu") {
     return {
         hedef: sonuc.secenekler.arrayFields.hedef,
         devam: sonuc.devamDugmesi,
+        zorunlu: sonuc.yanitZorunlu,
+        secenekler: sonuc.secenekler,
     };
 }
 
@@ -43,6 +45,10 @@ describe("soru ayarlarının görünürlüğü", () => {
         expect(tekli.devam.visible).toBe(false);
         expect(coklu.hedef?.visible).toBe(false);
         expect(coklu.devam.visible).toBe(true);
+        const metin = await soruAlanlari("metin");
+        expect(metin.devam.visible).toBe(true);
+        expect(metin.zorunlu.visible).toBe(true);
+        expect(metin.secenekler.visible).toBe(false);
     });
 });
 
@@ -67,5 +73,14 @@ describe("soru içeriği", () => {
         expect(
             yapilandirma(ortam).components.Soru.fields?.aciklama?.label,
         ).toBe("Açıklama (isteğe bağlı)");
+    });
+
+    it("serbest yanıt panel seçeneği isteğe bağlı gelir", () => {
+        const soru = yapilandirma(ortam).components.Soru;
+        const secimTuru = soru.fields?.secimTuru;
+        expect(
+            secimTuru && "options" in secimTuru ? secimTuru.options : [],
+        ).toContainEqual({ label: "Serbest yanıt", value: "metin" });
+        expect(soru.defaultProps?.yanitZorunlu).toBe("istege_bagli");
     });
 });

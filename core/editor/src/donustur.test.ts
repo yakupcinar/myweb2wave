@@ -95,10 +95,12 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
                           ...adim,
                           secimTuru: "coklu",
                           devamDugmesi: "Seçimleri gönder",
-                          secenekler: adim.secenekler.map((secenek) => ({
-                              ...secenek,
-                              hedef: "paywall",
-                          })),
+                          secenekler: (adim.secenekler ?? []).map(
+                              (secenek) => ({
+                                  ...secenek,
+                                  hedef: "paywall",
+                              }),
+                          ),
                       }
                     : adim,
             ),
@@ -110,14 +112,35 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
                 adim.tur === "soru"
                     ? {
                           ...adim,
-                          secenekler: adim.secenekler.map(({ id, metin }) => ({
-                              id,
-                              metin,
-                          })),
+                          secenekler: (adim.secenekler ?? []).map(
+                              ({ id, metin }) => ({
+                                  id,
+                                  metin,
+                              }),
+                          ),
                       }
                     : adim,
             ),
         });
+    });
+
+    it("serbest yanıt türü seçenekleri kaldırır ve zorunluluğu kayıpsız taşır", () => {
+        const metin: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim) =>
+                adim.tur === "soru"
+                    ? {
+                          id: adim.id,
+                          tur: "soru",
+                          soru: adim.soru,
+                          secimTuru: "metin",
+                          yanitZorunlu: true,
+                          devamDugmesi: "Yanıtla",
+                      }
+                    : adim,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(metin, VARSAYILAN))).toStrictEqual(metin);
     });
 
     it("özel tema, görseller ve hedefler (H5) aynen döner", () => {
