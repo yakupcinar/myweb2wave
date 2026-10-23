@@ -37,3 +37,25 @@ desenleri gözlem için kullanılacak (CLAUDE.md §2.12).
 2. Sonra HeyForm ve Formbricks'te soru oluşturma, adım düzenleme, mobil önizleme ve tema akışını karşılaştır.
 3. SurveyJS Library ile Xiaoju'da ziyaretçi anketinin soru, seçenek ve geçiş sunumunu incele.
 4. İnceleme sonucunda yalnız bizim ürünün ihtiyacına uyan davranışları Puck paneli ve dinamik anket ekranı için planla. Repo kodunu kopyalama veya lisans varsayımı yapma.
+
+## İlk arayüz uyarlaması — 2026-10-23
+
+Safari'de mevcut Puck üst çubuğu incelendi: huni adı başlıkta, Kaydet / Önizle /
+Yayınla / Sürümler aynı eylem alanında. Durum metni eylemlerin arasında düz
+metin olarak kalıyor; taslağın kaydedilmemiş mi, yayına hazır mı, yayındakiyle
+aynı mı olduğu renk veya ekran okuyucu duyurusu ile ayrışmıyor. OpenFunnels'ın
+yayımlama akışı ile HeyForm'un form oluşturma-yayımlama döngüsünden alınan
+davranış fikri bu mevcut adımı netleştirmek oldu.
+
+Uyarlama: üst çubukta durum artık ayrı, renk kodlu bir etiket; kaydedilmemiş
+değişiklik sarı, yayına hazır taslak mavi, yayındakiyle aynı yeşil, durum
+alınamıyor/işlem sürüyor nötr. Metin `role=status` ve `aria-live=polite` ile
+duyurulur. Mevcut eylemlerin açılma kuralları değişmedi. Repo kodu veya
+stil dosyası alınmadı.
+
+Doğrulama: `docker compose run --rm -T editor npm test` → 24/24 geçti;
+`docker compose run --rm -T editor npm run build` → başarılı. Safari'de
+yenileme sonrası yerel panel oturumu `/panel/giris` sayfasına yöneldiği için
+yeni etiketi yenilenmiş oturumda görsel olarak teyit edemedim. Ekran okuyucu
+metni ve durum sınıfları kod/test üzerinden doğrulandı; görsel teyit kullanıcı
+panelde yeniden oturum açınca yapılmalı.

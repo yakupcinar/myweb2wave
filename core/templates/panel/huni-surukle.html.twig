@@ -20,7 +20,12 @@
             .puck-ust-cubuk button, .puck-dugme { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid #8886; background: #fff; color: #111; cursor: pointer; text-decoration: none; }
             .puck-ust-cubuk .ana { background: #1a7f37; border-color: #1a7f37; color: #fff; }
             .puck-ust-cubuk :disabled, .puck-dugme[aria-disabled=true] { opacity: .45; cursor: not-allowed; pointer-events: none; }
-            .puck-not { color: #666; }
+            .puck-not { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 999px; background: #f6f8fa; color: #57606a; font-size: 13px; font-weight: 600; }
+            .puck-not::before { content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: currentColor; }
+            .puck-not-kaydedilmemis { background: #fff8c5; color: #7d4e00; }
+            .puck-not-taslak { background: #ddf4ff; color: #0969a3; }
+            .puck-not-yayinlandi { background: #dafbe1; color: #1a7f37; }
+            .puck-not-bilinmiyor, .puck-not-mesgul { background: #f6f8fa; color: #57606a; }
             .puck-surumler { position: relative; }
             .puck-surumler summary { cursor: pointer; padding: 6px 4px; }
             .puck-surumler ul { position: absolute; right: 0; z-index: 1000; min-width: 380px; margin: 4px 0 0; padding: 8px; list-style: none; background: #fff; color: #111; border-radius: 8px; box-shadow: 0 4px 20px #0003; }
