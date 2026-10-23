@@ -84,16 +84,19 @@ final readonly class Ziyaretler
     }
 
     /** Ziyaret bu uygulamanınsa oturumu ona bağlar; değilse hiçbir şey yazmaz. */
-    public function oturumBagla(string $ziyaret, string $app, string $oturum): bool
+    public function oturumBagla(string $ziyaret, string $app, string $oturum, ?string $ip, ?string $userAgent): bool
     {
         if (1 !== preg_match(self::UUID, $ziyaret)) {
             return false;
         }
 
         return 1 === $this->db->executeStatement(
-            'INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id)
-             SELECT :oturum, id FROM huni_ziyaretleri WHERE id = :ziyaret AND app = :app',
-            ['oturum' => $oturum, 'ziyaret' => $ziyaret, 'app' => $app],
+            'INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, ip_adresi, user_agent)
+             SELECT :oturum, id,
+                    CASE WHEN izin_at IS NOT NULL THEN CAST(:ip AS inet) END,
+                    CASE WHEN izin_at IS NOT NULL THEN :ua END
+             FROM huni_ziyaretleri WHERE id = :ziyaret AND app = :app',
+            ['oturum' => $oturum, 'ziyaret' => $ziyaret, 'app' => $app, 'ip' => $ip, 'ua' => null === $userAgent ? null : mb_substr($userAgent, 0, 1000)],
         );
     }
 

@@ -42,6 +42,20 @@ Doldur; rastgele değerler `openssl rand -hex 32`. Panel şifresinin
 `https://<API_ALANI>/panel`. `UYGULAMA_ANAHTARI_KEEPCHAT`
 KeepChat sunucusundakiyle **aynı**. Sırlar sohbete, depoya yazılmaz.
 
+H6b reklam dönüşümü isteğe bağlıdır. Meta için `META_PIXEL_ID`,
+`META_ACCESS_TOKEN`, `META_GRAPH_API_VERSION` (ör. `vXX.0`) ve test modu
+doğrulaması için `META_TEST_EVENT_CODE`; TikTok için `TIKTOK_PIXEL_ID`,
+`TIKTOK_ACCESS_TOKEN` ve isteğe bağlı `TIKTOK_TEST_EVENT_CODE` girilir. Boş
+değer ilgili ağı kapalı tutar. Gerçek trafik öncesinde sağlayıcı panellerinde
+test olayını doğrula. İzin metni ve geri alma yolu Ç56 kapanmadan ücretli
+reklam açılmamalıdır.
+
+Mevcut sunucuya H6b dağıtılırken reklam dönüşüm yeniden-deneme cron'u da
+kurulmalıdır. `sunucu-hazirla.sh` bu kaydı tekrar çalıştırıldığında güvenle
+yeniler; depoyu güncelledikten sonra root ile sunucuda
+`bash /opt/myweb2wave/deploy/sunucu-hazirla.sh` çalıştır. Yeni kurulumlarda
+bu cron ilk hazırlıkta zaten eklenir.
+
 ## 4 · Her dağıtım
 
 ```

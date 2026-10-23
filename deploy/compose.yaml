@@ -42,6 +42,14 @@ services:
       PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
       # A9: boş bırakılabilir (aktarım kapalı); ':-' — zorunlu değil.
       REVENUECAT_STRIPE_KEEPCHAT: ${REVENUECAT_STRIPE_KEEPCHAT:-}
+      # H6b: boş değer ilgili ağ aktarımını devre dışı bırakır.
+      META_PIXEL_ID: ${META_PIXEL_ID:-}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-}
+      META_TEST_EVENT_CODE: ${META_TEST_EVENT_CODE:-}
+      TIKTOK_PIXEL_ID: ${TIKTOK_PIXEL_ID:-}
+      TIKTOK_ACCESS_TOKEN: ${TIKTOK_ACCESS_TOKEN:-}
+      TIKTOK_TEST_EVENT_CODE: ${TIKTOK_TEST_EVENT_CODE:-}
     volumes:
       # E2.3: yüklenen görseller. Birim ilk açılışta imajdaki dizinin
       # sahipliğini (cekirdek) alır.

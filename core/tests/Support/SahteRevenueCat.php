@@ -60,6 +60,6 @@ final class SahteRevenueCat
 
         return null !== self::$agHatasi
             ? new MockResponse('', ['error' => self::$agHatasi])
-            : new MockResponse('{}', ['http_code' => self::$durum]);
+            : new MockResponse('{"code":0}', ['http_code' => self::$durum]);
     }
 }

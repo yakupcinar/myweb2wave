@@ -76,14 +76,14 @@
   - [x] **H4** — 2026-10-21, `docs/decisions/huni-gecisler-h4.md`: yalnız CSS (`@keyframes`, 220 ms), ilk adımda yok (`data-gecis`), `prefers-reduced-motion`'a uyar; JS +23 B; kırma 5/5. Kalanlar Ç54
   - [x] **H5** — 2026-10-21, `docs/decisions/huni-dallanma-h5.md` (A11): seçenek ve tanıtım düğmesi → hedef adım, yalnız ileri; skor yok; sözleşme + çekirdek + oynatıcı + Puck açılır listesi; kırma 9/9. XState/Zustand GEREKMEDİ (iki `useState` yetti). Kalanlar Ç55
   - [x] **H6a · onay şeridi** (A12) — 2026-10-21, `docs/decisions/huni-izin-h6a.md`: herkese Kabul/Reddet; tıklama kimlikleri yalnız izinle (çekirdek izinsizini atar); yeni uç `…/izin`; tarayıcıda iki kusur bulundu (göçsüz geliştirme DB'si, CORS §36). Kalanlar Ç56
-  - [ ] **H6b · sunucu dönüşümü** — Stripe webhook'unda Meta Conversions API + TikTok Events API, yalnız izinli ziyaretin ödemesi; `event_id` = ödeme oturumundan türetilir (H6c ile aynı); IP/UA ödeme oturumu açılırken saklanır; gerçek ölçüm için kullanıcıdan Meta Pixel ID + erişim anahtarı + test olay kodu, TikTok pixel kodu + anahtar
+  - [x] **H6b · sunucu dönüşümü** — 2026-10-23, `docs/decisions/huni-donusum-h6b.md`: Stripe webhook'unda yalnız izinli ve ödenmiş ziyaret için Meta CAPI + TikTok Events API; kuyruk/yeniden deneme; IP/UA geçici tutulur ve kuyruk yükü en geç 7 günde silinir. Gerçek reklam hesabı doğrulaması için Meta Pixel ID + erişim anahtarı + test olay kodu ve TikTok Pixel ID + erişim anahtarı gerekir; henüz yapılmadı.
   - [ ] **H6c · tarayıcı pikselleri** — izinden sonra Meta Pixel + TikTok Pixel; Purchase başarı sayfasında aynı `event_id`; piksel yüklenmeden önce adresten `session_id` silinir (A10)
   - [ ] **H6 · Olay/piksel noktası** (H6a–c'ye bölündü; aşağıdaki eski metin) — tek `olayBildir` (bugünkü `ilerlemeBildir`'in yerine): çekirdek ölçümü + Meta Pixel / TikTok Pixel / GA4. Ön koşul: çerez onayı (Ç12, Ç34) ve sunucu bildirimiyle tekilleştirme (Ç28) — aşağıdaki "Reklam ağına dönüşüm" maddesiyle aynı blok. Başarı sayfasında piksel `session_id`'yi görmemeli (A10, Ç46)
 - [x] **E2.4b ilk yeni soru türü: çoklu seçim** — 2026-10-22, `docs/decisions/huni-coklu-secim.md`
 - [x] **E2.4b müşteri yorumu/sosyal kanıt adımı** — 2026-10-22, `docs/decisions/huni-yorum.md`
 - [x] **E2.4c soru açıklaması** — 2026-10-22, `docs/decisions/huni-soru-aciklamasi.md`
 - [x] **E2.4b serbest metin soru türü** — 2026-10-23, `docs/decisions/huni-serbest-metin.md`
-- [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
+- [ ] Reklam ölçümünün canlıya hazır olması — H6b sunucu aktarımı tamam; H6c tarayıcı pikselleri + Ç56 hukuk/izin açıkları tamamlanmadan ücretli trafikten önce kapanmaz.
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10

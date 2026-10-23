@@ -46,9 +46,10 @@ oturumlarını yönetir. Huni ile çekirdek arasındaki OpenAPI sözleşmesi
 
 H6a itibarıyla onay şeridi Meta ve TikTok ölçüm izni ister. Tıklama
 kimlikleri yalnız izin verildiyse saklanır; çekirdek izinsiz gelen kimlikleri
-atar. Bu aşama tarayıcı pikseli veya sunucu dönüşüm bildiriminin
-tamamlandığı anlamına gelmez. H6b ve H6c plan işidir. Ayrıntı ve tarayıcı
-ölçümü `docs/decisions/huni-izin-h6a.md` içindedir.
+atar. H6b, yalnız izinli ve ödenmiş Stripe oturumunu sunucudan iki reklam
+ağına aktarır. H6c tarayıcı pikselidir ve henüz tamamlanmadı. H6a'nın hukuki
+metin ve izin geri alma açıkları da kapanmış değildir. Ayrıntı:
+`docs/decisions/huni-izin-h6a.md` ve `docs/decisions/huni-donusum-h6b.md`.
 
 Ödeme oturumu çekirdek üzerinden açılır; Stripe webhook'u ödeme sonucunu
 çekirdeğe iletir. Huni sayfasının kendisi ödeme doğrulamaz. Ödeme akışının
