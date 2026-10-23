@@ -151,7 +151,8 @@ yalnız abonelik olayı** (2026-10-21, kullanıcı; B4/H6, A6'nın uygulanışı
 Hunide herkese Kabul/Reddet şeridi; tıklama kimlikleri yalnız izinle
 saklanır. Abonelik başlayınca çekirdek Meta Conversions API + TikTok Events
 API'ye bildirir (yalnız izinli ziyaret); tarayıcıda Meta Pixel + TikTok Pixel
-yalnız izinden sonra, Purchase olayı sunucuyla aynı `event_id` (tekilleştirme).
+yalnız izinden sonra, platformların standart satın alma olaylarıyla
+(`Purchase` / `CompletePayment`) sunucuyla aynı `event_id` (tekilleştirme).
 **Reddedilen:** yalnız Meta (önerilen; kullanıcı ikisini seçti) · GA4 (analiz
 bizde, A6) · yalnız sunucu (önerilen; kullanıcı eşleşme kalitesi için piksel
 de istedi — hunide üçüncü taraf betik, onaydan sonra) · konuma göre onay

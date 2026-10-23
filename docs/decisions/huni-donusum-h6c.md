@@ -22,6 +22,8 @@ yüklemez.
 - İki tarafta da Stripe `session_id` değerini olay kimliği olarak kullan.
   Reklam sağlayıcısına erişim anahtarları yalnız sunucuda kalır; tarayıcıya
   yalnız herkese açık piksel kimlikleri derlenir.
+- GA4 eklenmedi: kullanıcı kararı A12'de reddedildi (analiz zaten A6 ile
+  çekirdekte yapılıyor); bu blok yalnız Meta + TikTok kapsamını kapatır.
 
 ## Ölçüm ve doğrulama
 

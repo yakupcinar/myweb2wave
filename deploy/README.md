@@ -42,12 +42,17 @@ Doldur; rastgele değerler `openssl rand -hex 32`. Panel şifresinin
 `https://<API_ALANI>/panel`. `UYGULAMA_ANAHTARI_KEEPCHAT`
 KeepChat sunucusundakiyle **aynı**. Sırlar sohbete, depoya yazılmaz.
 
-H6b reklam dönüşümü isteğe bağlıdır. Meta için `META_PIXEL_ID`,
+H6 reklam ölçümü isteğe bağlıdır. `META_PIXEL_ID` ve `TIKTOK_PIXEL_ID`, hem
+sunucu olayları hem tarayıcı pikseli için aynı herkese açık kimliklerdir;
+web imajı bu değerlerle derlenir. Kimlikler değişince `deploy/dagit.sh`
+`web` imajını yeniden kurar. Erişim anahtarları yalnız çekirdek sunucuda
+kullanılır; tarayıcıya aktarılmaz. Meta için `META_PIXEL_ID`,
 `META_ACCESS_TOKEN`, `META_GRAPH_API_VERSION` (ör. `vXX.0`) ve test modu
 doğrulaması için `META_TEST_EVENT_CODE`; TikTok için `TIKTOK_PIXEL_ID`,
 `TIKTOK_ACCESS_TOKEN` ve isteğe bağlı `TIKTOK_TEST_EVENT_CODE` girilir. Boş
 değer ilgili ağı kapalı tutar. Gerçek trafik öncesinde sağlayıcı panellerinde
-test olayını doğrula. İzin metni ve geri alma yolu Ç56 kapanmadan ücretli
+test olayını doğrula. Test olay kodları yalnız sunucu olaylarına eklenir.
+İzin metni, gizlilik bağlantısı ve geri alma akışı Ç56 kapanmadan ücretli
 reklam açılmamalıdır.
 
 Mevcut sunucuya H6b dağıtılırken reklam dönüşüm yeniden-deneme cron'u da

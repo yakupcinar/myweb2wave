@@ -56,8 +56,8 @@ durdurmaz; kuyruk cron'u başarısız gönderimleri tekrar dener.
 
 - H6a hukuk metni, gizlilik politikası bağlantısı ve izin geri alma yolu hâlâ
   açık (Ç56); H6b tamamlanması canlı reklam için hukuki onay değildir.
-- H6c tarayıcı pikselleri henüz eklenmedi. Aynı event ID ile tarayıcı ve sunucu
-  tekilleştirmesi gerçek hesapta doğrulanmalı.
+- H6c tarayıcı pikselleri eklendi (`huni-donusum-h6c.md`). Aynı event ID ile
+  tarayıcı ve sunucu tekilleştirmesi gerçek hesapta doğrulanmalı.
 - Başarılı test modu alımı ve Meta/TikTok panelindeki olay kalitesi anahtarlar
   girildikten sonra doğrulanmalı.
 
