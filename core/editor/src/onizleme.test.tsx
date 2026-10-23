@@ -49,10 +49,20 @@ const tanim: Tanim = {
             id: "kiminle",
             tur: "soru",
             soru: "Kiminle?",
+            aciklama: "Birden fazla seçenek seçebilirsin.",
             secenekler: [
                 { id: "aile", metin: "Ailemle", gorsel: G2 },
                 { id: "is", metin: "İş" },
             ],
+        },
+        {
+            id: "yorum",
+            tur: "yorum",
+            baslik: "Deneyim",
+            metin: "Çok faydalı",
+            yazar: "Ayşe",
+            unvan: "Kullanıcı",
+            dugme: "Devam",
         },
         {
             id: "paywall",

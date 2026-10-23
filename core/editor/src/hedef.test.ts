@@ -51,6 +51,6 @@ it("hedef listesi: sıradaki + yalnız sonraki adımlar", () => {
         "paywall",
     ]);
     expect(hedefSecenekleri(durum, bilesen(3))).toEqual([
-        { label: "— sıradaki adım —", value: "" },
+        { label: "Sıradaki adım", value: "" },
     ]);
 });

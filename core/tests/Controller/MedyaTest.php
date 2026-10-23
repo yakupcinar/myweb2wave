@@ -25,7 +25,7 @@ final class MedyaTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE medya, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $this->db->executeStatement('TRUNCATE medya, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari');
         // .env.test: MEDYA_DIZINI=%kernel.project_dir%/var/test-medya (resolve: ile çözülmeli).
         $this->dizin = \dirname(__DIR__, 2).'/var/test-medya';
         foreach (glob($this->dizin.'/*') ?: [] as $f) {

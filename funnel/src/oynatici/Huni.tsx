@@ -8,9 +8,17 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Adim } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
-import { ilerlemeBildir, ziyaretBaslat, type Govde } from "../lib/ziyaret";
+import { izinOku, izinYaz, type Izin } from "../lib/izin";
+import {
+  ilerlemeBildir,
+  izinBildir,
+  izinGeriAl,
+  ziyaretBaslat,
+  type Govde,
+} from "../lib/ziyaret";
 import type { components } from "../sozlesme/api";
 import { tanimIstegi } from "./erken-istek";
+import IzinSeridi from "./IzinSeridi";
 
 type Yayin = components["schemas"]["HuniYayini"];
 type App = Govde<"/huni/ziyaretler">["app"];
@@ -62,13 +70,28 @@ function Oynatici({
   onizleme: boolean;
 }): ReactNode {
   const { tanim } = yayin;
+  // H6a: reklam ölçümü izni — daha önce seçildiyse bu tarayıcıda hatırlanır.
+  const [izin, setIzin] = useState<Izin | null>(izinOku);
+  const [geriAlGerekir, setGeriAlGerekir] = useState(false);
+  const [izinKaydediliyor, setIzinKaydediliyor] = useState(false);
+  const [izinHatasi, setIzinHatasi] = useState("");
   // Ziyaret bir kez açılır; önizlemede hiç açılmaz, adım/cevap da gitmez.
+  // Tıklama kimlikleri yalnız önceden verilmiş izinle (yoksa Kabul'de ayrıca).
   const [ziyaretSozu] = useState(() =>
     onizleme
       ? Promise.resolve(undefined)
-      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined),
+      : ziyaretBaslat(
+          app,
+          yayin.huni,
+          yayin.surum ?? undefined,
+          izinOku() === "evet",
+        ),
   );
   const [mevcut, setMevcut] = useState(0);
+  const [secimler, setSecimler] = useState<Record<string, string[]>>({});
+  const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
+    {},
+  );
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
   // (opaklık 0'dan başlasa ilk anlamlı boyama gecikirdi). Adımla aynı
   // çizimde açılır; effect'te açılsa yeni adım bir kare görünüp titrerdi.
@@ -148,49 +171,138 @@ function Oynatici({
     setOdeme({ suruyor: false, hata });
   }
 
+  async function izinSec(secim: Izin): Promise<void> {
+    if (secim === "hayir" && geriAlGerekir) {
+      setIzinKaydediliyor(true);
+      const geriAlindi = await izinGeriAl(ziyaretSozu);
+      setIzinKaydediliyor(false);
+      if (!geriAlindi) {
+        setIzinHatasi(
+          "İzin tercihiniz sunucuya iletilemedi. Lütfen tekrar deneyin.",
+        );
+        return;
+      }
+    }
+    izinYaz(secim);
+    setIzin(secim);
+    setGeriAlGerekir(false);
+    setIzinHatasi("");
+    if (secim === "evet") izinBildir(ziyaretSozu);
+  }
+
   return (
     <>
+      {!onizleme && izin === null ? (
+        <IzinSeridi
+          onSec={izinSec}
+          bekliyor={izinKaydediliyor}
+          hata={izinHatasi}
+        />
+      ) : null}
       {onizleme ? (
         <p className="onizleme">
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
         </p>
       ) : null}
-      <progress max={tanim.adimlar.length} value={mevcut + 1} />
+      {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+        <progress max={tanim.adimlar.length} value={mevcut + 1} />
+      ) : null}
       <div ref={kutu} data-gecis={gecti ? "" : undefined}>
-        {tanim.adimlar.map((adim, i) => (
-          <div
-            key={`${i}-${adim.id}`}
-            data-adim={adim.id}
-            data-sira={i}
-            hidden={i !== mevcut}
-          >
-            <Adim
-              adim={adim}
-              medyaKoku={KOK}
-              onIleri={() =>
-                ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
-              }
-              onSecim={(s) => {
-                if (adim.tur !== "soru") return;
-                ilerlemeBildir(
-                  ziyaretSozu,
-                  mevcut,
-                  adim.id,
-                  adim.secenekler[s]?.id,
-                );
-                ileri(adim.secenekler[s]?.hedef);
-              }}
-              odeme={{
-                kapali: onizleme || odeme.suruyor,
-                hata: odeme.hata,
-                onDugme: () => {
-                  if (adim.tur === "paywall") void aboneOl(adim.plan);
-                },
-              }}
-            />
-          </div>
-        ))}
+        {tanim.adimlar.map((adim, i) => {
+          const soru = adim.tur === "soru" ? adim : null;
+          const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
+          const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
+          const secili = soru
+            ? (soru.secenekler ?? []).flatMap((s, j) =>
+                cevaplar.includes(s.id) ? [j] : [],
+              )
+            : [];
+          return (
+            <div
+              key={`${i}-${adim.id}`}
+              data-adim={adim.id}
+              data-sira={i}
+              hidden={i !== mevcut}
+            >
+              <Adim
+                adim={adim}
+                medyaKoku={KOK}
+                onIleri={() =>
+                  ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
+                }
+                onSecim={(s) => {
+                  if (adim.tur !== "soru") return;
+                  ilerlemeBildir(
+                    ziyaretSozu,
+                    mevcut,
+                    adim.id,
+                    adim.secenekler?.[s]?.id,
+                  );
+                  ileri(adim.secenekler?.[s]?.hedef);
+                }}
+                secili={secili}
+                cevapMetni={cevapMetni}
+                onMetinDegistir={(metin) => {
+                  if (adim.tur !== "soru" || adim.secimTuru !== "metin") return;
+                  setSerbestYanilar((once) => ({ ...once, [adim.id]: metin }));
+                }}
+                onSecenekDegistir={(s) => {
+                  if (adim.tur !== "soru") return;
+                  const id = adim.secenekler?.[s]?.id;
+                  if (!id) return;
+                  setSecimler((once) => {
+                    const seciliCevaplar = once[adim.id] ?? [];
+                    return {
+                      ...once,
+                      [adim.id]: seciliCevaplar.includes(id)
+                        ? seciliCevaplar.filter((cevap) => cevap !== id)
+                        : [...seciliCevaplar, id],
+                    };
+                  });
+                }}
+                onCokluDevam={() => {
+                  if (adim.tur !== "soru") return;
+                  if (adim.secimTuru === "metin") {
+                    if (adim.yanitZorunlu && !cevapMetni.trim()) return;
+                    ilerlemeBildir(
+                      ziyaretSozu,
+                      mevcut,
+                      adim.id,
+                      undefined,
+                      cevapMetni,
+                    );
+                    ileri();
+                    return;
+                  }
+                  if (!cevaplar.length) return;
+                  ilerlemeBildir(ziyaretSozu, mevcut, adim.id, cevaplar);
+                  ileri();
+                }}
+                odeme={{
+                  kapali: onizleme || odeme.suruyor,
+                  hata: odeme.hata,
+                  onDugme: () => {
+                    if (adim.tur === "paywall") void aboneOl(adim.plan);
+                  },
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
+      {!onizleme && izin !== null ? (
+        <button
+          className="izin-ayarlari"
+          type="button"
+          onClick={() => {
+            setGeriAlGerekir(izin === "evet");
+            setIzinHatasi("");
+            setIzin(null);
+          }}
+        >
+          Gizlilik ayarları
+        </button>
+      ) : null}
     </>
   );
 }

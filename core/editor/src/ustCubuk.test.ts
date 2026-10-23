@@ -16,6 +16,7 @@ describe("üst çubuk", () => {
             yayinla: true,
             geriYukle: true,
             not: "Kaydedildi, yayında değil",
+            durum: "taslak",
         });
     });
     it("kaydedilmemiş değişiklik: yalnız Kaydet (önizleme/yayın kaydedileni gösterir)", () => {
@@ -25,6 +26,7 @@ describe("üst çubuk", () => {
             yayinla: false,
             geriYukle: false,
             not: "Kaydedilmemiş değişiklik — önce kaydet",
+            durum: "kaydedilmemis",
         });
     });
     it("yayındakiyle aynı: Yayınla kapalı, önizleme açık", () => {
@@ -32,6 +34,7 @@ describe("üst çubuk", () => {
             onizle: true,
             yayinla: false,
             not: "Yayındakiyle aynı",
+            durum: "yayinlandi",
         });
     });
     it("istek sürerken ya da durum alınamadıysa yayın düğmeleri kapalı", () => {
@@ -46,5 +49,7 @@ describe("üst çubuk", () => {
             ]);
         }
         expect(dugmeler(yayin(true), false, true).kaydet).toBe(false);
+        expect(dugmeler(yayin(true), false, true).durum).toBe("mesgul");
+        expect(dugmeler(null, false, false).durum).toBe("bilinmiyor");
     });
 });

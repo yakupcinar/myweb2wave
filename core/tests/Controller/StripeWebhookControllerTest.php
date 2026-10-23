@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Tests\Support\SahteRevenueCat;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -21,7 +22,8 @@ final class StripeWebhookControllerTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, subscriptions, processed_webhook_events, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler');
+        SahteRevenueCat::sifirla();
+        $this->db->executeStatement('TRUNCATE reklam_donusumleri, revenuecat_gidenler, subscriptions, processed_webhook_events, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler');
     }
 
     public function testGecersizImza400VeHicbirSeyYazilmaz(): void
@@ -88,6 +90,7 @@ final class StripeWebhookControllerTest extends WebTestCase
             'id' => 'cs_1', 'object' => 'checkout.session', 'mode' => 'subscription',
             'subscription' => 'sub_1', 'customer' => 'cus_1',
             'customer_details' => ['email' => 'ayse@example.com'],
+            'payment_status' => 'paid',
             'metadata' => ['app' => 'keepchat'],
         ]));
 
@@ -97,6 +100,126 @@ final class StripeWebhookControllerTest extends WebTestCase
                 ['stripe_checkout_session_id' => 'cs_2', 'stripe_subscription_id' => null, 'odendi' => false]],
             $this->db->fetchAllAssociative('SELECT stripe_checkout_session_id, stripe_subscription_id, tamamlandi_at IS NOT NULL AS odendi FROM odeme_oturumlari ORDER BY 1'),
         );
+    }
+
+    public function testYalnizIzinliOdenmisZiyaretIcinIkiAgaAyniOlayKimligiGider(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, fbclid, ttclid, izin_at) VALUES ('keepchat', 'tiklama-fb', 'tiklama-tt', now()) RETURNING id");
+        $this->db->insert('odeme_oturumlari', [
+            'stripe_checkout_session_id' => 'cs_h6b',
+            'ziyaret_id' => $ziyaret,
+            'ip_adresi' => '192.0.2.21',
+            'user_agent' => 'Test tarayıcı',
+        ]);
+
+        $this->gonder($this->olay('evt_h6b', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_h6b', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_h6b', 'customer' => 'cus_h6b', 'payment_status' => 'paid',
+            'amount_total' => 1299, 'currency' => 'usd', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(2, SahteRevenueCat::sayi());
+        self::assertStringStartsWith('https://graph.facebook.com/v99.0/123456789/events', SahteRevenueCat::istek(0)['url']);
+        self::assertSame('https://business-api.tiktok.com/open_api/v1.3/event/track/', SahteRevenueCat::istek(1)['url']);
+        $meta = SahteRevenueCat::govde(0);
+        $tiktok = SahteRevenueCat::govde(1);
+        self::assertIsArray($meta['data'] ?? null);
+        self::assertIsArray($tiktok['data'] ?? null);
+        $metaData = $meta['data'][0] ?? null;
+        $tiktokData = $tiktok['data'][0] ?? null;
+        self::assertIsArray($metaData);
+        self::assertIsArray($tiktokData);
+        self::assertIsArray($metaData['user_data'] ?? null);
+        self::assertIsArray($tiktokData['user'] ?? null);
+        self::assertIsArray($metaData['custom_data'] ?? null);
+        self::assertIsArray($tiktokData['properties'] ?? null);
+        self::assertSame('cs_h6b', $metaData['event_id'] ?? null);
+        self::assertSame('cs_h6b', $tiktokData['event_id'] ?? null);
+        self::assertSame('Purchase', $metaData['event_name'] ?? null);
+        self::assertSame('CompletePayment', $tiktokData['event'] ?? null);
+        self::assertSame('tiklama-tt', $tiktokData['user']['ttclid'] ?? null);
+        self::assertSame('192.0.2.21', $metaData['user_data']['client_ip_address'] ?? null);
+        self::assertSame(12.99, $metaData['custom_data']['value'] ?? null);
+        self::assertSame(12.99, $tiktokData['properties']['value'] ?? null);
+        self::assertCount(2, $this->db->fetchFirstColumn('SELECT id FROM reklam_donusumleri WHERE gonderildi_at IS NOT NULL AND payload IS NULL'));
+    }
+
+    public function testIzinsizZiyaretReklamAglarinaGonderilmez(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app) VALUES ('keepchat') RETURNING id");
+        $this->db->insert('odeme_oturumlari', [
+            'stripe_checkout_session_id' => 'cs_red',
+            'ziyaret_id' => $ziyaret,
+            'ip_adresi' => '192.0.2.22',
+            'user_agent' => 'Test tarayıcı',
+        ]);
+
+        $this->gonder($this->olay('evt_red', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_red', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_red', 'customer' => 'cus_red', 'payment_status' => 'paid',
+            'amount_total' => 1299, 'currency' => 'usd', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertCount(0, $this->db->fetchFirstColumn('SELECT id FROM reklam_donusumleri'));
+        self::assertSame(0, SahteRevenueCat::sayi());
+    }
+
+    public function testOdenmemisOturumReklamAglarinaGitmezVeEslemeBilgisiSilinir(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, izin_at) VALUES ('keepchat', now()) RETURNING id");
+        $this->db->insert('odeme_oturumlari', [
+            'stripe_checkout_session_id' => 'cs_unpaid',
+            'ziyaret_id' => $ziyaret,
+            'ip_adresi' => '192.0.2.23',
+            'user_agent' => 'Test tarayıcı',
+        ]);
+
+        $this->gonder($this->olay('evt_unpaid', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_unpaid', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_unpaid', 'customer' => 'cus_unpaid', 'payment_status' => 'unpaid',
+            'amount_total' => 1299, 'currency' => 'usd', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertCount(0, $this->db->fetchFirstColumn('SELECT id FROM reklam_donusumleri'));
+        self::assertCount(0, SahteRevenueCat::$istekler);
+        self::assertSame(
+            ['ip_adresi' => null, 'user_agent' => null, 'tamamlandi' => false],
+            $this->db->fetchAssociative("SELECT ip_adresi::text AS ip_adresi, user_agent, tamamlandi_at IS NOT NULL AS tamamlandi FROM odeme_oturumlari WHERE stripe_checkout_session_id = 'cs_unpaid'"),
+        );
+    }
+
+    public function testSifirOndalikliParaBirimiYuzdeYuzeBolunmez(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, izin_at) VALUES ('keepchat', now()) RETURNING id");
+        $this->db->insert('odeme_oturumlari', [
+            'stripe_checkout_session_id' => 'cs_jpy',
+            'ziyaret_id' => $ziyaret,
+            'ip_adresi' => '192.0.2.24',
+            'user_agent' => 'Test tarayıcı',
+        ]);
+
+        $this->gonder($this->olay('evt_jpy', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_jpy', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_jpy', 'customer' => 'cus_jpy', 'payment_status' => 'paid',
+            'amount_total' => 1299, 'currency' => 'jpy', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        $meta = SahteRevenueCat::govde(0);
+        $tiktok = SahteRevenueCat::govde(1);
+        self::assertIsArray($meta['data'] ?? null);
+        self::assertIsArray($tiktok['data'] ?? null);
+        $metaData = $meta['data'][0] ?? null;
+        $tiktokData = $tiktok['data'][0] ?? null;
+        self::assertIsArray($metaData);
+        self::assertIsArray($tiktokData);
+        self::assertIsArray($metaData['custom_data'] ?? null);
+        self::assertIsArray($tiktokData['properties'] ?? null);
+        self::assertSame(1299, $metaData['custom_data']['value'] ?? null);
+        self::assertSame(1299, $tiktokData['properties']['value'] ?? null);
     }
 
     public function testOdemeOlayiDurumYazmaz(): void

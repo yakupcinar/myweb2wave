@@ -18,12 +18,14 @@ final class Tanim
     private const UZUNLUK = [
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
+        'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
     ];
 
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
     private const TURLER = [
         'tanitim' => ['baslik', 'metin', 'dugme'],
         'soru' => ['soru'],
+        'yorum' => ['baslik', 'metin', 'yazar', 'unvan', 'dugme'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
@@ -57,7 +59,7 @@ final class Tanim
             $yer = 'adım '.($i + 1);
             $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
             if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
-                $h[] = "{$yer}: tür tanitim, soru ya da paywall olmalı";
+                $h[] = "{$yer}: tür tanitim, soru, yorum ya da paywall olmalı";
                 continue;
             }
             $id = $adim['id'] ?? null;
@@ -69,8 +71,38 @@ final class Tanim
                 $gorulen[$id] = true;
             }
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
-                'soru' => ['secenekler'], 'paywall' => ['plan'], default => [],
+                'soru' => ('metin' === ($adim['secimTuru'] ?? 'tekli')) ? [] : ['secenekler'], 'paywall' => ['plan'], default => [],
             }];
+            if (\array_key_exists('ilerlemeGoster', $adim)) {
+                $beklenen[] = 'ilerlemeGoster';
+                if (!\is_bool($adim['ilerlemeGoster'])) {
+                    $h[] = "{$yer}: ilerlemeGoster true ya da false olmalı";
+                }
+            }
+            if ('soru' === $tur && \array_key_exists('secimTuru', $adim)) {
+                $beklenen[] = 'secimTuru';
+                if (!\in_array($adim['secimTuru'], ['tekli', 'coklu', 'metin'], true)) {
+                    $h[] = "{$yer}: secimTuru tekli, coklu ya da metin olmalı";
+                }
+            }
+            $metinYaniti = 'metin' === ($adim['secimTuru'] ?? 'tekli');
+            if ($metinYaniti && \array_key_exists('yanitZorunlu', $adim)) {
+                $beklenen[] = 'yanitZorunlu';
+                if (!\is_bool($adim['yanitZorunlu'])) {
+                    $h[] = "{$yer}: yanitZorunlu true ya da false olmalı";
+                }
+            }
+            if (!$metinYaniti && \array_key_exists('yanitZorunlu', $adim)) {
+                $h[] = "{$yer}: yanitZorunlu yalnız serbest yanıt türünde kullanılabilir";
+            }
+            if ('soru' === $tur && \array_key_exists('aciklama', $adim)) {
+                $beklenen[] = 'aciklama';
+                self::metin($adim['aciklama'], 'aciklama', "{$yer} aciklama", $h);
+            }
+            if ('soru' === $tur && \array_key_exists('devamDugmesi', $adim)) {
+                $beklenen[] = 'devamDugmesi';
+                self::metin($adim['devamDugmesi'], 'dugme', "{$yer} devamDugmesi", $h);
+            }
             // E2.3: tanıtım adımında isteğe bağlı görsel.
             if ('tanitim' === $tur && \array_key_exists('gorsel', $adim)) {
                 $beklenen[] = 'gorsel';
@@ -88,8 +120,8 @@ final class Tanim
             foreach (self::TURLER[$tur] as $alan) {
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
-            if ('soru' === $tur) {
-                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h);
+            if ('soru' === $tur && \array_key_exists('secenekler', $adim)) {
+                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
             }
             if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
                 $h[] = "{$yer}: plan bu uygulamada yok";
@@ -163,7 +195,7 @@ final class Tanim
      * @param array<string, int> $sira
      * @param list<string>       $h
      */
-    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h): void
+    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h, bool $coklu): void
     {
         if (!\is_array($secenekler) || !array_is_list($secenekler) || \count($secenekler) < 2 || \count($secenekler) > 8) {
             $h[] = "{$yer}: 2–8 seçenek olmalı";
@@ -179,6 +211,9 @@ final class Tanim
                 continue;
             }
             if (\array_key_exists('hedef', $s)) {
+                if ($coklu) {
+                    $h[] = "{$sy}: çoklu seçimde seçenek hedefi kullanılamaz";
+                }
                 self::hedef($s['hedef'], $sira, $i, $sy, $h);
             }
             if (\array_key_exists('gorsel', $s)) {

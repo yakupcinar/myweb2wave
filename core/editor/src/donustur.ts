@@ -24,11 +24,17 @@ export type TanitimProps = {
     dugme: string;
     gorsel: string;
     hedef: string;
+    ilerlemeGoster: boolean;
 };
 export type SoruProps = {
     kimlik: string;
     soru: string;
+    aciklama: string;
     secenekler: SecenekProps[];
+    secimTuru: "tekli" | "coklu" | "metin";
+    yanitZorunlu: "istege_bagli" | "zorunlu";
+    devamDugmesi: string;
+    ilerlemeGoster: boolean;
 };
 export type PaywallProps = {
     kimlik: string;
@@ -36,6 +42,16 @@ export type PaywallProps = {
     metin: string;
     dugme: string;
     plan: Plan;
+    ilerlemeGoster: boolean;
+};
+export type YorumProps = {
+    kimlik: string;
+    baslik: string;
+    metin: string;
+    yazar: string;
+    unvan: string;
+    dugme: string;
+    ilerlemeGoster: boolean;
 };
 export type KokProps = {
     sayfaBasligi: string;
@@ -49,6 +65,10 @@ export type KokProps = {
 export type Bilesenler = {
     Tanitim: TanitimProps;
     Soru: SoruProps;
+    TekSecim: SoruProps;
+    CokluSecim: SoruProps;
+    SerbestYanit: SoruProps;
+    Yorum: YorumProps;
     Paywall: PaywallProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
@@ -92,6 +112,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             dugme: adim.dugme,
                             gorsel: adim.gorsel ?? "",
                             hedef: adim.hedef ?? "",
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
                 case "soru":
@@ -101,12 +122,33 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             id,
                             kimlik: adim.id,
                             soru: adim.soru,
-                            secenekler: adim.secenekler.map((s) => ({
+                            aciklama: adim.aciklama ?? "",
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                            secimTuru: adim.secimTuru ?? "tekli",
+                            yanitZorunlu: adim.yanitZorunlu
+                                ? "zorunlu"
+                                : "istege_bagli",
+                            devamDugmesi: adim.devamDugmesi ?? "Devam",
+                            secenekler: (adim.secenekler ?? []).map((s) => ({
                                 kimlik: s.id,
                                 metin: s.metin,
                                 gorsel: s.gorsel ?? "",
                                 hedef: s.hedef ?? "",
                             })),
+                        },
+                    };
+                case "yorum":
+                    return {
+                        type: "Yorum" as const,
+                        props: {
+                            id,
+                            kimlik: adim.id,
+                            baslik: adim.baslik,
+                            metin: adim.metin,
+                            yazar: adim.yazar,
+                            unvan: adim.unvan,
+                            dugme: adim.dugme,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
                 default:
@@ -119,6 +161,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             metin: adim.metin,
                             dugme: adim.dugme,
                             plan: adim.plan,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
             }
@@ -140,27 +183,70 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                             baslik: p.baslik,
                             metin: p.metin,
                             dugme: p.dugme,
+                            ...(p.ilerlemeGoster === false
+                                ? { ilerlemeGoster: false }
+                                : {}),
                         },
                         p.gorsel,
                     ),
                     p.hedef ?? "",
                 );
             }
-            case "Soru": {
+            case "Soru":
+            case "TekSecim":
+            case "CokluSecim":
+            case "SerbestYanit": {
                 const p = oge.props as SoruProps;
                 return {
                     id: p.kimlik,
                     tur: "soru",
                     soru: p.soru,
-                    secenekler: (p.secenekler ?? []).map((s) =>
-                        hedefli(
-                            gorselli(
-                                { id: s.kimlik, metin: s.metin },
-                                s.gorsel ?? "",
-                            ),
-                            s.hedef ?? "",
-                        ),
-                    ),
+                    ...(p.aciklama ? { aciklama: p.aciklama } : {}),
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
+                    ...(p.secimTuru === "coklu"
+                        ? { secimTuru: "coklu" as const }
+                        : {}),
+                    ...(p.secimTuru === "metin"
+                        ? {
+                              secimTuru: "metin" as const,
+                              ...(p.yanitZorunlu === "zorunlu"
+                                  ? { yanitZorunlu: true }
+                                  : {}),
+                          }
+                        : {}),
+                    ...(p.devamDugmesi !== "Devam"
+                        ? { devamDugmesi: p.devamDugmesi }
+                        : {}),
+                    ...(p.secimTuru === "metin"
+                        ? {}
+                        : {
+                              secenekler: (p.secenekler ?? []).map((s) => {
+                                  const secenek = gorselli(
+                                      { id: s.kimlik, metin: s.metin },
+                                      s.gorsel ?? "",
+                                  );
+                                  return p.secimTuru === "coklu"
+                                      ? secenek
+                                      : hedefli(secenek, s.hedef ?? "");
+                              }),
+                          }),
+                };
+            }
+            case "Yorum": {
+                const p = oge.props as YorumProps;
+                return {
+                    id: p.kimlik,
+                    tur: "yorum",
+                    baslik: p.baslik,
+                    metin: p.metin,
+                    yazar: p.yazar,
+                    unvan: p.unvan,
+                    dugme: p.dugme,
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
                 };
             }
             default: {
@@ -172,6 +258,9 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     metin: p.metin,
                     dugme: p.dugme,
                     plan: p.plan,
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
                 };
             }
         }

@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Paywall, Soru, Tanitim } from "./bilesenler";
+import { Paywall, Soru, Tanitim, Yorum } from "./bilesenler";
 import css from "./huni.css?raw";
 
 const G = "a".repeat(64);
@@ -16,10 +16,11 @@ const tanitim = (gorsel?: string): string =>
             medyaKoku={KOK}
         />,
     );
-const soru = (): string =>
+const soru = (aciklama = ""): string =>
     renderToStaticMarkup(
         <Soru
             soru="Kiminle?"
+            aciklama={aciklama}
             secenekler={[
                 { metin: "Ailemle", gorsel: G },
                 { metin: "İş", gorsel: "" },
@@ -30,6 +31,26 @@ const soru = (): string =>
 const paywall = (): string =>
     renderToStaticMarkup(
         <Paywall baslik="Pro" metin="9,99 €" dugme="Abone ol" />,
+    );
+const serbestYanit = (yanitZorunlu = false): string =>
+    renderToStaticMarkup(
+        <Soru
+            soru="Hedefiniz nedir?"
+            secimTuru="metin"
+            yanitZorunlu={yanitZorunlu}
+            devamDugmesi="Devam et"
+            medyaKoku=""
+        />,
+    );
+const yorum = (): string =>
+    renderToStaticMarkup(
+        <Yorum
+            baslik="Deneyim"
+            metin="Çok faydalı"
+            yazar="Ayşe"
+            unvan="Kullanıcı"
+            dugme="Devam"
+        />,
     );
 
 describe("D1 — metin HTML olarak yorumlanmaz", () => {
@@ -47,6 +68,7 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
             renderToStaticMarkup(
                 <Soru
                     soru={kotu}
+                    aciklama={kotu}
                     secenekler={[{ metin: kotu }]}
                     medyaKoku=""
                 />,
@@ -54,10 +76,19 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
             renderToStaticMarkup(
                 <Paywall baslik={kotu} metin={kotu} dugme={kotu} />,
             ),
+            renderToStaticMarkup(
+                <Yorum
+                    baslik={kotu}
+                    metin={kotu}
+                    yazar={kotu}
+                    unvan={kotu}
+                    dugme={kotu}
+                />,
+            ),
         ].join("");
         expect(html).not.toContain("<b>");
         expect(html).not.toContain("<img src=x");
-        expect(html.split("&lt;b&gt;x&lt;/b&gt;").length - 1).toBe(8);
+        expect(html.split("&lt;b&gt;x&lt;/b&gt;").length - 1).toBe(14);
     });
 });
 
@@ -82,7 +113,7 @@ describe("D2 — görsel adresi kimlikten", () => {
 
 describe("DOM huni sayfasıyla aynı", () => {
     it("başlık odaklanabilir (D11), düğmeler type=button", () => {
-        for (const html of [tanitim(), soru(), paywall()]) {
+        for (const html of [tanitim(), soru(), yorum(), paywall()]) {
             expect(html).toContain('<h1 tabindex="-1">');
             expect(html).not.toMatch(/<button(?![^>]*type="button")/);
         }
@@ -96,10 +127,35 @@ describe("DOM huni sayfasıyla aynı", () => {
             /<div class="secenekler"><button type="button">.*<span>Ailemle<\/span>/,
         );
     });
+    it("yorum metnini kaynak adıyla alıntı olarak gösterir ve devam eder", () => {
+        expect(yorum()).toContain('<blockquote class="yorum-alinti">');
+        expect(yorum()).toContain("<strong>Ayşe</strong> · Kullanıcı");
+        expect(yorum()).toContain('<button type="button" class="ana">Devam');
+    });
+    it("sorudaki ek açıklama varsa gösterir, boşsa ek satır üretmez", () => {
+        expect(soru("Birden fazla seçenek seçebilirsin.")).toContain(
+            '<p class="yardim-metni">Birden fazla seçenek seçebilirsin.</p>',
+        );
+        expect(soru()).not.toContain("yardim-metni");
+    });
+    it("serbest yanıt alanı 500 karakterle sınırlı, boşken isteğe bağlı gelir", () => {
+        const html = serbestYanit();
+        expect(html).toContain('maxLength="500"');
+        expect(html).toContain("Yanıtınız (isteğe bağlı)");
+        expect(html).toContain('class="ana">Devam et</button>');
+        expect(html).not.toContain('class="secenekler"');
+        expect(serbestYanit(true)).toContain('required=""');
+    });
     it("bileşenlerin her sınıfı huni.css'te .huni altında boyanır", () => {
         const siniflar = new Set(
             Array.from(
-                [tanitim(G), soru(), paywall()]
+                [
+                    tanitim(G),
+                    soru("Kısa açıklama"),
+                    serbestYanit(),
+                    yorum(),
+                    paywall(),
+                ]
                     .join("")
                     .matchAll(/class="([^"]+)"/g),
             ).flatMap((m) => (m[1] ?? "").split(" ")),
@@ -109,11 +165,33 @@ describe("DOM huni sayfasıyla aynı", () => {
             "kapak",
             "secenek-gorseli",
             "secenekler",
+            "serbest-yanit",
+            "yardim-metni",
+            "yorum-alinti",
         ]);
         for (const s of siniflar) {
             // Sınıf seçicinin ÖZNESİ olmalı: ".huni .secenekler button" kuralı
             // .secenekler'in kendi düzenini (grid) boyamaz (kırma K10).
             expect(css).toMatch(new RegExp(`\\.huni [^{,]*\\.${s}\\s*[{,]`));
         }
+    });
+});
+
+describe("çoklu seçim", () => {
+    it("seçim durumunu erişilebilir aktarır ve hiç seçim yokken devamı kapatır", () => {
+        const html = renderToStaticMarkup(
+            <Soru
+                soru="Neler önemli?"
+                secenekler={[{ metin: "Hız" }, { metin: "Fiyat" }]}
+                secimTuru="coklu"
+                devamDugmesi="Seçimleri gönder"
+                medyaKoku=""
+            />,
+        );
+        expect(html).toContain('aria-pressed="false"');
+        expect(html).toContain(
+            '<button type="button" class="ana" disabled="">Seçimleri gönder</button>',
+        );
+        expect(css).toContain('.huni .secenekler button[aria-pressed="true"]');
     });
 });

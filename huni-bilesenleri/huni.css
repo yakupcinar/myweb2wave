@@ -29,6 +29,26 @@
     display: grid;
     gap: 10px;
 }
+.huni .serbest-yanit {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+}
+.huni .serbest-yanit textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 112px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--metin) 30%, transparent);
+    border-radius: var(--kose);
+    background: var(--arka);
+    color: var(--metin);
+    font: inherit;
+    resize: vertical;
+}
+.huni p.yardim-metni {
+    margin: 8px 0 16px;
+}
 .huni button {
     font: inherit;
     padding: 12px 16px;
@@ -46,6 +66,10 @@
     text-align: center;
     width: 100%;
 }
+.huni button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
 .huni img.kapak {
     display: block;
     width: 100%;
@@ -58,11 +82,28 @@
     align-items: center;
     gap: 12px;
 }
+.huni .secenekler button[aria-pressed="true"] {
+    border-color: var(--ana);
+    background: color-mix(in srgb, var(--ana) 12%, transparent);
+}
 .huni img.secenek-gorseli {
     width: 48px;
     height: 48px;
     object-fit: cover;
     border-radius: calc(var(--kose) / 2);
+}
+.huni .yorum-alinti {
+    margin: 20px 0;
+    padding: 16px;
+    border-left: 3px solid var(--ana);
+    background: color-mix(in srgb, var(--ana) 8%, var(--arka));
+    border-radius: var(--kose);
+}
+.huni .yorum-alinti p {
+    margin: 0 0 12px;
+}
+.huni .yorum-alinti footer {
+    font-size: 14px;
 }
 .huni .onizleme {
     background: #fde68a;
@@ -85,4 +126,31 @@
         opacity: 0;
         transform: translateY(8px);
     }
+}
+/* Reklam ölçümü onay şeridi (H6a, yalnız huni sayfası). Akışta, üstte. */
+.huni .izin-seridi {
+    font-size: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: var(--kose);
+    border: 1px solid color-mix(in srgb, var(--metin) 30%, transparent);
+}
+.huni .izin-seridi p {
+    margin: 0 0 8px;
+}
+.huni .izin-dugmeleri {
+    display: flex;
+    gap: 8px;
+}
+.huni .izin-dugmeleri button {
+    flex: 1;
+    text-align: center;
+}
+.huni button.izin-ayarlari {
+    display: block;
+    margin: 18px auto 0;
+    padding: 4px 8px;
+    border: 0;
+    font-size: 13px;
+    text-decoration: underline;
 }

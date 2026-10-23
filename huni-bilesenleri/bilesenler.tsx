@@ -58,37 +58,102 @@ export function Tanitim({
 
 export function Soru({
     soru,
-    secenekler,
+    aciklama = "",
+    secenekler = [],
+    secimTuru = "tekli",
+    yanitZorunlu = false,
+    cevapMetni = "",
+    secili = [],
+    devamDugmesi = "Devam",
     medyaKoku,
     onSecim,
+    onSecenekDegistir,
+    onMetinDegistir,
+    onDevam,
 }: {
     soru: string;
-    secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
+    aciklama?: string | undefined;
+    secenekler?:
+        ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[] | undefined;
+    secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+    yanitZorunlu?: boolean | undefined;
+    cevapMetni?: string | undefined;
+    secili?: number[] | undefined;
+    devamDugmesi?: string | undefined;
     medyaKoku: string;
     /** Seçeneğin sırası; kimliği çağıran bilir. */
     onSecim?: ((sira: number) => void) | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
+    onDevam?: (() => void) | undefined;
 }): ReactNode {
     return (
         <section>
             <h1 tabIndex={-1}>{soru}</h1>
-            <div className="secenekler">
-                {secenekler.map((s, i) => (
-                    <button
-                        key={i}
-                        type="button"
-                        onClick={onSecim ? () => onSecim(i) : undefined}
-                    >
-                        {s.gorsel ? (
-                            <Gorsel
-                                id={s.gorsel}
-                                medyaKoku={medyaKoku}
-                                sinif="secenek-gorseli"
-                            />
-                        ) : null}
-                        <span>{s.metin}</span>
-                    </button>
-                ))}
-            </div>
+            {aciklama ? <p className="yardim-metni">{aciklama}</p> : null}
+            {secimTuru === "metin" ? (
+                <label className="serbest-yanit">
+                    Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
+                    <textarea
+                        aria-label="Yanıtınız"
+                        required={yanitZorunlu}
+                        maxLength={500}
+                        rows={4}
+                        value={cevapMetni}
+                        readOnly={!onMetinDegistir}
+                        onChange={(e) =>
+                            onMetinDegistir?.(e.currentTarget.value)
+                        }
+                    />
+                </label>
+            ) : (
+                <div className="secenekler">
+                    {secenekler.map((s, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-pressed={
+                                secimTuru === "coklu"
+                                    ? secili.includes(i)
+                                    : undefined
+                            }
+                            onClick={
+                                secimTuru === "coklu"
+                                    ? onSecenekDegistir
+                                        ? () => onSecenekDegistir(i)
+                                        : undefined
+                                    : onSecim
+                                      ? () => onSecim(i)
+                                      : undefined
+                            }
+                        >
+                            {s.gorsel ? (
+                                <Gorsel
+                                    id={s.gorsel}
+                                    medyaKoku={medyaKoku}
+                                    sinif="secenek-gorseli"
+                                />
+                            ) : null}
+                            <span>{s.metin}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+            {secimTuru === "coklu" || secimTuru === "metin" ? (
+                <button
+                    type="button"
+                    className="ana"
+                    disabled={
+                        (secimTuru === "coklu" && secili.length === 0) ||
+                        (secimTuru === "metin" &&
+                            yanitZorunlu &&
+                            !cevapMetni.trim())
+                    }
+                    onClick={onDevam}
+                >
+                    {devamDugmesi}
+                </button>
+            ) : null}
         </section>
     );
 }
@@ -125,6 +190,37 @@ export function Paywall({
     );
 }
 
+export function Yorum({
+    baslik,
+    metin,
+    yazar,
+    unvan,
+    dugme,
+    onDugme,
+}: {
+    baslik: string;
+    metin: string;
+    yazar: string;
+    unvan: string;
+    dugme: string;
+} & Tiklama): ReactNode {
+    return (
+        <section>
+            <h1 tabIndex={-1}>{baslik}</h1>
+            <blockquote className="yorum-alinti">
+                <p>{metin}</p>
+                <footer>
+                    <strong>{yazar}</strong>
+                    {unvan ? ` · ${unvan}` : null}
+                </footer>
+            </blockquote>
+            <button type="button" className="ana" onClick={onDugme}>
+                {dugme}
+            </button>
+        </section>
+    );
+}
+
 /** Tanımdaki adım (sözleşme HuniTanimi.adimlar[]); fazla alanlar (id, plan) yok sayılır. */
 export type TanimAdimi =
     | {
@@ -137,7 +233,19 @@ export type TanimAdimi =
     | {
           tur: "soru";
           soru: string;
-          secenekler: { metin: string; gorsel?: string }[];
+          aciklama?: string;
+          secimTuru?: "tekli" | "coklu" | "metin";
+          yanitZorunlu?: boolean;
+          devamDugmesi?: string;
+          secenekler?: { metin: string; gorsel?: string }[];
+      }
+    | {
+          tur: "yorum";
+          baslik: string;
+          metin: string;
+          yazar: string;
+          unvan: string;
+          dugme: string;
       }
     | { tur: "paywall"; baslik: string; metin: string; dugme: string };
 
@@ -151,12 +259,22 @@ export function Adim({
     medyaKoku,
     onIleri,
     onSecim,
+    secili,
+    onSecenekDegistir,
+    onCokluDevam,
+    cevapMetni,
+    onMetinDegistir,
     odeme = {},
 }: {
     adim: TanimAdimi;
     medyaKoku: string;
     onIleri?: () => void;
     onSecim?: (sira: number) => void;
+    secili?: number[] | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onCokluDevam?: (() => void) | undefined;
+    cevapMetni?: string | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
     odeme?: { onDugme?: () => void; kapali?: boolean; hata?: string };
 }): ReactNode {
     switch (adim.tur) {
@@ -175,9 +293,18 @@ export function Adim({
             return (
                 <Soru
                     soru={adim.soru}
+                    aciklama={adim.aciklama}
                     secenekler={adim.secenekler}
+                    secimTuru={adim.secimTuru}
+                    yanitZorunlu={adim.yanitZorunlu}
+                    cevapMetni={cevapMetni}
+                    devamDugmesi={adim.devamDugmesi}
+                    secili={secili}
                     medyaKoku={medyaKoku}
                     onSecim={onSecim}
+                    onSecenekDegistir={onSecenekDegistir}
+                    onDevam={onCokluDevam}
+                    onMetinDegistir={onMetinDegistir}
                 />
             );
         case "paywall":
@@ -187,6 +314,17 @@ export function Adim({
                     metin={adim.metin}
                     dugme={adim.dugme}
                     {...odeme}
+                />
+            );
+        case "yorum":
+            return (
+                <Yorum
+                    baslik={adim.baslik}
+                    metin={adim.metin}
+                    yazar={adim.yazar}
+                    unvan={adim.unvan}
+                    dugme={adim.dugme}
+                    onDugme={onIleri}
                 />
             );
     }

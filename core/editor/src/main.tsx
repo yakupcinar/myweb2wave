@@ -263,7 +263,13 @@ function UstCubuk({
     const guncelVeri = (): HuniVerisi => getPuck().appState.data as HuniVerisi;
     return (
         <div className="puck-ust-cubuk">
-            <span className="puck-not">{acik.not}</span>
+            <span
+                className={`puck-not puck-not-${acik.durum}`}
+                role="status"
+                aria-live="polite"
+            >
+                {acik.durum === "mesgul" ? "İşleniyor…" : acik.not}
+            </span>
             <button
                 type="button"
                 disabled={!acik.kaydet}

@@ -1,6 +1,8 @@
-# Yalnız deploy/web.Dockerfile kökü bağlam olarak kullanır: huni + Caddyfile.
+# Yalnız deploy/web.Dockerfile kökü bağlam olarak kullanır: huni,
+# ortak huni bileşenleri + Caddyfile.
 *
 !funnel
+!huni-bilesenleri
 !deploy/Caddyfile
 funnel/node_modules
 funnel/dist

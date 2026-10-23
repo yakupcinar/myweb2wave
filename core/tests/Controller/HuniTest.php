@@ -27,7 +27,7 @@ final class HuniTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
@@ -66,6 +66,24 @@ final class HuniTest extends WebTestCase
         $yanit = $this->yanit();
         self::assertIsArray($yanit['tanim'] ?? null);
         self::assertEquals($tanim['tema'], $yanit['tanim']['tema'] ?? null);
+    }
+
+    public function testIlerlemeTercihiYayindaDonerSozlesmeyeUyar(): void
+    {
+        $tanim = self::ile(0, 'ilerlemeGoster', false);
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        $tanimYaniti = $this->yanit()['tanim'] ?? null;
+        self::assertIsArray($tanimYaniti);
+        $adimlar = $tanimYaniti['adimlar'] ?? null;
+        self::assertIsArray($adimlar);
+        $ilkAdim = $adimlar[0] ?? null;
+        self::assertIsArray($ilkAdim);
+        self::assertFalse($ilkAdim['ilerlemeGoster'] ?? null);
     }
 
     public function testYayinYoksa404(): void
@@ -107,8 +125,10 @@ final class HuniTest extends WebTestCase
         $t = self::tanim('X');
         yield 'tekrar eden kimlik' => ['tekrar ediyor', self::ile(1, 'id', 'giris')];
         yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
-        yield 'bilinmeyen tür' => ['tür tanitim, soru ya da paywall', self::ile(0, 'tur', 'html')];
+        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum ya da paywall', self::ile(0, 'tur', 'html')];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
+        yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
+        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu ya da metin olmalı', self::ile(1, 'secimTuru', 'belirsiz')];
         yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'dugme', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
@@ -136,6 +156,80 @@ final class HuniTest extends WebTestCase
         $t['adimlar'][0]['hedef'] = 'paywall';
 
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
+    public function testIlerlemeGostergesiIstegeBagliVeBoolOlmali(): void
+    {
+        $t = self::ile(0, 'ilerlemeGoster', false);
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::tanim('Eski tanım'), ['monthly']));
+    }
+
+    public function testCokluSecimTanimiGecerliVeDevamDugmesiSinirli(): void
+    {
+        $t = self::ile(1, 'secimTuru', 'coklu');
+        $t['adimlar'][1]['devamDugmesi'] = 'Seçtiklerimle devam et';
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        $t['adimlar'][1]['devamDugmesi'] = str_repeat('x', 61);
+        self::assertNotSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
+    public function testCokluSecimdeSecenekHedefiKullanilamaz(): void
+    {
+        $t = self::tanim('Çoklu');
+        $t['adimlar'][1]['secimTuru'] = 'coklu';
+        $t['adimlar'][1]['secenekler'] = [
+            ['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'],
+            ['id' => 'b', 'metin' => 'B'],
+        ];
+
+        self::assertStringContainsString(
+            'çoklu seçimde seçenek hedefi kullanılamaz',
+            implode(' | ', Tanim::hatalar($t, ['monthly'])),
+        );
+    }
+
+    public function testYorumAdimiYayindaSaklanirVeAlaniSinirlanir(): void
+    {
+        $t = self::tanim('Yorum');
+        $t['adimlar'][1] = [
+            'id' => 'yorum', 'tur' => 'yorum', 'baslik' => 'Deneyim',
+            'metin' => 'Çok faydalı', 'yazar' => 'Ayşe', 'unvan' => 'Kullanıcı', 'dugme' => 'Devam',
+        ];
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'yazar', str_repeat('a', 81)), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'fazla', 'alan'), ['monthly']));
+
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $t));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->client->request('GET', '/huni/keepchat');
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        self::assertEquals($t, $this->yanit()['tanim'] ?? null);
+    }
+
+    public function testSoruAciklamasiIstegeBagliVeUzunluguSinirli(): void
+    {
+        self::assertSame([], Tanim::hatalar(self::tanim('Açıklamasız'), ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::ile(1, 'aciklama', 'Kısa bir açıklama'), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', str_repeat('a', 501)), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', 123), ['monthly']));
+    }
+
+    public function testSerbestYanittaSecenekYokVeZorunlulukBoolOlarakSecilebilir(): void
+    {
+        $t = self::ile(1, 'secimTuru', 'metin');
+        unset($t['adimlar'][1]['secenekler']);
+        $t['adimlar'][1]['yanitZorunlu'] = false;
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+
+        $t['adimlar'][1]['yanitZorunlu'] = 'evet';
+        self::assertStringContainsString('yanitZorunlu true ya da false', implode(' | ', Tanim::hatalar($t, ['monthly'])));
+
+        $t['adimlar'][1]['yanitZorunlu'] = false;
+        $t['adimlar'][1]['secenekler'] = [['id' => 'a', 'metin' => 'A']];
+        self::assertNotSame([], Tanim::hatalar($t, ['monthly']));
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void

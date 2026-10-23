@@ -18,6 +18,7 @@ export type Dugmeler = {
     geriYukle: boolean;
     /** Yayınla düğmesinin yanındaki kısa açıklama. */
     not: string;
+    durum: "kaydedilmemis" | "taslak" | "yayinlandi" | "bilinmiyor" | "mesgul";
 };
 
 export function dugmeler(
@@ -26,6 +27,15 @@ export function dugmeler(
     mesgul: boolean,
 ): Dugmeler {
     const hazir = yayin !== null && !mesgul;
+    const durum = mesgul
+        ? "mesgul"
+        : kirli
+          ? "kaydedilmemis"
+          : yayin === null
+            ? "bilinmiyor"
+            : yayin.farkli
+              ? "taslak"
+              : "yayinlandi";
     return {
         kaydet: !mesgul,
         onizle: hazir && !kirli,
@@ -38,5 +48,6 @@ export function dugmeler(
               : yayin.farkli
                 ? "Kaydedildi, yayında değil"
                 : "Yayındakiyle aynı",
+        durum,
     };
 }

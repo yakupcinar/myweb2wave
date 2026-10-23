@@ -146,6 +146,21 @@ hedef (döngü; doğrulama tek geçişte biter) · skor (puan + sonuç metni ya 
 puana göre plan — ölçülmüş ihtiyaç yok, kural 6a; puana göre plan ödeme
 kuralını değiştirirdi). Kayıt: `docs/decisions/huni-dallanma-h5.md`.
 
+**A12 · Reklam ölçümü: Meta + TikTok, piksel + sunucu, herkese onay şeridi,
+yalnız abonelik olayı** (2026-10-21, kullanıcı; B4/H6, A6'nın uygulanışı).
+Hunide herkese Kabul/Reddet şeridi; tıklama kimlikleri yalnız izinle
+saklanır. Abonelik başlayınca çekirdek Meta Conversions API + TikTok Events
+API'ye bildirir (yalnız izinli ziyaret); tarayıcıda Meta Pixel + TikTok Pixel
+yalnız izinden sonra, platformların standart satın alma olaylarıyla
+(`Purchase` / `CompletePayment`) sunucuyla aynı `event_id` (tekilleştirme).
+**Reddedilen:** yalnız Meta (önerilen; kullanıcı ikisini seçti) · GA4 (analiz
+bizde, A6) · yalnız sunucu (önerilen; kullanıcı eşleşme kalitesi için piksel
+de istedi — hunide üçüncü taraf betik, onaydan sonra) · konuma göre onay
+(ülke tespiti + hangi ülkeler hukuki karar) · onaysız test · huni olayları
+(ViewContent, InitiateCheckout — daha çok veri paylaşımı). Metinler hukuken
+doğrulanmadı (Ç12). Kayıtlar: `docs/decisions/huni-izin-h6a.md` (H6a),
+H6b, H6c.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

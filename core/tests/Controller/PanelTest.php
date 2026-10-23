@@ -24,7 +24,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -156,7 +156,7 @@ final class PanelTest extends WebTestCase
             [['—', '1', 'karsilama', '3', '100 %'], ['—', '2', 'kiminle', '2', '67 %'], ['—', '3', 'cihaz', '1', '33 %']],
             $this->tablo('adimlar'),
         );
-        self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '1']], $this->tablo('cevaplar'));
+        self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '2']], $this->tablo('cevaplar'));
     }
 
     public function testAnketAraligiEskiZiyaretinAdiminiSaymaz(): void
@@ -182,7 +182,27 @@ final class PanelTest extends WebTestCase
         self::assertSelectorNotExists('[data-bolum=adimlar]');
     }
 
-    /** Üç ziyaret: biri 3 adım, biri 2, biri 1; kiminle → aile, aile, is. */
+    public function testSerbestYanitiYalnizOturumluPaneldeMetinOlarakGosterir(): void
+    {
+        $z = $this->ziyaretEkle([], '1 hour');
+        $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => 1, 'adim' => 'hedef']);
+        $this->db->insert('huni_metin_cevaplari', [
+            'ziyaret_id' => $z,
+            'soru' => 'hedef',
+            'cevap' => '<script>alert(1)</script>\nDaha iyi uyumak',
+        ]);
+        $this->client->request('GET', '/panel');
+        self::assertResponseRedirects('/panel/giris');
+
+        $this->girisYapmis();
+        $this->client->request('GET', '/panel');
+        $html = (string) $this->client->getResponse()->getContent();
+        self::assertSelectorTextContains('[data-bolum=serbest-cevaplar]', 'Daha iyi uyumak');
+        self::assertStringNotContainsString('<script>alert(1)</script>', $html);
+        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+    }
+
+    /** Üç ziyaret: biri çoklu aile+iş, biri aile, biri iş seçer. */
     private function anketKur(): void
     {
         foreach ([3 => 'aile', 2 => 'aile', 1 => null] as $kac => $cevap) {
@@ -191,6 +211,9 @@ final class PanelTest extends WebTestCase
                 $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => $sira, 'adim' => $adim]);
             }
             $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => $cevap ?? 'is']);
+            if (3 === $kac) {
+                $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => 'is']);
+            }
         }
     }
 

@@ -92,6 +92,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/ziyaretler/{ziyaret}/izin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri */
+        post: operations["grantMeasurementConsent"];
+        /** Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil */
+        delete: operations["revokeMeasurementConsent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/huni/giris-baglantisi": {
         parameters: {
             query?: never;
@@ -192,7 +210,7 @@ export interface components {
         HuniTanimi: {
             sayfaBasligi: string;
             tema?: components["schemas"]["HuniTemasi"];
-            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["PaywallAdimi"])[];
+            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
         HuniTemasi: {
@@ -212,18 +230,37 @@ export interface components {
             metin: string;
             dugme: string;
             hedef?: components["schemas"]["AdimHedefi"];
+            ilerlemeGoster?: boolean;
         };
         SoruAdimi: {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */
             tur: "soru";
             soru: string;
-            secenekler: {
+            aciklama?: string;
+            ilerlemeGoster?: boolean;
+            /** @enum {string} */
+            secimTuru?: "tekli" | "coklu" | "metin";
+            yanitZorunlu?: boolean;
+            devamDugmesi?: string;
+            secenekler?: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
                 gorsel?: components["schemas"]["GorselKimligi"];
                 hedef?: components["schemas"]["AdimHedefi"];
             }[];
+        };
+        /** @description Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir */
+        YorumAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "yorum";
+            baslik: string;
+            metin: string;
+            yazar: string;
+            unvan: string;
+            dugme: string;
+            ilerlemeGoster?: boolean;
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
         AdimHedefi: components["schemas"]["HuniKimligi"];
@@ -234,6 +271,7 @@ export interface components {
             baslik: string;
             metin: string;
             dugme: string;
+            ilerlemeGoster?: boolean;
             /** @enum {string} */
             plan: "monthly";
         };
@@ -362,6 +400,8 @@ export interface operations {
                     huni?: components["schemas"]["HuniKimligi"];
                     /** @description Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır */
                     surum?: number;
+                    /** @description Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz */
+                    izin?: boolean;
                 };
             };
         };
@@ -484,6 +524,8 @@ export interface operations {
                     sira: number;
                     adim: components["schemas"]["HuniKimligi"];
                     cevap?: components["schemas"]["HuniKimligi"];
+                    cevaplar?: components["schemas"]["HuniKimligi"][];
+                    cevapMetni?: string;
                 };
             };
         };
@@ -513,6 +555,87 @@ export interface operations {
             };
             /** @description Geçersiz alan */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    grantMeasurementConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fbclid?: components["schemas"]["AtifAlani"];
+                    ttclid?: components["schemas"]["AtifAlani"];
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Geçersiz alan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    revokeMeasurementConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İzin geri alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

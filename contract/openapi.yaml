@@ -81,6 +81,7 @@ paths:
                 ttclid: { $ref: "#/components/schemas/AtifAlani" }
                 huni: { $ref: "#/components/schemas/HuniKimligi" }
                 surum: { type: integer, minimum: 1, description: "Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır" }
+                izin: { type: boolean, description: "Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz" }
       responses:
         "201":
           description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
@@ -158,6 +159,15 @@ paths:
                 sira: { type: integer, minimum: 0, maximum: 50, description: Adımın huni tanımındaki sırası }
                 adim: { $ref: "#/components/schemas/HuniKimligi" }
                 cevap: { $ref: "#/components/schemas/HuniKimligi" }
+                cevaplar:
+                  type: array
+                  minItems: 1
+                  maxItems: 8
+                  uniqueItems: true
+                  items: { $ref: "#/components/schemas/HuniKimligi" }
+                cevapMetni: { type: string, maxLength: 500 }
+              not:
+                required: [cevap, cevaplar]
       responses:
         "204": { description: Kaydedildi }
         "400": { description: Gövde JSON değil }
@@ -168,6 +178,47 @@ paths:
               schema: { $ref: "#/components/schemas/Hata" }
         "422":
           description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /huni/ziyaretler/{ziyaret}/izin:
+    post:
+      operationId: grantMeasurementConsent
+      summary: Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                fbclid: { $ref: "#/components/schemas/AtifAlani" }
+                ttclid: { $ref: "#/components/schemas/AtifAlani" }
+      responses:
+        "204": { description: Kaydedildi }
+        "400": { description: Gövde JSON değil }
+        "404":
+          description: Ziyaret yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "422":
+          description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+    delete:
+      operationId: revokeMeasurementConsent
+      summary: Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: İzin geri alındı }
+        "404":
+          description: Ziyaret yok
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -386,6 +437,7 @@ components:
             oneOf:
               - $ref: "#/components/schemas/TanitimAdimi"
               - $ref: "#/components/schemas/SoruAdimi"
+              - $ref: "#/components/schemas/YorumAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
     HuniTemasi:
       description: "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)"
@@ -410,14 +462,20 @@ components:
         metin: { type: string }
         dugme: { type: string }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+        ilerlemeGoster: { type: boolean }
     SoruAdimi:
       type: object
       additionalProperties: false
-      required: [id, tur, soru, secenekler]
+      required: [id, tur, soru]
       properties:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [soru] }
         soru: { type: string }
+        aciklama: { type: string, maxLength: 500 }
+        ilerlemeGoster: { type: boolean }
+        secimTuru: { type: string, enum: [tekli, coklu, metin] }
+        yanitZorunlu: { type: boolean }
+        devamDugmesi: { type: string }
         secenekler:
           type: array
           items:
@@ -429,6 +487,20 @@ components:
               metin: { type: string }
               gorsel: { $ref: "#/components/schemas/GorselKimligi" }
               hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    YorumAdimi:
+      description: Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik, metin, yazar, unvan, dugme]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [yorum] }
+        baslik: { type: string, minLength: 1, maxLength: 200 }
+        metin: { type: string, maxLength: 1000 }
+        yazar: { type: string, minLength: 1, maxLength: 80 }
+        unvan: { type: string, maxLength: 100 }
+        dugme: { type: string, minLength: 1, maxLength: 60 }
+        ilerlemeGoster: { type: boolean }
     AdimHedefi:
       description: >-
         H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma
@@ -445,6 +517,7 @@ components:
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
+        ilerlemeGoster: { type: boolean }
         plan: { type: string, enum: [monthly] }
     GorselKimligi:
       description: "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)"
