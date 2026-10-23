@@ -65,6 +65,9 @@ export type KokProps = {
 export type Bilesenler = {
     Tanitim: TanitimProps;
     Soru: SoruProps;
+    TekSecim: SoruProps;
+    CokluSecim: SoruProps;
+    SerbestYanit: SoruProps;
     Yorum: YorumProps;
     Paywall: PaywallProps;
 };
@@ -189,7 +192,10 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     p.hedef ?? "",
                 );
             }
-            case "Soru": {
+            case "Soru":
+            case "TekSecim":
+            case "CokluSecim":
+            case "SerbestYanit": {
                 const p = oge.props as SoruProps;
                 return {
                     id: p.kimlik,

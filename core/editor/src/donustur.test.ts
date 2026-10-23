@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { puckTanim, tanimdanPuck, type Tanim, type Tema } from "./donustur";
+import {
+    puckTanim,
+    tanimdanPuck,
+    type HuniVerisi,
+    type Tanim,
+    type Tema,
+} from "./donustur";
 
 const VARSAYILAN: Tema = {
     anaRenk: "#2563eb",
@@ -207,6 +213,43 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
             "yorum",
             "paywall",
         ]);
+    });
+
+    it("hazır soru blokları kayıtta tek soru tanımına dönüşür", () => {
+        const soru: Tanim = {
+            sayfaBasligi: "Anket",
+            adimlar: [
+                {
+                    id: "secim",
+                    tur: "soru",
+                    soru: "Kimlerle kullanacaksın?",
+                    secenekler: [
+                        { id: "aile", metin: "Ailemle" },
+                        { id: "arkadas", metin: "Arkadaşlarımla" },
+                    ],
+                },
+            ],
+        };
+        const puck = tanimdanPuck(soru, VARSAYILAN);
+        const temelBlok = puck.content[0]!;
+        for (const [tur, secimTuru] of [
+            ["TekSecim", "tekli"],
+            ["CokluSecim", "coklu"],
+            ["SerbestYanit", "metin"],
+        ] as const) {
+            const blok = {
+                ...temelBlok,
+                type: tur,
+                props: { ...temelBlok.props, secimTuru },
+            } as HuniVerisi["content"][number];
+            const kayitli = puckTanim({ ...puck, content: [blok] }).adimlar[0];
+            expect(kayitli).toMatchObject({ id: "secim", tur: "soru" });
+            if (secimTuru === "tekli") {
+                expect(kayitli).not.toHaveProperty("secimTuru");
+            } else {
+                expect(kayitli).toHaveProperty("secimTuru", secimTuru);
+            }
+        }
     });
 
     it("Puck bileşen kimlikleri benzersiz, adım kimliği ayrı alanda", () => {

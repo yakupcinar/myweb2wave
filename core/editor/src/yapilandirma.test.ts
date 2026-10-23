@@ -83,4 +83,14 @@ describe("soru içeriği", () => {
         ).toContainEqual({ label: "Serbest yanıt", value: "metin" });
         expect(soru.defaultProps?.yanitZorunlu).toBe("istege_bagli");
     });
+
+    it("soru türleri blok ekleme menüsünde hazır seçenekler olarak görünür", () => {
+        const bilesenler = yapilandirma(ortam).components;
+        expect(bilesenler.TekSecim.label).toBe("Tek seçim sorusu");
+        expect(bilesenler.TekSecim.defaultProps?.secimTuru).toBe("tekli");
+        expect(bilesenler.CokluSecim.label).toBe("Çoklu seçim sorusu");
+        expect(bilesenler.CokluSecim.defaultProps?.secimTuru).toBe("coklu");
+        expect(bilesenler.SerbestYanit.label).toBe("Serbest yanıt sorusu");
+        expect(bilesenler.SerbestYanit.defaultProps?.secimTuru).toBe("metin");
+    });
 });

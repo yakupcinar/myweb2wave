@@ -24,7 +24,7 @@ desenleri gözlem için kullanılacak (CLAUDE.md §2.12).
 | Repo | Yıldız | Lisans | Bu proje için bakılacak UI |
 |---|---:|---|---|
 | [luispdoesai/openFunnel](https://github.com/luispdoesai/openFunnel) | 23 | AGPL-3.0 | Liste içindeki en doğrudan karşılık: reklam trafiğine yönelik mobil quiz hunisi, şablonlar, landing + soru + sonuç adımları, tema, görsel bloklar ve cihaz önizlemesi. Bu özellikler repo README'sinde beyan ediliyor; çalıştırıp doğrulanmadı. |
-| [aialvi/openfunnels](https://github.com/aialvi/openfunnels) | 34 | MIT | Görsel sayfa editörü, sürükle-bırak, şablon seçimi, duyarlı önizleme, yayınlama ve analitik. Daha çok lead toplama/CRM hunisi. |
+| [aialvi/openfunnels](https://github.com/aialvi/openfunnels) | 38 | MIT | Görsel sayfa editörü, sürükle-bırak, şablon seçimi, duyarlı önizleme, yayınlama ve analitik. Daha çok lead toplama/CRM hunisi. |
 
 ## Açık kaynak ölçütünü karşılamayan, ama arayüz olarak ilgili
 
@@ -37,6 +37,38 @@ desenleri gözlem için kullanılacak (CLAUDE.md §2.12).
 2. Sonra HeyForm ve Formbricks'te soru oluşturma, adım düzenleme, mobil önizleme ve tema akışını karşılaştır.
 3. SurveyJS Library ile Xiaoju'da ziyaretçi anketinin soru, seçenek ve geçiş sunumunu incele.
 4. İnceleme sonucunda yalnız bizim ürünün ihtiyacına uyan davranışları Puck paneli ve dinamik anket ekranı için planla. Repo kodunu kopyalama veya lisans varsayımı yapma.
+
+## Doğrudan huni örneklerinin ikinci incelemesi — 2026-10-23
+
+GitHub'daki güncel README'ler okundu; canlı ürün çalıştırılmadı. Bu nedenle
+aşağıdaki özellikler proje beyanıdır, tarayıcıda doğrulanmış davranış değildir.
+
+- `openFunnel` README'si tek seçim, çoklu seçim, form ve içerik türü dahil
+  hazır adım arketipleri; adım/yanıt dallanması; telefon/tablet/masaüstü
+  önizleme; ayrıca içerik blokları bildiriyor. Bizim huni de soru türü,
+  adım yönlendirme ve mobil önizlemeye sahip, fakat Puck'a yeni soru eklerken
+  türü sonradan değiştirmek gerekiyor.
+- `openfunnels` README'si sürükle-bırak bölüm editörü, undo/redo, otomatik
+  kaydetme, şablonlar ve duyarlı önizleme bildiriyor. Bu ürün form/CRM/landing
+  page kapsamına geniş; bu iş için yalnız başlangıç türünün seçilebilir
+  olması uygun ölçekte.
+- OpenFunnel AGPL-3.0; OpenFunnels MIT lisanslı. Herhangi bir kod veya stil
+  alınmadı. Özellikler davranış fikri olarak kendi Puck şemamızda uygulandı.
+
+### İkinci uyarlama: ekleme menüsünde soru arketipleri
+
+Puck'ın bileşen menüsünde artık **Tek seçim sorusu**, **Çoklu seçim sorusu**
+ve **Serbest yanıt sorusu** ayrı bloklar. Eklendiklerinde ilgili yanıt türü
+seçili gelir; mevcut alanlar sonradan değiştirilebilir. Puck'ın geçici üç
+blok adı kayıtta çekirdeğin tek `soru` adım türüne çevrilir; tekrar açınca
+Puck'ta normal `Soru` bileşeni olur. Böylece API/tanım biçimi değişmez.
+
+Ölçüm: editor 26/26 test ve `npm run check` geçti. Testler üç blok etiketini,
+varsayılan yanıt türünü ve kayıt dönüşümünü ölçüyor. Kullanıcı paneli
+yenilediğinde oturum girişe yönlendiğinden tarayıcı görsel teyidi bu adımda
+yapılamadı. Sıradaki UI işi: arketiplerin Puck ekleme menüsündeki sırasını ve
+görsel adlarını gerçek oturumda doğrula; ardından seçenek düzenleme
+akışındaki tekrar eden kimliklerin kullanımını değerlendir.
 
 ## İlk arayüz uyarlaması — 2026-10-23
 
