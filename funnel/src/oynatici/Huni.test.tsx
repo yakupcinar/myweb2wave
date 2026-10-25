@@ -501,6 +501,20 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
     await waitFor(() => expect(gorunenBaslik()).toBe("Merhaba"));
   });
+  it("Geri düğmesi ilk adımda yok; sonrakinde önceki adıma döner (Ç61)", async () => {
+    kur();
+    await yuklendi();
+    const geri = () => screen.queryByRole("button", { name: "← Geri" });
+    expect(geri()).toBeNull();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    // Tarayıcının geri tuşuyla aynı yol: geçmişten bir adım geri (dallanmada
+    // da gelinen adıma döner).
+    fireEvent.click(geri()!);
+    await waitFor(() => expect(gorunenBaslik()).toBe("Merhaba"));
+    expect(history.state).toEqual({ adim: 0 });
+    expect(geri()).toBeNull();
+  });
   it("adım değişince başlığa odak; ilk adımda odak çalınmaz", async () => {
     kur();
     await yuklendi();

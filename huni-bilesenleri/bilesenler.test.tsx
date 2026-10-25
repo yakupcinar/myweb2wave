@@ -146,6 +146,22 @@ describe("DOM huni sayfasıyla aynı", () => {
         expect(html).not.toContain('class="secenekler"');
         expect(serbestYanit(true)).toContain('required=""');
     });
+    it("gizlilik bağlantısı okunur, geri düğmesi boyanır (Ç61)", () => {
+        // Dokunma alanı en az 44 px (WCAG 2.5.5 / Apple HIG), yazı ≥ 15 px.
+        const blok = (secici: string): string =>
+            css.match(new RegExp(`${secici}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+        const izin = blok("\\.huni button\\.izin-ayarlari");
+        expect(
+            Number(izin.match(/min-height:\s*(\d+)px/)?.[1]),
+        ).toBeGreaterThanOrEqual(44);
+        expect(
+            Number(izin.match(/font-size:\s*(\d+)px/)?.[1]),
+        ).toBeGreaterThanOrEqual(15);
+        const geri = blok("\\.huni button\\.geri");
+        expect(
+            Number(geri.match(/min-height:\s*(\d+)px/)?.[1]),
+        ).toBeGreaterThanOrEqual(44);
+    });
     it("bileşenlerin her sınıfı huni.css'te .huni altında boyanır", () => {
         const siniflar = new Set(
             Array.from(

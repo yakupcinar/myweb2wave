@@ -207,6 +207,13 @@ function Oynatici({
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
         </p>
       ) : null}
+      {mevcut > 0 ? (
+        // Ç61: tarayıcı geri tuşuyla aynı yol (popstate) — dallanmada da
+        // gelinen adıma döner.
+        <button className="geri" type="button" onClick={() => history.back()}>
+          ← Geri
+        </button>
+      ) : null}
       {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
         <progress max={tanim.adimlar.length} value={mevcut + 1} />
       ) : null}
