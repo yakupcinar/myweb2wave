@@ -273,3 +273,43 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect("tema" in puckTanim(veri)).toBe(false);
     });
 });
+
+describe("kayıttan gelen soru hazır türle açılır (Ç61)", () => {
+    it("yanıt biçimi → TekSecim / CokluSecim / SerbestYanit, gidiş-dönüş aynı", () => {
+        const tanim = {
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "a",
+                    tur: "soru",
+                    soru: "A?",
+                    secenekler: [{ id: "x", metin: "X" }],
+                },
+                {
+                    id: "b",
+                    tur: "soru",
+                    soru: "B?",
+                    secimTuru: "coklu",
+                    secenekler: [{ id: "y", metin: "Y" }],
+                },
+                { id: "c", tur: "soru", soru: "C?", secimTuru: "metin" },
+                {
+                    id: "p",
+                    tur: "paywall",
+                    baslik: "P",
+                    metin: "",
+                    dugme: "Al",
+                    plan: "monthly",
+                },
+            ],
+        } as Tanim;
+        const puck = tanimdanPuck(tanim, VARSAYILAN);
+        expect(puck.content.map((o) => o.type)).toEqual([
+            "TekSecim",
+            "CokluSecim",
+            "SerbestYanit",
+            "Paywall",
+        ]);
+        expect(puckTanim(puck).adimlar).toEqual(tanim.adimlar);
+    });
+});

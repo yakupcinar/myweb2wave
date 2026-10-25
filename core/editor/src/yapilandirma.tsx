@@ -201,11 +201,37 @@ export function hedefSecenekleri(
     ];
 }
 
+/**
+ * Ekleme anında kimliğe Puck blok kimliğinden kısa ek (Ç61): aynı türden
+ * ikinci blok kayıtta "kimlik tekrar ediyor" ile reddedilmesin. Yalnız
+ * eklemede — yüklenen ya da yayındaki kimlik değişmez (eski veriyle eşleşme).
+ * Puck'ın "çoğalt" eylemi resolveData çağırmıyor; kopya kimliği kayıtta
+ * reddedilir (Ç65).
+ */
+export function benzersizKimlik(kimlik: string, puckKimligi: string): string {
+    // Puck kimliği "Tür-uuid": son 4 karakter küçük harf onaltılık.
+    return `${kimlik}-${puckKimligi.slice(-4)}`;
+}
+const eklenince = <P extends { id: string; kimlik: string }>(
+    veri: { props: P },
+    { trigger }: { trigger: string },
+) =>
+    trigger === "insert"
+        ? {
+              ...veri,
+              props: {
+                  ...veri.props,
+                  kimlik: benzersizKimlik(veri.props.kimlik, veri.props.id),
+              },
+          }
+        : veri;
+
 function soruBileseni(
     ortam: Ortam,
-): Config<Bilesenler, KokProps>["components"]["Soru"] {
+): Config<Bilesenler, KokProps>["components"]["TekSecim"] {
     return {
         label: "Soru",
+        resolveData: eklenince,
         fields: {
             kimlik: kimlikAlani,
             soru: { type: "text", label: "Soru" },
@@ -419,6 +445,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
         components: {
             Tanitim: {
                 label: "Tanıtım",
+                resolveData: eklenince,
                 fields: {
                     kimlik: kimlikAlani,
                     baslik: { type: "text", label: "Başlık" },
@@ -456,7 +483,6 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     </div>
                 ),
             },
-            Soru: soru,
             TekSecim: {
                 ...soru,
                 label: "Tek seçim sorusu",
@@ -505,6 +531,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             Yorum: {
                 label: "Müşteri yorumu",
+                resolveData: eklenince,
                 fields: {
                     kimlik: kimlikAlani,
                     baslik: { type: "text", label: "Başlık" },

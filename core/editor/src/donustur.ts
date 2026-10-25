@@ -64,7 +64,6 @@ export type KokProps = {
 };
 export type Bilesenler = {
     Tanitim: TanitimProps;
-    Soru: SoruProps;
     TekSecim: SoruProps;
     CokluSecim: SoruProps;
     SerbestYanit: SoruProps;
@@ -72,6 +71,13 @@ export type Bilesenler = {
     Paywall: PaywallProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
+
+/** Yanıt biçimi → Puck bloğu (Ç61): kayıt tek `soru` şeması, düzenleyicide üç tür. */
+const SORU_TURU = {
+    tekli: "TekSecim",
+    coklu: "CokluSecim",
+    metin: "SerbestYanit",
+} as const;
 
 /** Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz). */
 const gorselli = <T extends object>(
@@ -117,7 +123,8 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                     };
                 case "soru":
                     return {
-                        type: "Soru" as const,
+                        // Ç61: menüdeki hazır türle açılır (genel "Soru" yok).
+                        type: SORU_TURU[adim.secimTuru ?? "tekli"],
                         props: {
                             id,
                             kimlik: adim.id,
@@ -192,7 +199,6 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     p.hedef ?? "",
                 );
             }
-            case "Soru":
             case "TekSecim":
             case "CokluSecim":
             case "SerbestYanit": {

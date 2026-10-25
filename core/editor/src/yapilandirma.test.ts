@@ -10,7 +10,7 @@ const ortam: Ortam = {
 };
 
 async function soruAlanlari(secimTuru: "tekli" | "coklu" | "metin") {
-    const soru = yapilandirma(ortam).components.Soru;
+    const soru = yapilandirma(ortam).components.TekSecim;
     const cozumle = soru.resolveFields;
     if (!cozumle) throw new Error("Soru alanlarının dinamik çözümleyicisi yok");
     const sonuc = await cozumle(
@@ -21,7 +21,7 @@ async function soruAlanlari(secimTuru: "tekli" | "coklu" | "metin") {
             fields: soru.fields,
             appState: {
                 data: {
-                    content: [{ type: "Soru", props: { id: "soru-1" } }],
+                    content: [{ type: "TekSecim", props: { id: "soru-1" } }],
                 },
             } as unknown as AppState,
         } as Parameters<typeof cozumle>[1],
@@ -71,18 +71,85 @@ describe("müşteri yorumu bileşeni", () => {
 describe("soru içeriği", () => {
     it("isteğe bağlı açıklama alanı düzenlenebilir", () => {
         expect(
-            yapilandirma(ortam).components.Soru.fields?.aciklama?.label,
+            yapilandirma(ortam).components.TekSecim.fields?.aciklama?.label,
         ).toBe("Açıklama (isteğe bağlı)");
     });
 
     it("serbest yanıt panel seçeneği isteğe bağlı gelir", () => {
-        const soru = yapilandirma(ortam).components.Soru;
+        const soru = yapilandirma(ortam).components.TekSecim;
         const secimTuru = soru.fields?.secimTuru;
         expect(
             secimTuru && "options" in secimTuru ? secimTuru.options : [],
         ).toContainEqual({ label: "Serbest yanıt", value: "metin" });
         expect(soru.defaultProps?.yanitZorunlu).toBe("istege_bagli");
     });
+
+    it("menüde genel 'Soru' yok — yalnız üç hazır soru türü (Ç61)", () => {
+        const bilesenler = yapilandirma(ortam).components;
+        expect(bilesenler).not.toHaveProperty("Soru");
+        expect(
+            Object.values(bilesenler).filter((b) =>
+                String(b?.label).endsWith("sorusu"),
+            ),
+        ).toHaveLength(3);
+    });
+
+    it("eklenen bloğun kimliği benzersiz, yüklenenin kimliği değişmez (Ç61)", async () => {
+        const tek = yapilandirma(ortam).components.TekSecim;
+        const coz = tek.resolveData;
+        if (!coz) throw new Error("ekleme çözümleyicisi yok");
+        const ekle = async (id: string, trigger: string) =>
+            (
+                await coz(
+                    {
+                        props: { ...tek.defaultProps, id },
+                    } as unknown as Parameters<typeof coz>[0],
+                    { trigger } as unknown as Parameters<typeof coz>[1],
+                )
+            ).props?.kimlik;
+        const a = await ekle(
+            "TekSecim-1f2e3d4c-aaaa-bbbb-cccc-0000000a1b2c",
+            "insert",
+        );
+        const b = await ekle(
+            "TekSecim-9e8d7c6b-aaaa-bbbb-cccc-0000000f9e8d",
+            "insert",
+        );
+        expect(a).toBe("tek-secim-sorusu-1b2c");
+        expect(a).not.toBe(b);
+        // Çekirdek kuralı (Tanim::KIMLIK) burada elle: küçük harf, rakam, - _ (1–64).
+        expect(a).toMatch(/^[a-z0-9_-]{1,64}$/);
+        expect(
+            await ekle("TekSecim-1f2e3d4c-aaaa-bbbb-cccc-0000000a1b2c", "load"),
+        ).toBe("tek-secim-sorusu");
+    });
+
+    it.each([
+        "Tanitim",
+        "TekSecim",
+        "CokluSecim",
+        "SerbestYanit",
+        "Yorum",
+    ] as const)(
+        "%s eklenince kimliğe benzersiz ek gelir (Ç61)",
+        async (tur) => {
+            const bilesen = yapilandirma(ortam).components[tur];
+            const coz = bilesen.resolveData as unknown as
+                | ((
+                      veri: { props: Record<string, unknown> },
+                      p: { trigger: string },
+                  ) => Promise<{ props: { kimlik: string } }>)
+                | undefined;
+            if (!coz) throw new Error(`${tur}: ekleme çözümleyicisi yok`);
+            const sonuc = await coz(
+                { props: { ...bilesen.defaultProps, id: `${tur}-0000-9f3a` } },
+                { trigger: "insert" },
+            );
+            expect(sonuc.props.kimlik).toBe(
+                `${String(bilesen.defaultProps?.kimlik)}-9f3a`,
+            );
+        },
+    );
 
     it("soru türleri blok ekleme menüsünde hazır seçenekler olarak görünür", () => {
         const bilesenler = yapilandirma(ortam).components;

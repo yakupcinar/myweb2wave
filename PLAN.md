@@ -96,7 +96,7 @@
   - [x] L1 · Ç60 dev DB göçü + `bin/kontrol` uyarı adımı · Ç62 `reference.php` `.gitignore` — `docs/decisions/dev-goc-uyari.md`
   - [x] L2 · Ç58 izin yarışı — istemcide sıralama — `docs/decisions/huni-izin-yarisi.md`
   - [x] L3 · Ç59 terk edilen ödeme IP/UA — `checkout.session.expired` + 48 sa cron — `docs/decisions/odeme-ip-temizligi.md`
-  - [ ] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik
+  - [x] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik — `docs/decisions/puck-soru-turleri.md` (tarayıcı: kullanıcı bakacak)
   - [ ] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme
   - [ ] L6 · Ç61 huni: görünür geri düğmesi + okunur gizlilik bağlantısı
   - [ ] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları (sözleşme + çekirdek + Puck + oynatıcı)
