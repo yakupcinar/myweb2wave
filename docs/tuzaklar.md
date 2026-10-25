@@ -202,3 +202,11 @@ köken yok, happy-dom'da CORS yok. **Ölçüm (2026-10-21, `huni-izin-h6a.md`):*
 Resource Timing'de izin isteği **durum 0**, `izin_at` boş; yol listesine
 eklenince 204. **Doğrusu:** tarayıcıdan çağrılan her yeni uç için önce
 `OPTIONS` + `Origin` ile CORS testi (kırmızı), sonra listeye ekle.
+
+## §11 — Aracın yanıtı ölçtüğün şeyin yanıtı sanılır (örnek: tarayıcı uzantısı 503)
+**Belirti:** Claude in Chrome ağ kaydı çekirdeğe giden çapraz kökenli
+POST/DELETE'i **503** gösterdi (`ilerleme`, `izin`; 2026-10-26).
+**Sebep:** uzantının kaydı; sunucu isteği işlemişti. **Ölçüm:** çekirdek
+günlüğünde rota eşleşti + işlem commit edildi; DB'de satır var; aynı istek
+sayfadan `fetch` ile 204. **Doğrusu:** uzantının durum kodunu kanıt sayma;
+sunucu günlüğü ya da DB'den oku.

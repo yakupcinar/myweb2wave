@@ -83,9 +83,15 @@ export function ilerlemeBildir(
     .catch(() => undefined);
 }
 
-/** Onay şeridinde "Kabul": izin + o anki tıklama kimlikleri. Beklenmez, hata yutulur. */
-export function izinBildir(ziyaretSozu: Promise<string | undefined>): void {
-  void ziyaretSozu
+/**
+ * Onay şeridinde "Kabul": izin + o anki tıklama kimlikleri. Hata yutulur.
+ * Söz istek bitince çözülür: geri alma onu bekler, yoksa önce varan silmeyi
+ * geç varan Kabul ezer (Ç58).
+ */
+export function izinBildir(
+  ziyaretSozu: Promise<string | undefined>,
+): Promise<void> {
+  return ziyaretSozu
     .then((ziyaret) => {
       if (!ziyaret) return;
       const govde: Govde<"/huni/ziyaretler/{ziyaret}/izin"> =
@@ -95,7 +101,10 @@ export function izinBildir(ziyaretSozu: Promise<string | undefined>): void {
         body: govde,
       });
     })
-    .catch(() => undefined);
+    .then(
+      () => undefined,
+      () => undefined,
+    );
 }
 
 /** İzni geri alır; çekirdek eski tıklama/IP/UA'yı ve bekleyen event payload'larını siler. */

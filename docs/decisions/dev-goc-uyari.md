@@ -33,3 +33,5 @@
 | gerçek istek: izinli ziyaret → `POST /checkout/sessions` | **201**, `odeme_oturumlari`'na UA + IP yazıldı |
 
 `bin/kontrol` (reference.php yokken başlatıldı): **YEŞİL**, EXIT=0, 205 test / 1.294 doğrulama, `dev-goc` uyarısı yok (göç uygulanmış).
+
+CI: `864a69f` yeşil (temiz klon, `reference.php` yok).

@@ -22,13 +22,15 @@ import Huni from "./Huni";
 type Yayin = components["schemas"]["HuniYayini"];
 type Istek = { yontem: string; yol: string; sorgu: string; govde: unknown };
 type Yanit = { durum: number; govde?: unknown };
+type Cevap = Yanit | "ag-hatasi";
 
 // openapi-fetch fetch'i istemci kurulurken alır (cekirdek.ts, içe aktarmada):
 // sahte, içe aktarmalardan ÖNCE yerinde olmalı.
 const ag = vi.hoisted(() => {
   const ag = {
     istekler: [] as Istek[],
-    yanitla: (_i: Istek): Yanit | "ag-hatasi" => ({ durum: 404 }),
+    // Söz dönerse yanıt bekletilir: uçuştaki istekle yarış ölçülür (Ç58).
+    yanitla: (_i: Istek): Cevap | Promise<Cevap> => ({ durum: 404 }),
   };
   globalThis.fetch = async (girdi: RequestInfo | URL, init?: RequestInit) => {
     const r = new Request(girdi, init);
@@ -41,7 +43,7 @@ const ag = vi.hoisted(() => {
       govde: metin ? JSON.parse(metin) : undefined,
     };
     ag.istekler.push(istek);
-    const y = ag.yanitla(istek);
+    const y = await ag.yanitla(istek);
     if (y === "ag-hatasi") throw new TypeError("Failed to fetch");
     return new Response(
       y.govde === undefined ? null : JSON.stringify(y.govde),
@@ -721,6 +723,36 @@ describe("H6a — reklam ölçümü izni (A12)", () => {
     await screen.findByRole("alert");
     expect(screen.getByText("Reddet")).toBeTruthy();
     expect(window.localStorage.getItem("huni-reklam-izni")).toBe("evet");
+  });
+
+  it("Kabul isteği uçuştayken geri alınırsa silme ondan SONRA gider (Ç58)", async () => {
+    // Önce varan silmeyi geç varan Kabul ezerdi: tarayıcı "hayir", çekirdek
+    // izinli → satın alma reklam ağlarına giderdi.
+    let kabulBitir = (): void => undefined;
+    const oncekiYanitle = ag.yanitla;
+    ag.yanitla = (i) => {
+      if (i.yontem === "DELETE") return { durum: 204 };
+      if (i.yontem === "POST" && i.yol.endsWith("/izin"))
+        return new Promise<Cevap>((coz) => {
+          kabulBitir = () => coz({ durum: 204 });
+        });
+      return oncekiYanitle(i);
+    };
+    kur(ADRES);
+    await yuklendi();
+
+    fireEvent.click(screen.getByText("Kabul et"));
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Gizlilik ayarları" }));
+    fireEvent.click(screen.getByText("Reddet"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toEqual([]);
+
+    kabulBitir();
+    await waitFor(() =>
+      expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
+    );
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
   });
 
   it("önizlemede şerit yok", async () => {

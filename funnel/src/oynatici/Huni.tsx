@@ -75,6 +75,8 @@ function Oynatici({
   const [geriAlGerekir, setGeriAlGerekir] = useState(false);
   const [izinKaydediliyor, setIzinKaydediliyor] = useState(false);
   const [izinHatasi, setIzinHatasi] = useState("");
+  // Uçuştaki Kabul isteği: geri alma bunu bekler (Ç58).
+  const izinIstegi = useRef<Promise<void>>(Promise.resolve());
   // Ziyaret bir kez açılır; önizlemede hiç açılmaz, adım/cevap da gitmez.
   // Tıklama kimlikleri yalnız önceden verilmiş izinle (yoksa Kabul'de ayrıca).
   const [ziyaretSozu] = useState(() =>
@@ -174,6 +176,7 @@ function Oynatici({
   async function izinSec(secim: Izin): Promise<void> {
     if (secim === "hayir" && geriAlGerekir) {
       setIzinKaydediliyor(true);
+      await izinIstegi.current;
       const geriAlindi = await izinGeriAl(ziyaretSozu);
       setIzinKaydediliyor(false);
       if (!geriAlindi) {
@@ -187,7 +190,7 @@ function Oynatici({
     setIzin(secim);
     setGeriAlGerekir(false);
     setIzinHatasi("");
-    if (secim === "evet") izinBildir(ziyaretSozu);
+    if (secim === "evet") izinIstegi.current = izinBildir(ziyaretSozu);
   }
 
   return (
