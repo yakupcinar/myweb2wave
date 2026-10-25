@@ -44,6 +44,16 @@ final readonly class SubscriptionSync
                 $nesne = $event->data->object->toArray();
                 /** @var array<string, mixed> $nesne */
                 $ilgili = \in_array($event->type, ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'], true);
+                if ('checkout.session.expired' === $event->type) {
+                    // Ç59: ödenmeden kapanan oturumda completed hiç gelmez; eşleşme
+                    // verisi (IP/UA) burada silinir — uygulamadan bağımsız.
+                    $db->executeStatement(
+                        'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE stripe_checkout_session_id = :oturum',
+                        ['oturum' => $nesne['id'] ?? null],
+                    );
+
+                    return;
+                }
                 if (!$ilgili) {
                     return;
                 }

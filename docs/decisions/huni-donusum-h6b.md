@@ -67,3 +67,6 @@ durdurmaz; kuyruk cron'u başarısız gönderimleri tekrar dener.
 - [Meta Conversions API](https://developers.facebook.com/docs/marketing-api/conversions-api/)
 - [TikTok Events API](https://business-api.tiktok.com/gateway/docs/index?doc_id=1771100865818625)
 - [Stripe desteklenen para birimleri ve küçük birimler](https://docs.stripe.com/currencies)
+
+
+**2026-10-26 (L3, Ç59):** ödenmeyen oturumun IP/UA'sı `checkout.session.expired`'da ve 48 saatlik cron'da silinir — `odeme-ip-temizligi.md`.

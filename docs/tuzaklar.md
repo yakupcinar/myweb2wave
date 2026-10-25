@@ -210,3 +210,14 @@ POST/DELETE'i **503** gösterdi (`ilerleme`, `izin`; 2026-10-26).
 günlüğünde rota eşleşti + işlem commit edildi; DB'de satır var; aynı istek
 sayfadan `fetch` ile 204. **Doğrusu:** uzantının durum kodunu kanıt sayma;
 sunucu günlüğü ya da DB'den oku.
+
+## §37 — iCloud'daki masaüstünde üretilen dizin çakışma kopyası alır
+**Belirti:** `composer install` → `cache:clear` aralıksız kırmızı:
+`Failed to remove directory "/app/var/cache/de~" … Directory not empty`;
+kod değişmemişken. **Sebep:** masaüstü iCloud Drive'a eşitleniyor; iCloud
+önbellek dizinlerinde `Symfony 2`, `pools 2` gibi 0 B yer tutucu kopyalar
+yaratıyor, silme yarışı yarıda kalan `de~`'yi bırakıyor ve sonraki her koşu
+ona takılıyor. **Ölçüm (2026-10-26):** `defaults read com.apple.finder
+FXICloudDriveDesktop` = 1; `find core/var -name "* 2"` üç dizin; `du` 0 B,
+bağlantı sayısı 65535; silmek 5 dk'yı aştı. **Doğrusu:** projeyi iCloud
+dışında tut (ya da `.nosync`); kırmızıda önce `find . -name "* 2"`.

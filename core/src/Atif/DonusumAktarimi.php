@@ -145,6 +145,14 @@ final readonly class DonusumAktarimi
             "UPDATE reklam_donusumleri SET payload = NULL, son_hata = coalesce(son_hata, 'süre doldu')
              WHERE payload IS NOT NULL AND created_at < now() - interval '7 days'",
         );
+        // Ç59 yedeği: expired olayı kaçtıysa terk edilen oturumun IP/UA'sı.
+        // Stripe oturumu en geç 24 saatte kapanır; 48 saat pay bırakır. Ödenen
+        // oturumda IP/UA webhook'ta zaten silinir — "tamamlanmadı" koşulu gereksiz.
+        $this->db->executeStatement(
+            "UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL
+             WHERE (ip_adresi IS NOT NULL OR user_agent IS NOT NULL)
+               AND created_at < now() - interval '48 hours'",
+        );
         $satirlar = $this->db->fetchAllAssociative(
             'SELECT id, saglayici, event_id, payload::text AS payload FROM reklam_donusumleri
              WHERE gonderildi_at IS NULL AND payload IS NOT NULL AND deneme < :azami

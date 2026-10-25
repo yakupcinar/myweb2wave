@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Atif\DonusumAktarimi;
 use App\Tests\Support\SahteRevenueCat;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
@@ -189,6 +190,56 @@ final class StripeWebhookControllerTest extends WebTestCase
             ['ip_adresi' => null, 'user_agent' => null, 'tamamlandi' => false],
             $this->db->fetchAssociative("SELECT ip_adresi::text AS ip_adresi, user_agent, tamamlandi_at IS NOT NULL AS tamamlandi FROM odeme_oturumlari WHERE stripe_checkout_session_id = 'cs_unpaid'"),
         );
+    }
+
+    public function testSuresiDolanOturumunEslemeBilgisiHemenSilinir(): void
+    {
+        // Ç59: ödenmeden kapanan oturumda completed hiç gelmez; IP/UA expired'da gider.
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, izin_at) VALUES ('keepchat', now()) RETURNING id");
+        foreach (['cs_terk', 'cs_baska'] as $oturum) {
+            $this->db->insert('odeme_oturumlari', [
+                'stripe_checkout_session_id' => $oturum,
+                'ziyaret_id' => $ziyaret,
+                'ip_adresi' => '192.0.2.30',
+                'user_agent' => 'Test tarayıcı',
+            ]);
+        }
+
+        // metadata.app yok: temizlik uygulamadan bağımsız (A4 kapısına takılmamalı).
+        $this->gonder($this->olay('evt_terk', 'checkout.session.expired', 1_800_000_000, [
+            'id' => 'cs_terk', 'object' => 'checkout.session', 'status' => 'expired',
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(
+            [['stripe_checkout_session_id' => 'cs_baska', 'ip' => '192.0.2.30', 'user_agent' => 'Test tarayıcı'],
+                ['stripe_checkout_session_id' => 'cs_terk', 'ip' => null, 'user_agent' => null]],
+            $this->db->fetchAllAssociative('SELECT stripe_checkout_session_id, host(ip_adresi) AS ip, user_agent FROM odeme_oturumlari ORDER BY 1'),
+        );
+        self::assertCount(0, $this->db->fetchFirstColumn('SELECT id FROM reklam_donusumleri'));
+    }
+
+    public function testCronKirkSekizSaattenEskiOturumunEslemeBilgisiniSiler(): void
+    {
+        // Ç59 yedeği: expired olayı kaçarsa (webhook kapalı, olay seçilmemiş) cron siler.
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, izin_at) VALUES ('keepchat', now()) RETURNING id");
+        foreach ([['cs_eski', '49 hours'], ['cs_sinirda', '47 hours'], ['cs_yeni', '1 hour']] as [$oturum, $once]) {
+            $this->db->executeStatement(
+                "INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, ip_adresi, user_agent, created_at)
+                 VALUES (:o, :z, '192.0.2.31', 'Test tarayıcı', now() - CAST(:once AS interval))",
+                ['o' => $oturum, 'z' => $ziyaret, 'once' => $once],
+            );
+        }
+
+        $aktarim = static::getContainer()->get(DonusumAktarimi::class);
+        self::assertInstanceOf(DonusumAktarimi::class, $aktarim);
+        $aktarim->gonder();
+
+        self::assertSame(
+            ['cs_eski' => null, 'cs_sinirda' => 'Test tarayıcı', 'cs_yeni' => 'Test tarayıcı'],
+            $this->db->fetchAllKeyValue('SELECT stripe_checkout_session_id, user_agent FROM odeme_oturumlari ORDER BY 1'),
+        );
+        self::assertSame(1, $this->say('odeme_oturumlari WHERE ip_adresi IS NULL'));
     }
 
     public function testSifirOndalikliParaBirimiYuzdeYuzeBolunmez(): void

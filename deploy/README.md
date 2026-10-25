@@ -12,7 +12,9 @@ denemeleri: `docs/decisions/dagitim.md`.
 3. Stripe panelinde (**test modu**) Webhooks → uç nokta ekle:
    `https://<API_ALANI>/webhooks/stripe`, olaylar
    `checkout.session.completed`, `customer.subscription.created`,
-   `customer.subscription.updated`, `customer.subscription.deleted`.
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `checkout.session.expired` (terk edilen ödemenin IP/UA'sı hemen silinir — Ç59;
+   seçilmezse 48 sa cron temizliği yine siler).
    Verilen `whsec_` → `STRIPE_WEBHOOK_SECRET`.
 4. E-posta sağlayıcısı (Ç30): SMTP bilgisi → `MAILER_DSN`. Gönderen alan
    adında SPF/DKIM yoksa kodlar spam'e düşer.

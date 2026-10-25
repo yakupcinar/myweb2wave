@@ -95,7 +95,7 @@
 - [ ] **DÖNGÜ KUYRUĞU — A13** (kararlar 2026-10-26, `pre-setup.md` A13). Sırayla, her biri ayrı blok (`/blok`), bitince commit + push; dış girdi gerekirse açık uca yaz, atla. İşaretle ve `docs/decisions/`e taşı:
   - [x] L1 · Ç60 dev DB göçü + `bin/kontrol` uyarı adımı · Ç62 `reference.php` `.gitignore` — `docs/decisions/dev-goc-uyari.md`
   - [x] L2 · Ç58 izin yarışı — istemcide sıralama — `docs/decisions/huni-izin-yarisi.md`
-  - [ ] L3 · Ç59 terk edilen ödeme IP/UA — `checkout.session.expired` + 48 sa cron
+  - [x] L3 · Ç59 terk edilen ödeme IP/UA — `checkout.session.expired` + 48 sa cron — `docs/decisions/odeme-ip-temizligi.md`
   - [ ] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik
   - [ ] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme
   - [ ] L6 · Ç61 huni: görünür geri düğmesi + okunur gizlilik bağlantısı
