@@ -2,17 +2,26 @@
 // #puck-duzenleyici'ye taslağı ve uç adreslerini öznitelik olarak gömer.
 // Üst çubuk (b1): Kaydet · Önizle · Yayınla · Sürümler — rakiplerdeki gibi
 // düzenleyicinin içinde. Doğrulama çekirdekte.
-import { Puck, useGetPuck } from "@puckeditor/core";
+import {
+    createUsePuck,
+    Puck,
+    useGetPuck,
+    type Config,
+    type Data,
+} from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { StrictMode, useCallback, useEffect, useState } from "react";
+import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
     puckTanim,
     tanimdanPuck,
+    type Bilesenler,
     type HuniVerisi,
+    type KokProps,
     type Tanim,
     type Tema,
 } from "./donustur";
+import { hedefleriYenidenAdlandir, ulasilamayanlar } from "./akis";
 import { dugmeler, type YayinDurumu } from "./ustCubuk";
 import { yapilandirma, type Ortam } from "./yapilandirma";
 
@@ -227,22 +236,51 @@ function Duzenleyici({
                     // Puck'ın kendi "Publish" düğmesi yok: bizde kaydetmek
                     // demekti ve yanıltıcıydı (Ç45).
                     headerActions: () => (
-                        <UstCubuk
-                            acik={acik}
-                            yayin={yayin}
-                            onKaydet={(veri) => void kaydet(veri)}
-                            onYayinla={(veri) => {
-                                if (kaydedilmis(veri)) void yayinla();
-                            }}
-                            onGeriYukle={(s, veri) => {
-                                if (kaydedilmis(veri)) void geriYukle(s);
-                            }}
-                        />
+                        <>
+                            <AkisBekcisi />
+                            <UstCubuk
+                                acik={acik}
+                                yayin={yayin}
+                                onKaydet={(veri) => void kaydet(veri)}
+                                onYayinla={(veri) => {
+                                    if (kaydedilmis(veri)) void yayinla();
+                                }}
+                                onGeriYukle={(s, veri) => {
+                                    if (kaydedilmis(veri)) void geriYukle(s);
+                                }}
+                            />
+                        </>
                     ),
                 }}
             />
         </>
     );
+}
+
+const usePuck = createUsePuck<Config<Bilesenler, KokProps>>();
+
+/**
+ * Ç55: adım kimliği değişince ona işaret eden hedefleri taşır (Puck'ın
+ * kendi deposuna setData) ve hiçbir yolla varılamayan adımları uyarır —
+ * yayın engellenmez (A13).
+ */
+function AkisBekcisi() {
+    const veri = usePuck((s) => s.appState.data);
+    const dispatch = usePuck((s) => s.dispatch);
+    const onceki = useRef(veri);
+    useEffect(() => {
+        const duzelmis = hedefleriYenidenAdlandir(onceki.current, veri);
+        onceki.current = duzelmis ?? veri;
+        // Puck dispatch tipi yapılandırma türünü taşımıyor (0.23).
+        if (duzelmis)
+            dispatch({ type: "setData", data: duzelmis as unknown as Data });
+    }, [veri, dispatch]);
+    const kopuk = ulasilamayanlar(puckTanim(veri));
+    return kopuk.length ? (
+        <span className="puck-not puck-not-uyari" role="status">
+            Hiçbir yoldan ulaşılmayan adım: {kopuk.join(", ")}
+        </span>
+    ) : null;
 }
 
 function UstCubuk({

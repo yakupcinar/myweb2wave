@@ -97,7 +97,7 @@
   - [x] L2 · Ç58 izin yarışı — istemcide sıralama — `docs/decisions/huni-izin-yarisi.md`
   - [x] L3 · Ç59 terk edilen ödeme IP/UA — `checkout.session.expired` + 48 sa cron — `docs/decisions/odeme-ip-temizligi.md`
   - [x] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik — `docs/decisions/puck-soru-turleri.md` (tarayıcı: kullanıcı bakacak)
-  - [ ] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme
+  - [x] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme — `docs/decisions/puck-akis-denetimi.md` (tarayıcı: kullanıcı)
   - [ ] L6 · Ç61 huni: görünür geri düğmesi + okunur gizlilik bağlantısı
   - [ ] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları (sözleşme + çekirdek + Puck + oynatıcı)
   - [ ] L8 · Ç61 tema: logo + masaüstü düzeni
