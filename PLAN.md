@@ -92,6 +92,7 @@
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10
 - [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
 - [x] **`/kontrol`** — `bin/kontrol`, kırma K4–K7
+- [ ] **İnceleme 2026-10-26 → düzeltme sırası** (kullanıcı onayı bekliyor): önce Ç60 (dev DB göçü + bekçi) → Ç58 (izin yarışı, gizlilik) → Ç59 (terk edilen ödemede IP/UA) → Ç61 arayüz → Ç62. `bin/kontrol` yeşil: 205 test / 1.294 doğrulama
 
 ## 2. Backlog
 
