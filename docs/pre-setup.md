@@ -161,6 +161,27 @@ de istedi — hunide üçüncü taraf betik, onaydan sonra) · konuma göre onay
 doğrulanmadı (Ç12). Kayıtlar: `docs/decisions/huni-izin-h6a.md` (H6a),
 H6b, H6c.
 
+**A13 · İnceleme kararları paketi** (2026-10-26, kullanıcı; Ç58–Ç62 ve
+eski açık uçlar). Yapılacaklar: Ç58 izin yarışı **istemcide sıralanır**
+(reddedilen: sunucu sıra numarası — sözleşme + göç, ölçülmüş ihtiyaç yok) ·
+Ç59 terk edilen ödemede IP/UA `checkout.session.expired` + 48 sa cron
+temizliği · Ç60 dev DB'ye göç + `bin/kontrol`'de **uyarı** (kırmızı değil;
+CI'da dev DB yok) · Ç62 `reference.php` `.gitignore` · Ç61 Puck'ta yalnız
+3 hazır soru türü + benzersiz kimlik; paywall fayda listesi + yasal
+bağlantı alanları, görünür geri düğmesi, logo + masaüstü düzeni, okunur
+gizlilik bağlantısı · Ç55 ulaşılamayan adıma **uyarı** (yayın engellenmez;
+reddedilen: yayında reddetmek) + yeniden adlandırmada hedef güncelleme ·
+Ç44 alt metin (silme yok) · Ç53 b2 klasik düzenleyici silinir · Ç39
+eşzamanlı kayıt 409 · Ç41 8 sa oturum + uyarı, huni arşivleme · Ç35
+oturumlar DB'de (**2FA şimdilik hayır**) · Ç34 ziyaret hız sınırı +
+sekmede ziyaret sürdürme · Ç23 ölü bağlantı denetimi · Ç14 Dependabot ·
+Ç19/Ç21 fiyat tek kaynak Stripe; **Adaptive Pricing'i kullanıcı Stripe
+panelinden kapatır** · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
+testi · Ç20 past_due test clock · Ç54 yöne göre geçiş · Ç50 Preact
+denemesi (ölç, iyiyse geç). Reddedilen / ertelenen: Ç32 bağlama geçmişi.
+Dış girdi bekleyenler (sunucu, anahtarlar, hukuk, KeepChat, anket metni)
+döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.
