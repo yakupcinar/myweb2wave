@@ -506,6 +506,8 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     await yuklendi();
     const geri = () => screen.queryByRole("button", { name: "← Geri" });
     expect(geri()).toBeNull();
+    // İlk kaydı effect yazar; beklenmezse geçmiş null kalır (aralıklı, §33).
+    await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
     fireEvent.click(screen.getByText("Başla"));
     expect(gorunenBaslik()).toBe("Kiminle?");
     // Tarayıcının geri tuşuyla aynı yol: geçmişten bir adım geri (dallanmada

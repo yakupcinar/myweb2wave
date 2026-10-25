@@ -30,7 +30,15 @@ const soru = (aciklama = ""): string =>
     );
 const paywall = (): string =>
     renderToStaticMarkup(
-        <Paywall baslik="Pro" metin="9,99 €" dugme="Abone ol" />,
+        <Paywall
+            baslik="Pro"
+            metin="9,99 €"
+            dugme="Abone ol"
+            faydalar={["Sınırsız sohbet", "Reklamsız"]}
+            sartlar="https://ornek.com/sartlar"
+            gizlilik="https://ornek.com/gizlilik"
+            iptal="https://ornek.com/iptal"
+        />,
     );
 const serbestYanit = (yanitZorunlu = false): string =>
     renderToStaticMarkup(
@@ -74,7 +82,12 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
                 />,
             ),
             renderToStaticMarkup(
-                <Paywall baslik={kotu} metin={kotu} dugme={kotu} />,
+                <Paywall
+                    baslik={kotu}
+                    metin={kotu}
+                    dugme={kotu}
+                    faydalar={[kotu]}
+                />,
             ),
             renderToStaticMarkup(
                 <Yorum
@@ -88,7 +101,42 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
         ].join("");
         expect(html).not.toContain("<b>");
         expect(html).not.toContain("<img src=x");
-        expect(html.split("&lt;b&gt;x&lt;/b&gt;").length - 1).toBe(14);
+        expect(html.split("&lt;b&gt;x&lt;/b&gt;").length - 1).toBe(15);
+    });
+});
+
+describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
+    it("faydalar liste, bağlantılar yeni sekmede ve sayfaya erişimsiz", () => {
+        const html = paywall();
+        expect(html).toContain(
+            '<ul class="faydalar"><li>Sınırsız sohbet</li><li>Reklamsız</li></ul>',
+        );
+        expect(html).toContain(
+            '<a href="https://ornek.com/sartlar" target="_blank" rel="noopener noreferrer">Kullanım şartları</a>',
+        );
+        expect(html).toContain('href="https://ornek.com/gizlilik"');
+        expect(html).toContain('href="https://ornek.com/iptal"');
+        expect(html).toContain(">Gizlilik politikası</a>");
+        expect(html).toContain(">İptal ve iade</a>");
+    });
+    it("boşsa liste ve bağlantı satırı hiç yok", () => {
+        const html = renderToStaticMarkup(
+            <Paywall baslik="Pro" metin="9,99 €" dugme="Abone ol" />,
+        );
+        expect(html).not.toContain("faydalar");
+        expect(html).not.toContain("yasal");
+        expect(html).not.toContain("<a ");
+    });
+    it("yalnız verilen bağlantı çizilir", () => {
+        const html = renderToStaticMarkup(
+            <Paywall
+                baslik="Pro"
+                metin=""
+                dugme="Al"
+                gizlilik="https://ornek.com/g"
+            />,
+        );
+        expect(html.match(/<a /g)).toHaveLength(1);
     });
 });
 
@@ -178,11 +226,13 @@ describe("DOM huni sayfasıyla aynı", () => {
         );
         expect([...siniflar].sort()).toEqual([
             "ana",
+            "faydalar",
             "kapak",
             "secenek-gorseli",
             "secenekler",
             "serbest-yanit",
             "yardim-metni",
+            "yasal",
             "yorum-alinti",
         ]);
         for (const s of siniflar) {

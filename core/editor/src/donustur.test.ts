@@ -313,3 +313,43 @@ describe("kayıttan gelen soru hazır türle açılır (Ç61)", () => {
         expect(puckTanim(puck).adimlar).toEqual(tanim.adimlar);
     });
 });
+
+describe("paywall faydaları ve yasal bağlantılar (Ç61)", () => {
+    const paywall = (ek: object) =>
+        ({
+            sayfaBasligi: "x",
+            adimlar: [
+                { id: "g", tur: "tanitim", baslik: "G", metin: "", dugme: "D" },
+                {
+                    id: "p",
+                    tur: "paywall",
+                    baslik: "P",
+                    metin: "",
+                    dugme: "Al",
+                    plan: "monthly",
+                    ...ek,
+                },
+            ],
+        }) as Tanim;
+    it("dolu alanlar gidiş-dönüşte aynı", () => {
+        const tanim = paywall({
+            faydalar: ["Sınırsız", "Reklamsız"],
+            sartlar: "https://ornek.com/s",
+            gizlilik: "https://ornek.com/g",
+            iptal: "https://ornek.com/i",
+        });
+        expect(puckTanim(tanimdanPuck(tanim, VARSAYILAN))).toEqual(tanim);
+    });
+    it("boş alan tanıma hiç yazılmaz (çekirdek boş listeyi reddeder)", () => {
+        const veri = tanimdanPuck(paywall({}), VARSAYILAN);
+        const p = veri.content[1]!;
+        p.props = {
+            ...p.props,
+            faydalar: [{ metin: "" }],
+            sartlar: "",
+        } as typeof p.props;
+        const adim = puckTanim(veri).adimlar[1]!;
+        for (const alan of ["faydalar", "sartlar", "gizlilik", "iptal"])
+            expect(adim).not.toHaveProperty(alan);
+    });
+});

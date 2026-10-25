@@ -165,3 +165,18 @@
     border: 0;
     font-size: 15px;
 }
+/* Ç61 (3): paywall fayda listesi ve yasal bağlantılar. */
+.huni ul.faydalar {
+    margin: 0 0 20px;
+    padding-left: 1.2em;
+    line-height: 1.6;
+}
+.huni p.yasal {
+    margin: 16px 0 0;
+    font-size: 13px;
+    text-align: center;
+    opacity: 0.8;
+}
+.huni p.yasal a {
+    color: inherit;
+}

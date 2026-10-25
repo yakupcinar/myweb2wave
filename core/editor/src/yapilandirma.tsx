@@ -514,6 +514,29 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             value: p,
                         })) as { label: string; value: "monthly" }[],
                     },
+                    faydalar: {
+                        type: "array",
+                        label: "Faydalar (en çok 6, isteğe bağlı)",
+                        max: 6,
+                        getItemSummary: (f: { metin: string }) =>
+                            f.metin || "fayda",
+                        defaultItemProps: { metin: "" },
+                        arrayFields: {
+                            metin: { type: "text", label: "Fayda" },
+                        },
+                    },
+                    sartlar: {
+                        type: "text",
+                        label: "Kullanım şartları adresi (https://, isteğe bağlı)",
+                    },
+                    gizlilik: {
+                        type: "text",
+                        label: "Gizlilik politikası adresi (https://, isteğe bağlı)",
+                    },
+                    iptal: {
+                        type: "text",
+                        label: "İptal ve iade adresi (https://, isteğe bağlı)",
+                    },
                 },
                 defaultProps: {
                     kimlik: "paywall",
@@ -522,10 +545,32 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     dugme: "Abone ol",
                     ilerlemeGoster: true,
                     plan: "monthly",
+                    faydalar: [],
+                    sartlar: "",
+                    gizlilik: "",
+                    iptal: "",
                 },
-                render: ({ baslik, metin, dugme }) => (
+                render: ({
+                    baslik,
+                    metin,
+                    dugme,
+                    faydalar,
+                    sartlar,
+                    gizlilik,
+                    iptal,
+                }) => (
                     <div style={kart}>
-                        <Paywall baslik={baslik} metin={metin} dugme={dugme} />
+                        <Paywall
+                            baslik={baslik}
+                            metin={metin}
+                            dugme={dugme}
+                            faydalar={(faydalar ?? [])
+                                .map((f) => f.metin)
+                                .filter(Boolean)}
+                            sartlar={sartlar || undefined}
+                            gizlilik={gizlilik || undefined}
+                            iptal={iptal || undefined}
+                        />
                     </div>
                 ),
             },

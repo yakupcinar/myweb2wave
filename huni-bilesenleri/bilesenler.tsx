@@ -158,10 +158,21 @@ export function Soru({
     );
 }
 
+/** Ç61 (3): yasal bağlantı adları sabit; adresi çekirdek yalnız https ise kabul eder. */
+const YASAL = [
+    ["sartlar", "Kullanım şartları"],
+    ["gizlilik", "Gizlilik politikası"],
+    ["iptal", "İptal ve iade"],
+] as const;
+
 export function Paywall({
     baslik,
     metin,
     dugme,
+    faydalar = [],
+    sartlar,
+    gizlilik,
+    iptal,
     onDugme,
     kapali = false,
     hata = "",
@@ -169,14 +180,27 @@ export function Paywall({
     baslik: string;
     metin: string;
     dugme: string;
+    faydalar?: string[] | undefined;
+    sartlar?: string | undefined;
+    gizlilik?: string | undefined;
+    iptal?: string | undefined;
     /** Önizlemede ve ödeme isteği sürerken (çift tıklama yok, D13). */
     kapali?: boolean;
     hata?: string;
 } & Tiklama): ReactNode {
+    const adresler = { sartlar, gizlilik, iptal };
+    const baglantilar = YASAL.filter(([alan]) => adresler[alan]);
     return (
         <section>
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
+            {faydalar.length ? (
+                <ul className="faydalar">
+                    {faydalar.map((f, i) => (
+                        <li key={i}>{f}</li>
+                    ))}
+                </ul>
+            ) : null}
             <button
                 type="button"
                 className="ana"
@@ -186,6 +210,22 @@ export function Paywall({
                 {dugme}
             </button>
             {hata ? <p role="alert">{hata}</p> : null}
+            {baglantilar.length ? (
+                <p className="yasal">
+                    {baglantilar.map(([alan, ad], i) => (
+                        <span key={alan}>
+                            {i ? " · " : null}
+                            <a
+                                href={adresler[alan]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {ad}
+                            </a>
+                        </span>
+                    ))}
+                </p>
+            ) : null}
         </section>
     );
 }
@@ -247,7 +287,16 @@ export type TanimAdimi =
           unvan: string;
           dugme: string;
       }
-    | { tur: "paywall"; baslik: string; metin: string; dugme: string };
+    | {
+          tur: "paywall";
+          baslik: string;
+          metin: string;
+          dugme: string;
+          faydalar?: string[];
+          sartlar?: string;
+          gizlilik?: string;
+          iptal?: string;
+      };
 
 /**
  * Tanımdan adım (B4/H3): huni oynatıcısı bunu çizer. Puck kendi alanlarından
@@ -313,6 +362,10 @@ export function Adim({
                     baslik={adim.baslik}
                     metin={adim.metin}
                     dugme={adim.dugme}
+                    faydalar={adim.faydalar}
+                    sartlar={adim.sartlar}
+                    gizlilik={adim.gizlilik}
+                    iptal={adim.iptal}
                     {...odeme}
                 />
             );

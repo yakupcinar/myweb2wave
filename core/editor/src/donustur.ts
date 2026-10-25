@@ -43,6 +43,11 @@ export type PaywallProps = {
     dugme: string;
     plan: Plan;
     ilerlemeGoster: boolean;
+    /** Ç61 (3): boş metin / boş adres tanıma yazılmaz. */
+    faydalar: { metin: string }[];
+    sartlar: string;
+    gizlilik: string;
+    iptal: string;
 };
 export type YorumProps = {
     kimlik: string;
@@ -169,10 +174,27 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             dugme: adim.dugme,
                             plan: adim.plan,
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                            faydalar: (adim.faydalar ?? []).map((metin) => ({
+                                metin,
+                            })),
+                            sartlar: adim.sartlar ?? "",
+                            gizlilik: adim.gizlilik ?? "",
+                            iptal: adim.iptal ?? "",
                         },
                     };
             }
         }),
+    };
+}
+
+/** Ç61 (3): yalnız dolu faydalar ve adresler — boş liste/adres çekirdekte geçersiz. */
+function yasal(p: PaywallProps) {
+    const faydalar = (p.faydalar ?? []).map((f) => f.metin).filter(Boolean);
+    return {
+        ...(faydalar.length ? { faydalar } : {}),
+        ...(p.sartlar ? { sartlar: p.sartlar } : {}),
+        ...(p.gizlilik ? { gizlilik: p.gizlilik } : {}),
+        ...(p.iptal ? { iptal: p.iptal } : {}),
     };
 }
 
@@ -267,6 +289,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),
+                    ...yasal(p),
                 };
             }
         }

@@ -68,6 +68,25 @@ final class HuniTest extends WebTestCase
         self::assertEquals($tanim['tema'], $yanit['tanim']['tema'] ?? null);
     }
 
+    public function testPaywallFaydaVeBaglantilarYayindaDonerSozlesmeyeUyar(): void
+    {
+        $tanim = self::ile(2, 'faydalar', ['Sınırsız sohbet']);
+        $tanim['adimlar'][2]['gizlilik'] = 'https://ornek.com/gizlilik';
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        $yanit = $this->yanit();
+        $adimlar = \is_array($yanit['tanim'] ?? null) ? ($yanit['tanim']['adimlar'] ?? null) : null;
+        self::assertIsArray($adimlar);
+        $paywall = $adimlar[2] ?? null;
+        self::assertIsArray($paywall);
+        self::assertSame(['Sınırsız sohbet'], $paywall['faydalar'] ?? null);
+        self::assertSame('https://ornek.com/gizlilik', $paywall['gizlilik'] ?? null);
+    }
+
     public function testIlerlemeTercihiYayindaDonerSozlesmeyeUyar(): void
     {
         $tanim = self::ile(0, 'ilerlemeGoster', false);
@@ -146,7 +165,29 @@ final class HuniTest extends WebTestCase
         yield 'seçenek hedefi yok' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('yok'))];
         yield 'seçenek hedefi dizge değil' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec(2))];
         yield 'tanıtım hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(0, 'hedef', 'giris')];
+        // Ç61 (3): paywall fayda listesi + yasal bağlantılar, isteğe bağlı.
+        yield 'fayda liste değil' => ['faydalar 1–6 öğeli liste', self::ile(2, 'faydalar', 'Hızlı')];
+        yield 'yedi fayda' => ['faydalar 1–6 öğeli liste', self::ile(2, 'faydalar', array_fill(0, 7, 'Hızlı'))];
+        yield 'boş fayda' => ['1–120 karakter', self::ile(2, 'faydalar', ['Hızlı', '  '])];
+        yield 'http bağlantı' => ['https:// ile başlayan adres', self::ile(2, 'sartlar', 'http://ornek.com/sartlar')];
+        yield 'javascript bağlantı' => ['https:// ile başlayan adres', self::ile(2, 'gizlilik', 'javascript:alert(1)')];
+        yield 'boşluklu bağlantı' => ['https:// ile başlayan adres', self::ile(2, 'iptal', 'https://ornek.com/a b')];
+        yield 'faydalar paywall dışında' => ['alanlar tam olarak', self::ile(0, 'faydalar', ['Hızlı'])];
         yield 'seçenekte fazla alan' => ['yalnız id, metin', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'sonraki' => 'paywall'], ['id' => 'b', 'metin' => 'B']])];
+    }
+
+    /** Ç61 (3): fayda listesi ve üç yasal bağlantı geçerli; hiçbiri zorunlu değil. */
+    public function testPaywallFaydaVeYasalBaglantilarGecerli(): void
+    {
+        $t = self::ile(2, 'faydalar', ['Sınırsız sohbet', 'Reklamsız']);
+        $t['adimlar'][2] += [
+            'sartlar' => 'https://ornek.com/sartlar',
+            'gizlilik' => 'https://ornek.com/gizlilik?dil=tr',
+            'iptal' => 'https://ornek.com/iptal#iade',
+        ];
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::ile(2, 'faydalar', array_fill(0, 6, str_repeat('a', 120))), ['monthly']));
     }
 
     /** H5: seçenek ve tanıtım düğmesi ileriki bir adıma atlayabilir. */

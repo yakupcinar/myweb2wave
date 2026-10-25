@@ -19,6 +19,7 @@ final class Tanim
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
         'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
+        'fayda' => [1, 120],
     ];
 
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
@@ -113,6 +114,17 @@ final class Tanim
                 $beklenen[] = 'hedef';
                 self::hedef($adim['hedef'], $sira, $i, $yer, $h);
             }
+            // Ç61 (3): paywall'da isteğe bağlı fayda listesi ve yasal bağlantılar.
+            if ('paywall' === $tur && \array_key_exists('faydalar', $adim)) {
+                $beklenen[] = 'faydalar';
+                self::faydalar($adim['faydalar'], $yer, $h);
+            }
+            foreach ('paywall' === $tur ? ['sartlar', 'gizlilik', 'iptal'] : [] as $alan) {
+                if (\array_key_exists($alan, $adim)) {
+                    $beklenen[] = $alan;
+                    self::adres($adim[$alan], "{$yer} {$alan}", $h);
+                }
+            }
             if (!self::anahtarlar($adim, $beklenen)) {
                 $h[] = "{$yer}: alanlar tam olarak ".implode(', ', $beklenen).' olmalı';
                 continue;
@@ -179,6 +191,32 @@ final class Tanim
     {
         if (!\is_string($deger) || 1 !== preg_match('/^[0-9a-f]{64}$/', $deger)) {
             $h[] = "{$yer}: görsel kimliği geçersiz";
+        }
+    }
+
+    /** @param list<string> $h */
+    private static function faydalar(mixed $deger, string $yer, array &$h): void
+    {
+        if (!\is_array($deger) || !array_is_list($deger) || [] === $deger || \count($deger) > 6) {
+            $h[] = "{$yer}: faydalar 1–6 öğeli liste olmalı";
+
+            return;
+        }
+        foreach ($deger as $j => $fayda) {
+            self::metin($fayda, 'fayda', "{$yer} fayda ".($j + 1), $h);
+        }
+    }
+
+    /**
+     * Yasal bağlantı yalnız https: javascript:/data: gibi şemalar huni
+     * sayfasında tıklanınca betik çalıştırırdı (Ç61 (3)).
+     *
+     * @param list<string> $h
+     */
+    private static function adres(mixed $deger, string $yer, array &$h): void
+    {
+        if (!\is_string($deger) || 1 !== preg_match('~^https://[^\s]{1,490}$~', $deger)) {
+            $h[] = "{$yer}: https:// ile başlayan adres olmalı (en çok 500 karakter)";
         }
     }
 

@@ -274,7 +274,14 @@ export interface components {
             ilerlemeGoster?: boolean;
             /** @enum {string} */
             plan: "monthly";
+            /** @description Ç61: paywall'da madde madde fayda listesi (isteğe bağlı) */
+            faydalar?: string[];
+            sartlar?: components["schemas"]["YasalAdres"];
+            gizlilik?: components["schemas"]["YasalAdres"];
+            iptal?: components["schemas"]["YasalAdres"];
         };
+        /** @description Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı. */
+        YasalAdres: string;
         /** @description Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3) */
         GorselKimligi: string;
         /** @description Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/) */

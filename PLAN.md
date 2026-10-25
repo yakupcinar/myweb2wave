@@ -99,7 +99,7 @@
   - [x] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik — `docs/decisions/puck-soru-turleri.md` (tarayıcı: kullanıcı bakacak)
   - [x] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme — `docs/decisions/puck-akis-denetimi.md` (tarayıcı: kullanıcı)
   - [x] L6 · Ç61 huni: görünür geri düğmesi + okunur gizlilik bağlantısı — `docs/decisions/huni-geri-gizlilik.md`
-  - [ ] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları (sözleşme + çekirdek + Puck + oynatıcı)
+  - [x] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları — `docs/decisions/paywall-fayda-yasal.md`
   - [ ] L8 · Ç61 tema: logo + masaüstü düzeni
   - [ ] L9 · Ç44 görsel alt metni
   - [ ] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık)

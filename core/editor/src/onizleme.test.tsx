@@ -71,6 +71,10 @@ const tanim: Tanim = {
             metin: "9,99 €",
             dugme: "Abone ol",
             plan: "monthly",
+            // Ç61 (3): fayda + yasal bağlantı da iki yoldan aynı DOM.
+            faydalar: ["Sınırsız sohbet", "Reklamsız"],
+            sartlar: "https://ornek.com/sartlar",
+            iptal: "https://ornek.com/iptal",
         },
     ],
 };

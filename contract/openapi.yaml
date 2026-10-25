@@ -519,6 +519,21 @@ components:
         dugme: { type: string }
         ilerlemeGoster: { type: boolean }
         plan: { type: string, enum: [monthly] }
+        faydalar:
+          description: "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)"
+          type: array
+          minItems: 1
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        sartlar: { $ref: "#/components/schemas/YasalAdres" }
+        gizlilik: { $ref: "#/components/schemas/YasalAdres" }
+        iptal: { $ref: "#/components/schemas/YasalAdres" }
+    YasalAdres:
+      description: >-
+        Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https —
+        javascript: gibi şemalar huni sayfasında betik çalıştırırdı.
+      type: string
+      pattern: "^https://[^\\s]{1,490}$"
     GorselKimligi:
       description: "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)"
       type: string
