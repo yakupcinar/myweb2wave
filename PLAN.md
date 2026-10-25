@@ -93,7 +93,7 @@
 - [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
 - [x] **`/kontrol`** — `bin/kontrol`, kırma K4–K7
 - [ ] **DÖNGÜ KUYRUĞU — A13** (kararlar 2026-10-26, `pre-setup.md` A13). Sırayla, her biri ayrı blok (`/blok`), bitince commit + push; dış girdi gerekirse açık uca yaz, atla. İşaretle ve `docs/decisions/`e taşı:
-  - [ ] L1 · Ç60 dev DB göçü + `bin/kontrol` uyarı adımı · Ç62 `reference.php` `.gitignore`
+  - [x] L1 · Ç60 dev DB göçü + `bin/kontrol` uyarı adımı · Ç62 `reference.php` `.gitignore` — `docs/decisions/dev-goc-uyari.md`
   - [ ] L2 · Ç58 izin yarışı — istemcide sıralama
   - [ ] L3 · Ç59 terk edilen ödeme IP/UA — `checkout.session.expired` + 48 sa cron
   - [ ] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik
@@ -102,7 +102,7 @@
   - [ ] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları (sözleşme + çekirdek + Puck + oynatıcı)
   - [ ] L8 · Ç61 tema: logo + masaüstü düzeni
   - [ ] L9 · Ç44 görsel alt metni
-  - [ ] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing'i kullanıcı kapatır
+  - [ ] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık)
   - [ ] L11 · Ç53 b2 klasik düzenleyiciyi sil
   - [ ] L12 · Ç39 eşzamanlı kayıt 409
   - [ ] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de

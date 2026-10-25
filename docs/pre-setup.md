@@ -175,8 +175,8 @@ reddedilen: yayında reddetmek) + yeniden adlandırmada hedef güncelleme ·
 eşzamanlı kayıt 409 · Ç41 8 sa oturum + uyarı, huni arşivleme · Ç35
 oturumlar DB'de (**2FA şimdilik hayır**) · Ç34 ziyaret hız sınırı +
 sekmede ziyaret sürdürme · Ç23 ölü bağlantı denetimi · Ç14 Dependabot ·
-Ç19/Ç21 fiyat tek kaynak Stripe; **Adaptive Pricing'i kullanıcı Stripe
-panelinden kapatır** · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
+Ç19/Ç21 fiyat tek kaynak Stripe; **Adaptive Pricing AÇIK kalır**
+(kullanıcı 2026-10-26, ilk "kapat" kararını geri aldı) · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
 testi · Ç20 past_due test clock · Ç54 yöne göre geçiş · Ç50 Preact
 denemesi (ölç, iyiyse geç). Reddedilen / ertelenen: Ç32 bağlama geçmişi.
 Dış girdi bekleyenler (sunucu, anahtarlar, hukuk, KeepChat, anket metni)

@@ -41,6 +41,14 @@ adim ortam-db     docker compose up -d --wait db stripe-mock
 # EXIT=127 verdi (2026-10-19) — kapı yerel duruma dayanmamalı.
 adim core-kur     core   'composer install --no-interaction --no-progress'
 
+# Ç60: geliştirme DB'si göç gerisinde mi — kapı DEĞİL, uyarı. Test DB'si
+# aşağıda göçlenir; dev DB geride kalınca testler yeşilken tarayıcıda 500
+# (H6a'da ve 2026-10-26'da iki kez). CI'da dev DB'ye göç yok → atlanır.
+if [ -z "${CI:-}" ] && ! core 'php bin/console doctrine:migrations:up-to-date' > "$LOG/dev-goc.log" 2>&1; then
+  echo "UYARI dev-goc: geliştirme DB'si göç gerisinde → docker compose exec core php bin/console doctrine:migrations:migrate -n"
+  tail -3 "$LOG/dev-goc.log" | sed 's/^/    │ /'
+fi
+
 # 1 · Biçim
 adim core-bicim   core   'vendor/bin/php-cs-fixer check --diff'
 adim funnel-npm   funnel 'npm ci --no-audit --no-fund'
