@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Paywall, Soru, Tanitim, Yorum } from "./bilesenler";
+import { Logo, Paywall, Soru, Tanitim, Yorum } from "./bilesenler";
 import css from "./huni.css?raw";
 
 const G = "a".repeat(64);
@@ -141,6 +141,13 @@ describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
 });
 
 describe("D2 — görsel adresi kimlikten", () => {
+    it("logo çekirdeğin medya adresinden, .logo sınıfıyla (Ç61)", () => {
+        expect(
+            renderToStaticMarkup(<Logo gorsel={G} medyaKoku={KOK} />),
+        ).toContain(
+            `<img class="logo" src="${KOK}/medya/${G}.webp" alt="" decoding="async"/>`,
+        );
+    });
     it("tanıtım kapağı çekirdeğin medya adresinden, alt boş", () => {
         expect(tanitim(G)).toContain(
             `<img class="kapak" src="${KOK}/medya/${G}.webp" alt="" decoding="async"/>`,
@@ -194,6 +201,13 @@ describe("DOM huni sayfasıyla aynı", () => {
         expect(html).not.toContain('class="secenekler"');
         expect(serbestYanit(true)).toContain('required=""');
     });
+    it("masaüstünde sütun kart olur: üst boşluk + kenar (Ç61)", () => {
+        const masaustu =
+            css.match(/@media \(min-width: 768px\)\s*\{([\s\S]*?)\n\}/)?.[1] ??
+            "";
+        expect(masaustu).toMatch(/\.huni\s*\{[^}]*margin-top:/);
+        expect(masaustu).toMatch(/\.huni\s*\{[^}]*border:/);
+    });
     it("gizlilik bağlantısı okunur, geri düğmesi boyanır (Ç61)", () => {
         // Dokunma alanı en az 44 px (WCAG 2.5.5 / Apple HIG), yazı ≥ 15 px.
         const blok = (secici: string): string =>
@@ -219,6 +233,7 @@ describe("DOM huni sayfasıyla aynı", () => {
                     serbestYanit(),
                     yorum(),
                     paywall(),
+                    renderToStaticMarkup(<Logo gorsel={G} medyaKoku="" />),
                 ]
                     .join("")
                     .matchAll(/class="([^"]+)"/g),
@@ -228,6 +243,7 @@ describe("DOM huni sayfasıyla aynı", () => {
             "ana",
             "faydalar",
             "kapak",
+            "logo",
             "secenek-gorseli",
             "secenekler",
             "serbest-yanit",

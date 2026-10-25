@@ -11,6 +11,7 @@ import {
 } from "@puckeditor/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
+    Logo,
     Paywall,
     Soru,
     Tanitim,
@@ -379,6 +380,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     type: "text",
                     label: "Sayfa başlığı (tarayıcı sekmesi)",
                 },
+                logo: gorselAlani(ortam, "Logo (isteğe bağlı)"),
                 ozelTema: {
                     type: "radio",
                     label: "Bu huniye özel renk ve yazı tipi",
@@ -402,6 +404,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             render: ({
                 children,
+                logo,
                 ozelTema,
                 anaRenk,
                 arkaPlan,
@@ -437,7 +440,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                 4,5:1 olmalı, kaydedilemez.
                             </p>
                         ) : null}
-                        <div className="huni">{children}</div>
+                        <div className="huni">
+                            {logo ? <Logo gorsel={logo} medyaKoku="" /> : null}
+                            {children}
+                        </div>
                     </div>
                 );
             },

@@ -100,7 +100,7 @@
   - [x] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme — `docs/decisions/puck-akis-denetimi.md` (tarayıcı: kullanıcı)
   - [x] L6 · Ç61 huni: görünür geri düğmesi + okunur gizlilik bağlantısı — `docs/decisions/huni-geri-gizlilik.md`
   - [x] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları — `docs/decisions/paywall-fayda-yasal.md`
-  - [ ] L8 · Ç61 tema: logo + masaüstü düzeni
+  - [x] L8 · Ç61 tema: logo + masaüstü düzeni — `docs/decisions/huni-logo-masaustu.md`
   - [ ] L9 · Ç44 görsel alt metni
   - [ ] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık)
   - [ ] L11 · Ç53 b2 klasik düzenleyiciyi sil

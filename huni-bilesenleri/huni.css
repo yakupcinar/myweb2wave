@@ -180,3 +180,19 @@
 .huni p.yasal a {
     color: inherit;
 }
+/* Ç61 (5): logo ve masaüstü düzeni — geniş ekranda sütun üstten boşluklu,
+   ince kenarlı kart; dar ekranda değişmez. */
+.huni img.logo {
+    display: block;
+    max-width: 160px;
+    max-height: 40px;
+    margin: 0 0 12px;
+}
+@media (min-width: 768px) {
+    .huni {
+        margin-top: 8vh;
+        padding: 32px 40px;
+        border: 1px solid color-mix(in srgb, var(--metin) 12%, transparent);
+        border-radius: calc(var(--kose) * 2);
+    }
+}

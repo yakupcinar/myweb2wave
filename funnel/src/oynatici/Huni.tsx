@@ -5,7 +5,7 @@
 // tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey kaydedilmez,
 // ödeme kapalı. D1–D15: docs/decisions/huni-oynatici-h0.md (b).
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Adim } from "../../../huni-bilesenleri/bilesenler";
+import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { izinOku, izinYaz, type Izin } from "../lib/izin";
@@ -202,6 +202,7 @@ function Oynatici({
           hata={izinHatasi}
         />
       ) : null}
+      {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
       {onizleme ? (
         <p className="onizleme">
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.

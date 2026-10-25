@@ -87,6 +87,20 @@ final class HuniTest extends WebTestCase
         self::assertSame('https://ornek.com/gizlilik', $paywall['gizlilik'] ?? null);
     }
 
+    public function testLogoGecerliYayindaDonerSozlesmeyeUyar(): void
+    {
+        $logo = str_repeat('a1', 32);
+        $tanim = self::tanim('Logolu') + ['logo' => $logo];
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        $yanit = $this->yanit();
+        self::assertSame($logo, \is_array($yanit['tanim'] ?? null) ? ($yanit['tanim']['logo'] ?? null) : null);
+    }
+
     public function testIlerlemeTercihiYayindaDonerSozlesmeyeUyar(): void
     {
         $tanim = self::ile(0, 'ilerlemeGoster', false);
@@ -165,6 +179,9 @@ final class HuniTest extends WebTestCase
         yield 'seçenek hedefi yok' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('yok'))];
         yield 'seçenek hedefi dizge değil' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec(2))];
         yield 'tanıtım hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(0, 'hedef', 'giris')];
+        // Ç61 (5): isteğe bağlı logo — görsel kimliği.
+        yield 'logo geçersiz' => ['logo: görsel kimliği geçersiz', $t + ['logo' => 'logo.png']];
+        yield 'logo boş' => ['logo: görsel kimliği geçersiz', $t + ['logo' => '']];
         // Ç61 (3): paywall fayda listesi + yasal bağlantılar, isteğe bağlı.
         yield 'fayda liste değil' => ['faydalar 1–6 öğeli liste', self::ile(2, 'faydalar', 'Hızlı')];
         yield 'yedi fayda' => ['faydalar 1–6 öğeli liste', self::ile(2, 'faydalar', array_fill(0, 7, 'Hızlı'))];

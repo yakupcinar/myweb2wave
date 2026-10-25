@@ -210,6 +210,8 @@ export interface components {
         HuniTanimi: {
             sayfaBasligi: string;
             tema?: components["schemas"]["HuniTemasi"];
+            /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
+            logo?: components["schemas"]["GorselKimligi"];
             adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */

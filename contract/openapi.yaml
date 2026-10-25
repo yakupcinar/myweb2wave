@@ -429,6 +429,9 @@ components:
       properties:
         sayfaBasligi: { type: string, minLength: 1, maxLength: 120 }
         tema: { $ref: "#/components/schemas/HuniTemasi" }
+        logo:
+          description: "Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız)"
+          allOf: [{ $ref: "#/components/schemas/GorselKimligi" }]
         adimlar:
           type: array
           minItems: 2

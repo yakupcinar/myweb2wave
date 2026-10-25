@@ -60,6 +60,8 @@ export type YorumProps = {
 };
 export type KokProps = {
     sayfaBasligi: string;
+    /** Ç61 (5): boş dize = logo yok. */
+    logo: string;
     ozelTema: "evet" | "hayir";
     anaRenk: string;
     arkaPlan: string;
@@ -101,6 +103,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
         root: {
             props: {
                 sayfaBasligi: tanim.sayfaBasligi,
+                logo: tanim.logo ?? "",
                 ozelTema: tanim.tema ? "evet" : "hayir",
                 anaRenk: tema.anaRenk,
                 arkaPlan: tema.arkaPlan,
@@ -295,6 +298,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
         }
     });
     const tanim: Tanim = { sayfaBasligi: k?.sayfaBasligi ?? "", adimlar };
+    if (k?.logo) tanim.logo = k.logo;
     if (k?.ozelTema === "evet") {
         tanim.tema = {
             anaRenk: k.anaRenk,

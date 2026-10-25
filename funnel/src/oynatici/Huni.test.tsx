@@ -501,6 +501,22 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
     await waitFor(() => expect(gorunenBaslik()).toBe("Merhaba"));
   });
+  it("logo varsa sayfanın başında, yoksa hiç yok (Ç61)", async () => {
+    tanim = {
+      durum: 200,
+      govde: { ...yayin(), tanim: { ...yayin().tanim, logo: G } },
+    };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("img.logo")?.getAttribute("src")).toBe(
+      `${KOK}/medya/${G}.webp`,
+    );
+    cleanup();
+    tanim = { durum: 200, govde: yayin() };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("img.logo")).toBeNull();
+  });
   it("Geri düğmesi ilk adımda yok; sonrakinde önceki adıma döner (Ç61)", async () => {
     kur();
     await yuklendi();

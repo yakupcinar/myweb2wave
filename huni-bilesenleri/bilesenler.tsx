@@ -25,6 +25,17 @@ function Gorsel({
     );
 }
 
+/** Ç61 (5): sayfanın başındaki logo; başlık ürünü zaten adlandırır → alt boş. */
+export function Logo({
+    gorsel,
+    medyaKoku,
+}: {
+    gorsel: string;
+    medyaKoku: string;
+}): ReactNode {
+    return <Gorsel id={gorsel} medyaKoku={medyaKoku} sinif="logo" />;
+}
+
 // Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
 type GorselAlani = { gorsel?: string | undefined; medyaKoku: string };
 type Tiklama = { onDugme?: (() => void) | undefined };

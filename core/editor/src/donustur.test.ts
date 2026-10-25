@@ -353,3 +353,27 @@ describe("paywall faydaları ve yasal bağlantılar (Ç61)", () => {
             expect(adim).not.toHaveProperty(alan);
     });
 });
+
+describe("logo (Ç61)", () => {
+    const tanim = {
+        sayfaBasligi: "x",
+        adimlar: [
+            { id: "g", tur: "tanitim", baslik: "G", metin: "", dugme: "D" },
+            {
+                id: "p",
+                tur: "paywall",
+                baslik: "P",
+                metin: "",
+                dugme: "Al",
+                plan: "monthly",
+            },
+        ],
+    } as Tanim;
+    it("logo gidiş-dönüşte aynı; yoksa tanıma yazılmaz", () => {
+        const logolu = { ...tanim, logo: "b".repeat(64) } as Tanim;
+        expect(puckTanim(tanimdanPuck(logolu, VARSAYILAN))).toEqual(logolu);
+        expect(puckTanim(tanimdanPuck(tanim, VARSAYILAN))).not.toHaveProperty(
+            "logo",
+        );
+    });
+});

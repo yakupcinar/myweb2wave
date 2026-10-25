@@ -38,10 +38,15 @@ final class Tanim
     public static function hatalar(mixed $tanim, array $planlar): array
     {
         // tema isteğe bağlı (E2.2): yoksa huni sayfası varsayılanı kullanır.
-        if (!\is_array($tanim) || !self::anahtarlar($tanim, \array_key_exists('tema', $tanim) ? ['sayfaBasligi', 'adimlar', 'tema'] : ['sayfaBasligi', 'adimlar'])) {
-            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema içermeli'];
+        // logo isteğe bağlı (Ç61 (5)): temadan bağımsız, görsel kimliği.
+        $istege = \is_array($tanim) ? array_values(array_intersect(['tema', 'logo'], array_map(strval(...), array_keys($tanim)))) : [];
+        if (!\is_array($tanim) || !self::anahtarlar($tanim, ['sayfaBasligi', 'adimlar', ...$istege])) {
+            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema, logo içermeli'];
         }
         $h = \array_key_exists('tema', $tanim) ? Tema::hatalar($tanim['tema']) : [];
+        if (\array_key_exists('logo', $tanim)) {
+            self::gorsel($tanim['logo'], 'logo', $h);
+        }
         self::metin($tanim['sayfaBasligi'], 'sayfaBasligi', 'sayfaBasligi', $h);
         $adimlar = $tanim['adimlar'];
         if (!\is_array($adimlar) || !array_is_list($adimlar) || \count($adimlar) < 2 || \count($adimlar) > self::AZAMI_ADIM) {
