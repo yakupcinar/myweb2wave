@@ -110,6 +110,22 @@ final class PanelTest extends WebTestCase
         self::assertSame(['1', '0', '0', '0,0 %'], $this->kart('organik'));
     }
 
+    /** Ç56 (3): izin oranı — yalnız sayı; seçmeyen = ne kabul ne ret. */
+    public function testIzinOranlariKarti(): void
+    {
+        foreach (['izin_at = now()', 'izin_at = now()', 'izin_red_at = now()', 'true'] as $i => $kosul) {
+            $id = $this->ziyaretEkle([], ($i + 1).' minutes');
+            if ('true' !== $kosul) {
+                $this->db->executeStatement("UPDATE huni_ziyaretleri SET {$kosul} WHERE id = :id", ['id' => $id]);
+            }
+        }
+        $this->girisYapmis();
+
+        $this->client->request('GET', '/panel');
+
+        self::assertSame(['2 · 50,0 %', '1 · 25,0 %', '1 · 25,0 %'], $this->kart('izin'));
+    }
+
     public function testGunAraligiEskiZiyaretiAyirir(): void
     {
         $this->veriKur();

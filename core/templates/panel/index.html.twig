@@ -24,6 +24,16 @@
                 </dl>
             </div>
         {% endfor %}
+        {# Ç56 (3): yalnız sayı — kim kabul etti bilgisi yok. #}
+        {% set izin_toplam = izinler.kabul + izinler.red + izinler.secmeyen %}
+        <div class="kart" data-kaynak="izin">
+            <h2>Reklam ölçümü izni</h2>
+            <dl>
+                {% for ad, n in {'Kabul etti': izinler.kabul, 'Reddetti': izinler.red, 'Seçmedi': izinler.secmeyen} %}
+                    <dt>{{ ad }}</dt><dd>{{ n }} · {{ izin_toplam > 0 ? ((n / izin_toplam * 100)|number_format(1, ',') ~ ' %') : '—' }}</dd>
+                {% endfor %}
+            </dl>
+        </div>
     </section>
 
     {% if adimlar is not empty %}

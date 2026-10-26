@@ -83,12 +83,7 @@ function Oynatici({
   const [ziyaretSozu] = useState(() =>
     onizleme
       ? Promise.resolve(undefined)
-      : ziyaretBaslat(
-          app,
-          yayin.huni,
-          yayin.surum ?? undefined,
-          izinOku() === "evet",
-        ),
+      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined, izinOku()),
   );
   const [mevcut, setMevcut] = useState(0);
   const [secimler, setSecimler] = useState<Record<string, string[]>>({});
@@ -192,6 +187,8 @@ function Oynatici({
     setGeriAlGerekir(false);
     setIzinHatasi("");
     if (secim === "evet") izinIstegi.current = izinBildir(ziyaretSozu);
+    // Ç56 (3): ilk ret de çekirdeğe yazılsın (oran raporu); hata yutulur.
+    else if (!geriAlGerekir) void izinGeriAl(ziyaretSozu);
   }
 
   return (

@@ -108,7 +108,7 @@
   - [x] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de — `docs/decisions/panel-oturum.md`
   - [x] L14 · Ç41 huni arşivleme/silme — `docs/decisions/huni-arsiv.md`
   - [x] L15 · Ç34 ziyaret hız sınırı + sekmede ziyaret sürdürme (+ güvenilir vekil, H6b IP hatası) — `docs/decisions/ziyaret-hiz-siniri.md`
-  - [ ] L16 · Ç56-3 izin oranı raporu
+  - [x] L16 · Ç56-3 izin oranı raporu — `docs/decisions/izin-orani.md`
   - [ ] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock
   - [ ] L18 · Ç23 ölü bağlantı denetimi · Ç14 Dependabot
   - [ ] L19 · Ç54 yöne göre geçiş + yumuşak ilerleme çubuğu

@@ -85,6 +85,28 @@ final readonly class Rapor
     }
 
     /**
+     * Ç56 (3): reklam ölçümü izni — kabul / ret / seçmeyen (yalnız sayı).
+     *
+     * @return array{kabul: int, red: int, secmeyen: int}
+     */
+    public function izinler(int $gun): array
+    {
+        $s = $this->db->fetchAssociative(
+            'SELECT count(*) FILTER (WHERE izin_at IS NOT NULL) AS kabul,
+                    count(*) FILTER (WHERE izin_red_at IS NOT NULL) AS red,
+                    count(*) FILTER (WHERE izin_at IS NULL AND izin_red_at IS NULL) AS secmeyen
+             FROM huni_ziyaretleri WHERE created_at >= now() - make_interval(days => :gun)',
+            ['gun' => $gun],
+        );
+
+        return [
+            'kabul' => self::sayi($s['kabul'] ?? 0),
+            'red' => self::sayi($s['red'] ?? 0),
+            'secmeyen' => self::sayi($s['secmeyen'] ?? 0),
+        ];
+    }
+
+    /**
      * Anket hunisi: her adıma kaç ziyaret ulaştı (uygulama + huni başına, A8).
      * Adım adı huni tanımından gelir; tanım değiştiyse aynı sıradaki en son ad.
      *

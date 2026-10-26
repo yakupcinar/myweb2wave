@@ -62,14 +62,15 @@ export function ziyaretBaslat(
   app: Govde<"/huni/ziyaretler">["app"],
   huni?: string,
   surum?: number,
-  izin = false,
+  /** Ç56 (3): önceki tercih — "hayir" de çekirdeğe gider (oran raporu). */
+  izin: "evet" | "hayir" | null = null,
 ): Promise<string | undefined> {
   const anahtar = sekmeAnahtari(app, huni, surum);
   const onceki = sekmedenOku(anahtar);
   if (onceki) {
     const soz = Promise.resolve(onceki);
     // Ziyaret izinsiz açılmış olabilir; izin sonradan verildiyse bildir.
-    if (izin) void izinBildir(soz);
+    if (izin === "evet") void izinBildir(soz);
     return soz;
   }
   const adres = new URLSearchParams(window.location.search);
@@ -82,7 +83,9 @@ export function ziyaretBaslat(
     const deger = adres.get(ad)?.slice(0, 500);
     if (deger) govde[ad] = deger;
   }
-  if (izin) Object.assign(govde, tiklamaKimlikleri(), { izin: true });
+  if (izin === "evet")
+    Object.assign(govde, tiklamaKimlikleri(), { izin: true });
+  else if (izin === "hayir") govde.izin = false;
   return cekirdek
     .POST("/huni/ziyaretler", { body: govde })
     .then(({ data }) => {

@@ -141,6 +141,42 @@ final class AtifTest extends WebTestCase
         self::assertSame(1, $this->say("reklam_donusumleri WHERE event_id = 'cs_already_sent' AND gonderildi_at IS NOT NULL"));
     }
 
+    /**
+     * Ç56 (3): izin oranı raporu için çekirdek üç durumu ayırır — kabul
+     * (izin_at), ret (izin_red_at), seçmedi (ikisi de boş). Kişisel veri yok.
+     */
+    public function testIzinDurumuKabulRetVeSecmeyenAyrilir(): void
+    {
+        $durum = function (array $ek): array {
+            $this->client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat'] + $ek);
+            $id = $this->yanit()['ziyaret'] ?? null;
+            self::assertIsString($id);
+
+            return [$id, $this->db->fetchAssociative('SELECT izin_at IS NOT NULL AS kabul, izin_red_at IS NOT NULL AS red FROM huni_ziyaretleri WHERE id = :id', ['id' => $id])];
+        };
+        self::assertSame(['kabul' => true, 'red' => false], $durum(['izin' => true])[1]);
+        self::assertSame(['kabul' => false, 'red' => true], $durum(['izin' => false])[1]);
+        [$secmeyen, $bos] = $durum([]);
+        self::assertSame(['kabul' => false, 'red' => false], $bos);
+
+        // Şeritte Reddet → geri alma ucu ret yazar; sonradan Kabul reti siler.
+        $this->client->request('DELETE', "/huni/ziyaretler/{$secmeyen}/izin");
+        self::assertResponseStatusCodeSame(204);
+        self::assertNotNull($this->db->fetchOne('SELECT izin_red_at FROM huni_ziyaretleri WHERE id = :id', ['id' => $secmeyen]));
+        $this->client->jsonRequest('POST', "/huni/ziyaretler/{$secmeyen}/izin", []);
+        self::assertSame(
+            ['kabul' => true, 'red' => false],
+            $this->db->fetchAssociative('SELECT izin_at IS NOT NULL AS kabul, izin_red_at IS NOT NULL AS red FROM huni_ziyaretleri WHERE id = :id', ['id' => $secmeyen]),
+        );
+    }
+
+    /** Tuzak §4: aynı ziyaret hem kabul hem ret olamaz — kısıt doğrudan. */
+    public function testIzinHemKabulHemRetOlamaz(): void
+    {
+        $this->expectException(\Doctrine\DBAL\Exception\DriverException::class);
+        $this->db->executeStatement("INSERT INTO huni_ziyaretleri (app, izin_at, izin_red_at) VALUES ('keepchat', now(), now())");
+    }
+
     public function testIzinGeriAlBilinmeyenZiyaret404(): void
     {
         $this->client->request('DELETE', '/huni/ziyaretler/00000000-0000-4000-8000-000000000000/izin');

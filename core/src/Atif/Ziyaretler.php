@@ -45,19 +45,20 @@ final readonly class Ziyaretler
      *
      * @param array<value-of<self::ALANLAR>, string|null> $alanlar
      */
-    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null, bool $izin = false): string
+    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null, ?bool $izin = null): string
     {
-        if (!$izin) {
+        // Ç56 (3): null = şeritte henüz seçmedi; false = daha önce reddetti.
+        if (true !== $izin) {
             $alanlar = array_merge($alanlar, array_fill_keys(self::TIKLAMA, null));
         }
         $id = $this->db->fetchOne(
             'WITH s AS (SELECT ad, surum FROM huni_surumleri WHERE app = :app AND ad = :huni AND surum = CAST(:surum AS int))
-             INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at)
+             INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at, izin_red_at)
              VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :utm_content, :utm_term, :fbclid, :ttclid,
-                     (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :izin THEN now() END)
+                     (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :kabul THEN now() END, CASE WHEN :red THEN now() END)
              RETURNING id',
-            ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'izin' => $izin] + $alanlar,
-            ['izin' => \Doctrine\DBAL\ParameterType::BOOLEAN],
+            ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'kabul' => true === $izin, 'red' => false === $izin] + $alanlar,
+            ['kabul' => \Doctrine\DBAL\ParameterType::BOOLEAN, 'red' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
         \assert(\is_string($id));
 
@@ -77,7 +78,7 @@ final readonly class Ziyaretler
         }
 
         return 1 === $this->db->executeStatement(
-            'UPDATE huni_ziyaretleri SET izin_at = coalesce(izin_at, now()),
+            'UPDATE huni_ziyaretleri SET izin_at = coalesce(izin_at, now()), izin_red_at = NULL,
                     fbclid = coalesce(:fbclid, fbclid), ttclid = coalesce(:ttclid, ttclid)
              WHERE id = :id',
             ['id' => $ziyaret, 'fbclid' => $tiklama['fbclid'] ?? null, 'ttclid' => $tiklama['ttclid'] ?? null],
@@ -97,7 +98,7 @@ final readonly class Ziyaretler
                 ['id' => $ziyaret],
             );
             $var = 1 === $db->executeStatement(
-                'UPDATE huni_ziyaretleri SET izin_at = NULL, fbclid = NULL, ttclid = NULL WHERE id = :id',
+                'UPDATE huni_ziyaretleri SET izin_at = NULL, izin_red_at = now(), fbclid = NULL, ttclid = NULL WHERE id = :id',
                 ['id' => $ziyaret],
             );
             if (!$var) {

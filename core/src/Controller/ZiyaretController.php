@@ -50,8 +50,8 @@ final readonly class ZiyaretController
 
         $huni = $govde['huni'] ?? null;
         $surum = $govde['surum'] ?? null;
-        $izin = $govde['izin'] ?? false;
-        if (!\is_bool($izin)
+        $izin = $govde['izin'] ?? null;
+        if ((null !== $izin && !\is_bool($izin))
             || (null !== $surum && (!\is_int($surum) || $surum < 1))
             || (null !== $huni && (!\is_string($huni) || 1 !== preg_match(Tanim::KIMLIK, $huni)))) {
             return new JsonResponse(['error' => 'invalid_request'], 422);

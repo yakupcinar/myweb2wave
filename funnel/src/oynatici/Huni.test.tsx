@@ -757,6 +757,10 @@ describe("H6a — reklam ölçümü izni (A12)", () => {
     fireEvent.click(screen.getByText("Reddet"));
     await bekleZiyaret();
     expect(izinler()).toEqual([]);
+    // Ç56 (3): ret çekirdeğe yazılır (oran raporu) — geri alma ucuyla.
+    await waitFor(() =>
+      expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
+    );
     expect(screen.queryByText("Reddet")).toBeNull();
     expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
   });
@@ -782,6 +786,7 @@ describe("H6a — reklam ölçümü izni (A12)", () => {
     await bekleZiyaret();
     expect(screen.queryByText("Kabul et")).toBeNull();
     expect(ziyaretGovdesi()).not.toHaveProperty("fbclid");
+    expect(ziyaretGovdesi()).toHaveProperty("izin", false); // Ç56 (3)
   });
 
   it("gizlilik ayarından izin geri alınca çekirdeğe silme isteği yollar", async () => {
