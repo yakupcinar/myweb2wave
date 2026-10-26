@@ -102,7 +102,7 @@
   - [x] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları — `docs/decisions/paywall-fayda-yasal.md`
   - [x] L8 · Ç61 tema: logo + masaüstü düzeni — `docs/decisions/huni-logo-masaustu.md`
   - [x] L9 · Ç44 görsel alt metni (+ logo medya kontrolü) — `docs/decisions/gorsel-alt-metni.md`
-  - [ ] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık)
+  - [x] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık) — `docs/decisions/fiyat-tek-kaynak.md` (kullanıcı: paywall metninden elle fiyatı sil)
   - [ ] L11 · Ç53 b2 klasik düzenleyiciyi sil
   - [ ] L12 · Ç39 eşzamanlı kayıt 409
   - [ ] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de

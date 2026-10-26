@@ -194,6 +194,7 @@ export function Paywall({
     baslik,
     metin,
     dugme,
+    fiyat,
     faydalar = [],
     sartlar,
     gizlilik,
@@ -205,6 +206,8 @@ export function Paywall({
     baslik: string;
     metin: string;
     dugme: string;
+    /** Ç19/Ç21: biçimlenmiş Stripe fiyatı ("€9,99 / ay"); yoksa satır yok. */
+    fiyat?: string | undefined;
     faydalar?: string[] | undefined;
     sartlar?: string | undefined;
     gizlilik?: string | undefined;
@@ -219,6 +222,7 @@ export function Paywall({
         <section>
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
+            {fiyat ? <p className="fiyat">{fiyat}</p> : null}
             {faydalar.length ? (
                 <ul className="faydalar">
                     {faydalar.map((f, i) => (
@@ -354,7 +358,13 @@ export function Adim({
     onCokluDevam?: (() => void) | undefined;
     cevapMetni?: string | undefined;
     onMetinDegistir?: ((metin: string) => void) | undefined;
-    odeme?: { onDugme?: () => void; kapali?: boolean; hata?: string };
+    odeme?: {
+        onDugme?: () => void;
+        kapali?: boolean;
+        hata?: string;
+        /** Ç19/Ç21: biçimlenmiş Stripe fiyatı. */
+        fiyat?: string | undefined;
+    };
 }): ReactNode {
     switch (adim.tur) {
         case "tanitim":

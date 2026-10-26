@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
+import { fiyatMetni } from "../lib/fiyat";
 import { izinOku, izinYaz, type Izin } from "../lib/izin";
 import {
   ilerlemeBildir,
@@ -292,6 +293,10 @@ function Oynatici({
                 odeme={{
                   kapali: onizleme || odeme.suruyor,
                   hata: odeme.hata,
+                  fiyat:
+                    adim.tur === "paywall"
+                      ? fiyatMetni(yayin.fiyatlar?.[adim.plan])
+                      : undefined,
                   onDugme: () => {
                     if (adim.tur === "paywall") void aboneOl(adim.plan);
                   },

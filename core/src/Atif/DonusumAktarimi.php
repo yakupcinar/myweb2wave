@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Atif;
 
+use App\Billing\ParaBirimi;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -14,8 +15,6 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 final readonly class DonusumAktarimi
 {
     public const AZAMI_DENEME = 10;
-
-    private const SIFIR_ONDALIKLI_PARA_BIRIMLERI = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
 
     public function __construct(
         private Connection $db,
@@ -82,7 +81,7 @@ final readonly class DonusumAktarimi
 
         $url = rtrim($this->huniAdresi, '/').'/'.rawurlencode($app).'/basarili';
         $eventId = $oturum; // H6c tarayıcı Purchase olayı da aynı Stripe oturumunu kullanır.
-        $anaBirimTutar = \in_array(strtoupper($para), self::SIFIR_ONDALIKLI_PARA_BIRIMLERI, true) ? $tutar : $tutar / 100;
+        $anaBirimTutar = ParaBirimi::anaBirim($tutar, $para);
         $metaUser = ['client_ip_address' => $ip, 'client_user_agent' => $ua];
         $fbclid = $ziyaret['fbclid'] ?? null;
         $createdAt = $ziyaret['created_at'] ?? null;

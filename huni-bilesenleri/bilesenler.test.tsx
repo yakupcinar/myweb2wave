@@ -34,6 +34,7 @@ const paywall = (): string =>
             baslik="Pro"
             metin="9,99 €"
             dugme="Abone ol"
+            fiyat="€9,99 / ay"
             faydalar={["Sınırsız sohbet", "Reklamsız"]}
             sartlar="https://ornek.com/sartlar"
             gizlilik="https://ornek.com/gizlilik"
@@ -111,6 +112,8 @@ describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
         expect(html).toContain(
             '<ul class="faydalar"><li>Sınırsız sohbet</li><li>Reklamsız</li></ul>',
         );
+        // Ç19/Ç21: Stripe'tan gelen fiyat metnin altında.
+        expect(html).toContain('<p>9,99 €</p><p class="fiyat">€9,99 / ay</p>');
         expect(html).toContain(
             '<a href="https://ornek.com/sartlar" target="_blank" rel="noopener noreferrer">Kullanım şartları</a>',
         );
@@ -268,6 +271,7 @@ describe("DOM huni sayfasıyla aynı", () => {
         expect([...siniflar].sort()).toEqual([
             "ana",
             "faydalar",
+            "fiyat",
             "kapak",
             "logo",
             "secenek-gorseli",

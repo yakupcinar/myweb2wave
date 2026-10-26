@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Billing\Fiyatlar;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,6 +23,7 @@ final readonly class HuniController
 
     public function __construct(
         private Huniler $huniler,
+        private Fiyatlar $fiyatlar,
     ) {
     }
 
@@ -44,11 +46,19 @@ final readonly class HuniController
         if (null === $huni || null === $yayin) {
             return new JsonResponse(['error' => 'unknown_app'], 404);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin);
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + $this->fiyatAlani($app));
         $yanit->setPublic();
         $yanit->setMaxAge(self::ONBELLEK_SN);
 
         return $yanit;
+    }
+
+    /** @return array{fiyatlar?: non-empty-array<string, array{tutar: int|float, paraBirimi: string, aralik: string}>} */
+    private function fiyatAlani(string $app): array
+    {
+        $fiyatlar = $this->fiyatlar->uygulama($app);
+
+        return [] === $fiyatlar ? [] : ['fiyatlar' => $fiyatlar];
     }
 
     #[Route('/huni/{app}/taslak', name: 'huni_taslak', methods: ['GET'], requirements: ['app' => '[a-z0-9_-]+'])]
@@ -60,7 +70,7 @@ final readonly class HuniController
         if (null === $taslak || !$this->huniler->anahtarGecerli($app, $ad, $anahtar, time())) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad, 'surum' => null, 'tanim' => $taslak]);
+        $yanit = new JsonResponse(['huni' => $ad, 'surum' => null, 'tanim' => $taslak] + $this->fiyatAlani($app));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

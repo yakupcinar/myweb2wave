@@ -421,6 +421,21 @@ components:
         huni: { $ref: "#/components/schemas/HuniKimligi" }
         surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
         tanim: { $ref: "#/components/schemas/HuniTanimi" }
+        fiyatlar:
+          description: >-
+            Ç19/Ç21: plan → Stripe fiyatı (tek kaynak). Stripe'a ulaşılamazsa
+            ya da fiyat tek aralıklı yinelenen değilse yok — paywall yalnız
+            metnini gösterir.
+          type: object
+          additionalProperties: { $ref: "#/components/schemas/PlanFiyati" }
+    PlanFiyati:
+      type: object
+      additionalProperties: false
+      required: [tutar, paraBirimi, aralik]
+      properties:
+        tutar: { type: number, description: Ana birimde (9.99) }
+        paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
+        aralik: { type: string, enum: [day, week, month, year] }
     HuniTanimi:
       description: Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)
       type: object

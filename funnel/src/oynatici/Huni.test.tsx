@@ -501,6 +501,27 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
     await waitFor(() => expect(gorunenBaslik()).toBe("Merhaba"));
   });
+  it("paywall fiyatı yanıttaki Stripe fiyatından; yoksa satır yok (Ç19/Ç21)", async () => {
+    tanim = {
+      durum: 200,
+      govde: {
+        ...yayin(),
+        fiyatlar: {
+          monthly: { tutar: 9.99, paraBirimi: "EUR", aralik: "month" },
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    expect(
+      document.querySelector('[data-adim="paywall"] p.fiyat')?.textContent,
+    ).toBe("€9,99 / ay");
+    cleanup();
+    tanim = { durum: 200, govde: yayin() };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("p.fiyat")).toBeNull();
+  });
   it("logo varsa sayfanın başında, yoksa hiç yok (Ç61)", async () => {
     tanim = {
       durum: 200,

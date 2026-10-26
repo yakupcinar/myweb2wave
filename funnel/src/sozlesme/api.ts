@@ -205,6 +205,17 @@ export interface components {
             /** @description Yayınlanmış sürüm; taslakta null */
             surum: number | null;
             tanim: components["schemas"]["HuniTanimi"];
+            /** @description Ç19/Ç21: plan → Stripe fiyatı (tek kaynak). Stripe'a ulaşılamazsa ya da fiyat tek aralıklı yinelenen değilse yok — paywall yalnız metnini gösterir. */
+            fiyatlar?: {
+                [key: string]: components["schemas"]["PlanFiyati"];
+            };
+        };
+        PlanFiyati: {
+            /** @description Ana birimde (9.99) */
+            tutar: number;
+            paraBirimi: string;
+            /** @enum {string} */
+            aralik: "day" | "week" | "month" | "year";
         };
         /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
         HuniTanimi: {

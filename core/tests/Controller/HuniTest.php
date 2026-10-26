@@ -46,7 +46,7 @@ final class HuniTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
         // assertEquals: JSONB nesne anahtarlarını yeniden sıralar; içerik aynı olmalı.
-        self::assertEquals(['huni' => 'genel', 'surum' => 2, 'tanim' => self::tanim('İki')], $this->yanit());
+        self::assertEquals(['huni' => 'genel', 'surum' => 2, 'tanim' => self::tanim('İki')], $this->yanit(fiyatsiz: true));
         self::assertResponseHeaderSame('Cache-Control', 'max-age=60, public');
         self::assertSame(
             ['Bir', 'İki'],
@@ -337,7 +337,7 @@ final class HuniTest extends WebTestCase
         $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'genel', 'anahtar' => $iyi]);
         self::assertResponseStatusCodeSame(200);
         Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
-        self::assertEquals(['huni' => 'genel', 'surum' => null, 'tanim' => self::tanim('Taslak')], $this->yanit());
+        self::assertEquals(['huni' => 'genel', 'surum' => null, 'tanim' => self::tanim('Taslak')], $this->yanit(fiyatsiz: true));
         self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
 
         $eski = $this->huniler->onizlemeAnahtari('keepchat', 'genel', time() - Huniler::ONIZLEME_SN - 1);
@@ -429,10 +429,17 @@ final class HuniTest extends WebTestCase
         );
     }
 
-    /** @return array<mixed> */
-    private function yanit(): array
+    /**
+     * @param bool $fiyatsiz Stripe fiyatı (Ç19/Ç21) bu testlerin konusu değil — FiyatTest
+     *
+     * @return array<mixed>
+     */
+    private function yanit(bool $fiyatsiz = false): array
     {
         $j = json_decode((string) $this->client->getResponse()->getContent(), true);
+        if ($fiyatsiz && \is_array($j)) {
+            unset($j['fiyatlar']);
+        }
 
         return \is_array($j) ? $j : [];
     }
