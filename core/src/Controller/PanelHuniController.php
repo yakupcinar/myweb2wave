@@ -131,6 +131,7 @@ final class PanelHuniController extends AbstractController
             'uygulama' => $app,
             'huni' => $ad,
             'taslak' => $taslak,
+            'imza' => $this->huniler->taslakImzasi($app, $ad),
             'planlar' => array_keys($this->uygulamalar[$app]),
             'tema_varsayilan' => Tema::VARSAYILAN,
             'yazi_tipleri' => Tema::YAZI_TIPLERI,
@@ -147,9 +148,17 @@ final class PanelHuniController extends AbstractController
         if (!$this->isCsrfTokenValid('huni-'.$app, $request->headers->get('X-CSRF-Token', ''))) {
             return new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403);
         }
-        $hatalar = $this->huniler->taslakKaydet($app, $ad, $request->toArray()['tanim'] ?? null);
+        $govde = $request->toArray();
+        // Ç39: imzasız kayıt da çakışma sayılır — düzenleyici hep yollar.
+        $imza = \is_string($govde['imza'] ?? null) ? $govde['imza'] : '';
+        $hatalar = $this->huniler->taslakKaydet($app, $ad, $govde['tanim'] ?? null, $imza);
+        if ([Huniler::CAKISMA] === $hatalar) {
+            return new JsonResponse(['hatalar' => $hatalar], 409);
+        }
 
-        return new JsonResponse(['hatalar' => $hatalar], [] === $hatalar ? 200 : 422);
+        return [] === $hatalar
+            ? new JsonResponse(['hatalar' => [], 'imza' => $this->huniler->taslakImzasi($app, $ad)])
+            : new JsonResponse(['hatalar' => $hatalar], 422);
     }
 
     /**
@@ -199,7 +208,7 @@ final class PanelHuniController extends AbstractController
             return new JsonResponse(['hatalar' => ["v{$surum} bulunamadı."]], 404);
         }
 
-        return new JsonResponse(['tanim' => $this->huniler->taslak($app, $ad)]);
+        return new JsonResponse(['tanim' => $this->huniler->taslak($app, $ad), 'imza' => $this->huniler->taslakImzasi($app, $ad)]);
     }
 
     /**

@@ -60,6 +60,7 @@
              data-durum="{{ path('panel_huni_durum', {app: uygulama, ad: huni}) }}"
              data-medya="{{ path('panel_medya_liste', {app: uygulama}) }}"
              data-jeton="{{ csrf_token('huni-' ~ uygulama) }}"
+             data-imza="{{ imza }}"
              data-baslik="{{ uygulama }} · {{ huni }}"></div>
         <script type="module" src="{{ betik }}"></script>
     </body>

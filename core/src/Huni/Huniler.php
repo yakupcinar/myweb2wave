@@ -68,6 +68,11 @@ final readonly class Huniler
         return false === $s ? null : ['surum' => self::sayi($s['surum']), 'tanim' => self::json($s['tanim'])];
     }
 
+    public const CAKISMA = 'Bu taslak başka bir sekmede ya da başka biri tarafından değiştirildi — sayfayı yenileyip yeniden düzenleyin.';
+
+    /** Veritabanındaki taslak metninin SHA-256'sı (JSONB metni kararlı). */
+    private const IMZA = "encode(sha256(convert_to(taslak::text, 'UTF8')), 'hex')";
+
     /** @return array<mixed>|null */
     public function taslak(string $app, string $ad): ?array
     {
@@ -143,18 +148,32 @@ final readonly class Huniler
     }
 
     /** @return list<string> hatalar; boşsa kaydedildi */
-    public function taslakKaydet(string $app, string $ad, mixed $tanim): array
+    public function taslakKaydet(string $app, string $ad, mixed $tanim, ?string $beklenenImza = null): array
     {
         $hatalar = $this->hatalar($app, $tanim);
         if ([] !== $hatalar) {
             return $hatalar;
         }
+        // Ç39: imza verildiyse karşılaştırma AYNI UPDATE'te — okuyup sonra
+        // yazmak iki kaydı arasına üçüncüsünü sokardı.
         $n = $this->db->executeStatement(
-            'UPDATE huniler SET taslak = CAST(:t AS jsonb), updated_at = now() WHERE app = :app AND ad = :ad',
-            ['app' => $app, 'ad' => $ad, 't' => self::kodla($tanim)],
+            'UPDATE huniler SET taslak = CAST(:t AS jsonb), updated_at = now()
+             WHERE app = :app AND ad = :ad AND (CAST(:imza AS text) IS NULL OR '.self::IMZA.' = :imza)',
+            ['app' => $app, 'ad' => $ad, 't' => self::kodla($tanim), 'imza' => $beklenenImza],
         );
+        if (1 === $n) {
+            return [];
+        }
 
-        return 1 === $n ? [] : ["'{$ad}' adında huni yok"];
+        return null === $this->taslakImzasi($app, $ad) ? ["'{$ad}' adında huni yok"] : [self::CAKISMA];
+    }
+
+    /** Ç39: taslağın imzası — düzenleyici açılışta alır, kayıtta geri yollar. */
+    public function taslakImzasi(string $app, string $ad): ?string
+    {
+        $imza = $this->db->fetchOne('SELECT '.self::IMZA.' FROM huniler WHERE app = :app AND ad = :ad', ['app' => $app, 'ad' => $ad]);
+
+        return \is_string($imza) ? $imza : null;
     }
 
     /**

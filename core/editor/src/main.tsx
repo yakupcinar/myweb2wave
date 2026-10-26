@@ -42,6 +42,7 @@ if (kok) {
                 varsayilanTema={json<Tema>("temaVarsayilan")}
                 ortam={ortam}
                 kaydetAdresi={ds["kaydet"] ?? ""}
+                ilkImza={ds["imza"] ?? ""}
                 durumAdresi={ds["durum"] ?? ""}
                 baslik={ds["baslik"] ?? ""}
             />
@@ -63,6 +64,7 @@ function Duzenleyici({
     varsayilanTema,
     ortam,
     kaydetAdresi,
+    ilkImza,
     durumAdresi,
     baslik,
 }: {
@@ -70,6 +72,8 @@ function Duzenleyici({
     varsayilanTema: Tema;
     ortam: Ortam;
     kaydetAdresi: string;
+    /** Ç39: açılıştaki taslak imzası; çekirdek eşleşmezse 409 (başka sekme kaydetti). */
+    ilkImza: string;
     durumAdresi: string;
     baslik: string;
 }) {
@@ -80,6 +84,7 @@ function Duzenleyici({
     const [guncel, setGuncel] = useState(() => imza(ilk));
     const [yayin, setYayin] = useState<YayinDurumu | null>(null);
     const [mesgul, setMesgul] = useState(false);
+    const [imzaDegeri, setImza] = useState(ilkImza);
     const [durum, setDurum] = useState<Bildirim | null>(null);
 
     const yenile = useCallback(async (): Promise<void> => {
@@ -135,6 +140,7 @@ function Duzenleyici({
         islem(async () => {
             const { ok, json } = await gonder(kaydetAdresi, {
                 tanim: puckTanim(veri),
+                imza: imzaDegeri,
             });
             if (!ok)
                 return {
@@ -143,6 +149,7 @@ function Duzenleyici({
                     hatalar: hatalar(json),
                 };
             setKayitli(imza(veri));
+            setImza(String(json["imza"]));
             return {
                 tur: "tamam",
                 metin: "Kaydedildi. Önizleyebilir ya da yayınlayabilirsin.",
@@ -178,6 +185,7 @@ function Duzenleyici({
                     hatalar: hatalar(json),
                 };
             const veri = tanimdanPuck(json["tanim"] as Tanim, varsayilanTema);
+            setImza(String(json["imza"]));
             setIlk(veri);
             setKayitli(imza(veri));
             setGuncel(imza(veri));

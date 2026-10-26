@@ -137,6 +137,39 @@ final class PanelHuniTest extends WebTestCase
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
 
+    /**
+     * Ç39: iki sekme aynı taslağı açarsa ikinci kayıt birincisini sessizce
+     * ezmez — açılıştaki imza artık eşleşmiyorsa 409, taslak değişmez.
+     */
+    public function testEskiImzaylaKayitCakismaVerirYazmaz(): void
+    {
+        $this->girisYap();
+        $jeton = $this->jeton();
+        $ilkSekme = $this->imza();
+        $ikinciSekme = $this->imza();
+        self::assertSame($ilkSekme, $ikinciSekme);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $ilkSekme);
+
+        $this->kaydet(self::tanim('Birinci'), $jeton, $ilkSekme);
+        self::assertResponseStatusCodeSame(200);
+        $yeni = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($yeni);
+        self::assertSame($this->imza(), $yeni['imza'] ?? null);
+
+        $this->kaydet(self::tanim('İkinci'), $jeton, $ikinciSekme);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(['hatalar' => [Huniler::CAKISMA]], json_decode((string) $this->client->getResponse()->getContent(), true));
+        self::assertSame('Birinci', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
+
+        $this->kaydet(self::tanim('İmzasız'), $jeton, '');
+        self::assertResponseStatusCodeSame(409);
+
+        // Yenilenen sekme güncel imzayla kaydedebilir.
+        $this->kaydet(self::tanim('İkinci'), $jeton, $yeni['imza']);
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame('İkinci', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
+    }
+
     /** b2 (Ç53): klasik düzenleyici ve form uçları kalktı; Puck tek düzenleyici. */
     public function testKlasikDuzenleyiciVeFormUclariYok(): void
     {
@@ -211,6 +244,8 @@ final class PanelHuniTest extends WebTestCase
         $yanit = $this->json('POST', '/panel/huniler/keepchat/genel/durum/surumler/1/taslaga', $jeton);
         self::assertIsArray($yanit['tanim']);
         self::assertSame('Eski', $yanit['tanim']['sayfaBasligi']);
+        // Ç39: geri yüklenen taslakla açılan düzenleyici bu imzayla kaydedebilir.
+        self::assertSame($this->imza(), $yanit['imza'] ?? null);
         self::assertSame('Eski', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
         self::assertSame([2, 1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri ORDER BY surum DESC'), 'geri yükleme yayınlamaz');
 
@@ -272,13 +307,25 @@ final class PanelHuniTest extends WebTestCase
         return $sonuc;
     }
 
-    /** @param array<string, mixed> $tanim */
-    private function kaydet(array $tanim, string $jeton): void
+    /**
+     * @param array<string, mixed> $tanim
+     * @param string|null          $imza  null → sayfanın şu anki imzası (Ç39)
+     */
+    private function kaydet(array $tanim, string $jeton, ?string $imza = null): void
     {
+        $imza ??= $this->imza();
         $this->client->request('POST', '/panel/huniler/keepchat/genel/taslak', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_CSRF_TOKEN' => $jeton,
-        ], (string) json_encode(['tanim' => $tanim]));
+        ], (string) json_encode(['tanim' => $tanim, 'imza' => $imza]));
+    }
+
+    /** Düzenleyicinin açılışta aldığı taslak imzası. */
+    private function imza(): string
+    {
+        $this->client->request('GET', '/panel/huniler/keepchat/genel');
+
+        return (string) $this->client->getCrawler()->filter('#puck-duzenleyici')->attr('data-imza');
     }
 
     /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */
