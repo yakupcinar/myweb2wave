@@ -458,6 +458,15 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            /** @description Ç34: bu IP'den dakikada 120'den fazla ziyaret; huni yine çalışır */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
         };
     };
     getPublishedFunnel: {

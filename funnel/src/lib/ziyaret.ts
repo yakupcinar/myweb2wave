@@ -33,6 +33,30 @@ function tiklamaKimlikleri(): { fbclid?: string; ttclid?: string } {
   return k;
 }
 
+/**
+ * Ç34: aynı sekmede yeniden yükleme yeni ziyaret saymasın — kimlik sekme
+ * deposunda (sekme kapanınca biter; çerez değil). Anahtar huni + sürüm:
+ * başka sürüm başka ziyarettir. Depo engelliyse her yükleme yeni ziyaret.
+ */
+const sekmeAnahtari = (app: string, huni?: string, surum?: number): string =>
+  `huni-ziyaret:${app}:${huni ?? ""}:${surum ?? ""}`;
+
+function sekmedenOku(anahtar: string): string | undefined {
+  try {
+    return window.sessionStorage.getItem(anahtar) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function sekmeyeYaz(anahtar: string, ziyaret: string): void {
+  try {
+    window.sessionStorage.setItem(anahtar, ziyaret);
+  } catch {
+    // engelli depo: ziyaret yine çalışır, yalnız yenilemede tekrar sayılır
+  }
+}
+
 /** Sayfa açılınca bir kez: URL'deki reklam alanlarıyla ziyaret kaydı. */
 export function ziyaretBaslat(
   app: Govde<"/huni/ziyaretler">["app"],
@@ -40,6 +64,14 @@ export function ziyaretBaslat(
   surum?: number,
   izin = false,
 ): Promise<string | undefined> {
+  const anahtar = sekmeAnahtari(app, huni, surum);
+  const onceki = sekmedenOku(anahtar);
+  if (onceki) {
+    const soz = Promise.resolve(onceki);
+    // Ziyaret izinsiz açılmış olabilir; izin sonradan verildiyse bildir.
+    if (izin) void izinBildir(soz);
+    return soz;
+  }
   const adres = new URLSearchParams(window.location.search);
   const govde: Govde<"/huni/ziyaretler"> = { app };
   if (huni && surum) {
@@ -53,7 +85,10 @@ export function ziyaretBaslat(
   if (izin) Object.assign(govde, tiklamaKimlikleri(), { izin: true });
   return cekirdek
     .POST("/huni/ziyaretler", { body: govde })
-    .then(({ data }) => data?.ziyaret)
+    .then(({ data }) => {
+      if (data?.ziyaret) sekmeyeYaz(anahtar, data.ziyaret);
+      return data?.ziyaret;
+    })
     .catch(() => undefined);
 }
 

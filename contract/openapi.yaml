@@ -99,6 +99,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429":
+          description: "Ç34: bu IP'den dakikada 120'den fazla ziyaret; huni yine çalışır"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /huni/{app}:
     get:
       operationId: getPublishedFunnel

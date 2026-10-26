@@ -27,6 +27,9 @@ final class AtifTest extends WebTestCase
         $this->db = $db;
         $this->db->executeStatement('TRUNCATE reklam_donusumleri, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler');
         ApiRequestor::setHttpClient(new KayitliStripeIstemcisi());
+        // Ç34: hız sınırı durumu testler arasında taşınmasın.
+        $limiter = static::getContainer()->get('cache.rate_limiter');
+        self::assertTrue(method_exists($limiter, 'clear') && $limiter->clear());
     }
 
     protected function tearDown(): void
@@ -208,6 +211,48 @@ final class AtifTest extends WebTestCase
         self::assertIsString($satir['stripe_checkout_session_id']);
         self::assertStringStartsWith('cs_', $satir['stripe_checkout_session_id']);
         self::assertNull($satir['tamamlandi_at']);
+    }
+
+    /**
+     * Ç34 + H6b: üretimde çekirdek Caddy'nin arkasında; vekil güvenilir değilse
+     * bütün ziyaretçiler vekilin IP'sinden gelmiş görünür — reklam ağına giden
+     * eşleşme IP'si ve hız sınırı anahtarı yanlış olur.
+     */
+    public function testVekilArkasindaGercekIstemciIpsiKullanilir(): void
+    {
+        $ziyaret = $this->ziyaretAc('keepchat');
+        $this->db->executeStatement('UPDATE huni_ziyaretleri SET izin_at = now() WHERE id = :id', ['id' => $ziyaret]);
+
+        $this->client->request('POST', '/checkout/sessions', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'REMOTE_ADDR' => '172.18.0.5',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.9',
+        ], (string) json_encode(['app' => 'keepchat', 'plan' => 'monthly', 'ziyaret' => $ziyaret]));
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame('203.0.113.9', $this->db->fetchOne('SELECT host(ip_adresi) FROM odeme_oturumlari'));
+    }
+
+    /** Ç34: ziyaret ucu herkese açık — IP başına dakikada 120; aşan 429, başka IP etkilenmez. */
+    public function testZiyaretUcuIpBasinaHizSinirli(): void
+    {
+        $ziyaret = function (string $ip): int {
+            $this->client->request('POST', '/huni/ziyaretler', [], [], [
+                'CONTENT_TYPE' => 'application/json',
+                'REMOTE_ADDR' => '172.18.0.5',
+                'HTTP_X_FORWARDED_FOR' => $ip,
+            ], (string) json_encode(['app' => 'keepchat']));
+
+            return $this->client->getResponse()->getStatusCode();
+        };
+        for ($i = 0; $i < 120; ++$i) {
+            self::assertSame(201, $ziyaret('203.0.113.20'), "istek {$i}");
+        }
+
+        self::assertSame(429, $ziyaret('203.0.113.20'));
+        Sozlesme::yanitiDogrula('POST', '/huni/ziyaretler', $this->client->getResponse());
+        self::assertSame(201, $ziyaret('203.0.113.21'));
+        self::assertSame(121, $this->say('huni_ziyaretleri'));
     }
 
     public function testBaskaUygulamaninZiyaretiBaglanmazOdemeYineAcilir(): void

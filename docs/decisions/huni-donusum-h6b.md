@@ -70,3 +70,5 @@ durdurmaz; kuyruk cron'u başarısız gönderimleri tekrar dener.
 
 
 **2026-10-26 (L3, Ç59):** ödenmeyen oturumun IP/UA'sı `checkout.session.expired`'da ve 48 saatlik cron'da silinir — `odeme-ip-temizligi.md`.
+
+**2026-10-26 (L15):** `trusted_proxies` yoktu — üretimde reklam ağına giden IP Caddy'nin iç IP'si olurdu; düzeltildi ve testle ölçüldü (`ziyaret-hiz-siniri.md`).

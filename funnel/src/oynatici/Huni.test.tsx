@@ -130,6 +130,7 @@ beforeEach(() => {
   };
   delete window.huniTanimi;
   window.localStorage.clear(); // izin seçimi testler arasında sızmasın
+  window.sessionStorage.clear(); // Ç34: sekmedeki ziyaret de
   document.documentElement.removeAttribute("style");
   document.title = "";
 });
@@ -522,6 +523,45 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     await yuklendi();
     expect(document.querySelector("p.fiyat")).toBeNull();
   });
+  it("aynı sekmede yeniden yükleme yeni ziyaret açmaz; başka sürüm açar (Ç34)", async () => {
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+    );
+    cleanup();
+    kur(); // sayfa yenilendi
+    await yuklendi();
+    await waitFor(() => expect(ilerlemeler().length).toBeGreaterThan(1));
+    expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1);
+    cleanup();
+    tanim = { durum: 200, govde: { ...yayin(), surum: 5 } };
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(2),
+    );
+  });
+
+  it("sekme deposu yoksa yine ziyaret açılır (Ç34)", async () => {
+    const asil = Object.getOwnPropertyDescriptor(window, "sessionStorage");
+    Object.defineProperty(window, "sessionStorage", {
+      configurable: true,
+      get: () => {
+        throw new DOMException("engelli", "SecurityError");
+      },
+    });
+    try {
+      kur();
+      await yuklendi();
+      await waitFor(() =>
+        expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+      );
+    } finally {
+      if (asil) Object.defineProperty(window, "sessionStorage", asil);
+    }
+  });
+
   it("logo varsa sayfanın başında, yoksa hiç yok (Ç61)", async () => {
     tanim = {
       durum: 200,
@@ -806,6 +846,19 @@ describe("H6a — reklam ölçümü izni (A12)", () => {
       expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
     );
     expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
+  });
+
+  it("yeniden kullanılan ziyarette önceden verilmiş izin izin ucuna gider (Ç34)", async () => {
+    window.sessionStorage.setItem("huni-ziyaret:keepchat:varsayilan:4", Z);
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    kur(ADRES);
+    await yuklendi();
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    expect(istekler("POST", "/huni/ziyaretler")).toEqual([]);
+    expect(izinler()[0]?.govde).toEqual({
+      fbclid: "IwAR0abc",
+      ttclid: "E.C.P.x",
+    });
   });
 
   it("önizlemede şerit yok", async () => {

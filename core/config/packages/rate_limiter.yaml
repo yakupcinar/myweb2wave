@@ -1,0 +1,9 @@
+# Ç34: herkese açık ziyaret ucu sahte istekle şişirilmesin. IP başına
+# dakikada 120 — mobil operatörlerin ortak IP'si (CGNAT) arkasındaki gerçek
+# kullanıcılar takılmasın; aşan 429 alır, huni yine çalışır (ziyaret yazılmaz).
+framework:
+    rate_limiter:
+        huni_ziyaret:
+            policy: sliding_window
+            limit: 120
+            interval: '1 minute'
