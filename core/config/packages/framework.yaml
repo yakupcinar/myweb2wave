@@ -3,7 +3,11 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # Ç35/Ç41: oturumlar Postgres'te (kap yeniden kurulunca düşmez) ve boşta
+    # 8 saat yaşar — PHP varsayılanı 1440 sn'de düzenleyicideki iş kayboluyordu.
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        gc_maxlifetime: 28800
 
     #esi: true
     #fragments: true

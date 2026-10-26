@@ -104,8 +104,8 @@
   - [x] L9 · Ç44 görsel alt metni (+ logo medya kontrolü) — `docs/decisions/gorsel-alt-metni.md`
   - [x] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık) — `docs/decisions/fiyat-tek-kaynak.md` (kullanıcı: paywall metninden elle fiyatı sil)
   - [x] L11 · Ç53 b2 klasik düzenleyiciyi sil — `docs/decisions/puck-tek-duzenleyici-b2.md`
-  - [x] L12 · Ç39 eşzamanlı kayıt 409 — `docs/decisions/esmzamanli-kayit.md`
-  - [ ] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de
+  - [x] L12 · Ç39 eşzamanlı kayıt 409 — `docs/decisions/eszamanli-kayit.md`
+  - [x] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de — `docs/decisions/panel-oturum.md`
   - [ ] L14 · Ç41 huni arşivleme/silme
   - [ ] L15 · Ç34 ziyaret hız sınırı + sekmede ziyaret sürdürme
   - [ ] L16 · Ç56-3 izin oranı raporu

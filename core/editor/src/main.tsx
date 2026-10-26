@@ -22,6 +22,7 @@ import {
     type Tema,
 } from "./donustur";
 import { hedefleriYenidenAdlandir, ulasilamayanlar } from "./akis";
+import { OTURUM_DUSTU, oturumDustu } from "./oturum";
 import { dugmeler, type YayinDurumu } from "./ustCubuk";
 import { yapilandirma, type Ortam } from "./yapilandirma";
 
@@ -112,6 +113,7 @@ function Duzenleyici({
             },
             body: govde === undefined ? null : JSON.stringify(govde),
         });
+        if (oturumDustu(y)) throw new Error(OTURUM_DUSTU);
         return {
             ok: y.ok,
             json: (await y.json()) as Record<string, unknown>,
@@ -126,8 +128,12 @@ function Duzenleyici({
         setMesgul(true);
         try {
             setDurum(await calis());
-        } catch {
-            setDurum({ tur: "hata", metin: hataMetni, hatalar: [] });
+        } catch (e) {
+            const metin =
+                e instanceof Error && e.message === OTURUM_DUSTU
+                    ? OTURUM_DUSTU
+                    : hataMetni;
+            setDurum({ tur: "hata", metin, hatalar: [] });
         }
         await yenile();
         setMesgul(false);
