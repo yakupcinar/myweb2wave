@@ -166,6 +166,12 @@ const kart: CSSProperties = {
         "1px dashed color-mix(in srgb, var(--metin) 25%, transparent)",
 };
 
+/** Ç44: boşsa görsel dekoratif sayılır; görselsiz yazılmaz. */
+const gorselMetniAlani = {
+    type: "text" as const,
+    label: "Görsel açıklaması (alt metin, isteğe bağlı)",
+};
+
 const kimlikAlani = {
     type: "text" as const,
     label: "Kimlik (panelde görünür; yayından sonra değiştirmek eski veriyle eşleşmeyi koparır)",
@@ -268,12 +274,14 @@ function soruBileseni(
                     kimlik: "secenek",
                     metin: "",
                     gorsel: "",
+                    gorselMetni: "",
                     hedef: "",
                 },
                 arrayFields: {
                     metin: { type: "text", label: "Metin" },
                     kimlik: { type: "text", label: "Kimlik" },
                     gorsel: gorselAlani(ortam, "Görsel"),
+                    gorselMetni: gorselMetniAlani,
                     hedef: yanitHedefAlani,
                 },
             },
@@ -321,12 +329,14 @@ function soruBileseni(
                     kimlik: "secenek-1",
                     metin: "Seçenek 1",
                     gorsel: "",
+                    gorselMetni: "",
                     hedef: "",
                 },
                 {
                     kimlik: "secenek-2",
                     metin: "Seçenek 2",
                     gorsel: "",
+                    gorselMetni: "",
                     hedef: "",
                 },
             ],
@@ -366,8 +376,20 @@ const varsayilanSoru = (
     yanitZorunlu: "istege_bagli",
     devamDugmesi: "Devam",
     secenekler: [
-        { kimlik: "secenek-1", metin: "Seçenek 1", gorsel: "", hedef: "" },
-        { kimlik: "secenek-2", metin: "Seçenek 2", gorsel: "", hedef: "" },
+        {
+            kimlik: "secenek-1",
+            metin: "Seçenek 1",
+            gorsel: "",
+            gorselMetni: "",
+            hedef: "",
+        },
+        {
+            kimlik: "secenek-2",
+            metin: "Seçenek 2",
+            gorsel: "",
+            gorselMetni: "",
+            hedef: "",
+        },
     ],
 });
 
@@ -458,6 +480,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     metin: { type: "textarea", label: "Metin" },
                     dugme: { type: "text", label: "Düğme" },
                     gorsel: gorselAlani(ortam, "Kapak görseli"),
+                    gorselMetni: gorselMetniAlani,
                     ilerlemeGoster: ilerlemeAlani,
                     hedef: tanitimHedefAlani,
                 },
@@ -474,16 +497,18 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     metin: "",
                     dugme: "Devam",
                     gorsel: "",
+                    gorselMetni: "",
                     ilerlemeGoster: true,
                     hedef: "",
                 },
-                render: ({ baslik, metin, dugme, gorsel }) => (
+                render: ({ baslik, metin, dugme, gorsel, gorselMetni }) => (
                     <div style={kart}>
                         <Tanitim
                             baslik={baslik}
                             metin={metin}
                             dugme={dugme}
                             gorsel={gorsel}
+                            gorselMetni={gorselMetni}
                             medyaKoku=""
                         />
                     </div>

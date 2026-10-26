@@ -377,3 +377,53 @@ describe("logo (Ç61)", () => {
         );
     });
 });
+
+describe("görsel alt metni (Ç44)", () => {
+    const g = "d".repeat(64);
+    const tanim = {
+        sayfaBasligi: "x",
+        adimlar: [
+            {
+                id: "t",
+                tur: "tanitim",
+                baslik: "T",
+                metin: "",
+                dugme: "D",
+                gorsel: g,
+                gorselMetni: "Ekran",
+            },
+            {
+                id: "s",
+                tur: "soru",
+                soru: "?",
+                secenekler: [
+                    { id: "a", metin: "A", gorsel: g, gorselMetni: "Aile" },
+                    { id: "b", metin: "B" },
+                ],
+            },
+            {
+                id: "p",
+                tur: "paywall",
+                baslik: "P",
+                metin: "",
+                dugme: "Al",
+                plan: "monthly",
+            },
+        ],
+    } as Tanim;
+    it("gidiş-dönüşte aynı", () => {
+        expect(puckTanim(tanimdanPuck(tanim, VARSAYILAN))).toEqual(tanim);
+    });
+    it("görsel kaldırılınca alt metin tanıma yazılmaz (çekirdek reddederdi)", () => {
+        const veri = tanimdanPuck(tanim, VARSAYILAN);
+        const t = veri.content[0]!;
+        t.props = { ...t.props, gorsel: "" } as typeof t.props;
+        const s = veri.content[1]!;
+        const sp = s.props as unknown as { secenekler: { gorsel: string }[] };
+        sp.secenekler[0]!.gorsel = "";
+        const sonuc = puckTanim(veri);
+        expect(sonuc.adimlar[0]).not.toHaveProperty("gorselMetni");
+        const soru = sonuc.adimlar[1] as { secenekler: object[] };
+        expect(soru.secenekler[0]).not.toHaveProperty("gorselMetni");
+    });
+});

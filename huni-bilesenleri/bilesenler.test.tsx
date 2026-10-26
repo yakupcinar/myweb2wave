@@ -141,6 +141,32 @@ describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
 });
 
 describe("D2 — görsel adresi kimlikten", () => {
+    it("alt metin verilirse img alt'ında, verilmezse boş (Ç44)", () => {
+        expect(
+            renderToStaticMarkup(
+                <Tanitim
+                    baslik="B"
+                    metin=""
+                    dugme="D"
+                    gorsel={G}
+                    gorselMetni="Sohbet ekranı"
+                    medyaKoku=""
+                />,
+            ),
+        ).toContain('alt="Sohbet ekranı"');
+        const html = renderToStaticMarkup(
+            <Soru
+                soru="?"
+                secenekler={[
+                    { metin: "A", gorsel: G, gorselMetni: "Aile" },
+                    { metin: "B", gorsel: G },
+                ]}
+                medyaKoku=""
+            />,
+        );
+        expect(html).toContain('alt="Aile"');
+        expect(html.match(/alt=""/g)).toHaveLength(1);
+    });
     it("logo çekirdeğin medya adresinden, .logo sınıfıyla (Ç61)", () => {
         expect(
             renderToStaticMarkup(<Logo gorsel={G} medyaKoku={KOK} />),

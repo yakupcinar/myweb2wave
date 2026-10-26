@@ -15,6 +15,8 @@ export type SecenekProps = {
     kimlik: string;
     metin: string;
     gorsel: string;
+    /** Ç44: boş = dekoratif; görselsizse tanıma yazılmaz. */
+    gorselMetni: string;
     hedef: string;
 };
 export type TanitimProps = {
@@ -23,6 +25,7 @@ export type TanitimProps = {
     metin: string;
     dugme: string;
     gorsel: string;
+    gorselMetni: string;
     hedef: string;
     ilerlemeGoster: boolean;
 };
@@ -86,11 +89,18 @@ const SORU_TURU = {
     metin: "SerbestYanit",
 } as const;
 
-/** Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz). */
+/**
+ * Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
+ * Ç44: alt metin yalnız görselle — görselsiz alt metni çekirdek reddeder.
+ */
 const gorselli = <T extends object>(
     nesne: T,
     gorsel: string,
-): T & { gorsel?: string } => (gorsel ? { ...nesne, gorsel } : nesne);
+    gorselMetni = "",
+): T & { gorsel?: string; gorselMetni?: string } =>
+    gorsel
+        ? { ...nesne, gorsel, ...(gorselMetni ? { gorselMetni } : {}) }
+        : nesne;
 /** H5: boş dize = sıradaki adım (tanımda alan hiç olmaz). */
 const hedefli = <T extends object>(
     nesne: T,
@@ -125,6 +135,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             metin: adim.metin,
                             dugme: adim.dugme,
                             gorsel: adim.gorsel ?? "",
+                            gorselMetni: adim.gorselMetni ?? "",
                             hedef: adim.hedef ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
@@ -148,6 +159,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 kimlik: s.id,
                                 metin: s.metin,
                                 gorsel: s.gorsel ?? "",
+                                gorselMetni: s.gorselMetni ?? "",
                                 hedef: s.hedef ?? "",
                             })),
                         },
@@ -220,6 +232,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                                 : {}),
                         },
                         p.gorsel,
+                        p.gorselMetni ?? "",
                     ),
                     p.hedef ?? "",
                 );
@@ -257,6 +270,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                                   const secenek = gorselli(
                                       { id: s.kimlik, metin: s.metin },
                                       s.gorsel ?? "",
+                                      s.gorselMetni ?? "",
                                   );
                                   return p.secimTuru === "coklu"
                                       ? secenek

@@ -461,6 +461,7 @@ components:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [tanitim] }
         gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+        gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
@@ -489,6 +490,7 @@ components:
               id: { $ref: "#/components/schemas/HuniKimligi" }
               metin: { type: string }
               gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+              gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
               hedef: { $ref: "#/components/schemas/AdimHedefi" }
     YorumAdimi:
       description: Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir
@@ -537,6 +539,11 @@ components:
         javascript: gibi şemalar huni sayfasında betik çalıştırırdı.
       type: string
       pattern: "^https://[^\\s]{1,490}$"
+    GorselMetni:
+      description: "Ç44: görselin alt metni (yalnız görselle); yoksa görsel dekoratif sayılır (alt boş)"
+      type: string
+      minLength: 1
+      maxLength: 200
     GorselKimligi:
       description: "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)"
       type: string

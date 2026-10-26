@@ -37,6 +37,7 @@ const tanim: Tanim = {
             metin: "Kısa",
             dugme: "Başla",
             gorsel: G1,
+            gorselMetni: "Sohbet ekranı", // Ç44: iki yoldan aynı alt
         },
         {
             id: "yalin",
@@ -51,7 +52,12 @@ const tanim: Tanim = {
             soru: "Kiminle?",
             aciklama: "Birden fazla seçenek seçebilirsin.",
             secenekler: [
-                { id: "aile", metin: "Ailemle", gorsel: G2 },
+                {
+                    id: "aile",
+                    metin: "Ailemle",
+                    gorsel: G2,
+                    gorselMetni: "Aile",
+                },
                 { id: "is", metin: "İş" },
             ],
         },

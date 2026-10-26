@@ -19,7 +19,7 @@ final class Tanim
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
         'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
-        'fayda' => [1, 120],
+        'fayda' => [1, 120], 'gorselMetni' => [1, 200],
     ];
 
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
@@ -114,6 +114,10 @@ final class Tanim
                 $beklenen[] = 'gorsel';
                 self::gorsel($adim['gorsel'], $yer, $h);
             }
+            if ('tanitim' === $tur && \array_key_exists('gorselMetni', $adim)) {
+                $beklenen[] = 'gorselMetni';
+                self::gorselMetni($adim, $yer, $h);
+            }
             // H5: tanıtım düğmesi de atlayabilir — dallar ortak adımda birleşsin.
             if ('tanitim' === $tur && \array_key_exists('hedef', $adim)) {
                 $beklenen[] = 'hedef';
@@ -175,7 +179,8 @@ final class Tanim
      */
     public static function gorseller(mixed $tanim): array
     {
-        $k = [];
+        // Ç61 (5): logo da bir görsel — aynı "bu uygulamada var mı" kuralı.
+        $k = \is_array($tanim) && \is_string($tanim['logo'] ?? null) ? [$tanim['logo']] : [];
         $adimlar = \is_array($tanim) && \is_array($tanim['adimlar'] ?? null) ? $tanim['adimlar'] : [];
         foreach ($adimlar as $adim) {
             if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {
@@ -197,6 +202,23 @@ final class Tanim
         if (!\is_string($deger) || 1 !== preg_match('/^[0-9a-f]{64}$/', $deger)) {
             $h[] = "{$yer}: görsel kimliği geçersiz";
         }
+    }
+
+    /**
+     * Ç44: alt metin yalnız görselle — görselsiz alt metin ekranda hiçbir
+     * yere çıkmaz, yazanı yanıltır.
+     *
+     * @param array<mixed> $nesne
+     * @param list<string> $h
+     */
+    private static function gorselMetni(array $nesne, string $yer, array &$h): void
+    {
+        if (!\array_key_exists('gorsel', $nesne)) {
+            $h[] = "{$yer}: gorselMetni yalnız gorsel ile kullanılabilir";
+
+            return;
+        }
+        self::metin($nesne['gorselMetni'], 'gorselMetni', "{$yer} gorselMetni", $h);
     }
 
     /** @param list<string> $h */
@@ -248,9 +270,9 @@ final class Tanim
         $gorulen = [];
         foreach ($secenekler as $j => $s) {
             $sy = "{$yer} seçenek ".($j + 1);
-            $istege = \is_array($s) ? array_values(array_intersect(['gorsel', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
+            $istege = \is_array($s) ? array_values(array_intersect(['gorsel', 'gorselMetni', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
             if (!\is_array($s) || !self::anahtarlar($s, ['id', 'metin', ...$istege])) {
-                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel, hedef";
+                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel, gorselMetni, hedef";
                 continue;
             }
             if (\array_key_exists('hedef', $s)) {
@@ -261,6 +283,9 @@ final class Tanim
             }
             if (\array_key_exists('gorsel', $s)) {
                 self::gorsel($s['gorsel'], $sy, $h);
+            }
+            if (\array_key_exists('gorselMetni', $s)) {
+                self::gorselMetni($s, $sy, $h);
             }
             if (!\is_string($s['id']) || 1 !== preg_match(self::KIMLIK, $s['id']) || isset($gorulen[$s['id']])) {
                 $h[] = "{$sy}: kimlik geçersiz ya da tekrar ediyor";

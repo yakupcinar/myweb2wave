@@ -27,7 +27,7 @@ final class HuniTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, medya');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
@@ -87,10 +87,33 @@ final class HuniTest extends WebTestCase
         self::assertSame('https://ornek.com/gizlilik', $paywall['gizlilik'] ?? null);
     }
 
+    /** Ç44: tanıtım kapağı ve seçenek görseli isteğe bağlı alt metin taşır. */
+    public function testGorselMetniGecerliYayindaDoner(): void
+    {
+        $g = str_repeat('c', 64);
+        $tanim = self::ile(0, 'gorsel', $g);
+        $tanim['adimlar'][0]['gorselMetni'] = 'Uygulamanın sohbet ekranı';
+        $tanim['adimlar'][1]['secenekler'] = [
+            ['id' => 'a', 'metin' => 'A', 'gorsel' => $g, 'gorselMetni' => 'Aile fotoğrafı'],
+            ['id' => 'b', 'metin' => 'B'],
+        ];
+        self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
+        $this->medyaEkle($g);
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     public function testLogoGecerliYayindaDonerSozlesmeyeUyar(): void
     {
         $logo = str_repeat('a1', 32);
         $tanim = self::tanim('Logolu') + ['logo' => $logo];
+        // Logo da adım görselleri gibi bu uygulamaya yüklenmiş olmalı (E2.3).
+        self::assertSame(['görsel a1a1a1a1… bu uygulamada yok'], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->medyaEkle($logo);
         self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
         $this->huniler->yayinla('keepchat', 'genel');
 
@@ -179,6 +202,12 @@ final class HuniTest extends WebTestCase
         yield 'seçenek hedefi yok' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('yok'))];
         yield 'seçenek hedefi dizge değil' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec(2))];
         yield 'tanıtım hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(0, 'hedef', 'giris')];
+        // Ç44: görsel alt metni yalnız görselle, 1–200.
+        yield 'görselsiz görsel metni' => ['gorselMetni yalnız gorsel ile', self::ile(0, 'gorselMetni', 'Ekran')];
+        $uzun = self::ile(0, 'gorsel', str_repeat('c', 64));
+        $uzun['adimlar'][0]['gorselMetni'] = str_repeat('a', 201);
+        yield 'uzun görsel metni' => ['1–200 karakter', $uzun];
+        yield 'seçenekte görselsiz görsel metni' => ['gorselMetni yalnız gorsel ile', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'gorselMetni' => 'x'], ['id' => 'b', 'metin' => 'B']])];
         // Ç61 (5): isteğe bağlı logo — görsel kimliği.
         yield 'logo geçersiz' => ['logo: görsel kimliği geçersiz', $t + ['logo' => 'logo.png']];
         yield 'logo boş' => ['logo: görsel kimliği geçersiz', $t + ['logo' => '']];
@@ -390,6 +419,14 @@ final class HuniTest extends WebTestCase
         }
 
         return $t;
+    }
+
+    private function medyaEkle(string $id): void
+    {
+        $this->db->executeStatement(
+            "INSERT INTO medya (app, id, genislik, yukseklik, bayt, ozgun_ad) VALUES ('keepchat', :id, 1, 1, 1, 'test.webp') ON CONFLICT DO NOTHING",
+            ['id' => $id],
+        );
     }
 
     /** @return array<mixed> */

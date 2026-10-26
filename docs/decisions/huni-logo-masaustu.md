@@ -53,3 +53,5 @@ kenar 0, iç boşluk 16, yatay kaydırma yok. Taslak geri yüklendi, JSON
 
 ## Kontrol
 `bin/kontrol` **YEŞİL**, EXIT=0, 219 çekirdek testi / 1.365 doğrulama.
+
+**Sonradan (L9):** logo `Tanim::gorseller`'e girmiyordu; bu testteki sahte kimlik bu yüzden geçti — `gorsel-alt-metni.md`.

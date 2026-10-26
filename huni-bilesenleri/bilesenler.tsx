@@ -10,16 +10,19 @@ function Gorsel({
     id,
     medyaKoku,
     sinif,
+    alt = "",
 }: {
     id: string;
     medyaKoku: string;
     sinif: string;
+    /** Ç44: boş = dekoratif. */
+    alt?: string | undefined;
 }): ReactNode {
     return (
         <img
             className={sinif}
             src={`${medyaKoku}/medya/${id}.webp`}
-            alt=""
+            alt={alt}
             decoding="async"
         />
     );
@@ -37,7 +40,11 @@ export function Logo({
 }
 
 // Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
-type GorselAlani = { gorsel?: string | undefined; medyaKoku: string };
+type GorselAlani = {
+    gorsel?: string | undefined;
+    gorselMetni?: string | undefined;
+    medyaKoku: string;
+};
 type Tiklama = { onDugme?: (() => void) | undefined };
 
 export function Tanitim({
@@ -45,6 +52,7 @@ export function Tanitim({
     metin,
     dugme,
     gorsel,
+    gorselMetni,
     medyaKoku,
     onDugme,
 }: {
@@ -56,7 +64,12 @@ export function Tanitim({
     return (
         <section>
             {gorsel ? (
-                <Gorsel id={gorsel} medyaKoku={medyaKoku} sinif="kapak" />
+                <Gorsel
+                    id={gorsel}
+                    medyaKoku={medyaKoku}
+                    sinif="kapak"
+                    alt={gorselMetni}
+                />
             ) : null}
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
@@ -143,6 +156,7 @@ export function Soru({
                                     id={s.gorsel}
                                     medyaKoku={medyaKoku}
                                     sinif="secenek-gorseli"
+                                    alt={s.gorselMetni}
                                 />
                             ) : null}
                             <span>{s.metin}</span>
@@ -280,6 +294,7 @@ export type TanimAdimi =
           metin: string;
           dugme: string;
           gorsel?: string;
+          gorselMetni?: string;
       }
     | {
           tur: "soru";
@@ -288,7 +303,11 @@ export type TanimAdimi =
           secimTuru?: "tekli" | "coklu" | "metin";
           yanitZorunlu?: boolean;
           devamDugmesi?: string;
-          secenekler?: { metin: string; gorsel?: string }[];
+          secenekler?: {
+              metin: string;
+              gorsel?: string;
+              gorselMetni?: string;
+          }[];
       }
     | {
           tur: "yorum";
@@ -345,6 +364,7 @@ export function Adim({
                     metin={adim.metin}
                     dugme={adim.dugme}
                     gorsel={adim.gorsel}
+                    gorselMetni={adim.gorselMetni}
                     medyaKoku={medyaKoku}
                     onDugme={onIleri}
                 />

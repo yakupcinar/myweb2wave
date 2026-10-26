@@ -228,6 +228,7 @@ export interface components {
             /** @enum {string} */
             tur: "tanitim";
             gorsel?: components["schemas"]["GorselKimligi"];
+            gorselMetni?: components["schemas"]["GorselMetni"];
             baslik: string;
             metin: string;
             dugme: string;
@@ -249,6 +250,7 @@ export interface components {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
                 gorsel?: components["schemas"]["GorselKimligi"];
+                gorselMetni?: components["schemas"]["GorselMetni"];
                 hedef?: components["schemas"]["AdimHedefi"];
             }[];
         };
@@ -284,6 +286,8 @@ export interface components {
         };
         /** @description Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı. */
         YasalAdres: string;
+        /** @description Ç44: görselin alt metni (yalnız görselle); yoksa görsel dekoratif sayılır (alt boş) */
+        GorselMetni: string;
         /** @description Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3) */
         GorselKimligi: string;
         /** @description Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/) */
