@@ -55,45 +55,6 @@ final class PanelHuniTest extends WebTestCase
         self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'yayınlanmamış değişiklik');
     }
 
-    public function testDuzenleyiciTaslagiKacislanmisOlarakGomer(): void
-    {
-        // Metin HTML/özniteliği kıramaz: "> ve <script> öznitelikte kaçışlanır.
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('"><script>alert(1)</script>'));
-        $this->girisYap();
-
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        $html = (string) $this->client->getResponse()->getContent();
-
-        self::assertResponseStatusCodeSame(200);
-        self::assertStringNotContainsString('<script>alert(1)', $html);
-        $gomulu = $this->client->getCrawler()->filter('#duzenleyici')->attr('data-taslak');
-        self::assertEquals(self::tanim('"><script>alert(1)</script>'), json_decode((string) $gomulu, true));
-        self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
-    }
-
-    public function testDuzenleyiciAdresiIcerikOzetiTasir(): void
-    {
-        // Önbellekteki eski düzenleyici çalışmasın: adres içerikle değişir.
-        $this->girisYap();
-
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        $src = (string) $this->client->getCrawler()->filter('script[src*=huni-duzenleyici]')->attr('src');
-
-        $dosya = \dirname(__DIR__, 2).'/public/varliklar/huni-duzenleyici.js';
-        self::assertSame('/varliklar/huni-duzenleyici.js?v='.substr((string) md5_file($dosya), 0, 10), $src);
-    }
-
-    public function testOnizlemeBaglantisiGecerliAnahtarTasir(): void
-    {
-        $this->girisYap();
-
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        $adres = (string) $this->client->getCrawler()->selectLink('Taslağı önizle ↗')->attr('href');
-
-        self::assertStringStartsWith('https://huni.test/keepchat/?huni=genel&onizleme=', $adres);
-        self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'genel', substr($adres, (int) strrpos($adres, '=') + 1), time()));
-    }
-
     public function testKaydetGecerliyiYazarGecersizdeHataDonerYazmaz(): void
     {
         $this->girisYap();
@@ -120,30 +81,6 @@ final class PanelHuniTest extends WebTestCase
             self::assertResponseStatusCodeSame(403);
         }
         self::assertEquals($this->huniler->bosTaslak('keepchat'), $this->huniler->taslak('keepchat', 'genel'));
-    }
-
-    public function testYayinlaSurumAcarAyniTaslagiIkinciKezYayinlamaz(): void
-    {
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
-        $this->girisYap();
-
-        $this->yayinlaTikla();
-        self::assertSelectorTextContains('.bildirim.tamam', 'genel v1 yayında');
-
-        $this->yayinlaTikla();
-        self::assertSelectorTextContains('.bildirim.hata', 'yayınlanacak değişiklik yok');
-        self::assertSame([1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri'));
-    }
-
-    public function testYayinlaVeGeriYukleCsrfIster(): void
-    {
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
-        $this->girisYap();
-
-        $this->client->request('POST', '/panel/huniler/keepchat/genel/yayinla', ['_token' => 'yanlis']);
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('.bildirim.hata', 'jetonu geçersiz');
-        self::assertSame([], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri'));
     }
 
     public function testPaneldenYeniHuniKuralVeVarsayilan(): void
@@ -178,24 +115,6 @@ final class PanelHuniTest extends WebTestCase
         self::assertSelectorTextContains('.bildirim.hata', 'zaten var');
     }
 
-    public function testEskiSurumTaslagaGeriYuklenir(): void
-    {
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Eski'));
-        $this->huniler->yayinla('keepchat', 'genel');
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Yeni'));
-        $this->huniler->yayinla('keepchat', 'genel');
-        $this->girisYap();
-
-        $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        self::assertSame(['v2 yayında', 'v1'], $crawler->filter('[data-bolum=surumler] tbody tr td:first-child')->each(static fn ($td): string => trim($td->text())));
-        $this->client->submit($crawler->filter('[data-bolum=surumler] tbody tr')->last()->selectButton('Taslağa geri yükle')->form());
-        $this->client->followRedirect();
-
-        self::assertSelectorTextContains('.bildirim.tamam', 'v1 taslağa alındı');
-        self::assertSame('Eski', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
-        self::assertSame([2, 1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri ORDER BY surum DESC'));
-    }
-
     public function testSurukleBirakSayfasiManifesttekiBetigiYukler(): void
     {
         // Derleme kontrolde testten önce (bin/kontrol editor-derle); adres içerik özetli.
@@ -203,11 +122,11 @@ final class PanelHuniTest extends WebTestCase
         self::assertIsArray($manifest);
         self::assertIsArray($manifest['src/main.tsx'] ?? null);
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('"><script>alert(1)</script>'));
-        $this->client->request('GET', '/panel/huniler/keepchat/genel/surukle');
+        $this->client->request('GET', '/panel/huniler/keepchat/genel');
         self::assertResponseRedirects('/panel/giris');
         $this->girisYap();
 
-        $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel/surukle');
+        $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel');
 
         self::assertResponseStatusCodeSame(200);
         $betik = $manifest['src/main.tsx']['file'] ?? null;
@@ -216,6 +135,28 @@ final class PanelHuniTest extends WebTestCase
         self::assertEquals(self::tanim('"><script>alert(1)</script>'), json_decode((string) $crawler->filter('#puck-duzenleyici')->attr('data-taslak'), true));
         self::assertStringNotContainsString('<script>alert(1)', (string) $this->client->getResponse()->getContent());
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
+    }
+
+    /** b2 (Ç53): klasik düzenleyici ve form uçları kalktı; Puck tek düzenleyici. */
+    public function testKlasikDuzenleyiciVeFormUclariYok(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->girisYap();
+
+        $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel');
+        self::assertCount(0, $crawler->filter('script[src*=huni-duzenleyici]'));
+        self::assertCount(1, $crawler->filter('#puck-duzenleyici'));
+        self::assertFileDoesNotExist(\dirname(__DIR__, 2).'/public/varliklar/huni-duzenleyici.js');
+
+        $jeton = $this->jeton();
+        foreach (['/panel/huniler/keepchat/genel/yayinla', '/panel/huniler/keepchat/genel/surumler/1/taslaga'] as $eski) {
+            $this->client->request('POST', $eski, ['_token' => $jeton]);
+            self::assertResponseStatusCodeSame(404, $eski);
+        }
+        $this->client->request('GET', '/panel/huniler/keepchat/genel/surukle');
+        self::assertResponseStatusCodeSame(404);
+        self::assertSame([1], $this->db->fetchFirstColumn('SELECT surum FROM huni_surumleri'));
     }
 
     /** b1: sürükle-bırak üst çubuğu — durum, yayınla, geri yükle JSON ile. */
@@ -314,7 +255,7 @@ final class PanelHuniTest extends WebTestCase
     {
         $this->client->request('GET', '/panel/huniler/keepchat/genel');
 
-        return (string) $this->client->getCrawler()->filter('#duzenleyici')->attr('data-jeton');
+        return (string) $this->client->getCrawler()->filter('#puck-duzenleyici')->attr('data-jeton');
     }
 
     /** @return array<string, mixed> */
@@ -338,13 +279,6 @@ final class PanelHuniTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_CSRF_TOKEN' => $jeton,
         ], (string) json_encode(['tanim' => $tanim]));
-    }
-
-    private function yayinlaTikla(): void
-    {
-        $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        $this->client->submit($crawler->filter('#yayinla')->form());
-        $this->client->followRedirect();
     }
 
     /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */

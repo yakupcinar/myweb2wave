@@ -32,8 +32,6 @@ final class PanelHuniController extends AbstractController
         private readonly array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private readonly string $funnelBaseUrl,
-        #[Autowire('%kernel.project_dir%/public/varliklar/huni-duzenleyici.js')]
-        private readonly string $duzenleyiciDosyasi,
         #[Autowire('%kernel.project_dir%/public/varliklar/editor/.vite/manifest.json')]
         private readonly string $editorManifesti,
     ) {
@@ -112,37 +110,14 @@ final class PanelHuniController extends AbstractController
         return $this->redirectToRoute('panel_huniler');
     }
 
-    #[Route('/{app}/{ad}', name: 'panel_huni', methods: ['GET'])]
-    public function duzenle(string $app, string $ad): Response
-    {
-        $this->uygulama($app);
-        $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
-
-        return self::korumali($this->render('panel/huni.html.twig', [
-            // 'app' DEĞİL: Twig'in global app'ini ezer, flaşlar üretimde sessizce kaybolur (tuzak §29).
-            'uygulama' => $app,
-            'huni' => $ad,
-            'taslak' => $taslak,
-            'planlar' => array_keys($this->uygulamalar[$app]),
-            'tema_varsayilan' => Tema::VARSAYILAN,
-            'yazi_tipleri' => Tema::YAZI_TIPLERI,
-            'surumler' => $this->huniler->surumler($app, $ad),
-            'farkli' => $this->huniler->taslakFarkli($app, $ad),
-            'onizleme' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $ad, time()),
-            'huni_adresi' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad,
-            // Dosyanın Cache-Control'ü yok: tarayıcı tahminle eski kopyayı
-            // çalıştırıyordu (ölçüldü, tuzak §30). İçerik özeti değişince adres değişir.
-            'duzenleyici_surumu' => substr((string) md5_file($this->duzenleyiciDosyasi), 0, 10),
-        ]));
-    }
-
     /**
-     * Sürükle-bırak düzenleyici (E2.4, React + Puck). Betik/stil adresleri
+     * Huni düzenleyicisi (E2.4, React + Puck; b2: tek düzenleyici — klasik
+     * form düzenleyicisi kaldırıldı, Ç53). Betik/stil adresleri
      * Vite manifestinden — içerik özetli adlar (tuzak §30). Derlenmemişse
      * sessizce boş sayfa değil, açık hata.
      */
-    #[Route('/{app}/{ad}/surukle', name: 'panel_huni_surukle', methods: ['GET'])]
-    public function surukle(string $app, string $ad): Response
+    #[Route('/{app}/{ad}', name: 'panel_huni', methods: ['GET'])]
+    public function duzenle(string $app, string $ad): Response
     {
         $this->uygulama($app);
         $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
@@ -225,36 +200,6 @@ final class PanelHuniController extends AbstractController
         }
 
         return new JsonResponse(['tanim' => $this->huniler->taslak($app, $ad)]);
-    }
-
-    #[Route('/{app}/{ad}/yayinla', name: 'panel_huni_yayinla', methods: ['POST'])]
-    public function yayinla(Request $request, string $app, string $ad): RedirectResponse
-    {
-        $this->uygulama($app);
-        $surum = 0;
-        $tamam = $this->islem($request, $app, function () use ($app, $ad, &$surum): array {
-            $sonuc = $this->huniler->yayinla($app, $ad);
-            if (\is_array($sonuc)) {
-                return $sonuc;
-            }
-            $surum = $sonuc;
-
-            return [];
-        }, null);
-        if ($tamam) {
-            $this->addFlash('tamam', "{$ad} v{$surum} yayında. Ziyaretçiler en geç 1 dakika içinde görür.");
-        }
-
-        return $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]);
-    }
-
-    #[Route('/{app}/{ad}/surumler/{surum}/taslaga', name: 'panel_huni_geri_yukle', methods: ['POST'], requirements: ['surum' => '\d+'])]
-    public function geriYukle(Request $request, string $app, string $ad, int $surum): RedirectResponse
-    {
-        $this->uygulama($app);
-        $this->islem($request, $app, fn (): array => $this->huniler->surumuTaslagaAl($app, $ad, $surum) ? [] : ["v{$surum} bulunamadı."], "v{$surum} taslağa alındı. Yayınlamak için \"Yayınla\".");
-
-        return $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]);
     }
 
     /**

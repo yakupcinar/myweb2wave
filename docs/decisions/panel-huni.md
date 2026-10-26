@@ -70,3 +70,6 @@ Düzenleyici JS'inin otomatik testi yok (Ç39); davranışı tarayıcıda ölç�
 ## Açık
 Ç39 (eşzamanlı düzenleme koruması yok, JS testi yok) · Ç38 · Ç36 (metin
 artık panelden düzeltilebilir) · E2.
+
+
+**2026-10-26 (L11, b2):** klasik form düzenleyicisi ve form uçları silindi; `/panel/huniler/{app}/{ad}` Puck'ı açar — `puck-tek-duzenleyici-b2.md`.
