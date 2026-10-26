@@ -192,6 +192,39 @@ final class StripeWebhookControllerTest extends WebTestCase
         );
     }
 
+    /**
+     * Ç18: olay "işlendi" yazılıp uygulama yarıda düşerse olay kaybolmamalı —
+     * aynı işlemde geri alınır, Stripe 500 görür ve yeniden yollar. Hata
+     * gerçek veritabanından (tetikleyici), sahte servis değil.
+     */
+    public function testYaridaDusenOlayGeriAlinirYenidenGelinceIslenir(): void
+    {
+        $this->db->executeStatement("CREATE OR REPLACE FUNCTION test_cokus() RETURNS trigger AS \$\$
+            BEGIN IF NEW.stripe_subscription_id = 'sub_cokus' THEN RAISE EXCEPTION 'test çöküşü'; END IF; RETURN NEW; END \$\$ LANGUAGE plpgsql");
+        $this->db->executeStatement('CREATE TRIGGER test_cokus BEFORE INSERT ON subscriptions FOR EACH ROW EXECUTE FUNCTION test_cokus()');
+        $olay = $this->olay('evt_cokus', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_cokus', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_cokus', 'customer' => 'cus_cokus', 'payment_status' => 'paid',
+            'customer_details' => ['email' => 'a@ornek.com'], 'metadata' => ['app' => 'keepchat'],
+        ]);
+        try {
+            $this->gonder($olay);
+
+            self::assertResponseStatusCodeSame(500);
+            self::assertSame(0, $this->say("processed_webhook_events WHERE event_id = 'evt_cokus'"));
+            self::assertSame(0, $this->say("subscriptions WHERE stripe_subscription_id = 'sub_cokus'"));
+        } finally {
+            $this->db->executeStatement('DROP TRIGGER test_cokus ON subscriptions');
+            $this->db->executeStatement('DROP FUNCTION test_cokus()');
+        }
+
+        $this->gonder($olay); // Stripe'ın yeniden denemesi
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(1, $this->say("processed_webhook_events WHERE event_id = 'evt_cokus'"));
+        self::assertSame(1, $this->say("subscriptions WHERE stripe_subscription_id = 'sub_cokus'"));
+    }
+
     public function testSuresiDolanOturumunEslemeBilgisiHemenSilinir(): void
     {
         // Ç59: ödenmeden kapanan oturumda completed hiç gelmez; IP/UA expired'da gider.

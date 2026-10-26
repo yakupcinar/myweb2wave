@@ -109,7 +109,7 @@
   - [x] L14 · Ç41 huni arşivleme/silme — `docs/decisions/huni-arsiv.md`
   - [x] L15 · Ç34 ziyaret hız sınırı + sekmede ziyaret sürdürme (+ güvenilir vekil, H6b IP hatası) — `docs/decisions/ziyaret-hiz-siniri.md`
   - [x] L16 · Ç56-3 izin oranı raporu — `docs/decisions/izin-orani.md`
-  - [ ] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock
+  - [x] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock — `docs/decisions/webhook-butunluk-past-due.md`
   - [ ] L18 · Ç23 ölü bağlantı denetimi · Ç14 Dependabot
   - [ ] L19 · Ç54 yöne göre geçiş + yumuşak ilerleme çubuğu
   - [ ] L20 · Ç50 Preact denemesi (ölç; iyiyse geç)
