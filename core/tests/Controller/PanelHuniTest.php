@@ -104,6 +104,35 @@ final class PanelHuniTest extends WebTestCase
         self::assertSelectorTextContains('tr[data-huni=fitness]', 'varsayılan');
     }
 
+    /** Ç41: listede ziyaretsiz huniye "Sil", ziyaretliye "Arşivle"; varsayılanda yok. */
+    public function testListedenHuniSilinirYaDaArsivlenir(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel'));
+        $this->huniler->yeniHuni('keepchat', 'bos', 'genel');
+        $this->huniler->yeniHuni('keepchat', 'eski', 'genel');
+        $this->huniler->yayinla('keepchat', 'eski');
+        $this->db->executeStatement("INSERT INTO huni_ziyaretleri (app, huni, surum) VALUES ('keepchat', 'eski', 1)");
+        $this->girisYap();
+
+        $liste = $this->client->request('GET', '/panel/huniler');
+        self::assertCount(0, $liste->filter('tr[data-huni=genel] [data-form=kaldir]'));
+        self::assertSame('Sil', trim($liste->filter('tr[data-huni=bos] [data-form=kaldir] button')->text()));
+        self::assertSame('Arşivle', trim($liste->filter('tr[data-huni=eski] [data-form=kaldir] button')->text()));
+
+        $this->client->request('POST', '/panel/huniler/keepchat/bos/kaldir', ['_token' => 'yanlis']);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.bildirim.hata', 'jetonu geçersiz');
+        self::assertNotNull($this->huniler->taslak('keepchat', 'bos'));
+
+        $this->client->submit($this->client->getCrawler()->filter('tr[data-huni=bos] [data-form=kaldir]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.bildirim.tamam', "'bos' silindi");
+        $this->client->submit($this->client->getCrawler()->filter('tr[data-huni=eski] [data-form=kaldir]')->form());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.bildirim.tamam', "'eski' arşivlendi");
+        self::assertSame(['genel'], $this->client->getCrawler()->filter('tr[data-huni]')->each(static fn ($tr): string => (string) $tr->attr('data-huni')));
+    }
+
     public function testAyniAdlaIkinciHuniHataGosterir(): void
     {
         $this->girisYap();

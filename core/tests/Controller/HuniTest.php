@@ -34,6 +34,61 @@ final class HuniTest extends WebTestCase
         self::assertSame([], $this->huniler->yeniHuni('keepchat', 'genel', null));
     }
 
+    /** Ç41: ziyaretsiz huni iz bırakmadan silinir (sürümleri ve kuralları da). */
+    public function testZiyaretsizHuniSilinir(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'genel'));
+        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'deneme', 'genel'));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'deneme'));
+        self::assertSame([], $this->huniler->kuralEkle('keepchat', 'k', 'x', 'deneme'));
+
+        self::assertSame('silindi', $this->huniler->kaldir('keepchat', 'deneme'));
+
+        self::assertNull($this->huniler->taslak('keepchat', 'deneme'));
+        self::assertSame([], $this->db->fetchFirstColumn("SELECT surum FROM huni_surumleri WHERE ad = 'deneme'"));
+        self::assertSame([], $this->huniler->kurallar('keepchat'));
+        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'deneme', null), 'ad yeniden kullanılabilir');
+    }
+
+    /** Ç41: ziyareti olan huni silinmez (rapor verisi) — arşivlenir, kurallardan çıkar, seçilmez. */
+    public function testZiyaretliHuniArsivlenirSecilmezListelenmez(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'genel'));
+        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'eski', 'genel'));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'eski'));
+        self::assertSame([], $this->huniler->kuralEkle('keepchat', 'k', 'x', 'eski'));
+        $this->db->executeStatement("INSERT INTO huni_ziyaretleri (app, huni, surum) VALUES ('keepchat', 'eski', 1)");
+        self::assertSame('eski', $this->huniler->sec('keepchat', ['huni' => 'eski']));
+
+        self::assertSame('arsivlendi', $this->huniler->kaldir('keepchat', 'eski'));
+
+        self::assertSame([1], $this->db->fetchFirstColumn("SELECT surum FROM huni_surumleri WHERE ad = 'eski'"), 'ziyaretin sürümü korunur');
+        self::assertSame([], $this->huniler->kurallar('keepchat'));
+        self::assertSame('genel', $this->huniler->sec('keepchat', ['huni' => 'eski', 'k' => 'x']));
+        self::assertSame(['genel'], array_column($this->huniler->huniler('keepchat'), 'ad'));
+        self::assertNull($this->huniler->taslak('keepchat', 'eski'));
+        self::assertNotSame([], $this->huniler->kuralEkle('keepchat', 'k', 'y', 'eski'));
+        self::assertFalse($this->huniler->varsayilanYap('keepchat', 'eski'));
+        self::assertSame("'eski' yok ya da arşivde", $this->huniler->kaldir('keepchat', 'eski'));
+    }
+
+    public function testVarsayilanHuniKaldirilamaz(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel')));
+
+        self::assertStringContainsString('varsayılan', $this->huniler->kaldir('keepchat', 'genel'));
+        self::assertNotNull($this->huniler->taslak('keepchat', 'genel'));
+    }
+
+    /** Tuzak §4: uygulamadaki "varsayılan mı" kontrolü kısıtı görünmez kılar — kısıtı doğrudan ölç. */
+    public function testVarsayilanHuniVeritabanindaArsivlenemez(): void
+    {
+        $this->expectException(\Doctrine\DBAL\Exception\DriverException::class);
+        $this->db->executeStatement("UPDATE huniler SET arsiv_at = now() WHERE app = 'keepchat' AND ad = 'genel'");
+    }
+
     public function testYayinlananEnSonSurumOkunurEskisiDegismez(): void
     {
         self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir')));

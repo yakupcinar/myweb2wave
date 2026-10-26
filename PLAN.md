@@ -106,7 +106,7 @@
   - [x] L11 · Ç53 b2 klasik düzenleyiciyi sil — `docs/decisions/puck-tek-duzenleyici-b2.md`
   - [x] L12 · Ç39 eşzamanlı kayıt 409 — `docs/decisions/eszamanli-kayit.md`
   - [x] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de — `docs/decisions/panel-oturum.md`
-  - [ ] L14 · Ç41 huni arşivleme/silme
+  - [x] L14 · Ç41 huni arşivleme/silme — `docs/decisions/huni-arsiv.md`
   - [ ] L15 · Ç34 ziyaret hız sınırı + sekmede ziyaret sürdürme
   - [ ] L16 · Ç56-3 izin oranı raporu
   - [ ] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock

@@ -101,6 +101,25 @@ final class PanelHuniController extends AbstractController
         return $this->redirectToRoute('panel_huniler');
     }
 
+    /** Ç41: ziyaretsiz huni silinir, ziyaretli arşivlenir; varsayılan kaldırılamaz. */
+    #[Route('/{app}/{ad}/kaldir', name: 'panel_huni_kaldir', methods: ['POST'])]
+    public function kaldir(Request $request, string $app, string $ad): RedirectResponse
+    {
+        $this->uygulama($app);
+        $sonuc = '';
+        if ($this->islem($request, $app, function () use ($app, $ad, &$sonuc): array {
+            $sonuc = $this->huniler->kaldir($app, $ad);
+
+            return \in_array($sonuc, ['silindi', 'arsivlendi'], true) ? [] : [$sonuc];
+        }, null)) {
+            $this->addFlash('tamam', 'silindi' === $sonuc
+                ? "'{$ad}' silindi."
+                : "'{$ad}' arşivlendi — ziyaret verisi raporda kalır, kuralları kaldırıldı.");
+        }
+
+        return $this->redirectToRoute('panel_huniler');
+    }
+
     #[Route('/{app}/{ad}/varsayilan', name: 'panel_huni_varsayilan', methods: ['POST'])]
     public function varsayilan(Request $request, string $app, string $ad): RedirectResponse
     {

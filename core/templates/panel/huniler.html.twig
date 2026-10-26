@@ -27,6 +27,11 @@
                                             <input type="hidden" name="_token" value="{{ jeton }}">
                                             <button type="submit">Varsayılan yap</button>
                                         </form>
+                                        {# Ç41: ziyaret verisi silinmez — o zaman arşiv. #}
+                                        <form method="post" action="{{ path('panel_huni_kaldir', {app: u.ad, ad: h.ad}) }}" data-form="kaldir">
+                                            <input type="hidden" name="_token" value="{{ jeton }}">
+                                            <button type="submit">{{ h.ziyaretli ? 'Arşivle' : 'Sil' }}</button>
+                                        </form>
                                     {% endif %}
                                 </td>
                             </tr>
