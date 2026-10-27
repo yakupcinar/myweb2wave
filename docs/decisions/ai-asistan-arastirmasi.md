@@ -78,3 +78,9 @@ Nasıl yapmışlar araştır, sonra sıralamayı ayarla". Önceki ölçüm: Ç67
   reklam ve deney bağı olan huniyi insan yayınlar.
 - **Managed Agents** — sandbox/dosya gerekmez; döngü kısa, araçlar bizim
   sunucuda → Claude API + tool runner yeterli ve basit.
+
+## Karar değişikliği — 2026-10-27 (B6)
+Kullanıcı: ilk aşama yalnız dışarıya açılan MCP sunucusu (URL). Yukarıdaki
+"panel sohbeti önce, MCP sonra; MCP önce stdio" sırası değişti: **MCP HTTP
+önce**. Neden: MCP'de model kullanıcının Claude aboneliğinde çalışır, API
+anahtarı gerekmez. A2/A3 kapalı kalır (anahtar yok), silinmez.

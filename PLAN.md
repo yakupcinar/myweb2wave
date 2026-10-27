@@ -125,9 +125,10 @@
   - [x] **A2** · panel AI arka ucu (`ai-a2-panel-arka-uc.md`; gerçek Claude ölçülmedi — anahtar yok): `/panel/api/ai/sohbet` (oturum+CSRF, SSE akış), PHP SDK tool runner, `claude-opus-5-5`, doğrulama döngüsü, yalnız taslak, tur/jeton/hız sınırı, istek kaydı + maliyet; sahte API ile testler (`SahteRevenueCat` deseni). **Anahtar yok (kullanıcı 2026-10-27, boş kalacak)** → anahtar boşsa panelde "AI kapalı", istek gitmez; testler sahte API'yle; anahtarı kullanıcı `core/.env.local`'e kendisi yazar
   - [x] **A3** · panel AI arayüzü: Puck eklentisi (sohbet, canlı adımlar, geri al) — `ai-a3-panel-arayuz.md`; "AI ile yeni huni" P2'ye ertelendi
   - [x] **A4** · ürün bağlamı (`ai-a4-urun-baglami.md`): uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine
+  - [ ] **SIRADAKİ (B6, kullanıcı 2026-10-27): A5 öne alındı** — dışarıya açık MCP sunucusu (URL); önce araştırma (aktarım, kimlik, herkese açık adres), sonra kurulum. Anahtar gerekmez (kullanıcının Claude aboneliği).
   - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
-  - [ ] **A5** · MCP sunucusu: aynı araçlar; önce stdio (yerel, Claude Desktop/Code), dağıtımdan sonra HTTP `/mcp` + uygulama başına belirteç; yıkıcı araç yok
+  - [ ] **A5** · MCP sunucusu — **B6: HTTP (URL) önce**, stdio değil; aynı araçlar (A0), uygulama başına kimlik, yıkıcı araç yok; herkese açık adres sorusu (dağıtım/tünel) araştırmada
   - [ ] **A6** · değerlendirme: brief seti → geçerli tanım oranı, tur, maliyet (A2 sonrası, model/efor ayarı için)
   - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`

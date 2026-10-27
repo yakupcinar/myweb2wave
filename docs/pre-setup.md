@@ -317,6 +317,25 @@ zor, büyük bağımlılığa kilit · kendi CSS + Radix — her bileşenin stil
 ölçülür), bağımlılık sayısı artar (Dependabot, L18), Twig panel testleri
 JSON uç testlerine dönüşür.
 
+**B6 · AI'ın ilk kapısı dışarıya açılan MCP sunucusu (URL)** (2026-10-27,
+kullanıcı: "Quiz Builder için en mantıklı yol, ilk aşamada sistemi yalnızca
+dışarıya açılan bir MCP sunucusu (URL) olarak inşa etmek"). Önceki sıra
+(`ai-asistan-arastirmasi.md`): panel içi sohbet (A2/A3) önce, MCP (A5) sonra
+ve önce yerel stdio. Yeni sıra: **MCP (HTTP, URL) önce**.
+- Gerekçe: MCP'ye Claude Desktop / claude.ai kullanıcının KENDİ Claude
+  aboneliğiyle bağlanır; model Anthropic'te çalışır, bizde yalnız araçlar →
+  **ANTHROPIC_API_KEY gerekmez** (kullanıcıda anahtar yok, A2/A3 kapalı
+  duruyor). web2wave ve FunnelFox'ta da aynı kapı var.
+- Araçlar A0 (`HuniAraclari`) — değişmez; yalnız taslak, yayın/silme yok.
+- A2/A3 (panel içi sohbet) kalır, kapalı; ikinci aşama. Silinmez.
+- Yerel stdio artık ilk hedef değil (yalnız geliştirme kolaylığı olarak
+  istenirse).
+**Açık (MCP araştırmasında netleşecek):** herkese açık adres — dağıtım
+ertelenmişti (sunucu yok); yerel deneme için tünel (ör. Cloudflare Tunnel)
+mi, önce sunucu mu · kimlik — uygulama başına belirteç (Bearer) mı, claude.ai
+özel bağlayıcısı için OAuth mu · PHP'de MCP HTTP aktarımı (`mcp/sdk` 0.9,
+`symfony/mcp-bundle` beta; iki hafta kuralı).
+
 ## §C — Araç ortamı
 
 **C1 · Ritüel skill'leri projede yaşar, kullanıcı düzeyi `ritual` eklentisi
