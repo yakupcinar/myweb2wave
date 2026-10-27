@@ -96,6 +96,11 @@ function Oynatici({
     );
   });
   const [mevcut, setMevcut] = useState(ilkSira);
+  // Ç75: AI'ın ekran görüntüsü ziyaretçinin gördüğünü göstersin — şerit yok,
+  // ödeme düğmesi soluk değil (önizlemede yine ödeme başlamaz, aşağıda).
+  const [ekranCekimi] = useState(
+    () => new URLSearchParams(window.location.search).get("ekran") === "1",
+  );
   const [secimler, setSecimler] = useState<Record<string, string[]>>({});
   const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
     {},
@@ -211,7 +216,7 @@ function Oynatici({
         />
       ) : null}
       {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
-      {onizleme ? (
+      {onizleme && !ekranCekimi ? (
         <p className="onizleme">
           Önizleme —{" "}
           {new URLSearchParams(window.location.search).get("yayin") === "1"
@@ -327,13 +332,15 @@ function Oynatici({
                   ileri();
                 }}
                 odeme={{
-                  kapali: onizleme || odeme.suruyor,
+                  kapali: (onizleme && !ekranCekimi) || odeme.suruyor,
                   hata: odeme.hata,
                   fiyat:
                     adim.tur === "paywall"
                       ? fiyatMetni(yayin.fiyatlar?.[adim.plan])
                       : undefined,
                   onDugme: () => {
+                    // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
+                    if (onizleme) return;
                     if (adim.tur === "paywall") void aboneOl(adim.plan);
                   },
                 }}

@@ -171,8 +171,9 @@ final class HuniAraclariTest extends KernelTestCase
         self::assertSame(SahteEkranCekici::BAYTLAR, $ilk->gorsel);
         self::assertSame(['huni' => 'genel', 'adim' => 'karsilama', 'surum' => 'taslak', 'adimlar' => ['karsilama', 'hedef', 'kilo-sorusu', 'kas-sorusu', 'sure', 'paywall']], $ilk->icerik);
         $q = self::sorgu(SahteEkranCekici::$adresler[0], 'https://huni.test/keepchat/');
-        self::assertSame(['huni', 'adim', 'onizleme'], array_keys($q));
-        self::assertSame(['genel', 'karsilama'], [$q['huni'], $q['adim']]);
+        self::assertSame(['huni', 'adim', 'ekran', 'onizleme'], array_keys($q));
+        // Ç75: ekran=1 — şeritsiz, ödeme düğmesi ziyaretçideki gibi çizilir.
+        self::assertSame(['genel', 'karsilama', '1'], [$q['huni'], $q['adim'], $q['ekran']]);
         self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'genel', $q['onizleme'], time()));
 
         $yayin = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel', 'adim' => 'paywall', 'surum' => 'yayin'], $k);

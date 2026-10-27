@@ -249,6 +249,17 @@ describe("Ç72 — önizlemede adım seçimi (ekran görüntüsü)", () => {
     await yuklendi();
     expect(gorunur("Merhaba")).toBe(true);
   });
+  it("Ç75 ekran=1: şerit yok, ödeme düğmesi ziyaretçideki gibi etkin; tıklanınca ödeme başlamaz", async () => {
+    kur("?huni=fitness&onizleme=abc&ekran=1&adim=paywall");
+    await yuklendi();
+    expect(screen.queryByText(/Önizleme —/)).toBeNull();
+    const dugme = screen.getByText("Abone ol") as HTMLButtonElement;
+    expect(gorunur("Abone ol")).toBe(true);
+    expect(dugme.disabled).toBe(false);
+    fireEvent.click(dugme);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ag.istekler.filter((i) => i.yontem === "POST")).toEqual([]);
+  });
   it("gerçek ziyarette adim yok sayılır (ölçüm ilk adımdan)", async () => {
     kur("?adim=kiminle");
     await yuklendi();

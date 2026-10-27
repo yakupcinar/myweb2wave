@@ -29,3 +29,12 @@
 
 ## Açık uçlar
 Ç73 (claude.ai ~100 KB yanıt sınırı, uzun adımda aşılabilir), Ç74 (üretimde `ekran` servisi yok; yerelde huni sunucusu compose dışında).
+
+## Ek 2026-10-27 — Ç75: ekran çekimi ziyaretçinin gördüğünü göstersin
+G1 panosunda görüldü: önizlemede ödeme kapalı → düğme `:disabled` soluk, koyu temada neredeyse görünmüyor; üstte önizleme şeridi içeriği aşağı itiyor. AI bunu "okunmuyor" diye renkleri bozabilirdi.
+- **Karar:** araç adrese `&ekran=1` ekler; oynatıcı bu işaretle (yalnız önizlemede anlamlı) şeridi göstermez ve ödeme düğmesini etkin çizer. Önizlemede ödeme **hiç başlamaz**: düğme işleyicisi `onizleme` ise döner — `disabled`'a artık güvenilmiyor. Panelden "Aç" (insan) eskisi gibi şerit + soluk düğme görür.
+- Reddedilen: yalnız araç açıklamasına uyarı (a) — model görüntüyü metinden çok tartar; işaretsiz her önizlemeyi etkin çizmek — insan "ödeme kapalı" ipucunu kaybederdi.
+- Bilinçli dışarıda: çerez/izin şeridi (yeni ziyaretçi görür) çekimde yok — tasarımın parçası değil.
+- Gereksiz savunma kaldırıldı (§10): `ekranCekimi = onizleme && …` — işaret yalnız `onizleme && !ekranCekimi` içinde kullanılıyor, gerçek ziyarette gözlenebilir etkisi yok.
+- Kırma 5/5 kırmızı, her biri doğru iddiada (§8 denetlendi): K1 işaret okunmaz → şerit var · K2 şerit hep · **K3 önizleme koruması yok → ödeme isteği (POST) gider** · K4 düğme hep kapalı · K5 araç `ekran=1` eklemez.
+- Gerçek sistem: huni sunucusunun yeni kodu sunduğu `curl` ile doğrulandı (§38), ödeme adımı çekimi şeritsiz ve düğme normal mavi. `bin/kontrol` yeşil (273 çekirdek testi; oynatıcı 53).

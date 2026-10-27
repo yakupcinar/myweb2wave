@@ -131,7 +131,7 @@ final readonly class HuniAraclari
         if (!\in_array($adim, $adimlar, true)) {
             return AracSonucu::hata("adım '{$adim}' yok; adımlar: ".implode(', ', $adimlar));
         }
-        $adres = $this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.($yayin ? '&yayin=1' : '').'&adim='.$adim
+        $adres = $this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.($yayin ? '&yayin=1' : '').'&adim='.$adim.'&ekran=1'
             .'&onizleme='.$this->huniler->onizlemeAnahtari($app, $huni, time());
         try {
             $gorsel = $this->ekran->cek($adres);
