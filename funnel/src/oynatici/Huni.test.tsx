@@ -581,12 +581,18 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
   it("Geri düğmesi ilk adımda yok; sonrakinde önceki adıma döner (Ç61)", async () => {
     kur();
     await yuklendi();
-    const geri = () => screen.queryByRole("button", { name: "← Geri" });
+    const geri = () => screen.queryByRole("button", { name: "Geri" });
     expect(geri()).toBeNull();
+    // Geri sütunu ilk adımda da üst çubukta yer tutar: ikinci adımda
+    // ilerleme çubuğu ve içerik kaymaz.
+    expect(document.querySelector(".ust-cubuk > progress")).not.toBeNull();
     // İlk kaydı effect yazar; beklenmezse geçmiş null kalır (aralıklı, §33).
     await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
     fireEvent.click(screen.getByText("Başla"));
     expect(gorunenBaslik()).toBe("Kiminle?");
+    expect(
+      document.querySelector(".ust-cubuk > button.geri + progress"),
+    ).not.toBeNull();
     // Tarayıcının geri tuşuyla aynı yol: geçmişten bir adım geri (dallanmada
     // da gelinen adıma döner).
     fireEvent.click(geri()!);

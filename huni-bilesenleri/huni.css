@@ -156,14 +156,31 @@
     font-size: 15px;
     text-decoration: underline;
 }
-.huni button.geri {
-    display: inline-flex;
+/* Üst çubuk: solda 44 px geri sütunu (ilk adımda boş, yer tutar), sağda
+   ilerleme. */
+.huni .ust-cubuk {
+    display: grid;
+    grid-template-columns: 44px 1fr;
     align-items: center;
+    gap: 8px;
     min-height: 44px;
-    margin: 0 0 8px -12px;
-    padding: 8px 12px;
+    margin: 0 0 8px -10px;
+}
+.huni .ust-cubuk progress {
+    grid-column: 2;
+}
+.huni button.geri {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
     border: 0;
-    font-size: 15px;
+    border-radius: 50%;
+    color: var(--metin);
+}
+.huni button.geri:hover {
+    background: color-mix(in srgb, var(--metin) 8%, transparent);
 }
 /* Ç61 (3): paywall fayda listesi ve yasal bağlantılar. */
 .huni p.fiyat {

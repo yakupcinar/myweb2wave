@@ -206,15 +206,40 @@ function Oynatici({
           Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
         </p>
       ) : null}
-      {mevcut > 0 ? (
-        // Ç61: tarayıcı geri tuşuyla aynı yol (popstate) — dallanmada da
-        // gelinen adıma döner.
-        <button className="geri" type="button" onClick={() => history.back()}>
-          ← Geri
-        </button>
-      ) : null}
-      {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
-        <progress max={tanim.adimlar.length} value={mevcut + 1} />
+      {mevcut > 0 || tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+        // Geri ve ilerleme tek satırda; geri sütunu ilk adımda da yer tutar,
+        // ikinci adımda sayfa kaymaz.
+        <div className="ust-cubuk">
+          {mevcut > 0 ? (
+            // Ç61: tarayıcı geri tuşuyla aynı yol (popstate) — dallanmada da
+            // gelinen adıma döner.
+            <button
+              className="geri"
+              type="button"
+              aria-label="Geri"
+              onClick={() => history.back()}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+              >
+                <path
+                  d="M15 5l-7 7 7 7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.25"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+          {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+            <progress max={tanim.adimlar.length} value={mevcut + 1} />
+          ) : null}
+        </div>
       ) : null}
       <div ref={kutu} data-gecis={gecti ? "" : undefined}>
         {tanim.adimlar.map((adim, i) => {

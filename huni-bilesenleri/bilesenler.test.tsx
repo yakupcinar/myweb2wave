@@ -248,10 +248,17 @@ describe("DOM huni sayfasıyla aynı", () => {
         expect(
             Number(izin.match(/font-size:\s*(\d+)px/)?.[1]),
         ).toBeGreaterThanOrEqual(15);
+        // Geri yalnız simge: yükseklik VE genişlik ≥ 44 px.
         const geri = blok("\\.huni button\\.geri");
-        expect(
-            Number(geri.match(/min-height:\s*(\d+)px/)?.[1]),
-        ).toBeGreaterThanOrEqual(44);
+        for (const boyut of ["height", "width"]) {
+            expect(
+                Number(
+                    geri.match(
+                        new RegExp(`(?:^|\\s)${boyut}:\\s*(\\d+)px`),
+                    )?.[1],
+                ),
+            ).toBeGreaterThanOrEqual(44);
+        }
     });
     it("bileşenlerin her sınıfı huni.css'te .huni altında boyanır", () => {
         const siniflar = new Set(
