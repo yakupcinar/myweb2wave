@@ -401,8 +401,13 @@ final readonly class Huniler
         );
     }
 
-    /** @return list<string> */
-    private function hatalar(string $app, mixed $tanim): array
+    /**
+     * Tanımın bu uygulamadaki tam doğrulaması: biçim + plan + görsel sahipliği.
+     * Kaydetmeden önce ölçmek isteyen (AI aracı) de bunu kullanır.
+     *
+     * @return list<string>
+     */
+    public function hatalar(string $app, mixed $tanim): array
     {
         if (!isset($this->uygulamalar[$app])) {
             return ['bilinmeyen uygulama'];

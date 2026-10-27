@@ -66,6 +66,9 @@ adim bilesen-bicim bilesen 'npm run -s format:check'
 # 2 · Statik analiz
 adim core-composer core  'composer validate --strict --no-check-publish'
 adim core-stan    core   'vendor/bin/phpstan analyse --no-progress --memory-limit=1G'
+# A0: AI araç şeması (config/huni/tanim-semasi.json) sözleşmeden üretilir;
+# sözleşme değişip yeniden üretilmezse kırmızı (TypeScript tipleriyle aynı).
+adim huni-sema    core   'php bin/console app:huni-semasi --kontrol'
 adim funnel-tip   funnel 'npm run -s check'
 adim panel-tip    panel 'npm run -s check'
 adim bilesen-tip  bilesen 'npm run -s check'
