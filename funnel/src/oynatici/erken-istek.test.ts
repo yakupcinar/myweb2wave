@@ -22,3 +22,16 @@ it("kaynağından yeniden kurulunca da aynı isteği atar", async () => {
   expect(await yalitik("keepchat", "http://cekirdek")).toEqual({ tamam: true });
   expect(istenen).toEqual(["http://cekirdek/huni/keepchat?k=fitness"]);
 });
+
+it("yayin=1 önizlemesi taslak ucuna yayin parametresini taşır", async () => {
+  const istenen: string[] = [];
+  vi.stubGlobal("fetch", (adres: string) => {
+    istenen.push(adres);
+    return Promise.resolve(Response.json({}));
+  });
+  history.replaceState(null, "", "/keepchat/?huni=genel&yayin=1&onizleme=a.b");
+  await tanimIstegi("keepchat", "http://cekirdek");
+  expect(istenen).toEqual([
+    "http://cekirdek/huni/keepchat/taslak?huni=genel&anahtar=a.b&yayin=1",
+  ]);
+});

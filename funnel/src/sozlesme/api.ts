@@ -65,7 +65,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** İmzalı, süreli önizleme anahtarıyla bir huninin taslağı (A7) */
+        /** İmzalı, süreli önizleme anahtarıyla bir huninin taslağı ya da yayındaki sürümü (A7, Ç70) */
         get: operations["getDraftFunnel"];
         put?: never;
         post?: never;
@@ -755,6 +755,8 @@ export interface operations {
             query: {
                 huni: components["schemas"]["HuniKimligi"];
                 anahtar: string;
+                /** @description 1 ise taslak yerine yayındaki son sürüm (Ç70: panelden ölçümsüz bakış) */
+                yayin?: "1";
             };
             header?: never;
             path: {
@@ -764,7 +766,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Taslak (surum null) */
+            /** @description Taslak (surum null) ya da yayin=1 ile yayındaki sürüm */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -773,7 +775,7 @@ export interface operations {
                     "application/json": components["schemas"]["HuniYayini"];
                 };
             };
-            /** @description Anahtar yok, yanlış ya da süresi geçmiş */
+            /** @description Anahtar yok, yanlış ya da süresi geçmiş; yayin=1 ise huni yayınlanmamış */
             403: {
                 headers: {
                     [name: string]: unknown;

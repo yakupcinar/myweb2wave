@@ -211,6 +211,29 @@ describe("D3 — önizleme", () => {
   });
 });
 
+describe("Ç70 — yayındaki sürümün önizlemesi", () => {
+  it("yayin=1: taslak ucuna yayin gider, şerit yayındaki der; ziyaret yok, ödeme kapalı", async () => {
+    kur("?huni=fitness&yayin=1&onizleme=abc");
+    await yuklendi();
+    const [g] = istekler("GET", "/huni/keepchat/taslak");
+    expect(Object.fromEntries(new URLSearchParams(g?.sorgu))).toEqual({
+      huni: "fitness",
+      anahtar: "abc",
+      yayin: "1",
+    });
+    screen.getByText(
+      "Önizleme — yayındaki sürüm; hiçbir şey kaydedilmez, ödeme kapalı.",
+    );
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect((screen.getByText("Abone ol") as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ag.istekler.filter((i) => i.yontem === "POST")).toEqual([]);
+  });
+});
+
 describe("D1 · D2 · D6 · D8 — çizim", () => {
   it("metin HTML olarak yorumlanmaz", async () => {
     tanim = {

@@ -406,6 +406,24 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
     }
 
+    public function testOnizlemeAnahtariYayinIleYayindakiSurumuGosterir(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('İki'));
+        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'bos', null));
+
+        $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'genel', 'anahtar' => $this->huniler->onizlemeAnahtari('keepchat', 'genel', time()), 'yayin' => '1']);
+        self::assertResponseStatusCodeSame(200);
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}/taslak', $this->client->getResponse());
+        self::assertEquals(['huni' => 'genel', 'surum' => 1, 'tanim' => self::tanim('Bir')], $this->yanit(fiyatsiz: true));
+        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
+
+        // Yayınlanmamış hunide yayındaki sürüm yok.
+        $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'bos', 'anahtar' => $this->huniler->onizlemeAnahtari('keepchat', 'bos', time()), 'yayin' => '1']);
+        self::assertResponseStatusCodeSame(403);
+    }
+
     public function testZiyaretGorduguSurumuTasirBilinmeyeniNullYazar(): void
     {
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('X'));

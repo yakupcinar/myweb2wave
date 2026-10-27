@@ -70,7 +70,13 @@ final readonly class HuniController
         if (null === $taslak || !$this->huniler->anahtarGecerli($app, $ad, $anahtar, time())) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad, 'surum' => null, 'tanim' => $taslak] + $this->fiyatAlani($app));
+        // Ç70: yayin=1 aynı anahtarla yayındaki sürümü gösterir — panel "Aç"
+        // canlıya bakarken ziyaret açmasın (önizlemede oynatıcı ölçmez).
+        $sonuc = '1' === $request->query->getString('yayin') ? $this->huniler->yayinda($app, $ad) : ['surum' => null, 'tanim' => $taslak];
+        if (null === $sonuc) {
+            return new JsonResponse(['error' => 'forbidden'], 403);
+        }
+        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

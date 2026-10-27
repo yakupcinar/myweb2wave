@@ -56,7 +56,7 @@ final class PanelHuniTest extends WebTestCase
         self::assertSelectorTextSame('nav.yan a[aria-current=page]', 'Huniler');
     }
 
-    public function testListedeAcYayindaysaCanliAdresYoksaOnizleme(): void
+    public function testListedeAcYayindakiniYaDaTaslagiOlcumsuzAcar(): void
     {
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir'));
         $this->huniler->yayinla('keepchat', 'genel');
@@ -65,10 +65,13 @@ final class PanelHuniTest extends WebTestCase
 
         $liste = $this->client->request('GET', '/panel/huniler');
 
-        $canli = $liste->filter('tr[data-huni=genel] a[data-ac]');
-        self::assertSame('Aç', trim($canli->text()));
-        self::assertSame('https://huni.test/keepchat/?huni=genel', $canli->attr('href'));
-        self::assertSame('_blank', $canli->attr('target'));
+        // Ç70: yayındaki de imzalı önizlemeyle açılır — kontrol ziyaret sayılmaz.
+        $yayin = $liste->filter('tr[data-huni=genel] a[data-ac]');
+        self::assertSame('Aç', trim($yayin->text()));
+        self::assertSame('_blank', $yayin->attr('target'));
+        $adres = (string) $yayin->attr('href');
+        self::assertStringStartsWith('https://huni.test/keepchat/?huni=genel&yayin=1&onizleme=', $adres);
+        self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'genel', substr($adres, (int) strrpos($adres, '=') + 1), time()));
         $onizleme = (string) $liste->filter('tr[data-huni=taslak] a[data-ac]')->attr('href');
         self::assertStringStartsWith('https://huni.test/keepchat/?huni=taslak&onizleme=', $onizleme);
         self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'taslak', substr($onizleme, (int) strrpos($onizleme, '=') + 1), time()));

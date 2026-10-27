@@ -203,7 +203,11 @@ function Oynatici({
       {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
       {onizleme ? (
         <p className="onizleme">
-          Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
+          Önizleme —{" "}
+          {new URLSearchParams(window.location.search).get("yayin") === "1"
+            ? "yayındaki sürüm"
+            : "taslak"}
+          ; hiçbir şey kaydedilmez, ödeme kapalı.
         </p>
       ) : null}
       {mevcut > 0 || tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (

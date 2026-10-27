@@ -130,19 +130,20 @@ paths:
   /huni/{app}/taslak:
     get:
       operationId: getDraftFunnel
-      summary: İmzalı, süreli önizleme anahtarıyla bir huninin taslağı (A7)
+      summary: İmzalı, süreli önizleme anahtarıyla bir huninin taslağı ya da yayındaki sürümü (A7, Ç70)
       parameters:
         - $ref: "#/components/parameters/App"
         - { name: huni, in: query, required: true, schema: { $ref: "#/components/schemas/HuniKimligi" } }
         - { name: anahtar, in: query, required: true, schema: { type: string } }
+        - { name: yayin, in: query, required: false, description: "1 ise taslak yerine yayındaki son sürüm (Ç70: panelden ölçümsüz bakış)", schema: { type: string, enum: ["1"] } }
       responses:
         "200":
-          description: Taslak (surum null)
+          description: Taslak (surum null) ya da yayin=1 ile yayındaki sürüm
           content:
             application/json:
               schema: { $ref: "#/components/schemas/HuniYayini" }
         "403":
-          description: Anahtar yok, yanlış ya da süresi geçmiş
+          description: Anahtar yok, yanlış ya da süresi geçmiş; yayin=1 ise huni yayınlanmamış
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
