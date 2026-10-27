@@ -128,7 +128,10 @@
   - [ ] **SIRADAKİ (B6, kullanıcı 2026-10-27): A5 öne alındı** — dışarıya açık MCP sunucusu (URL); önce araştırma (aktarım, kimlik, herkese açık adres), sonra kurulum. Anahtar gerekmez (kullanıcının Claude aboneliği).
   - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
-  - [ ] **A5** · MCP sunucusu — **B6: HTTP (URL) önce**, stdio değil; aynı araçlar (A0), uygulama başına kimlik, yıkıcı araç yok; herkese açık adres sorusu (dağıtım/tünel) araştırmada
+  - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
+    - [ ] A5a · kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost
+    - [ ] A5b · herkese açık adres (geçici Cloudflare tüneli onayla / dağıtım) + claude.ai özel bağlayıcı
+    - [ ] A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa
   - [ ] **A6** · değerlendirme: brief seti → geçerli tanım oranı, tur, maliyet (A2 sonrası, model/efor ayarı için)
   - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
