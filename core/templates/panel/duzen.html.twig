@@ -4,7 +4,7 @@
 
 {% block body %}
     {% set rota = app.request.attributes.get('_route') %}
-    {% set aktif = rota starts with 'panel_huni' or rota starts with 'panel_kural' ? 'huniler' : (rota == 'panel_baglam' ? 'baglam' : 'rapor') %}
+    {% set aktif = rota starts with 'panel_huni' or rota starts with 'panel_kural' ? 'huniler' : (rota == 'panel_baglam' ? 'baglam' : (rota == 'panel_anahtarlar' ? 'anahtarlar' : 'rapor')) %}
     <div class="duzen">
         <nav class="yan" aria-label="Panel">
             <a class="marka" href="{{ path('panel') }}"><span class="marka-isaret" aria-hidden="true">W</span>MyWeb2Wave</a>
@@ -19,6 +19,10 @@
             <a href="{{ path('panel_baglam') }}"{% if aktif == 'baglam' %} aria-current="page"{% endif %}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg>
                 Ürün bağlamı
+            </a>
+            <a href="{{ path('panel_anahtarlar') }}"{% if aktif == 'anahtarlar' %} aria-current="page"{% endif %}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/></svg>
+                API anahtarları
             </a>
             <a class="alt" href="{{ path('panel_cikis') }}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>

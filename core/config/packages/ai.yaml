@@ -16,3 +16,20 @@ framework:
             policy: sliding_window
             limit: 30
             interval: '1 hour'
+        # A5a: MCP — anahtar başına dakikada 120 istek.
+        mcp:
+            policy: sliding_window
+            limit: 120
+            interval: '1 minute'
+    cache:
+        pools:
+            # MCP oturumları (2025-11-25 çağı, Mcp-Session-Id): PSR-16 üzerinden.
+            mcp.oturumlar.havuz:
+                adapter: cache.app
+                default_lifetime: 3600
+
+services:
+    mcp.oturumlar:
+        class: Symfony\Component\Cache\Psr16Cache
+        arguments: ['@mcp.oturumlar.havuz']
+

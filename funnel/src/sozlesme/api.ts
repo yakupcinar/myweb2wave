@@ -283,10 +283,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/anahtarlar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** Kişisel API anahtarları (A5a, MCP) — anahtarın kendisi yok, yalnız önek */
+        get: operations["panelApiAnahtarlari"];
+        put?: never;
+        /** Yeni anahtar — kendisi YALNIZ bu yanıtta döner */
+        post: operations["panelApiAnahtariOlustur"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/anahtarlar/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Anahtarı iptal eder (geri alınamaz) */
+        delete: operations["panelApiAnahtariIptal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ApiAnahtari: {
+            id: number;
+            ad: string;
+            /** @description Anahtarın ilk 11 karakteri (mw2w_xxxxxx) — tanımak için */
+            onek: string;
+            olusturma: string;
+            sonKullanim: string | null;
+            iptal: boolean;
+        };
         /** @description A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar */
         UrunBaglami: {
             /** @description Ürün ne yapıyor */
@@ -1332,6 +1381,142 @@ export interface operations {
             };
             /** @description Alan çok uzun ya da geçersiz */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtarlari: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description MCP adresi ve anahtarlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        mcpAdresi: string;
+                        anahtarlar: components["schemas"]["ApiAnahtari"][];
+                    };
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtariOlustur: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ad: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Oluşturuldu */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: number;
+                        ad: string;
+                        anahtar: string;
+                    };
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Ad geçersiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtariIptal: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İptal edildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Yok ya da zaten iptal */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -7,6 +7,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
+import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Baglam } from "./sayfalar/Baglam";
 import { Rapor } from "./sayfalar/Rapor";
 
@@ -17,6 +18,7 @@ export const yollar = [
         children: [
             { index: true, element: <Rapor /> },
             { path: "baglam", element: <Baglam /> },
+            { path: "anahtarlar", element: <Anahtarlar /> },
         ],
     },
 ];

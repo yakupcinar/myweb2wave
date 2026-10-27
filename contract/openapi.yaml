@@ -489,6 +489,69 @@ paths:
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Alan çok uzun ya da geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/anahtarlar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiAnahtarlari
+      summary: Kişisel API anahtarları (A5a, MCP) — anahtarın kendisi yok, yalnız önek
+      responses:
+        "200":
+          description: MCP adresi ve anahtarlar
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [mcpAdresi, anahtarlar]
+                properties:
+                  mcpAdresi: { type: string }
+                  anahtarlar: { type: array, items: { $ref: "#/components/schemas/ApiAnahtari" } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiAnahtariOlustur
+      summary: Yeni anahtar — kendisi YALNIZ bu yanıtta döner
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ad]
+              properties:
+                ad: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        "201":
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [id, ad, anahtar]
+                properties:
+                  id: { type: integer }
+                  ad: { type: string }
+                  anahtar: { type: string, pattern: "^mw2w_[0-9a-f]{48}$" }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Ad geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/anahtarlar/{id}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    delete:
+      operationId: panelApiAnahtariIptal
+      summary: Anahtarı iptal eder (geri alınamaz)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "204": { description: İptal edildi }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Yok ya da zaten iptal, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -513,6 +576,17 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
   schemas:
+    ApiAnahtari:
+      type: object
+      additionalProperties: false
+      required: [id, ad, onek, olusturma, sonKullanim, iptal]
+      properties:
+        id: { type: integer }
+        ad: { type: string }
+        onek: { type: string, description: "Anahtarın ilk 11 karakteri (mw2w_xxxxxx) — tanımak için" }
+        olusturma: { type: string }
+        sonKullanim: { type: [string, "null"] }
+        iptal: { type: boolean }
     UrunBaglami:
       description: "A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar"
       type: object
