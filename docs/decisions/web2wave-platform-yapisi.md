@@ -89,3 +89,26 @@ giden webhook + yönetim API'si → ekip/roller → e-posta dizisi.
 **Bilinçli farklar (korunacak, değiştirmek ayrı karar):** özel JS yok (D1,
 XSS/güven), olasılıksal cihaz eşleme yok (A10: kesin giriş bağlantısı),
 dallanma yalnız ileri (A11 — koşul motoru gelirse yeniden değerlendirilir).
+
+## Ek 2026-10-27 — quiz builder: araç + AI karşılaştırması
+
+Kullanıcı: "web2wave quiz builder'ı hem AI hem araç açısından nasıl yönetmiş, aynı seviyede miyiz, değilsek fark ne". Kaynak: `docs.web2wave.com/reference/{mcp-server,wavy-ai,blocks-list}.md` (2026-10-27 okundu; üretici beyanı, panel çalıştırılmadı). Kod alınmadı (kural 12).
+
+| Alan | web2wave | MyWeb2Wave | Seviye |
+|---|---|---|---|
+| Yapı | ekran = blok listesi; belgede ~72 blok (içerik 16, soru 31, yapı 19, yükleyici 6); MCP şeması 410+ blok tipi | adım = tek tür, 6 tür (tanıtım, soru tekli/çoklu/metin, yorum, paywall) | çok geride (temel 1 / T1) |
+| Stil | global tema CSS değişkenleri + **blok başına Styles sekmesi** (renk, tipografi, boşluk, kenarlık, kap) "global temanın üstüne"; 1700+ CSS değişkeni; özel CSS | huni başına 5 alan (3 renk, 4 yazı tipi yığını, köşe) + logo; blok başına yok; özel CSS bilinçli yok (D1) | çok geride (G1–G5); özel CSS farkı bilinçli |
+| Mantık | koşul motoru (sonraki ekran, atla, koşullu değer), JS koşulu | seçenek → ileri hedef (A11) | geride (T3) |
+| Sürüm/önizleme | geçmiş, görsel fark, geri yükleme, sürüm başına önizleme + istatistik | geçmiş, geri yükleme, sürüm başına ziyaret, imzalı önizleme (taslak + yayın, Ç70) | yakın (görsel fark yok) |
+| Panel AI | Wavy AI (beta): açık quiz'e brief'ten ekran üretir/yeniden yazar; stil "görsel geçiş" isteğiyle; girdi yalnız metin; yayın insanda | A2/A3 hazır ama **kapalı** (anahtar yok); ürün bağlamı (A4); tema yönergesi (Ç71 a); yalnız taslak | kavram aynı, kullanımda değil |
+| MCP araçları | 70+; quiz kur+yayınla, **`web2wave_render_quiz_screen` (ekran görüntüsü)**, `validate_quiz_json`, `web2wave_set_quiz_theme_variables`, `web2wave_patch_block_css_variables`, `web2wave_generate_theme_palette`, `plan_quiz_from_design`, `web2wave_crawl_funnel` (adresten kopya), analitik/deney/abonelik | 5: listele, oku, doğrula, taslağa yaz, önizleme adresi | çok geride |
+| MCP istem senaryoları | design-to-quiz, **iterate-quiz-design (render → tasarımla fark → yama → yeniden render)**, theme-from-brand, clone-funnel-from-url … | yok (talimat metni var) | yok |
+| Güvenlik | yıkıcı işlemler barındırılan uçta kapalı; anahtar = tek proje | yayın/silme aracı yok; anahtar = tek uygulama | aynı |
+
+**Farkın nedenleri (önem sırası):**
+1. **AI kör.** web2wave'de model çıktısını ekran görüntüsüyle görüyor ve tasarımla karşılaştırıp düzeltiyor (iterate senaryosu). Bizde AI yalnız JSON yazıyor; ekranın nasıl göründüğünü hiç görmüyor → görünümü iyileştirmesi için geri bildirim yok. "Hepsi aynı görünüyor" şikâyetinin ikinci kökü bu (birincisi Ç71: dar yüzey).
+2. **AI'ın tavanı sözleşme.** AI yalnız `HuniTanimi`'nde olanı üretebilir: 6 tür + 5 tema alanı. web2wave'de 410+ blok tipi + 1700+ değişken. Model zekâsı farkı değil, **ifade alanı** farkı. T1 (blok kataloğu) ve G1–G5 bunu çözer; araç şeması sözleşmeden üretildiği için AI kendiliğinden büyür.
+3. **Bilinçli farklar** (korunur): özel CSS/JS yok (D1, XSS), dış font yok (KVKK). web2wave'in kaçış kapıları bizde kapalı → aynı çeşitliliği yapılandırılmış alanlarla vermek gerekiyor (daha çok iş, daha güvenli).
+4. **Süre.** web2wave yıllardır; bu depo 2026-10-19'da başladı.
+
+Yakın olduğumuz yerler: sürüm/geri yükleme/önizleme, yalnız-taslak güvenlik modeli, sunucuda tam doğrulama + Türkçe hata ile AI düzeltme döngüsü, ürün bağlamı. Öneri ve sıra: Ç72.
