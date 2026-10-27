@@ -286,6 +286,37 @@ tanımlanamadı); rakiplerin React'i animasyon/durum için seçtiği (çıkarım
 yeni ortak paket, iki tüketici (huni + düzenleyici) ve Docker bağlaması.
 Geçiş planı: `PLAN.md` §1 (H0–H6).
 
+**B5 · Panel ayrı React uygulaması; Symfony panel için JSON veri servisi**
+(2026-10-27, kullanıcı: "yapılarını nasıl kurmuşlar, basite kaçmayalım,
+geliştirmemiz ileride kesilmesin"). Rakip ölçümü
+(`docs/decisions/panel-mimari-arastirmasi.md`): OpnForm (Laravel API +
+ayrı Nuxt SPA), HeyForm (NestJS + ayrı React webapp + ayrı form-renderer),
+Formbricks (Next.js + ayrı Preact anket paketi + ortak types), openFunnel
+(admin/builder/runtime + engine) — dördünde de yönetim paneli **ayrı
+istemci uygulaması**, ziyaretçi tarafı **ayrı hafif paket**, tipler ortak.
+Bizde huni (Astro+React), ortak bileşen ve OpenAPI tipleri var; eksik olan
+panel (Twig sayfaları + ayrı sayfada Puck). Twig'de CRM araması, grafik, A/B,
+sayfa yenilemeden düzenleme, çoklu dil zorlaşır.
+- Panel = `core/panel` (bugünkü `core/editor` büyür): Vite + React +
+  React Router, **Radix** (erişilebilir davranış) + **Tailwind** (stil;
+  bileşen kodu depoda, shadcn yöntemi), **TanStack Query** (veri), TanStack
+  Table (tablo), Recharts (grafik). Aynı adresten (`/panel/*`) Symfony
+  sunar: aynı köken, mevcut oturum + giriş formu korunur, CSRF başlıkla.
+- Panel uçları `/panel/api/*` JSON, **OpenAPI sözleşmesinde**; tipler
+  üretilir (huniyle aynı yol). Puck düzenleyici panelin bir sayfası olur.
+- Giriş sayfası Symfony formu kalır (güvenlik bileşeni), yalnız görünüm.
+- Geçiş adım adım (`PLAN.md` "Panel React" P0–P5); her adım testli, ayrı
+  commit; eski Twig sayfası, yerine gelen React sayfası testle eşlenince
+  silinir.
+**Reddedilen:** Twig + Symfony UX (Turbo/Stimulus) — grafik/filtre/CRM'de
+sınır, düzenleyiciyle iki dünya · Next.js ayrı sunucu (Formbricks) — ikinci
+Node sunucusu ve ikinci arka uç, oturum ve dağıtım iki yerde (B2'nin
+gerekçesi) · hazır tasarım sistemi (Mantine/Ant) — görünüm özelleştirmesi
+zor, büyük bağımlılığa kilit · kendi CSS + Radix — her bileşenin stili elle.
+**Bedeli:** panel JS'i büyür (panel herkese açık değil; bütçe yok ama
+ölçülür), bağımlılık sayısı artar (Dependabot, L18), Twig panel testleri
+JSON uç testlerine dönüşür.
+
 ## §C — Araç ortamı
 
 **C1 · Ritüel skill'leri projede yaşar, kullanıcı düzeyi `ritual` eklentisi

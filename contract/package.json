@@ -3,7 +3,7 @@
   "private": true,
   "description": "Sözleşmeden huni tiplerini üretir. Kendi TypeScript 5'i var: openapi-typescript 7 TS 6'yı desteklemiyor (peer ^5.x), huninin TS 6'sına karışmasın.",
   "scripts": {
-    "uret": "openapi-typescript openapi.yaml -o ../funnel/src/sozlesme/api.ts && cp ../funnel/src/sozlesme/api.ts /editor-src/sozlesme.ts"
+    "uret": "openapi-typescript openapi.yaml -o ../funnel/src/sozlesme/api.ts && cp ../funnel/src/sozlesme/api.ts /panel-src/sozlesme.ts"
   },
   "devDependencies": {
     "openapi-typescript": "7.13.0",

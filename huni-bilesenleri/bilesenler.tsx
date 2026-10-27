@@ -354,7 +354,7 @@ export type TanimAdimi =
 
 /**
  * Tanımdan adım (B4/H3): huni oynatıcısı bunu çizer. Puck kendi alanlarından
- * aynı bileşenleri ayrı yoldan çağırır; core/editor/src/onizleme.test.tsx
+ * aynı bileşenleri ayrı yoldan çağırır; core/panel/src/onizleme.test.tsx
  * iki yolun aynı DOM'u verdiğini ölçer (önizleme = huni).
  */
 export function Adim({

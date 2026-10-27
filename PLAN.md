@@ -119,6 +119,13 @@
   - [ ] 3 · seçenek simgesi (emoji): sözleşme + çekirdek + Puck alanı
   - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
+- [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
+  - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
+  - [ ] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
+  - [ ] P2 · Huniler: liste, yeni, varsayılan, sil/arşiv, kurallar — JSON uçlar + sayfa; Twig silinir
+  - [ ] P3 · Puck düzenleyici panelin sayfası (sayfa yenilemeden); `huni-surukle.html.twig` silinir
+  - [ ] P4 · grafik: günlük ziyaret / ödeme serisi (Recharts)
+  - [ ] P5 · Kullanıcılar (CRM): e-posta / UTM / kampanya araması, abonelik durumu (TanStack Table)
 - [x] **Panel görünümü** (kullanıcı 2026-10-27: "basit siyah ekran, web2wave'e bak") — sol menü, özet, huni şeridi, açık/koyu tema. `docs/decisions/panel-gorunum.md`
 
 ## 2. Backlog

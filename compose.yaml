@@ -76,22 +76,22 @@ services:
       - ./huni-bilesenleri:/huni-bilesenleri
       - funnel-node-modules:/huni-bilesenleri/node_modules
 
-  # Panel huni düzenleyicisi (E2.4, React + Puck): `docker compose run --rm editor npm run build`
-  # çıktıyı core/public/varliklar/editor'a yazar. Huniyle aynı Node imajı.
-  editor:
+  # Panel (B5: React; E2.4 Puck düzenleyicisi dahil): `docker compose run --rm panel npm run build`
+  # çıktıyı core/public/varliklar/panel'e yazar. Huniyle aynı Node imajı.
+  panel:
     build: ./funnel
     image: myweb2wave-funnel:dev
     profiles: ["araclar"]
-    working_dir: /core/editor
+    working_dir: /core/panel
     volumes:
       - ./core:/core
       - ./contract:/contract:ro
-      - editor-node-modules:/core/editor/node_modules
-      # Ortak huni bileşenleri (B4/H1). Bağımlılıkları yok: düzenleyicinin
+      - panel-node-modules:/core/panel/node_modules
+      # Ortak huni bileşenleri (B4/H1). Bağımlılıkları yok: panelin
       # node_modules'u oraya da bağlanır (tek React, Ç45). Yazılabilir —
       # iç bağlama noktası salt okunur dizinde açılamaz.
       - ./huni-bilesenleri:/huni-bilesenleri
-      - editor-node-modules:/huni-bilesenleri/node_modules
+      - panel-node-modules:/huni-bilesenleri/node_modules
 
   # Sözleşmeden huni tiplerini üretir; huni dizinine yazar.
   contract:
@@ -101,12 +101,12 @@ services:
     volumes:
       - ./contract:/app
       - ./funnel:/funnel
-      # E2.4: panel düzenleyicisi de aynı tipleri kullanır (R2 — tek kaynak).
-      - ./core/editor/src:/editor-src
+      # E2.4/B5: panel de aynı tipleri kullanır (R2 — tek kaynak).
+      - ./core/panel/src:/panel-src
       - contract-node-modules:/app/node_modules
 
 volumes:
   db-data:
   funnel-node-modules:
-  editor-node-modules:
+  panel-node-modules:
   contract-node-modules:

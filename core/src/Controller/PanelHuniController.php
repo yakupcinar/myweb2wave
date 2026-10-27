@@ -32,7 +32,7 @@ final class PanelHuniController extends AbstractController
         private readonly array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private readonly string $funnelBaseUrl,
-        #[Autowire('%kernel.project_dir%/public/varliklar/editor/.vite/manifest.json')]
+        #[Autowire('%kernel.project_dir%/public/varliklar/panel/.vite/manifest.json')]
         private readonly string $editorManifesti,
     ) {
     }
@@ -143,7 +143,7 @@ final class PanelHuniController extends AbstractController
         $manifest = is_file($this->editorManifesti) ? json_decode((string) file_get_contents($this->editorManifesti), true) : null;
         $giris = \is_array($manifest) && \is_array($manifest['src/main.tsx'] ?? null) ? $manifest['src/main.tsx'] : null;
         if (null === $giris || !\is_string($giris['file'] ?? null)) {
-            return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm editor npm run build', 503));
+            return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm panel npm run build', 503));
         }
 
         return self::korumali($this->render('panel/huni-surukle.html.twig', [
@@ -154,8 +154,8 @@ final class PanelHuniController extends AbstractController
             'planlar' => array_keys($this->uygulamalar[$app]),
             'tema_varsayilan' => Tema::VARSAYILAN,
             'yazi_tipleri' => Tema::YAZI_TIPLERI,
-            'betik' => '/varliklar/editor/'.$giris['file'],
-            'stiller' => array_map(static fn (mixed $c): string => '/varliklar/editor/'.(\is_string($c) ? $c : ''), \is_array($giris['css'] ?? null) ? $giris['css'] : []),
+            'betik' => '/varliklar/panel/'.$giris['file'],
+            'stiller' => array_map(static fn (mixed $c): string => '/varliklar/panel/'.(\is_string($c) ? $c : ''), \is_array($giris['css'] ?? null) ? $giris['css'] : []),
         ]));
     }
 

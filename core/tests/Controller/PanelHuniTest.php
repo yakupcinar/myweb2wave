@@ -148,7 +148,7 @@ final class PanelHuniTest extends WebTestCase
     public function testSurukleBirakSayfasiManifesttekiBetigiYukler(): void
     {
         // Derleme kontrolde testten önce (bin/kontrol editor-derle); adres içerik özetli.
-        $manifest = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/public/varliklar/editor/.vite/manifest.json'), true);
+        $manifest = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/public/varliklar/panel/.vite/manifest.json'), true);
         self::assertIsArray($manifest);
         self::assertIsArray($manifest['src/main.tsx'] ?? null);
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('"><script>alert(1)</script>'));
@@ -161,7 +161,7 @@ final class PanelHuniTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
         $betik = $manifest['src/main.tsx']['file'] ?? null;
         self::assertIsString($betik);
-        self::assertSame('/varliklar/editor/'.$betik, $crawler->filter('script[type=module]')->attr('src'));
+        self::assertSame('/varliklar/panel/'.$betik, $crawler->filter('script[type=module]')->attr('src'));
         self::assertEquals(self::tanim('"><script>alert(1)</script>'), json_decode((string) $crawler->filter('#puck-duzenleyici')->attr('data-taslak'), true));
         self::assertStringNotContainsString('<script>alert(1)', (string) $this->client->getResponse()->getContent());
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
