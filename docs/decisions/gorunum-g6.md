@@ -17,4 +17,5 @@ Kullanıcı: "başla" (G6). G1 ölçümü: içerik kartı (C9) düzen farkında 
 - Gerçek sistem (konsol aracı, taslak yedeklendi → **aynen geri yüklendi**, tanım + imza eşit): kartsız koyu tema reddedildi (1,72:1); kartlı düz zemin ve kartlı görsel zemin (%0 karartma) kaydedildi, üç adım çekildi; yan boşluk düzeltmesinden sonra zemin kartın dört yanında.
 - Bir koşu 300 sn'yi aştı → tek çekim yeniden ölçüldü: **2 sn** (gerileme yok; geçici yavaşlık oturumun duraklamasıyla aynı ana denk geldi, kaynak ölçülmedi).
 - `bin/kontrol` yeşil (285 çekirdek testi).
+- CI: koşu 40555689715, SHA 8ee1e6a, `KONTROL: YEŞİL`, 285 test.
 - **Ölçülmedi:** Puck düzenleyicide yeni alanların görsel kontrolü; iOS Safari `:has` (15.4+) ve gölge görünümü.
