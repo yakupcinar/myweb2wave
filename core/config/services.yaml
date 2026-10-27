@@ -35,3 +35,6 @@ services:
 when@test:
     services:
         App\Tests\Support\SahteRevenueCat: ~
+        # Ç72: testte başsız tarayıcı yok — sahte çekici.
+        App\Huni\Ekran\EkranCekici: '@App\Tests\Support\SahteEkranCekici'
+        App\Tests\Support\SahteEkranCekici: ~

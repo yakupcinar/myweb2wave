@@ -234,6 +234,29 @@ describe("Ç70 — yayındaki sürümün önizlemesi", () => {
   });
 });
 
+describe("Ç72 — önizlemede adım seçimi (ekran görüntüsü)", () => {
+  // Adımların hepsi DOM'da; görünmeyen `hidden` taşır — görünürlük ölçülür.
+  const gorunur = (metin: string): boolean =>
+    screen.getByText(metin).closest("[hidden]") === null;
+  it("önizlemede adim=<kimlik> o adımdan başlar", async () => {
+    kur("?huni=fitness&onizleme=abc&adim=kiminle");
+    await yuklendi();
+    expect(gorunur("Kiminle?")).toBe(true);
+    expect(gorunur("Merhaba")).toBe(false);
+  });
+  it("bilinmeyen adım ilk adımdan başlar", async () => {
+    kur("?huni=fitness&onizleme=abc&adim=yok");
+    await yuklendi();
+    expect(gorunur("Merhaba")).toBe(true);
+  });
+  it("gerçek ziyarette adim yok sayılır (ölçüm ilk adımdan)", async () => {
+    kur("?adim=kiminle");
+    await yuklendi();
+    expect(gorunur("Merhaba")).toBe(true);
+    expect(gorunur("Kiminle?")).toBe(false);
+  });
+});
+
 describe("D1 · D2 · D6 · D8 — çizim", () => {
   it("metin HTML olarak yorumlanmaz", async () => {
     tanim = {

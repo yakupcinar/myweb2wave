@@ -231,3 +231,16 @@ kaba ulaşmadı, Vite modülü önbellekten verdi. **Ölçüm (2026-10-27,
 sınıfı **0** kez, aynı adres `?t=1` ile **1** kez içerdi; kap yeniden
 başlayınca 1. **Doğrusu:** tarayıcıda görsel ölçümden önce sunulan dosyayı
 `curl` ile oku; eskiyse `docker restart huni-dev`.
+
+## §39 — Testing Library `getByText`/`findByText` gizli öğeyi de bulur
+**Belirti:** "önizlemede ikinci adımdan başlar" testi `findByText("Kiminle?")`
+ile yeşil olurdu — adım ekranda değilken. Tersine "ilk adım yok" iddiası
+(`queryByText("Merhaba")` null) kod doğruyken kırmızı.
+**Sebep:** huni oynatıcısı bütün adımları DOM'da tutar, görünmeyenleri
+`hidden` ile gizler; metin sorguları `hidden`'ı (ve `display:none`'ı)
+**süzmez** — bulunmak görünmek değildir. **Ölçüm (2026-10-27,
+`ai-ekran-goruntusu.md`):** kod yokken "gerçek ziyarette adım yok sayılır"
+testi `queryByText("Kiminle?")` ile kırmızıydı; DOM'da `<h1>Kiminle?</h1>`
+gizli adımın içindeydi. **Doğrusu:** görünürlüğü ayrıca ölç —
+`el.closest("[hidden]") === null` (ya da `toBeVisible`) — ve olumlu iddiayı
+da görünürlükle yaz.

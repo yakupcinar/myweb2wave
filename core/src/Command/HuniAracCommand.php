@@ -12,6 +12,7 @@ use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * AI araç katmanını konsoldan çalıştırır (A1): panel sohbeti (A2) ve MCP
@@ -29,6 +30,8 @@ final readonly class HuniAracCommand
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
+        #[Autowire('%kernel.project_dir%')]
+        private string $projeDizini,
     ) {
     }
 
@@ -60,7 +63,15 @@ final readonly class HuniAracCommand
             return Command::INVALID;
         }
         $sonuc = $this->araclar->calistir($arac, $veri, $kapsam);
-        $cikti->writeln(self::json($sonuc->icerik));
+        $icerik = $sonuc->icerik;
+        // Ç72: görüntü JSON'a sığmaz — dosyaya (core/var/ekran, Claude Code okur), yolu çıktıda.
+        if (null !== $sonuc->gorsel) {
+            $ad = array_map(static fn (mixed $d): string => \is_string($d) ? $d : '', [$icerik['huni'] ?? '', $icerik['adim'] ?? '']);
+            $yol = $this->projeDizini.'/var/ekran/'.$app.'-'.implode('-', $ad).'.jpg';
+            (new Filesystem())->dumpFile($yol, $sonuc->gorsel);
+            $icerik['gorsel_dosyasi'] = $yol;
+        }
+        $cikti->writeln(self::json($icerik));
 
         return $sonuc->hata ? Command::FAILURE : Command::SUCCESS;
     }

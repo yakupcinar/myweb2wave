@@ -136,6 +136,7 @@
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
   - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
     - [x] A5a · (`mcp-a5a.md`) kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost
+    - [x] A5+ · (`ai-ekran-goruntusu.md`, Ç72 (1)) `ekran_goruntusu` aracı: başsız Chrome kabı (`ekran`), önizlemede `?adim=`, MCP görüntü içeriği; gerçek MCP HTTP ile ölçüldü. Kalan: Ç72 (2)–(4), Ç73, Ç74
     - [ ] A5b · herkese açık adres (geçici Cloudflare tüneli onayla / dağıtım) + claude.ai özel bağlayıcı
     - [ ] A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa
   - [ ] **A6** · değerlendirme: brief seti → geçerli tanım oranı, tur, maliyet (A2 sonrası, model/efor ayarı için)

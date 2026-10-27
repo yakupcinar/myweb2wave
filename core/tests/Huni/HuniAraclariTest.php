@@ -7,6 +7,7 @@ namespace App\Tests\Huni;
 use App\Huni\Arac\AracKapsami;
 use App\Huni\Arac\HuniAraclari;
 use App\Huni\Huniler;
+use App\Tests\Support\SahteEkranCekici;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -32,6 +33,7 @@ final class HuniAraclariTest extends KernelTestCase
         $araclar = static::getContainer()->get(HuniAraclari::class);
         self::assertInstanceOf(HuniAraclari::class, $araclar);
         $this->araclar = $araclar;
+        SahteEkranCekici::sifirla();
     }
 
     /** Yayınlama, silme, kural aracı YOK; açık huni üzerindeki sohbette yeni huni de yok. */
@@ -39,8 +41,8 @@ final class HuniAraclariTest extends KernelTestCase
     {
         $adlar = fn (?string $huni): array => array_column($this->araclarTanimi($huni), 'name');
 
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'yeni_huni'], $adlar(null));
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi'], $adlar('genel'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'yeni_huni'], $adlar(null));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu'], $adlar('genel'));
     }
 
     /** Tanım şeması sözleşmedeki HuniTanimi'nin kendisi (bağımsız okuma: YAML doğrudan) ve her $ref çözülür. */
@@ -154,6 +156,62 @@ final class HuniAraclariTest extends KernelTestCase
         parse_str((string) parse_url($adres, \PHP_URL_QUERY), $q);
         self::assertIsString($q['onizleme'] ?? null);
         self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'fitness', $q['onizleme'], time()));
+    }
+
+    /** Ç72: adımın önizlemesi tarayıcıda çekilir; adım ve sürüm adrese, görüntü sonuca. */
+    public function testEkranGoruntusuAdimVeSurumleOnizlemeyiCeker(): void
+    {
+        $k = new AracKapsami('keepchat');
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::fitness('Yayındaki')));
+        self::assertIsInt($this->huniler->yayinla('keepchat', 'genel'));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::fitness('Taslak')));
+
+        $ilk = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel'], $k);
+        self::assertFalse($ilk->hata);
+        self::assertSame(SahteEkranCekici::BAYTLAR, $ilk->gorsel);
+        self::assertSame(['huni' => 'genel', 'adim' => 'karsilama', 'surum' => 'taslak', 'adimlar' => ['karsilama', 'hedef', 'kilo-sorusu', 'kas-sorusu', 'sure', 'paywall']], $ilk->icerik);
+        $q = self::sorgu(SahteEkranCekici::$adresler[0], 'https://huni.test/keepchat/');
+        self::assertSame(['huni', 'adim', 'onizleme'], array_keys($q));
+        self::assertSame(['genel', 'karsilama'], [$q['huni'], $q['adim']]);
+        self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'genel', $q['onizleme'], time()));
+
+        $yayin = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel', 'adim' => 'paywall', 'surum' => 'yayin'], $k);
+        self::assertFalse($yayin->hata);
+        $q = self::sorgu(SahteEkranCekici::$adresler[1], 'https://huni.test/keepchat/');
+        self::assertSame(['genel', '1', 'paywall'], [$q['huni'], $q['yayin'] ?? null, $q['adim']]);
+    }
+
+    public function testEkranGoruntusuHatalariTarayiciyaGitmeden(): void
+    {
+        $k = new AracKapsami('keepchat');
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::fitness()));
+
+        $yokAdim = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel', 'adim' => 'yok'], $k);
+        $yayinYok = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel', 'surum' => 'yayin'], $k);
+        $yokHuni = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'bos'], $k);
+        $bozukAdim = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel', 'adim' => '../x'], $k);
+
+        self::assertSame(['hatalar' => ["adım 'yok' yok; adımlar: karsilama, hedef, kilo-sorusu, kas-sorusu, sure, paywall"]], $yokAdim->icerik);
+        self::assertSame(['hatalar' => ["'genel' henüz yayınlanmadı — surum: taslak kullan"]], $yayinYok->icerik);
+        self::assertSame(['hatalar' => ["'bos' adında huni yok"]], $yokHuni->icerik);
+        self::assertTrue($bozukAdim->hata);
+        self::assertSame([], SahteEkranCekici::$adresler, 'hatalı istek tarayıcıya gitmedi');
+        foreach ([$yokAdim, $yayinYok, $yokHuni, $bozukAdim] as $s) {
+            self::assertNull($s->gorsel);
+        }
+
+        SahteEkranCekici::$hata = 'tarayıcı servisine ulaşılamadı (ekran:9222)';
+        $kapali = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel'], $k);
+        self::assertSame(['hatalar' => ['ekran görüntüsü alınamadı: tarayıcı servisine ulaşılamadı (ekran:9222)']], $kapali->icerik);
+    }
+
+    /** @return array<array-key, string> */
+    private static function sorgu(string $adres, string $onEk): array
+    {
+        self::assertStringStartsWith($onEk.'?', $adres);
+        parse_str((string) parse_url($adres, \PHP_URL_QUERY), $q);
+
+        return array_map(static fn (mixed $d): string => \is_string($d) ? $d : '', $q);
     }
 
     /** @return list<array{name: string, description: string, input_schema: array<string, mixed>}> */

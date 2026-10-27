@@ -52,7 +52,9 @@ final class Tema
             .'Yöneticinin seçtiği bir tema varsa istenmedikçe dokunma. '
             .'Alanların hepsi zorunlu: anaRenk, arkaPlan, metinRengi (#rrggbb, küçük harf), yaziTipi ('.implode(', ', self::YAZI_TIPLERI).'), kose (0–'.self::AZAMI_KOSE.' tam sayı). '
             .'metinRengi ile arkaPlan arasındaki kontrast en az '.self::ASGARI_KONTRAST.':1 olmalı — düşükse kayıt reddedilir. Düğme yazısının rengini sayfa kendisi seçer. '
-            .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler;
+            .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler
+            // Ç72: üretilen görünümü görmeden düzeltemez.
+            ."\nKaydettikten sonra ekran_goruntusu ile en az ilk adımı ve ödeme ekranını gör; okunmayan, taşan ya da sıkışık bir şey varsa düzeltip yeniden kaydet.";
     }
 
     /** @return list<string> */

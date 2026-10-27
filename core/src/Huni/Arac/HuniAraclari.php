@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Huni\Arac;
 
+use App\Huni\Ekran\EkranCekici;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -25,6 +26,7 @@ final readonly class HuniAraclari
         private string $semaDosyasi,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private string $funnelBaseUrl,
+        private EkranCekici $ekran,
     ) {
     }
 
@@ -46,6 +48,12 @@ final readonly class HuniAraclari
             ['name' => 'tanim_dogrula', 'description' => 'Tanımı KAYDETMEDEN doğrular; hataları Türkçe döndürür.', 'input_schema' => $this->semali($nesne(['tanim' => $tanim], ['tanim']))],
             ['name' => 'taslak_kaydet', 'description' => 'Tanımı hunin TASLAĞINA yazar (yayınlamaz; yayın insanda). Geçersizse yazmaz, hataları döndürür — düzeltip yeniden dene.', 'input_schema' => $this->semali($nesne(['huni' => $huni, 'tanim' => $tanim, 'imza' => $imza], ['huni', 'tanim', 'imza']))],
             ['name' => 'onizleme_adresi', 'description' => 'Taslağı görmek için süreli önizleme bağlantısı (1 saat).', 'input_schema' => $nesne(['huni' => $huni], ['huni'])],
+            // Ç72: AI'ın gözü — kaydettiğini ziyaretçinin gördüğü gibi görür.
+            ['name' => 'ekran_goruntusu', 'description' => 'Bir adımın ziyaretçinin telefonunda (390×844) nasıl göründüğünü GÖRÜNTÜ olarak döndürür. Kaydettikten sonra görünümü (tema, okunurluk, metin uzunluğu, düzen) kontrol etmek ve düzeltmek için kullan; her çağrı tek adım.', 'input_schema' => $nesne([
+                'huni' => $huni,
+                'adim' => ['type' => 'string', 'pattern' => '^[a-z0-9_-]{1,64}$', 'description' => 'Adım kimliği (varsayılan: ilk adım)'],
+                'surum' => ['type' => 'string', 'enum' => ['taslak', 'yayin'], 'description' => 'taslak (varsayılan) ya da yayındaki sürüm'],
+            ], ['huni'])],
         ];
         if (null === $kapsam->huni) {
             $araclar[] = ['name' => 'yeni_huni', 'description' => "'{$kapsam->app}' uygulamasında yeni huni açar (boş şablon ya da kaynak huninin taslağından kopya); taslağı sonra taslak_kaydet ile doldur.", 'input_schema' => $nesne(['huni' => $huni, 'kaynak' => ['description' => 'kopyalanacak huni (isteğe bağlı)'] + $huni], ['huni'])];
@@ -100,11 +108,38 @@ final readonly class HuniAraclari
             'onizleme_adresi' => null === $this->huniler->taslak($app, $huni)
                 ? AracSonucu::hata("'{$huni}' adında huni yok")
                 : new AracSonucu(['adres' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $huni, time())]),
+            'ekran_goruntusu' => $this->ekranGoruntusu($app, $huni, $girdi['adim'] ?? null, 'yayin' === ($girdi['surum'] ?? 'taslak')),
             'yeni_huni' => [] === ($h = $this->huniler->yeniHuni($app, $huni, isset($girdi['kaynak']) && \is_string($girdi['kaynak']) ? $girdi['kaynak'] : null))
                 ? new AracSonucu(['huni' => $huni, 'imza' => $this->huniler->taslakImzasi($app, $huni)])
                 : AracSonucu::hata(...$h),
             default => AracSonucu::hata("bilinmeyen araç: {$ad}"),
         };
+    }
+
+    /** Ç72: adım önizlemesi (ölçümsüz, ödeme kapalı) tarayıcıda çekilir; adım kimliği önce burada doğrulanır. */
+    private function ekranGoruntusu(string $app, string $huni, mixed $adim, bool $yayin): AracSonucu
+    {
+        if (null === $this->huniler->taslak($app, $huni)) {
+            return AracSonucu::hata("'{$huni}' adında huni yok");
+        }
+        $tanim = $yayin ? $this->huniler->yayinda($app, $huni)['tanim'] ?? null : $this->huniler->taslak($app, $huni);
+        if (null === $tanim) {
+            return AracSonucu::hata("'{$huni}' henüz yayınlanmadı — surum: taslak kullan");
+        }
+        $adimlar = array_map(static fn (mixed $a): string => \is_array($a) && \is_string($a['id'] ?? null) ? $a['id'] : '', \is_array($tanim['adimlar'] ?? null) ? array_values($tanim['adimlar']) : []);
+        $adim = \is_string($adim) ? $adim : ($adimlar[0] ?? '');
+        if (!\in_array($adim, $adimlar, true)) {
+            return AracSonucu::hata("adım '{$adim}' yok; adımlar: ".implode(', ', $adimlar));
+        }
+        $adres = $this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.($yayin ? '&yayin=1' : '').'&adim='.$adim
+            .'&onizleme='.$this->huniler->onizlemeAnahtari($app, $huni, time());
+        try {
+            $gorsel = $this->ekran->cek($adres);
+        } catch (\RuntimeException $e) {
+            return AracSonucu::hata('ekran görüntüsü alınamadı: '.$e->getMessage());
+        }
+
+        return new AracSonucu(['huni' => $huni, 'adim' => $adim, 'surum' => $yayin ? 'yayin' : 'taslak', 'adimlar' => $adimlar], gorsel: $gorsel);
     }
 
     private function kaydet(string $app, string $huni, mixed $tanim, mixed $imza): AracSonucu

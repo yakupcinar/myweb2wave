@@ -11,6 +11,8 @@ final readonly class AracSonucu
     public function __construct(
         public array $icerik,
         public bool $hata = false,
+        /** Ç72: JPEG baytları (ekran_goruntusu) — MCP/Claude'a görüntü bloğu olarak gider. */
+        public ?string $gorsel = null,
     ) {
     }
 

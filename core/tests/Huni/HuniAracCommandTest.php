@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Huni;
 
 use App\Huni\Huniler;
+use App\Tests\Support\SahteEkranCekici;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -64,6 +65,18 @@ final class HuniAracCommandTest extends KernelTestCase
         self::assertSame(Command::INVALID, $this->komut->execute(['app' => 'keepchat', 'arac' => 'huni_oku', '--girdi' => '{bozuk']));
         self::assertSame(Command::INVALID, $this->komut->execute(['app' => 'baska', 'arac' => 'huniler_listele', '--girdi' => '{}']));
         self::assertSame(['bilinmeyen uygulama: baska'], $this->cikti()['hatalar']);
+    }
+
+    /** Ç72: konsolda görüntü dosyaya yazılır (Claude Code okur), yolu çıktıda. */
+    public function testEkranGoruntusuDosyaya(): void
+    {
+        SahteEkranCekici::sifirla();
+        self::assertSame(Command::SUCCESS, $this->calistir('ekran_goruntusu', ['huni' => 'genel']));
+        $yol = $this->cikti()['gorsel_dosyasi'] ?? null;
+        self::assertIsString($yol);
+        self::assertStringEndsWith('/var/ekran/keepchat-genel-karsilama.jpg', $yol);
+        self::assertSame(SahteEkranCekici::BAYTLAR, file_get_contents($yol));
+        unlink($yol);
     }
 
     /** @param array<string, mixed> $girdi */

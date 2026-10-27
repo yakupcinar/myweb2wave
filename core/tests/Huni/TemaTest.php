@@ -30,7 +30,7 @@ final class TemaTest extends TestCase
 
         $y = Tema::aiYonergesi();
         // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
-        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm'] as $parca) {
+        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu'] as $parca) {
             self::assertStringContainsString($parca, $y);
         }
         foreach (Tema::AI_ORNEKLERI as $tema) {

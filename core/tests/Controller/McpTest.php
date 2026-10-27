@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Huni\Huniler;
 use App\Huni\Tema;
 use App\Mcp\ApiAnahtarlari;
+use App\Tests\Support\SahteEkranCekici;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -92,7 +93,7 @@ final class McpTest extends WebTestCase
         $liste = $this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $bearer);
         $araclar = self::yol($liste, 'result', 'tools');
         self::assertIsArray($araclar);
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'yeni_huni'], array_column($araclar, 'name'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'yeni_huni'], array_column($araclar, 'name'));
         $sema = array_column($araclar, 'inputSchema', 'name')['taslak_kaydet'] ?? null;
         self::assertIsArray(self::yol($sema, '$defs', 'HuniTanimi'));
 
@@ -109,6 +110,25 @@ final class McpTest extends WebTestCase
             array_map(static fn (array $s): array => [$s['arac'], $s['hata']], $this->db->fetchAllAssociative('SELECT arac, hata FROM mcp_cagrilari ORDER BY id')),
         );
         self::assertNotNull($this->db->fetchOne('SELECT son_kullanim_at FROM api_anahtarlari'));
+    }
+
+    /** Ç72: ekran görüntüsü MCP'de görüntü içeriği (JPEG, base64) olarak döner. */
+    public function testEkranGoruntusuGoruntuIcerigiDoner(): void
+    {
+        SahteEkranCekici::sifirla();
+        $bearer = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'x')['anahtar'];
+        $this->elSikis($bearer);
+
+        $s = $this->rpc(self::cagri(2, 'ekran_goruntusu', ['huni' => 'genel']), $bearer);
+
+        self::assertFalse(self::yol($s, 'result', 'isError'));
+        self::assertSame(
+            ['type' => 'image', 'data' => base64_encode(SahteEkranCekici::BAYTLAR), 'mimeType' => 'image/jpeg'],
+            self::yol($s, 'result', 'content', 1),
+        );
+        self::assertSame('text', self::yol($s, 'result', 'content', 0, 'type'));
+        self::assertSame('karsilama', self::yol($s, 'result', 'structuredContent', 'adim'));
+        self::assertCount(1, SahteEkranCekici::$adresler);
     }
 
     /** Araç hatası isError ile modele; şema dışı alan araç ÇALIŞMADAN reddedilir; yayınlama aracı yok. */

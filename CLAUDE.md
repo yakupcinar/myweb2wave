@@ -101,7 +101,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
 | Sözleşme → huni + panel tipleri + AI araç şeması | `docker compose run --rm contract npm run uret` + `… core bin/console app:huni-semasi` (`contract/openapi.yaml` değişince) |
-| AI araçları (A0/A1) | `… core bin/console app:huni-arac keepchat --liste` · `… app:huni-arac keepchat taslak_kaydet < istek.json` |
+| AI araçları (A0/A1) | `… core bin/console app:huni-arac keepchat --liste` · `… app:huni-arac keepchat taslak_kaydet < istek.json` · `ekran_goruntusu` → `core/var/ekran/*.jpg` (`ekran` kabı + `huni-dev` gerekir) |
 | Panel (React, B5; Puck dahil) | `docker compose run --rm panel npm run build` · `… panel npm test` |
 
 ---
@@ -152,6 +152,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi. |
 | **§37** | **iCloud'daki masaüstünde** üretilen dizinler (`var/cache`…) " 2" çakışma kopyası alır — `cache:clear` kod değişmeden kırmızı; önce `find . -name "* 2"`. |
 | **§38** | **Docker'daki Vite sunucusu macOS'taki dosya değişikliğini görmeyebilir** — tarayıcı eski stili hatasız çizer; önce sunulan dosyayı `curl` ile oku, eskiyse kabı yeniden başlat. |
+| **§39** | Testing Library **metin sorgusu `hidden` öğeyi de bulur** — "adım görünüyor" testi yalancı yeşil; görünürlüğü ayrıca ölç (`closest("[hidden]")`). |
 
 ---
 

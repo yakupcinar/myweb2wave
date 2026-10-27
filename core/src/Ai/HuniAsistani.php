@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Ai;
 
+use Anthropic\Beta\Messages\BetaBase64ImageSource;
+use Anthropic\Beta\Messages\BetaImageBlockParam;
 use Anthropic\Beta\Messages\BetaMessage;
 use Anthropic\Beta\Messages\BetaMessageParam;
 use Anthropic\Beta\Messages\BetaOutputConfig\Effort;
@@ -127,9 +129,14 @@ final readonly class HuniAsistani
                             $olay('taslak', ['imza' => $s->icerik['imza'] ?? null, 'tanim' => $this->huniler->taslak($app, $huni)]);
                         }
                         $olay('arac_sonucu', ['ad' => $blok->name, 'hata' => $s->hata]);
+                        $metin = json_encode($s->icerik, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
                         $sonuclar[] = BetaToolResultBlockParam::with(
                             toolUseID: $blok->id,
-                            content: json_encode($s->icerik, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
+                            // Ç72: ekran görüntüsü modele görüntü bloğu olarak.
+                            content: null === $s->gorsel ? $metin : [
+                                BetaTextBlockParam::with(text: $metin),
+                                BetaImageBlockParam::with(source: BetaBase64ImageSource::with(data: base64_encode($s->gorsel), mediaType: 'image/jpeg')),
+                            ],
                             isError: $s->hata,
                         );
                     }

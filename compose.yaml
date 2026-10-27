@@ -41,6 +41,24 @@ services:
       db:
         condition: service_healthy
 
+  # Ç72: AI'ın ekran görüntüsü aracı için başsız Chrome (chromedp, MIT;
+  # Chromium BSD). Çekirdek CDP ile bağlanır (EKRAN_CDP). Önizleme adresi
+  # localhost:4321 (huni) ve localhost:8081 (çekirdek) içerir; kabın içinde
+  # bu iki port socat ile huni geliştirme sunucusuna ve çekirdeğe yönlenir.
+  # Huni sunucusu compose dışında `huni-dev` adıyla koşuyor (EKRAN_HUNI ile
+  # değişir). --remote-allow-origins: DevTools yoksa WebSocket'i reddeder.
+  ekran:
+    image: chromedp/headless-shell:155.0.8059.40@sha256:0dc9356ce1428962cddcf938dab712a8c56de79adc326f9138298f13df440071
+    entrypoint:
+      - bash
+      - -c
+      - >-
+        socat TCP4-LISTEN:4321,fork,reuseaddr TCP4:$${EKRAN_HUNI} &
+        socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:core:80 &
+        exec /headless-shell/run.sh --remote-allow-origins=http://127.0.0.1
+    environment:
+      EKRAN_HUNI: ${EKRAN_HUNI:-huni-dev:4321}
+
   # Yerel e-posta yakalayıcı (MIT): kod e-postaları buraya düşer,
   # http://localhost:8025 — gerçek kutuya gitmez.
   mailpit:

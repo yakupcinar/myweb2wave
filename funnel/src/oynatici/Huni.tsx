@@ -85,7 +85,17 @@ function Oynatici({
       ? Promise.resolve(undefined)
       : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined, izinOku()),
   );
-  const [mevcut, setMevcut] = useState(0);
+  // Ç72: önizlemede ?adim=<kimlik> o adımdan başlar (ekran görüntüsü aracı);
+  // gerçek ziyarette yok sayılır — ölçüm hep ilk adımdan.
+  const [ilkSira] = useState(() => {
+    if (!onizleme) return 0;
+    const adim = new URLSearchParams(window.location.search).get("adim");
+    return Math.max(
+      0,
+      tanim.adimlar.findIndex((a) => a.id === adim),
+    );
+  });
+  const [mevcut, setMevcut] = useState(ilkSira);
   const [secimler, setSecimler] = useState<Record<string, string[]>>({});
   const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
     {},
@@ -109,14 +119,14 @@ function Oynatici({
 
   // Geri tuşu bir önceki adıma döner, sayfadan çıkmaz.
   useEffect(() => {
-    history.replaceState({ adim: 0 }, "");
+    history.replaceState({ adim: ilkSira }, "");
     const geri = (e: PopStateEvent): void => {
       setGecti(true);
       setMevcut((e.state as { adim?: number } | null)?.adim ?? 0);
     };
     window.addEventListener("popstate", geri);
     return () => window.removeEventListener("popstate", geri);
-  }, []);
+  }, [ilkSira]);
 
   // Her gösterilen adım bildirilir; ilk adım dışında başlığa odak.
   useEffect(() => {

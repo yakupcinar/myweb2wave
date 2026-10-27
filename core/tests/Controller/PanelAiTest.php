@@ -9,6 +9,7 @@ use App\Huni\Huniler;
 use App\Huni\Tema;
 use App\Panel\YoneticiSaglayici;
 use App\Tests\Support\SahteClaude;
+use App\Tests\Support\SahteEkranCekici;
 use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -119,6 +120,26 @@ final class PanelAiTest extends WebTestCase
         self::assertSame(24000, end($olaylar)['maliyetMikrodolar'] ?? null);
     }
 
+    /** Ç72: ekran görüntüsü araç sonucunda görüntü bloğu olarak modele gider. */
+    public function testEkranGoruntusuAracSonucundaGoruntuBlogu(): void
+    {
+        $this->girisYap();
+        SahteEkranCekici::sifirla();
+        SahteClaude::sirala([SahteClaude::arac('e1', 'ekran_goruntusu', ['huni' => 'genel'])], 'tool_use');
+        SahteClaude::sirala([SahteClaude::metin('Görünüm iyi.')]);
+
+        $this->sohbet('Nasıl görünüyor?');
+
+        $sonuc = self::yol(SahteClaude::$istekler[1], 'messages', 2, 'content', 0);
+        self::assertSame(['tool_result', 'e1', false], [self::yol($sonuc, 'type'), self::yol($sonuc, 'tool_use_id'), self::yol($sonuc, 'is_error')]);
+        self::assertSame('text', self::yol($sonuc, 'content', 0, 'type'));
+        // Anahtar sırası SDK'nın; içerik karşılaştırılır.
+        self::assertEquals(
+            ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => 'image/jpeg', 'data' => base64_encode(SahteEkranCekici::BAYTLAR)]],
+            self::yol($sonuc, 'content', 1),
+        );
+    }
+
     /** SDK'nın API'ye gerçekte gönderdiği: şema anahtarları bozulmadan, önbellek, efor, yedek model, kapsam. */
     public function testIstekGovdesi(): void
     {
@@ -140,7 +161,7 @@ final class PanelAiTest extends WebTestCase
         // Açık huni kapsamı: yeni huni yok, yayınlama yok.
         $araclar = self::yol($g, 'tools');
         self::assertIsArray($araclar);
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi'], array_column($araclar, 'name'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu'], array_column($araclar, 'name'));
         $sema = array_column($araclar, 'input_schema', 'name')['taslak_kaydet'] ?? null;
         self::assertFalse(self::yol($sema, 'additionalProperties'), 'JSON Şeması anahtarı camelCase→snake çevrilmedi');
         self::assertIsArray(self::yol($sema, '$defs', 'HuniTanimi'));

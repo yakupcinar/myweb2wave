@@ -8,6 +8,7 @@ use App\Ai\UrunBaglami;
 use App\Huni\Arac\AracKapsami;
 use App\Huni\Arac\HuniAraclari;
 use App\Huni\Tema;
+use Mcp\Schema\Content\ImageContent;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Result\CallToolResult;
 use Mcp\Server;
@@ -52,8 +53,13 @@ final readonly class McpSunucusu
                     $s = $this->araclar->calistir($ad, $girdi, $kapsam);
                     $this->anahtarlar->cagriKaydet($anahtarId, $ad, $s->hata);
 
+                    $icerik = [new TextContent(json_encode($s->icerik, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR))];
+                    if (null !== $s->gorsel) {
+                        $icerik[] = new ImageContent(base64_encode($s->gorsel), 'image/jpeg');
+                    }
+
                     return new CallToolResult(
-                        [new TextContent(json_encode($s->icerik, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR))],
+                        $icerik,
                         $s->hata,
                         $s->icerik,
                     );
