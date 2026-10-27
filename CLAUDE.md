@@ -96,7 +96,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 |---|---|
 | **Tam doğrulama** | `bin/kontrol > /tmp/k.log 2>&1; echo EXIT=$?` · `/kontrol` · `sinayici` |
 | Biçim | `docker compose run --rm -T core vendor/bin/php-cs-fixer fix` · `… funnel npm run format` |
-| Statik analiz | `… core vendor/bin/phpstan analyse` (max) · `… funnel npm run check` |
+| Statik analiz | `… core vendor/bin/phpstan analyse --memory-limit=1G` (max; bayraksız işçi 128M'de ölür) · `… funnel npm run check` |
 | Test | `docker compose run --rm -T core vendor/bin/phpunit` · `… funnel npm test` (huni oynatıcısı) |
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |

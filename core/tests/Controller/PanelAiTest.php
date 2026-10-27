@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Ai\AiAyarlari;
 use App\Huni\Huniler;
+use App\Huni\Tema;
 use App\Panel\YoneticiSaglayici;
 use App\Tests\Support\SahteClaude;
 use App\Tests\Support\Sozlesme;
@@ -170,6 +171,9 @@ final class PanelAiTest extends WebTestCase
         self::assertStringContainsString('Hedef kitle: Aileler', $baglam);
         self::assertStringContainsString('Asla yazma / kaçın: Rakip adı verme', $baglam);
         self::assertStringNotContainsString('Kategori:', $baglam, 'boş alan gönderilmez');
+        // Ç71: tema yönergesi sistem isteminde; bağlam metni görünümü de kapsar.
+        self::assertStringContainsString(Tema::aiYonergesi(), self::metin(self::yol($ilk, 'text')));
+        self::assertStringContainsString('metinleri ve görünümü (tema)', $baglam);
     }
 
     public function testTurSiniriDonguyuKeser(): void

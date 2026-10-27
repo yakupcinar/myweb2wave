@@ -7,6 +7,7 @@ namespace App\Mcp;
 use App\Ai\UrunBaglami;
 use App\Huni\Arac\AracKapsami;
 use App\Huni\Arac\HuniAraclari;
+use App\Huni\Tema;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Result\CallToolResult;
 use Mcp\Server;
@@ -73,6 +74,7 @@ final readonly class McpSunucusu
             Çalışma: huniler_listele ile bak; değiştirmeden önce huni_oku ile tanımı ve imzayı al; TAM tanımı taslak_kaydet ile yaz (imza zorunlu). Hata dönerse düzeltip yeniden kaydet. Sonuçta onizleme_adresi ile bağlantı ver.
             Yalnız TASLAĞA yazarsın; yayınlamak panelde insanın işi. Gerçek olmayan müşteri yorumu uydurma (unvana "Örnek — yayından önce gerçeğiyle değiştir"); fiyat yazma (ödeme ekranı Stripe'tan gösterir); kesin sonuç vaadi yazma.
             METIN;
+        $metin .= "\n".Tema::aiYonergesi();
         $baglam = $this->baglam->istemMetni($app);
 
         return null === $baglam ? $metin : $metin."\n\n".$baglam;

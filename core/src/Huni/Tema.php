@@ -26,6 +26,35 @@ final class Tema
     /** WCAG AA, normal metin. */
     public const ASGARI_KONTRAST = 4.5;
 
+    /** Ç71: AI'a yön veren örnekler (kopya değil) — her biri yayından geçer (TemaTest). */
+    public const AI_ORNEKLERI = [
+        'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20],
+        'teknoloji / üretkenlik' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6],
+        'finans / ciddi' => ['anaRenk' => '#1e3a8a', 'arkaPlan' => '#f8fafc', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4],
+        'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24],
+        'iletişim / sosyal' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'sistem', 'kose' => 16],
+    ];
+
+    /**
+     * Ç71: panel asistanı ve MCP talimatına giren ortak görünüm kuralı —
+     * yoksa AI tema koymuyor, her huni varsayılan görünümde çıkıyordu.
+     */
+    public static function aiYonergesi(): string
+    {
+        $v = self::VARSAYILAN;
+        $ornekler = '';
+        foreach (self::AI_ORNEKLERI as $tur => $tema) {
+            $ornekler .= "\n- {$tur}: ".json_encode($tema, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
+        }
+
+        return 'Görünüm (tema): taslakta tema yoksa ya da varsayılan görünümse '
+            ."(ana renk {$v['anaRenk']}, zemin {$v['arkaPlan']}, yazı tipi {$v['yaziTipi']}), ürün bağlamına (kategori, kitle, ton) uyan bir tema seç ve tanıma ekle — her huni aynı görünümde kalmasın. "
+            .'Yöneticinin seçtiği bir tema varsa istenmedikçe dokunma. '
+            .'Alanların hepsi zorunlu: anaRenk, arkaPlan, metinRengi (#rrggbb, küçük harf), yaziTipi ('.implode(', ', self::YAZI_TIPLERI).'), kose (0–'.self::AZAMI_KOSE.' tam sayı). '
+            .'metinRengi ile arkaPlan arasındaki kontrast en az '.self::ASGARI_KONTRAST.':1 olmalı — düşükse kayıt reddedilir. Düğme yazısının rengini sayfa kendisi seçer. '
+            .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler;
+    }
+
     /** @return list<string> */
     public static function hatalar(mixed $tema): array
     {

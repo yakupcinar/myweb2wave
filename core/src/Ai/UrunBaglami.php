@@ -87,6 +87,6 @@ final readonly class UrunBaglami
             }
         }
 
-        return [] === $satirlar ? null : "Ürün bağlamı (yöneticinin yazdığı; metinleri buna göre yaz):\n".implode("\n", $satirlar);
+        return [] === $satirlar ? null : "Ürün bağlamı (yöneticinin yazdığı; metinleri ve görünümü (tema) buna göre seç):\n".implode("\n", $satirlar);
     }
 }

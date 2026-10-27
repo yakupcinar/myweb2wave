@@ -119,6 +119,12 @@
   - [ ] 3 · seçenek simgesi (emoji): sözleşme + çekirdek + Puck alanı
   - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
+- [ ] **Huni görünüm yüzeyi** (Ç71 (b); kullanıcı 2026-10-27: "AI birebir aynı quiz verdi, renk farkı yok yazı farkı yok"). Bugün görünüm = huni başına 5 tema alanı + logo; adım başına çeşit yok. (a) AI yönergesi yapıldı (`docs/decisions/ai-tema-yonergesi.md`). Her adım `/blok`; her yeni alan = sözleşme `HuniTemasi`/adım şeması + `Tema.php`/`Tanim.php` + `huni-bilesenleri` + Puck alanı + `Tema::aiYonergesi` örnekleri (AI ancak sözleşmedekini üretebilir):
+  - [ ] G1 · ölç: web2wave + örnek huni repolarındaki görünüm seçenekleri; hangi ayar ekranda en çok fark yaratır → sıra (kod alınmaz, kural 12)
+  - [ ] G2 · yazı tipleri: daha çok cihaz yığını ya da kendi sunucumuzdan font — dış font yasak (KVKK, `Tema.php` başlığı) → kullanıcı kararı
+  - [ ] G3 · arka plan: renk geçişi / görsel (E2.3 görsel altyapısı), kontrast ölçümü korunur
+  - [ ] G4 · düğme biçimi (dolu / çerçeve / hap) + seçenek kartı düzeni (liste / ızgara / görselli)
+  - [ ] G5 · adım başına görünüm çeşidi (ör. tanıtım: görsel üstte / tam ekran) — T1 blok kataloğuyla çakışır, sırası orada kararlaştırılır
 - [ ] **YOL HARİTASI — AI asistanı + platform temelleri** (kullanıcı 2026-10-27: "MCP'yi içine göm, prompt iç arayüzde"; araştırma `docs/decisions/ai-asistan-arastirmasi.md`, `web2wave-platform-yapisi.md`). Sıra bağımlılığa göre; her adım `/blok`, ayrı commit:
   - [x] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)
   - [x] **A1** · konsol: `app:huni-arac <app> <araç>` (JSON `--girdi`/stdin) — Claude Code depodan promptla huni kurar; `ai-a1-konsol.md`

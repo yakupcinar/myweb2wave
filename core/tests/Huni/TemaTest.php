@@ -17,6 +17,27 @@ final class TemaTest extends TestCase
         self::assertSame([], Tema::hatalar(Tema::VARSAYILAN));
     }
 
+    /** Ç71: AI'a gösterilen örnek temalar yayından geçmeli ve birbirinden, varsayılandan farklı olmalı. */
+    public function testAiOrnekTemalariGecerliVeFarkli(): void
+    {
+        self::assertGreaterThanOrEqual(4, \count(Tema::AI_ORNEKLERI));
+        foreach (Tema::AI_ORNEKLERI as $tur => $tema) {
+            self::assertSame([], Tema::hatalar($tema), $tur);
+        }
+        self::assertGreaterThanOrEqual(3, \count(array_unique(array_column(Tema::AI_ORNEKLERI, 'yaziTipi'))));
+        // Ana renkler birbirinden ve varsayılandan farklı.
+        self::assertCount(\count(Tema::AI_ORNEKLERI) + 1, array_unique([...array_column(Tema::AI_ORNEKLERI, 'anaRenk'), Tema::VARSAYILAN['anaRenk']]));
+
+        $y = Tema::aiYonergesi();
+        // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
+        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm'] as $parca) {
+            self::assertStringContainsString($parca, $y);
+        }
+        foreach (Tema::AI_ORNEKLERI as $tema) {
+            self::assertStringContainsString($tema['anaRenk'], $y);
+        }
+    }
+
     public function testKontrastBilinenDegerler(): void
     {
         // Bağımsız kaynak: WCAG tanımı — siyah/beyaz 21:1; #767676 beyazda AA sınırının hemen üstü (tuzak §3).
