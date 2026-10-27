@@ -244,3 +244,16 @@ testi `queryByText("Kiminle?")` ile kırmızıydı; DOM'da `<h1>Kiminle?</h1>`
 gizli adımın içindeydi. **Doğrusu:** görünürlüğü ayrıca ölç —
 `el.closest("[hidden]") === null` (ya da `toBeVisible`) — ve olumlu iddiayı
 da görünürlükle yaz.
+
+## §40 — Boyamadan sonra uygulanan tema + CSS geçişi = ilk görünüm ara renk
+**Belirti:** aynı temayla çekilen ekran görüntülerinde düğme bazen
+varsayılan mavi, bazen tema rengi; hata yok, testler yeşil.
+**Sebep:** tema değişkenleri `useEffect`'te (ilk boyamadan sonra) köke
+yazılıyor; düğmede `transition: background-color 120ms` var → öğe önce
+varsayılanla çiziliyor, sonra geçişle temaya dönüyor. Ziyaretçi her
+açılışta parlama görüyor. jsdom boyama yapmadığı için Testing Library
+iki effect'i ayırt edemez — test hep yeşil. **Ölçüm (2026-10-27,
+`gorunum-g3.md`):** 6 çekimde 4'ü ara renk → `useLayoutEffect` ile 6/6
+hedef renk. **Doğrusu:** ilk çizimi etkileyen değişkeni boyamadan önce
+yaz (`useLayoutEffect` / sunucuda); görsel iddiayı gerçek tarayıcıda,
+birden çok çekimle ölç.

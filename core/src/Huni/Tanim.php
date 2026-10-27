@@ -181,6 +181,11 @@ final class Tanim
     {
         // Ç61 (5): logo da bir görsel — aynı "bu uygulamada var mı" kuralı.
         $k = \is_array($tanim) && \is_string($tanim['logo'] ?? null) ? [$tanim['logo']] : [];
+        // G3: zemin görseli de.
+        $zemin = \is_array($tanim) && \is_array($tanim['tema'] ?? null) && \is_array($tanim['tema']['zemin'] ?? null) ? $tanim['tema']['zemin'] : [];
+        if ('gorsel' === ($zemin['tur'] ?? null) && \is_string($zemin['gorsel'] ?? null)) {
+            $k[] = $zemin['gorsel'];
+        }
         $adimlar = \is_array($tanim) && \is_array($tanim['adimlar'] ?? null) ? $tanim['adimlar'] : [];
         foreach ($adimlar as $adim) {
             if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {

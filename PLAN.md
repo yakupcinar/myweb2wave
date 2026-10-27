@@ -121,7 +121,7 @@
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
 - [ ] **Huni görünüm yüzeyi** (Ç71 (b); kullanıcı 2026-10-27: "AI birebir aynı quiz verdi, renk farkı yok yazı farkı yok"). Bugün görünüm = huni başına 5 tema alanı + logo; adım başına çeşit yok. (a) AI yönergesi yapıldı (`docs/decisions/ai-tema-yonergesi.md`). Her adım `/blok`; her yeni alan = sözleşme `HuniTemasi`/adım şeması + `Tema.php`/`Tanim.php` + `huni-bilesenleri` + Puck alanı + `Tema::aiYonergesi` örnekleri (AI ancak sözleşmedekini üretebilir):
   - [x] G1 · 2026-10-27, `docs/decisions/gorunum-g1.md`: envanter (web2wave, Formbricks) + 19 varyant × 3 adım ekran ölçümü; zemin baskın, yapısal ayarlar ikinci, düğme/köşe küçük. Sıra aşağıda (ölçüme göre); Ç75, Ç76
-  - [ ] G3 · arka plan: renk geçişi / görsel (+ karartma; E2.3 görsel altyapısı), kontrast ölçümü korunur — **en büyük etki**
+  - [x] G3 · 2026-10-27, `docs/decisions/gorunum-g3.md`: `tema.zemin` geçiş / görsel + karartma (en kötü görsele göre eşik, hata en az değeri söyler); Puck alanları, AI örnekleri; yan bulgu: tema boyamadan sonra uygulanıyordu → `useLayoutEffect` (§40). Kırma 11/11
   - [ ] G6 · içerik kartı: zemin üstünde kart (arka plan, gölge/kenarlık)
   - [ ] G7 · tipografi ölçeği + yoğunluk + hizalama — birkaç ön ayar (serbest piksel değil)
   - [ ] G2 · yazı tipleri: kendi sunucumuzdan font — dış font yasak (KVKK, `Tema.php` başlığı) → kullanıcı kararı; ekran kabına aynı fontlar (Ç76)

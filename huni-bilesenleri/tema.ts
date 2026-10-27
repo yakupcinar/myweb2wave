@@ -5,12 +5,18 @@
 
 export type YaziTipi = "sistem" | "serif" | "yuvarlak" | "mono";
 
+/** G3: düz arka plan yerine geçiş ya da görsel (okunurluğu çekirdek ölçer). */
+export type Zemin =
+    | { tur: "gecis"; ikinciRenk: string }
+    | { tur: "gorsel"; gorsel: string; karartma: number };
+
 export type Tema = {
     anaRenk: string;
     arkaPlan: string;
     metinRengi: string;
     yaziTipi: YaziTipi;
     kose: number;
+    zemin?: Zemin;
 };
 
 /** Tema::VARSAYILAN ile aynı; huni.css'teki :root değerleri de bundan (testle). */
@@ -53,7 +59,10 @@ export function anaYazi(ana: string): "#ffffff" | "#000000" {
 }
 
 /** huni.css'in okuduğu değişkenler. Değerler çekirdekte doğrulandı; yine de çağıran CSS'e setProperty / style nesnesiyle yazar, dizge birleştirmeyle değil. */
-export function temaDegiskenleri(tema: Tema): Record<string, string> {
+export function temaDegiskenleri(
+    tema: Tema,
+    medyaKoku = "",
+): Record<string, string> {
     return {
         "--ana": tema.anaRenk,
         "--ana-yazi": anaYazi(tema.anaRenk),
@@ -61,5 +70,27 @@ export function temaDegiskenleri(tema: Tema): Record<string, string> {
         "--metin": tema.metinRengi,
         "--kose": `${tema.kose}px`,
         "--yazi-tipi": YAZI_TIPLERI[tema.yaziTipi],
+        ...(tema.zemin ? zeminDegiskenleri(tema, tema.zemin, medyaKoku) : {}),
+    };
+}
+
+/**
+ * G3: --zemin sayfanın arka planı, --alt-renk alta yapışık düğme çubuğunun
+ * solduğu renk (geçişte alt renk, görselde karartma rengi).
+ */
+function zeminDegiskenleri(
+    tema: Tema,
+    zemin: Zemin,
+    medyaKoku: string,
+): Record<string, string> {
+    if (zemin.tur === "gecis")
+        return {
+            "--zemin": `linear-gradient(180deg, ${tema.arkaPlan}, ${zemin.ikinciRenk})`,
+            "--alt-renk": zemin.ikinciRenk,
+        };
+    const katman = `color-mix(in srgb, ${tema.arkaPlan} ${zemin.karartma}%, transparent)`;
+    return {
+        "--zemin": `linear-gradient(${katman}, ${katman}), url("${medyaKoku}/medya/${zemin.gorsel}.webp") center / cover no-repeat`,
+        "--alt-renk": tema.arkaPlan,
     };
 }

@@ -511,6 +511,28 @@ describe("D7 — tema", () => {
     );
     expect(s.getPropertyValue("--yazi-tipi")).toContain("ui-monospace");
   });
+  it("G3: zemin görseli çekirdeğin medya adresinden kökte", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        tema: {
+          anaRenk: "#2563eb",
+          arkaPlan: "#ffffff",
+          metinRengi: "#111827",
+          yaziTipi: "sistem",
+          kose: 10,
+          zemin: { tur: "gorsel", gorsel: G, karartma: 70 },
+        },
+      }),
+    };
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(
+        document.documentElement.style.getPropertyValue("--zemin"),
+      ).toContain(`url("${KOK}/medya/${G}.webp")`),
+    );
+  });
   it("tema yoksa kökte değişken yazılmaz (huni.css varsayılanı)", async () => {
     kur();
     await yuklendi();

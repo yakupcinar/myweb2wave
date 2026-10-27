@@ -23,6 +23,7 @@ import {
     temaDegiskenleri,
     VARSAYILAN_TEMA,
 } from "../../../huni-bilesenleri/tema";
+import { kokZemini } from "./donustur";
 import type { Bilesenler, KokProps, SecenekProps, SoruProps } from "./donustur";
 
 export type Ortam = {
@@ -423,6 +424,24 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     })) as { label: string; value: KokProps["yaziTipi"] }[],
                 },
                 kose: { type: "number", label: "Köşe (px)", min: 0, max: 32 },
+                // G3: zemin — okunurluğu kayıtta çekirdek ölçer (karartma eşiği dahil).
+                zeminTuru: {
+                    type: "radio",
+                    label: "Zemin",
+                    options: [
+                        { label: "Düz renk", value: "yok" },
+                        { label: "Geçiş", value: "gecis" },
+                        { label: "Görsel", value: "gorsel" },
+                    ],
+                },
+                ikinciRenk: renkAlani("Geçişin alt rengi"),
+                zeminGorseli: gorselAlani(ortam, "Zemin görseli"),
+                karartma: {
+                    type: "number",
+                    label: "Görsel üstü karartma (%)",
+                    min: 0,
+                    max: 95,
+                },
             },
             render: ({
                 children,
@@ -433,6 +452,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 metinRengi,
                 yaziTipi,
                 kose,
+                zeminTuru,
+                ikinciRenk,
+                zeminGorseli,
+                karartma,
             }) => {
                 const tema = ozelTema === "evet";
                 // Dış kutu huni sayfasındaki <body>'nin yerine: arka plan
@@ -440,10 +463,22 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 const degiskenler = {
                     ...temaDegiskenleri(
                         tema
-                            ? { anaRenk, arkaPlan, metinRengi, yaziTipi, kose }
+                            ? {
+                                  anaRenk,
+                                  arkaPlan,
+                                  metinRengi,
+                                  yaziTipi,
+                                  kose,
+                                  ...kokZemini({
+                                      zeminTuru,
+                                      ikinciRenk,
+                                      zeminGorseli,
+                                      karartma,
+                                  }),
+                              }
                             : VARSAYILAN_TEMA,
                     ),
-                    background: "var(--arka)",
+                    background: "var(--zemin, var(--arka))",
                     minHeight: "100vh",
                 } as CSSProperties;
                 const oran = tema ? kontrast(metinRengi, arkaPlan) : 21;

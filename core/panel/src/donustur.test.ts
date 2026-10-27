@@ -264,6 +264,34 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         ]);
     });
 
+    it("G3 zemin: geçiş ve görsel gidiş-dönüş aynı; 'yok' seçilince tanımdan çıkar", () => {
+        const gecis: Tanim = {
+            ...temel,
+            tema: {
+                ...VARSAYILAN,
+                zemin: { tur: "gecis", ikinciRenk: "#e0e7ff" },
+            },
+        };
+        expect(puckTanim(tanimdanPuck(gecis, VARSAYILAN))).toStrictEqual(gecis);
+        const gorsel: Tanim = {
+            ...temel,
+            tema: {
+                ...VARSAYILAN,
+                zemin: { tur: "gorsel", gorsel: G1, karartma: 70 },
+            },
+        };
+        const veri = tanimdanPuck(gorsel, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(gorsel);
+        veri.root.props!.karartma = "55" as unknown as number; // Puck sayı alanı dize verebilir
+        expect(puckTanim(veri).tema?.zemin).toStrictEqual({
+            tur: "gorsel",
+            gorsel: G1,
+            karartma: 55,
+        });
+        veri.root.props!.zeminTuru = "yok";
+        expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);

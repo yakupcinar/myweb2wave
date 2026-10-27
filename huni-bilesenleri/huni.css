@@ -20,7 +20,8 @@
     --yuzey: color-mix(in srgb, var(--metin) 4%, var(--arka));
     --cizgi: color-mix(in srgb, var(--metin) 14%, var(--arka));
     font: 17px/1.5 var(--yazi-tipi);
-    background: var(--arka);
+    /* G3: geçiş/görsel tanımlıysa onu (tema.ts --zemin), yoksa düz renk. */
+    background: var(--zemin, var(--arka));
     color: var(--metin);
     margin: 0 auto;
     padding: 16px;
@@ -388,7 +389,7 @@
     bottom: 0;
     margin-top: auto;
     padding: 16px 0 max(8px, env(safe-area-inset-bottom));
-    background: linear-gradient(transparent, var(--arka) 16px);
+    background: linear-gradient(transparent, var(--alt-renk, var(--arka)) 16px);
 }
 .huni .eylem p[role="alert"] {
     margin: 0 0 10px;

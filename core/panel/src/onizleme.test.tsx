@@ -135,4 +135,25 @@ describe("önizleme = huni: tema", () => {
         }
         expect(cikti).toContain('<div class="huni">ICERIK</div>');
     });
+    // G3: zemin de aynı değişkenle; dış kutu onu çizer (huni sayfasında body.huni).
+    it("zemin geçişi → --zemin değişkeni ve dış kutu onu çizer", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        const zeminli = tanimdanPuck(
+            {
+                ...tanim,
+                tema: {
+                    ...tanim.tema!,
+                    zemin: { tur: "gecis", ikinciRenk: "#1e3a8a" },
+                },
+            },
+            VARSAYILAN,
+        );
+        const cikti = html(
+            kok({ ...zeminli.root.props, children: "ICERIK", puck: {} }),
+        );
+        expect(cikti).toContain(
+            "--zemin:linear-gradient(180deg, #0b1220, #1e3a8a)",
+        );
+        expect(cikti).toContain("background:var(--zemin, var(--arka))");
+    });
 });

@@ -4,7 +4,13 @@
 // (huni-bilesenleri). Ölçüm (ziyaret, adım, cevap, ödeme) oynatıcının işi;
 // tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey kaydedilmez,
 // ödeme kapalı. D1–D15: docs/decisions/huni-oynatici-h0.md (b).
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
@@ -114,11 +120,14 @@ function Oynatici({
   const ilkAdim = useRef(true);
 
   // Tema: değerler çekirdekte doğrulandı; yine de CSS'e setProperty ile.
-  useEffect(() => {
+  // İlk boyamadan ÖNCE (layout effect): sonra yazılırsa düğme önce varsayılan
+  // renkle çizilip 120 ms'de temaya geçiyordu — ziyaretçi parlama, ekran
+  // görüntüsü ara renk görüyordu (ölçüm: gorunum-g3.md).
+  useLayoutEffect(() => {
     document.title = tanim.sayfaBasligi;
     if (!tanim.tema) return;
     const kok = document.documentElement.style;
-    for (const [ad, deger] of Object.entries(temaDegiskenleri(tanim.tema)))
+    for (const [ad, deger] of Object.entries(temaDegiskenleri(tanim.tema, KOK)))
       kok.setProperty(ad, deger);
   }, [tanim]);
 

@@ -111,6 +111,17 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 32
+                },
+                "zemin": {
+                    "description": "G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer",
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/ZeminGecisi"
+                        },
+                        {
+                            "$ref": "#/$defs/ZeminGorseli"
+                        }
+                    ]
                 }
             }
         },
@@ -343,6 +354,53 @@
                 },
                 "ilerlemeGoster": {
                     "type": "boolean"
+                }
+            }
+        },
+        "ZeminGecisi": {
+            "description": "Yukarıdan aşağı arkaPlan → ikinciRenk; metin ikinciRenk üstünde de 4,5:1",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "ikinciRenk"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gecis"
+                    ]
+                },
+                "ikinciRenk": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                }
+            }
+        },
+        "ZeminGorseli": {
+            "description": "Görsel kaplar, üstünde arkaPlan renginde yarı saydam katman (karartma %). Karartma, görsel en kötü durumda (tam siyah ya da tam beyaz) olsa da metni 4,5:1 okutacak kadar olmalı",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "gorsel",
+                "karartma"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gorsel"
+                    ]
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "karartma": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 95
                 }
             }
         }

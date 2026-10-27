@@ -7,6 +7,7 @@ import type { components } from "./sozlesme";
 
 export type Tanim = components["schemas"]["HuniTanimi"];
 export type Tema = components["schemas"]["HuniTemasi"];
+type Zemin = NonNullable<Tema["zemin"]>;
 type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
 type YaziTipi = Tema["yaziTipi"];
@@ -71,6 +72,11 @@ export type KokProps = {
     metinRengi: string;
     yaziTipi: YaziTipi;
     kose: number;
+    /** G3: "yok" = düz arka plan; alanlar yalnız seçilen türde kullanılır. */
+    zeminTuru: "yok" | "gecis" | "gorsel";
+    ikinciRenk: string;
+    zeminGorseli: string;
+    karartma: number;
 };
 export type Bilesenler = {
     Tanitim: TanitimProps;
@@ -120,6 +126,15 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                 metinRengi: tema.metinRengi,
                 yaziTipi: tema.yaziTipi,
                 kose: tema.kose,
+                zeminTuru: tema.zemin?.tur ?? "yok",
+                ikinciRenk:
+                    tema.zemin?.tur === "gecis"
+                        ? tema.zemin.ikinciRenk
+                        : tema.arkaPlan,
+                zeminGorseli:
+                    tema.zemin?.tur === "gorsel" ? tema.zemin.gorsel : "",
+                karartma:
+                    tema.zemin?.tur === "gorsel" ? tema.zemin.karartma : 70,
             },
         },
         content: tanim.adimlar.map((adim: Adim, i: number) => {
@@ -320,7 +335,25 @@ export function puckTanim(veri: HuniVerisi): Tanim {
             metinRengi: k.metinRengi,
             yaziTipi: k.yaziTipi,
             kose: Number(k.kose),
+            ...kokZemini(k),
         };
     }
     return tanim;
+}
+
+/** G3: kök alanlarından tanımın zemini; "yok" → alan yazılmaz (uydurulmaz). */
+export function kokZemini(
+    k: Pick<KokProps, "zeminTuru" | "ikinciRenk" | "zeminGorseli" | "karartma">,
+): { zemin?: Zemin } {
+    if (k.zeminTuru === "gecis")
+        return { zemin: { tur: "gecis", ikinciRenk: k.ikinciRenk } };
+    if (k.zeminTuru === "gorsel")
+        return {
+            zemin: {
+                tur: "gorsel",
+                gorsel: k.zeminGorseli,
+                karartma: Number(k.karartma),
+            },
+        };
+    return {};
 }

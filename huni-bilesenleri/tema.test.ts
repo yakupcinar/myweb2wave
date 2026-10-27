@@ -23,6 +23,44 @@ describe("tema — çekirdekle ortak örnekler", () => {
     });
 });
 
+describe("tema — zemin (G3)", () => {
+    const G = "a".repeat(64);
+    it("geçiş: arka plandan ikinci renge, alt çubuk ikinci renge solar", () => {
+        const d = temaDegiskenleri({
+            ...VARSAYILAN_TEMA,
+            zemin: { tur: "gecis", ikinciRenk: "#e0e7ff" },
+        });
+        expect(d["--zemin"]).toBe("linear-gradient(180deg, #ffffff, #e0e7ff)");
+        expect(d["--alt-renk"]).toBe("#e0e7ff");
+    });
+    it("görsel: arka plan renginde karartma katmanı + medya adresi", () => {
+        const d = temaDegiskenleri(
+            {
+                ...VARSAYILAN_TEMA,
+                arkaPlan: "#0b1120",
+                zemin: { tur: "gorsel", gorsel: G, karartma: 60 },
+            },
+            "https://c",
+        );
+        const katman = "color-mix(in srgb, #0b1120 60%, transparent)";
+        expect(d["--zemin"]).toBe(
+            `linear-gradient(${katman}, ${katman}), url("https://c/medya/${G}.webp") center / cover no-repeat`,
+        );
+        expect(d["--alt-renk"]).toBe("#0b1120");
+    });
+    it("zemin yoksa değişken yazılmaz (huni.css düz arka plana düşer)", () => {
+        expect(Object.keys(temaDegiskenleri(VARSAYILAN_TEMA))).not.toContain(
+            "--zemin",
+        );
+        expect(css).toMatch(
+            /\.huni \{[^}]*background: var\(--zemin, var\(--arka\)\)/,
+        );
+        expect(css).toMatch(
+            /\.huni \.adimlar \.eylem \{[^}]*var\(--alt-renk, var\(--arka\)\)/,
+        );
+    });
+});
+
 describe("tema — düğme yazısı", () => {
     // Bağımsız: koyu mavi üzerinde beyaz, sarı üzerinde siyah okunur
     // (parlaklık 0,19 ve 0,93) — formülden değil renkten (tuzak §3).

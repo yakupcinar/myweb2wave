@@ -476,6 +476,21 @@ export interface components {
             /** @enum {string} */
             yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono";
             kose: number;
+            /** @description G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer */
+            zemin?: components["schemas"]["ZeminGecisi"] | components["schemas"]["ZeminGorseli"];
+        };
+        /** @description Yukarıdan aşağı arkaPlan → ikinciRenk; metin ikinciRenk üstünde de 4,5:1 */
+        ZeminGecisi: {
+            /** @enum {string} */
+            tur: "gecis";
+            ikinciRenk: string;
+        };
+        /** @description Görsel kaplar, üstünde arkaPlan renginde yarı saydam katman (karartma %). Karartma, görsel en kötü durumda (tam siyah ya da tam beyaz) olsa da metni 4,5:1 okutacak kadar olmalı */
+        ZeminGorseli: {
+            /** @enum {string} */
+            tur: "gorsel";
+            gorsel: components["schemas"]["GorselKimligi"];
+            karartma: number;
         };
         TanitimAdimi: {
             id: components["schemas"]["HuniKimligi"];
