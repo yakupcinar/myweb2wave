@@ -123,7 +123,7 @@
   - [x] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)
   - [x] **A1** · konsol: `app:huni-arac <app> <araç>` (JSON `--girdi`/stdin) — Claude Code depodan promptla huni kurar; `ai-a1-konsol.md`
   - [x] **A2** · panel AI arka ucu (`ai-a2-panel-arka-uc.md`; gerçek Claude ölçülmedi — anahtar yok): `/panel/api/ai/sohbet` (oturum+CSRF, SSE akış), PHP SDK tool runner, `claude-opus-5-5`, doğrulama döngüsü, yalnız taslak, tur/jeton/hız sınırı, istek kaydı + maliyet; sahte API ile testler (`SahteRevenueCat` deseni). **Anahtar yok (kullanıcı 2026-10-27, boş kalacak)** → anahtar boşsa panelde "AI kapalı", istek gitmez; testler sahte API'yle; anahtarı kullanıcı `core/.env.local`'e kendisi yazar
-  - [ ] **A3** · panel AI arayüzü: Puck'a kendi eklentimiz (sohbet kutusu, akan yanıt, araç adımları, tur başına geri al = önceki taslak); Huniler sayfasında "AI ile yeni huni"
+  - [x] **A3** · panel AI arayüzü: Puck eklentisi (sohbet, canlı adımlar, geri al) — `ai-a3-panel-arayuz.md`; "AI ile yeni huni" P2'ye ertelendi
   - [ ] **A4** · ürün bağlamı: uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine
   - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
@@ -133,7 +133,7 @@
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
   - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
   - [x] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
-  - [ ] P2 · Huniler: liste, yeni, varsayılan, sil/arşiv, kurallar — JSON uçlar + sayfa; Twig silinir
+  - [ ] P2 · Huniler: liste, yeni, varsayılan, sil/arşiv, kurallar — JSON uçlar + sayfa; Twig silinir · + "AI ile yeni huni" (A0 `yeni_huni`, kapsamsız sohbet ucu; A3'ten)
   - [ ] P3 · Puck düzenleyici panelin sayfası (sayfa yenilemeden); `huni-surukle.html.twig` silinir
   - [ ] P4 · grafik: günlük ziyaret / ödeme serisi (Recharts)
   - [ ] P5 · Kullanıcılar (CRM): e-posta / UTM / kampanya araması, abonelik durumu (TanStack Table)

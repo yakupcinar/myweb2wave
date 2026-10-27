@@ -10,7 +10,14 @@ import {
     type Data,
 } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
+import {
+    StrictMode,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { createRoot } from "react-dom/client";
 import {
     puckTanim,
@@ -21,6 +28,7 @@ import {
     type Tanim,
     type Tema,
 } from "./donustur";
+import { AiSohbeti } from "./AiSohbeti";
 import { hedefleriYenidenAdlandir, ulasilamayanlar } from "./akis";
 import { OTURUM_DUSTU, oturumDustu } from "./oturum";
 import { dugmeler, type YayinDurumu } from "./ustCubuk";
@@ -46,6 +54,10 @@ if (kok) {
                 ilkImza={ds["imza"] ?? ""}
                 durumAdresi={ds["durum"] ?? ""}
                 baslik={ds["baslik"] ?? ""}
+                ai={{
+                    durumAdresi: ds["aiDurum"] ?? "",
+                    sohbetAdresi: ds["aiSohbet"] ?? "",
+                }}
             />
         </StrictMode>,
     );
@@ -68,6 +80,7 @@ function Duzenleyici({
     ilkImza,
     durumAdresi,
     baslik,
+    ai,
 }: {
     taslak: Tanim;
     varsayilanTema: Tema;
@@ -77,6 +90,8 @@ function Duzenleyici({
     ilkImza: string;
     durumAdresi: string;
     baslik: string;
+    /** A3: AI asistanı uçları (sohbet açık huniye bağlı). */
+    ai: { durumAdresi: string; sohbetAdresi: string };
 }) {
     const [ilk, setIlk] = useState(() => tanimdanPuck(taslak, varsayilanTema));
     // Geri yüklemede Puck yeni veriyle baştan açılır (data yalnız ilk değer).
@@ -205,6 +220,49 @@ function Duzenleyici({
 
     const acik = dugmeler(yayin, guncel !== kayitli, mesgul);
 
+    // A3: AI eklentisi bir kez kurulur (Puck eklentileri açılışta okur);
+    // düzenleyicinin GÜNCEL durumuna ref'le ulaşır — yoksa AI'dan sonra gelen
+    // imza "geri al" kaydında eski kalırdı.
+    const aiIslev = useRef({
+        kayitliMi: (veri: HuniVerisi) => imza(veri) === kayitli,
+        taslakGeldi: (veri: HuniVerisi, yeniImza: string) => {
+            setImza(yeniImza);
+            setKayitli(imza(veri));
+            setGuncel(imza(veri));
+            void yenile();
+        },
+        geriAl: (veri: HuniVerisi) => void kaydet(veri),
+    });
+    aiIslev.current = {
+        kayitliMi: (veri) => imza(veri) === kayitli,
+        taslakGeldi: (veri, yeniImza) => {
+            setImza(yeniImza);
+            setKayitli(imza(veri));
+            setGuncel(imza(veri));
+            void yenile();
+        },
+        geriAl: (veri) => void kaydet(veri),
+    };
+    const eklentiler = useMemo(
+        () => [
+            {
+                name: "ai",
+                label: "AI",
+                icon: <span aria-hidden="true">✦</span>,
+                render: () => (
+                    <AiEklentisi
+                        durumAdresi={ai.durumAdresi}
+                        sohbetAdresi={ai.sohbetAdresi}
+                        jeton={ortam.jeton}
+                        varsayilanTema={varsayilanTema}
+                        islev={aiIslev}
+                    />
+                ),
+            },
+        ],
+        [ai.durumAdresi, ai.sohbetAdresi, ortam.jeton, varsayilanTema],
+    );
+
     /**
      * Tıklama anında Puck deposundan bir kez daha denetlenir: düğmenin açık
      * olması onChange'le güncellenen duruma bağlı ve kaydetmeden sonra bu
@@ -245,6 +303,7 @@ function Duzenleyici({
                 config={yapilandirma(ortam)}
                 data={ilk}
                 headerTitle={baslik}
+                plugins={eklentiler}
                 onChange={(veri) => setGuncel(imza(veri))}
                 overrides={{
                     // Puck'ın kendi "Publish" düğmesi yok: bizde kaydetmek
@@ -272,6 +331,50 @@ function Duzenleyici({
 }
 
 const usePuck = createUsePuck<Config<Bilesenler, KokProps>>();
+
+type AiIslev = {
+    kayitliMi: (veri: HuniVerisi) => boolean;
+    taslakGeldi: (veri: HuniVerisi, imza: string) => void;
+    geriAl: (veri: HuniVerisi) => void;
+};
+
+/** A3: sohbeti Puck deposuna bağlar — yeni taslak tuvale setData ile (Puck yeniden açılmaz, sohbet kalır). */
+function AiEklentisi({
+    durumAdresi,
+    sohbetAdresi,
+    jeton,
+    varsayilanTema,
+    islev,
+}: {
+    durumAdresi: string;
+    sohbetAdresi: string;
+    jeton: string;
+    varsayilanTema: Tema;
+    islev: { current: AiIslev };
+}) {
+    const getPuck = useGetPuck();
+    const koy = (veri: HuniVerisi): void =>
+        // Puck dispatch tipi yapılandırma türünü taşımıyor (0.23).
+        getPuck().dispatch({ type: "setData", data: veri as unknown as Data });
+    return (
+        <AiSohbeti
+            durumAdresi={durumAdresi}
+            sohbetAdresi={sohbetAdresi}
+            jeton={jeton}
+            kayitliMi={(v) => islev.current.kayitliMi(v)}
+            veriAl={() => getPuck().appState.data as HuniVerisi}
+            taslakGeldi={(tanim, imzaYeni) => {
+                const veri = tanimdanPuck(tanim, varsayilanTema);
+                koy(veri);
+                islev.current.taslakGeldi(veri, imzaYeni);
+            }}
+            geriAl={(veri) => {
+                koy(veri);
+                islev.current.geriAl(veri);
+            }}
+        />
+    );
+}
 
 /**
  * Ç55: adım kimliği değişince ona işaret eden hedefleri taşır (Puck'ın

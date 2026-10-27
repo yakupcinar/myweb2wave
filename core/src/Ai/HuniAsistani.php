@@ -110,7 +110,8 @@ final readonly class HuniAsistani
                         $s = $this->araclar->calistir($blok->name, $blok->input, $kapsam);
                         if ('taslak_kaydet' === $blok->name && !$s->hata) {
                             $kaydedildi = true;
-                            $olay('taslak', ['imza' => $s->icerik['imza'] ?? null]);
+                            // Düzenleyici tuvali bununla yeniler (ek istek yok).
+                            $olay('taslak', ['imza' => $s->icerik['imza'] ?? null, 'tanim' => $this->huniler->taslak($app, $huni)]);
                         }
                         $olay('arac_sonucu', ['ad' => $blok->name, 'hata' => $s->hata]);
                         $sonuclar[] = BetaToolResultBlockParam::with(

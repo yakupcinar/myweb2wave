@@ -275,6 +275,7 @@ export interface components {
             /** @enum {string} */
             tur: "taslak";
             imza: string | null;
+            tanim: components["schemas"]["HuniTanimi"];
         } | {
             /** @enum {string} */
             tur: "hata";

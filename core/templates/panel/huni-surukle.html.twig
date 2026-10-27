@@ -31,6 +31,22 @@
             .puck-surumler summary { cursor: pointer; padding: 6px 4px; }
             .puck-surumler ul { position: absolute; right: 0; z-index: 1000; min-width: 380px; margin: 4px 0 0; padding: 8px; list-style: none; background: #fff; color: #111; border-radius: 8px; box-shadow: 0 4px 20px #0003; }
             .puck-surumler li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; }
+            /* A3: AI asistanı (Puck eklenti paneli) */
+            .ai-sohbet { display: grid; gap: 10px; padding: 12px; font-size: 14px; }
+            .ai-sohbet h3 { margin: 0; font-size: 15px; }
+            .ai-sohbet form, .ai-sohbet label { display: grid; gap: 6px; }
+            .ai-sohbet textarea { font: inherit; padding: 8px; border-radius: 8px; border: 1px solid #8886; resize: vertical; }
+            .ai-sohbet button { font: inherit; padding: 7px 12px; border-radius: 8px; border: 1px solid #8886; background: #fff; color: #111; cursor: pointer; }
+            .ai-sohbet button.ana { background: #2563eb; border-color: #2563eb; color: #fff; }
+            .ai-sohbet button:disabled { opacity: .5; cursor: not-allowed; }
+            .ai-satirlar { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 50vh; overflow-y: auto; }
+            .ai-satirlar li { padding: 6px 8px; border-radius: 8px; white-space: pre-wrap; }
+            .ai-istem { background: #eef2ff; justify-self: end; }
+            .ai-metin { background: #f6f8fa; }
+            .ai-adim { color: #57606a; font-size: 13px; }
+            .ai-hata, .ai-kapali { background: #ffebe9; color: #a40e26; }
+            .ai-bitti { color: #1a7f37; font-size: 13px; }
+            .ai-not { margin: 0; color: #57606a; font-size: 12px; }
             @media (max-width: 760px) {
                 #puck-duzenleyici { flex: 1 1 100%; min-width: 0; }
                 .puck-ust-cubuk { flex-wrap: wrap; width: 100%; }
@@ -61,7 +77,9 @@
              data-medya="{{ path('panel_medya_liste', {app: uygulama}) }}"
              data-jeton="{{ csrf_token('huni-' ~ uygulama) }}"
              data-imza="{{ imza }}"
-             data-baslik="{{ uygulama }} · {{ huni }}"></div>
+             data-baslik="{{ uygulama }} · {{ huni }}"
+             data-ai-durum="{{ path('panel_api_ai_durum') }}"
+             data-ai-sohbet="{{ path('panel_api_ai_sohbet', {app: uygulama, huni: huni}) }}"></div>
         <script type="module" src="{{ betik }}"></script>
     </body>
 </html>

@@ -493,7 +493,13 @@ components:
         - { type: object, additionalProperties: false, required: [tur, metin], properties: { tur: { type: string, enum: [metin] }, metin: { type: string } } }
         - { type: object, additionalProperties: false, required: [tur, ad], properties: { tur: { type: string, enum: [arac] }, ad: { type: string } } }
         - { type: object, additionalProperties: false, required: [tur, ad, hata], properties: { tur: { type: string, enum: [arac_sonucu] }, ad: { type: string }, hata: { type: boolean } } }
-        - { type: object, additionalProperties: false, required: [tur, imza], properties: { tur: { type: string, enum: [taslak] }, imza: { type: [string, "null"] } } }
+        - type: object
+          additionalProperties: false
+          required: [tur, imza, tanim]
+          properties:
+            tur: { type: string, enum: [taslak] }
+            imza: { type: [string, "null"] }
+            tanim: { $ref: "#/components/schemas/HuniTanimi" }
         - { type: object, additionalProperties: false, required: [tur, mesaj], properties: { tur: { type: string, enum: [hata] }, mesaj: { type: string } } }
         - type: object
           additionalProperties: false
