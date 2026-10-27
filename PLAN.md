@@ -121,7 +121,7 @@
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
 - [ ] **YOL HARİTASI — AI asistanı + platform temelleri** (kullanıcı 2026-10-27: "MCP'yi içine göm, prompt iç arayüzde"; araştırma `docs/decisions/ai-asistan-arastirmasi.md`, `web2wave-platform-yapisi.md`). Sıra bağımlılığa göre; her adım `/blok`, ayrı commit:
   - [x] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)
-  - [ ] **A1** · konsol: `app:huni taslak <app> <ad>` (stdin JSON) — Claude Code depodan promptla huni kurar (hızlı kazanç)
+  - [x] **A1** · konsol: `app:huni-arac <app> <araç>` (JSON `--girdi`/stdin) — Claude Code depodan promptla huni kurar; `ai-a1-konsol.md`
   - [ ] **A2** · panel AI arka ucu: `/panel/api/ai/sohbet` (oturum+CSRF, SSE akış), PHP SDK tool runner, `claude-opus-5-5`, doğrulama döngüsü, yalnız taslak, tur/jeton/hız sınırı, istek kaydı + maliyet; sahte API ile testler (`SahteRevenueCat` deseni). **Anahtar yok (kullanıcı 2026-10-27, boş kalacak)** → anahtar boşsa panelde "AI kapalı", istek gitmez; testler sahte API'yle; anahtarı kullanıcı `core/.env.local`'e kendisi yazar
   - [ ] **A3** · panel AI arayüzü: Puck'a kendi eklentimiz (sohbet kutusu, akan yanıt, araç adımları, tur başına geri al = önceki taslak); Huniler sayfasında "AI ile yeni huni"
   - [ ] **A4** · ürün bağlamı: uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine

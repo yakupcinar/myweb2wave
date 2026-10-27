@@ -101,6 +101,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
 | Sözleşme → huni + panel tipleri + AI araç şeması | `docker compose run --rm contract npm run uret` + `… core bin/console app:huni-semasi` (`contract/openapi.yaml` değişince) |
+| AI araçları (A0/A1) | `… core bin/console app:huni-arac keepchat --liste` · `… app:huni-arac keepchat taslak_kaydet < istek.json` |
 | Panel (React, B5; Puck dahil) | `docker compose run --rm panel npm run build` · `… panel npm test` |
 
 ---

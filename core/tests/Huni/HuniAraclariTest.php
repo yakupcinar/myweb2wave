@@ -29,10 +29,9 @@ final class HuniAraclariTest extends KernelTestCase
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
         self::assertSame([], $this->huniler->yeniHuni('keepchat', 'genel', null));
-        // Henüz tüketicisi yok (A1 komutu, A2 sohbet) → kapta yok; aynı bağımlılıklarla kurulur.
-        $kok = static::getContainer()->getParameter('kernel.project_dir');
-        self::assertIsString($kok);
-        $this->araclar = new HuniAraclari($huniler, $kok.'/config/huni/tanim-semasi.json', 'https://huni.test');
+        $araclar = static::getContainer()->get(HuniAraclari::class);
+        self::assertInstanceOf(HuniAraclari::class, $araclar);
+        $this->araclar = $araclar;
     }
 
     /** Yayınlama, silme, kural aracı YOK; açık huni üzerindeki sohbette yeni huni de yok. */
