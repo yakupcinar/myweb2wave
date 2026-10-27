@@ -1,16 +1,29 @@
-{% extends 'base.html.twig' %}
+{% extends 'panel/duzen.html.twig' %}
 
-{% block body %}
-    <header>
-        <h1>MyWeb2Wave panel</h1>
-        <nav>
-            {% for g in gunler %}
-                {% if g == gun %}<strong>Son {{ g }} gün</strong>{% else %}<a href="{{ path('panel', {gun: g}) }}">Son {{ g }} gün</a>{% endif %}
-            {% endfor %}
-            <a href="{{ path('panel_huniler') }}">Huniler</a>
-            <a href="{{ path('panel_cikis') }}">Çıkış</a>
-        </nav>
-    </header>
+{% block title %}Rapor · MyWeb2Wave panel{% endblock %}
+{% block baslik %}Rapor{% endblock %}
+{% block alt_baslik %}<p class="soluk">Ziyaret, ödeme ve anket — son {{ gun }} gün</p>{% endblock %}
+
+{% block sayfa_eylemleri %}
+    <nav class="bolge-secimi" aria-label="Zaman aralığı">
+        {% for g in gunler %}
+            {% if g == gun %}<strong>Son {{ g }} gün</strong>{% else %}<a href="{{ path('panel', {gun: g}) }}">Son {{ g }} gün</a>{% endif %}
+        {% endfor %}
+    </nav>
+{% endblock %}
+
+{% block icerik %}
+    {# Toplam = reklam + organik (aynı sayımların toplamı; yeni sorgu yok). #}
+    {% set toplam = {ziyaret: 0, odemeye_gecti: 0, odedi: 0} %}
+    {% for s in sayimlar %}
+        {% set toplam = {ziyaret: toplam.ziyaret + s.ziyaret, odemeye_gecti: toplam.odemeye_gecti + s.odemeye_gecti, odedi: toplam.odedi + s.odedi} %}
+    {% endfor %}
+    <section class="ozetler" aria-label="Özet">
+        <div class="ozet" data-ozet="ziyaret"><span>Sayfayı gördü</span><strong>{{ toplam.ziyaret }}</strong></div>
+        <div class="ozet" data-ozet="odemeye-gecti"><span>Ödemeye geçti</span><strong>{{ toplam.odemeye_gecti }}</strong></div>
+        <div class="ozet" data-ozet="odedi"><span>Ödedi</span><strong>{{ toplam.odedi }}</strong></div>
+        <div class="ozet" data-ozet="donusum"><span>Dönüşüm</span><strong>{{ toplam.ziyaret > 0 ? ((toplam.odedi / toplam.ziyaret * 100)|number_format(1, ',') ~ ' %') : '—' }}</strong></div>
+    </section>
 
     <section class="kartlar">
         {% for ad, s in sayimlar %}
@@ -37,78 +50,93 @@
     </section>
 
     {% if adimlar is not empty %}
-        <section class="kartlar">
+        <section class="kartlar genis">
             <div class="kart" data-bolum="adimlar">
                 <h2>Anket adımları — kaç ziyaret ulaştı</h2>
-                <table>
-                    <thead><tr><th>Huni</th><th>#</th><th>Adım</th><th>Ulaşan</th><th>İlk adıma göre</th></tr></thead>
-                    <tbody>
-                        {% set ilk = {} %}
-                        {% for a in adimlar %}
-                            {% set anahtar = a.app ~ '/' ~ a.huni %}
-                            {% if ilk[anahtar] is not defined %}{% set ilk = ilk|merge({(anahtar): a.ulasan}) %}{% endif %}
-                            <tr>
-                                <td>{{ a.huni }}{% if a.app != 'keepchat' %} <span class="soluk">({{ a.app }})</span>{% endif %}</td>
-                                <td>{{ a.sira + 1 }}</td>
-                                <td>{{ a.adim }}</td>
-                                <td>{{ a.ulasan }}</td>
-                                <td>{{ (a.ulasan / ilk[anahtar] * 100)|number_format(0, ',') }} %</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="tablo">
+                    <table>
+                        <thead><tr><th>Huni</th><th>#</th><th>Adım</th><th>Ulaşan</th><th>İlk adıma göre</th></tr></thead>
+                        <tbody>
+                            {% set ilk = {} %}
+                            {% for a in adimlar %}
+                                {% set anahtar = a.app ~ '/' ~ a.huni %}
+                                {% if ilk[anahtar] is not defined %}{% set ilk = ilk|merge({(anahtar): a.ulasan}) %}{% endif %}
+                                {% set oran = a.ulasan / ilk[anahtar] * 100 %}
+                                <tr>
+                                    <td>{{ a.huni }}{% if a.app != 'keepchat' %} <span class="soluk">({{ a.app }})</span>{% endif %}</td>
+                                    <td>{{ a.sira + 1 }}</td>
+                                    <td>{{ a.adim }}</td>
+                                    <td>{{ a.ulasan }}</td>
+                                    {# Şerit metinsiz: hücrenin metni yalnız oran. #}
+                                    <td>{{ oran|number_format(0, ',') }} %<span class="serit" aria-hidden="true"><span style="width: {{ min(oran, 100)|number_format(1, '.') }}%"></span></span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="kart" data-bolum="cevaplar">
                 <h2>Cevaplar</h2>
-                <table>
-                    <thead><tr><th>Soru</th><th>Cevap</th><th>Sayı</th></tr></thead>
-                    <tbody>
-                        {% for c in cevaplar %}
-                            <tr><td>{{ c.soru }}</td><td>{{ c.secenek }}</td><td>{{ c.sayi }}</td></tr>
-                        {% else %}
-                            <tr><td colspan="3" class="soluk">Henüz cevap yok.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="tablo">
+                    <table>
+                        <thead><tr><th>Soru</th><th>Cevap</th><th>Sayı</th></tr></thead>
+                        <tbody>
+                            {% for c in cevaplar %}
+                                <tr><td>{{ c.soru }}</td><td>{{ c.secenek }}</td><td>{{ c.sayi }}</td></tr>
+                            {% else %}
+                                <tr><td colspan="3" class="soluk">Henüz cevap yok.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="kart" data-bolum="serbest-cevaplar">
                 <h2>Serbest yanıtlar <span class="soluk">· 90 gün içinde, en yeni {{ azami }}</span></h2>
-                <table>
-                    <thead><tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Soru</th><th>Yanıt</th></tr></thead>
-                    <tbody>
-                        {% for c in metin_cevaplari %}
-                            <tr><td>{{ c.zaman|date('Y-m-d H:i', 'UTC') }}</td><td>{{ c.app }}</td><td>{{ c.soru }}</td><td class="serbest-cevap">{{ c.cevap }}</td></tr>
-                        {% else %}
-                            <tr><td colspan="4" class="soluk">Henüz serbest yanıt yok.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="tablo">
+                    <table>
+                        <thead><tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Soru</th><th>Yanıt</th></tr></thead>
+                        <tbody>
+                            {% for c in metin_cevaplari %}
+                                <tr><td>{{ c.zaman|date('Y-m-d H:i', 'UTC') }}</td><td>{{ c.app }}</td><td>{{ c.soru }}</td><td class="serbest-cevap">{{ c.cevap }}</td></tr>
+                            {% else %}
+                                <tr><td colspan="4" class="soluk">Henüz serbest yanıt yok.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     {% endif %}
 
-    <div class="tablo">
-        <table>
-            <thead>
-                <tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Huni</th><th>Kaynak</th><th>Kampanya</th><th>Aşama</th><th>Abonelik</th><th>E-posta</th></tr>
-            </thead>
-            <tbody>
-                {% for s in satirlar %}
-                    <tr>
-                        <td>{{ s.zaman|date('Y-m-d H:i', 'UTC') }}</td>
-                        <td>{{ s.app }}</td>
-                        <td>{{ s.huni ?? '—' }}</td>
-                        <td>{% if s.reklam %}<span class="reklam">reklam</span> · {% endif %}{{ s.kaynak }}</td>
-                        <td>{{ s.kampanya ?? '—' }}</td>
-                        <td{% if s.asama == 'ödedi' %} class="odedi"{% endif %}>{{ s.asama }}</td>
-                        <td>{{ s.durum ?? '—' }}</td>
-                        <td>{{ s.email ?? '—' }}</td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="8" class="soluk">Bu aralıkta ziyaret yok.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% if satirlar|length == azami %}<p class="soluk">En yeni {{ azami }} ziyaret gösteriliyor; sayımlar tüm aralığı kapsar.</p>{% endif %}
+    <section class="bolum">
+        <div class="bolum-basi">
+            <div>
+                <h2>Ziyaretler</h2>
+                {% if satirlar|length == azami %}<p class="soluk">En yeni {{ azami }} ziyaret gösteriliyor; sayımlar tüm aralığı kapsar.</p>{% endif %}
+            </div>
+        </div>
+        <div class="tablo">
+            <table>
+                <thead>
+                    <tr><th>Zaman (UTC)</th><th>Uygulama</th><th>Huni</th><th>Kaynak</th><th>Kampanya</th><th>Aşama</th><th>Abonelik</th><th>E-posta</th></tr>
+                </thead>
+                <tbody>
+                    {% for s in satirlar %}
+                        <tr>
+                            <td>{{ s.zaman|date('Y-m-d H:i', 'UTC') }}</td>
+                            <td>{{ s.app }}</td>
+                            <td>{{ s.huni ?? '—' }}</td>
+                            <td>{% if s.reklam %}<span class="reklam">reklam</span> · {% endif %}{{ s.kaynak }}</td>
+                            <td>{{ s.kampanya ?? '—' }}</td>
+                            <td>{% if s.asama == 'ödedi' %}<span class="odedi">{{ s.asama }}</span>{% else %}<span class="rozet">{{ s.asama }}</span>{% endif %}</td>
+                            <td>{{ s.durum ?? '—' }}</td>
+                            <td>{{ s.email ?? '—' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="8" class="soluk">Bu aralıkta ziyaret yok.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 {% endblock %}

@@ -119,6 +119,7 @@
   - [ ] 3 · seçenek simgesi (emoji): sözleşme + çekirdek + Puck alanı
   - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
+- [x] **Panel görünümü** (kullanıcı 2026-10-27: "basit siyah ekran, web2wave'e bak") — sol menü, özet, huni şeridi, açık/koyu tema. `docs/decisions/panel-gorunum.md`
 
 ## 2. Backlog
 

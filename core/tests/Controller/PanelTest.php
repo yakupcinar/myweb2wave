@@ -108,6 +108,10 @@ final class PanelTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
         self::assertSame(['2', '2', '1', '50,0 %'], $this->kart('reklam'));
         self::assertSame(['1', '0', '0', '0,0 %'], $this->kart('organik'));
+        // Üstteki özet = reklam + organik (elle: 2+1, 2+0, 1+0; 1/3).
+        self::assertSame(['3', '2', '1', '33,3 %'], $this->client->getCrawler()->filter('.ozet strong')->each(static fn ($s): string => trim($s->text())));
+        // Menüde bulunulan sayfa işaretli, öteki değil.
+        self::assertSame(['Rapor'], $this->client->getCrawler()->filter('nav.yan a[aria-current=page]')->each(static fn ($a): string => trim($a->text())));
     }
 
     /** Ç56 (3): izin oranı — yalnız sayı; seçmeyen = ne kabul ne ret. */
@@ -171,6 +175,11 @@ final class PanelTest extends WebTestCase
         self::assertSame(
             [['—', '1', 'karsilama', '3', '100 %'], ['—', '2', 'kiminle', '2', '67 %'], ['—', '3', 'cihaz', '1', '33 %']],
             $this->tablo('adimlar'),
+        );
+        // Huni şeridi: genişlik ilk adıma göre oran (3/3, 2/3, 1/3).
+        self::assertSame(
+            ['width: 100.0%', 'width: 66.7%', 'width: 33.3%'],
+            $this->client->getCrawler()->filter('[data-bolum=adimlar] .serit > span')->each(static fn ($s): string => (string) $s->attr('style')),
         );
         self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '2']], $this->tablo('cevaplar'));
     }

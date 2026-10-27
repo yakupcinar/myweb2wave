@@ -53,6 +53,7 @@ final class PanelHuniTest extends WebTestCase
         self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'v1');
         self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'varsayılan');
         self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'yayınlanmamış değişiklik');
+        self::assertSelectorTextSame('nav.yan a[aria-current=page]', 'Huniler');
     }
 
     public function testKaydetGecerliyiYazarGecersizdeHataDonerYazmaz(): void

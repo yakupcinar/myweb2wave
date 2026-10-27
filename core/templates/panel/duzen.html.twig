@@ -1,0 +1,38 @@
+{# Oturum açık panel sayfalarının düzeni: solda menü, sağda başlık + içerik.
+   Etkin menü rotadan (huni ve kural rotaları "Huniler"). #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% set rota = app.request.attributes.get('_route') %}
+    {% set aktif = rota starts with 'panel_huni' or rota starts with 'panel_kural' ? 'huniler' : 'rapor' %}
+    <div class="duzen">
+        <nav class="yan" aria-label="Panel">
+            <a class="marka" href="{{ path('panel') }}"><span class="marka-isaret" aria-hidden="true">W</span>MyWeb2Wave</a>
+            <a href="{{ path('panel') }}"{% if aktif == 'rapor' %} aria-current="page"{% endif %}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                Rapor
+            </a>
+            <a href="{{ path('panel_huniler') }}"{% if aktif == 'huniler' %} aria-current="page"{% endif %}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 9v6l-4 2v-8z"/></svg>
+                Huniler
+            </a>
+            <a class="alt" href="{{ path('panel_cikis') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>
+                Çıkış
+            </a>
+        </nav>
+        <main class="icerik">
+            <header class="sayfa-basi">
+                <div>
+                    <h1>{% block baslik %}{% endblock %}</h1>
+                    {% block alt_baslik %}{% endblock %}
+                </div>
+                {% block sayfa_eylemleri %}{% endblock %}
+            </header>
+            {% for tur, mesajlar in app.flashes %}
+                {% for m in mesajlar %}<p class="bildirim {{ tur }}" role="status">{{ m }}</p>{% endfor %}
+            {% endfor %}
+            {% block icerik %}{% endblock %}
+        </main>
+    </div>
+{% endblock %}
