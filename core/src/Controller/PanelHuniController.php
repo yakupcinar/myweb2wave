@@ -46,7 +46,9 @@ final class PanelHuniController extends AbstractController
             $uygulamalar[] = [
                 'ad' => $app,
                 'adres' => $this->funnelBaseUrl.'/'.$app.'/',
-                'huniler' => $this->huniler->huniler($app),
+                // "Aç": yayınlanmışsa canlı adres (ziyaret sayılır), değilse taslağın süreli önizlemesi (ölçümsüz).
+                'huniler' => array_map(fn (array $h): array => $h + ['ac' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$h['ad']
+                    .(null === $h['yayinda'] ? '&onizleme='.$this->huniler->onizlemeAnahtari($app, $h['ad'], time()) : '')], $this->huniler->huniler($app)),
                 'kurallar' => $this->huniler->kurallar($app),
             ];
         }

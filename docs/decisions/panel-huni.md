@@ -73,3 +73,10 @@ artık panelden düzeltilebilir) · E2.
 
 
 **2026-10-26 (L11, b2):** klasik form düzenleyicisi ve form uçları silindi; `/panel/huniler/{app}/{ad}` Puck'ı açar — `puck-tek-duzenleyici-b2.md`.
+
+## Ek 2026-10-27 — listede "Aç"
+
+Kullanıcı: "varsayılan yapabiliyoruz ama aç yok; hunileri kontrol için aç lazım". Listede her huninin yanına **Aç** (yeni sekme): yayınlanmışsa canlı adres `/<app>/?huni=<ad>` (müşterinin gördüğü sürüm), yayınlanmamışsa taslağın süreli önizlemesi (`&onizleme=`, 1 saat, ölçümsüz, ödeme kapalı). Liste zaten `no-store` (önizleme anahtarı taşır).
+- Test: `PanelHuniTest::testListedeAcYayindaysaCanliAdresYoksaOnizleme`. Kırma 2/2 kırmızı: K1 önizleme dalı yok → yayınlanmamış huni canlı adres alır; K2 hep önizleme → yayındaki huni taslağı açar.
+- `bin/kontrol` yeşil (266 test). Tarayıcıda denenmedi.
+- Açık uç Ç70: canlı adresi açmak gerçek ziyaret sayar.

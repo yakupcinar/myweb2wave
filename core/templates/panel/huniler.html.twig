@@ -26,6 +26,7 @@
                                     <td>{% if h.farkli %}<span class="reklam">yayınlanmamış değişiklik</span>{% else %}<span class="rozet">yayındakiyle aynı</span>{% endif %}</td>
                                     <td class="eylemler">
                                         <a class="dugme ana" href="{{ path('panel_huni', {app: u.ad, ad: h.ad}) }}">Düzenle</a>
+                                        <a class="dugme" href="{{ h.ac }}" target="_blank" rel="noopener" data-ac title="{{ h.yayinda ? 'Yayındaki sürüm — ziyaret sayılır' : 'Taslak önizlemesi — 1 saat geçerli, ölçülmez' }}">Aç</a>
                                         {% if not h.varsayilan %}
                                             <form method="post" action="{{ path('panel_huni_varsayilan', {app: u.ad, ad: h.ad}) }}">
                                                 <input type="hidden" name="_token" value="{{ jeton }}">
