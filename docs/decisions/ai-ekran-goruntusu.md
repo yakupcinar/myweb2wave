@@ -24,6 +24,7 @@
 - Gereksiz savunma kaldırıldı (§10): `adim` biçim denetimi — adımın tanımda olup olmadığı denetimi bozuk kimliği zaten reddediyor (K5 ölçüyor).
 - **Gerçek sistem (yerel, Docker Desktop macOS):** konsol ilk çekim 4,8 sn, ısınmış 1,5 sn; ödeme adımı yayındaki sürümle, fiyat Stripe'tan. **Gerçek MCP HTTP** (`/mcp`, geçici anahtar, sonra iptal): `tools/list`'te araç var; `tools/call` → `isError=false`, içerik `text` + `image/jpeg` 60 KB, yanıt 82 KB; `mcp_cagrilari` kaydı. Ziyaret sayısı çekimlerden önce/sonra 103/103. Tarayıcı durdurulunca: "ekran görüntüsü alınamadı: tarayıcı servisine ulaşılamadı (ekran:9222)", çıkış 1.
 - `bin/kontrol` yeşil (273 çekirdek testi).
+- CI (GitHub Actions, imaj Dockerfile'dan sıfırdan — `sockets` dahil): koşu 40504699887, SHA 91a0080, `KONTROL: YEŞİL`, 273 test.
 - **Ölçülmedi:** gerçek Claude'un aracı kullanıp görünümü düzelttiği (claude.ai bağlayıcısı A5b'yi, panel anahtarı yok); üretim dağıtımı.
 
 ## Açık uçlar
