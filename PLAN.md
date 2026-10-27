@@ -119,6 +119,17 @@
   - [ ] 3 · seçenek simgesi (emoji): sözleşme + çekirdek + Puck alanı
   - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
+- [ ] **YOL HARİTASI — AI asistanı + platform temelleri** (kullanıcı 2026-10-27: "MCP'yi içine göm, prompt iç arayüzde"; araştırma `docs/decisions/ai-asistan-arastirmasi.md`, `web2wave-platform-yapisi.md`). Sıra bağımlılığa göre; her adım `/blok`, ayrı commit:
+  - [ ] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)
+  - [ ] **A1** · konsol: `app:huni taslak <app> <ad>` (stdin JSON) — Claude Code depodan promptla huni kurar (hızlı kazanç)
+  - [ ] **A2** · panel AI arka ucu: `/panel/api/ai/sohbet` (oturum+CSRF, SSE akış), PHP SDK tool runner, `claude-opus-5-5`, doğrulama döngüsü, yalnız taslak, tur/jeton/hız sınırı, istek kaydı + maliyet; sahte API ile testler (`SahteRevenueCat` deseni). **Kullanıcıdan:** `ANTHROPIC_API_KEY` → `core/.env.local` (kendisi yazar)
+  - [ ] **A3** · panel AI arayüzü: Puck'a kendi eklentimiz (sohbet kutusu, akan yanıt, araç adımları, tur başına geri al = önceki taslak); Huniler sayfasında "AI ile yeni huni"
+  - [ ] **A4** · ürün bağlamı: uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine
+  - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
+  - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
+  - [ ] **A5** · MCP sunucusu: aynı araçlar; önce stdio (yerel, Claude Desktop/Code), dağıtımdan sonra HTTP `/mcp` + uygulama başına belirteç; yıkıcı araç yok
+  - [ ] **A6** · değerlendirme: brief seti → geçerli tanım oranı, tur, maliyet (A2 sonrası, model/efor ayarı için)
+  - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
   - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
   - [x] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
