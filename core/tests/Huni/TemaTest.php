@@ -27,12 +27,14 @@ final class TemaTest extends TestCase
         self::assertGreaterThanOrEqual(3, \count(array_unique(array_column(Tema::AI_ORNEKLERI, 'yaziTipi'))));
         // G3: zemin örneği de gösterilir (G1: görünümü en çok zemin değiştirir).
         self::assertGreaterThanOrEqual(2, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['zemin']))));
+        // G6: kartlı örnek de (koyu zemin + açık kart — kartsız geçersiz olurdu).
+        self::assertGreaterThanOrEqual(1, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['kartRengi']))));
         // Ana renkler birbirinden ve varsayılandan farklı.
         self::assertCount(\count(Tema::AI_ORNEKLERI) + 1, array_unique([...array_column(Tema::AI_ORNEKLERI, 'anaRenk'), Tema::VARSAYILAN['anaRenk']]));
 
         $y = Tema::aiYonergesi();
         // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
-        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma'] as $parca) {
+        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi'] as $parca) {
             self::assertStringContainsString($parca, $y);
         }
         foreach (Tema::AI_ORNEKLERI as $tema) {
@@ -93,6 +95,24 @@ final class TemaTest extends TestCase
         self::assertStringContainsString('karartma en az %64 olmalı (şu an %63)', implode('', Tema::hatalar($gorsel(63, $koyu))));
     }
 
+    /**
+     * G6: kart varsa metin kartın üstünde — okunurluk metin ↔ kart; zemin
+     * yalnız çevrede (koyu zemin + açık kart + koyu metin geçerli). Oranlar
+     * bağımsız (§3): #0f172a/#1e3a8a 1,72 · #0f172a/#334155 1,72.
+     */
+    public function testKartVarsaMetinKartUstundeOlculur(): void
+    {
+        $koyuZemin = ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 8];
+
+        self::assertStringContainsString('arka planda okunmuyor', implode('', Tema::hatalar($koyuZemin)), 'kartsız: metin zeminde');
+        self::assertSame([], Tema::hatalar(['kartRengi' => '#ffffff'] + $koyuZemin));
+        self::assertStringContainsString('metin kartta okunmuyor (kontrast 1.72:1', implode('', Tema::hatalar(['kartRengi' => '#334155'] + $koyuZemin)));
+        // Görsel zeminde karartma eşiği metin içindir; kart varsa metin görselin üstünde değil.
+        self::assertSame([], Tema::hatalar(['kartRengi' => '#ffffff', 'zemin' => ['tur' => 'gorsel', 'gorsel' => str_repeat('a', 64), 'karartma' => 0]] + $koyuZemin));
+        // Biçim yine denetlenir.
+        self::assertStringContainsString('karartma: 0–95', implode('', Tema::hatalar(['kartRengi' => '#ffffff', 'zemin' => ['tur' => 'gorsel', 'gorsel' => str_repeat('a', 64), 'karartma' => 99]] + $koyuZemin)));
+    }
+
     #[DataProvider('bozuklar')]
     public function testBicimKurallari(string $beklenen, mixed $tema): void
     {
@@ -104,6 +124,7 @@ final class TemaTest extends TestCase
     {
         $v = Tema::VARSAYILAN;
         yield 'büyük harf hex' => ['#rrggbb', ['anaRenk' => '#2563EB'] + $v];
+        yield 'kart rengi büyük harf' => ['tema kartRengi: #rrggbb', ['kartRengi' => '#FFFFFF'] + $v];
         yield 'zemin bilinmeyen tür' => ['tema zemin: tur gecis ya da gorsel', ['zemin' => ['tur' => 'video']] + $v];
         yield 'zemin nesne değil' => ['tema zemin: tur gecis ya da gorsel', ['zemin' => 'gecis'] + $v];
         yield 'geçişte fazla alan' => ['tema zemin (gecis): alanlar tam olarak tur, ikinciRenk', ['zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#ffffff', 'yon' => 'yatay']] + $v];

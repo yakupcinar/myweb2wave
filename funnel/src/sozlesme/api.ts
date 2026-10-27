@@ -476,6 +476,8 @@ export interface components {
             /** @enum {string} */
             yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono";
             kose: number;
+            /** @description G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır */
+            kartRengi?: string;
             /** @description G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer */
             zemin?: components["schemas"]["ZeminGecisi"] | components["schemas"]["ZeminGorseli"];
         };

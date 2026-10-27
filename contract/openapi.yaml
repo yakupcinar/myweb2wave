@@ -782,6 +782,10 @@ components:
         metinRengi: { type: string, pattern: "^#[0-9a-f]{6}$" }
         yaziTipi: { type: string, enum: [sistem, serif, yuvarlak, mono] }
         kose: { type: integer, minimum: 0, maximum: 32 }
+        kartRengi:
+          description: "G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır"
+          type: string
+          pattern: "^#[0-9a-f]{6}$"
         zemin:
           description: "G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer"
           oneOf:

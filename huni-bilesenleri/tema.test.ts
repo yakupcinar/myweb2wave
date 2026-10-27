@@ -53,10 +53,51 @@ describe("tema — zemin (G3)", () => {
             "--zemin",
         );
         expect(css).toMatch(
-            /\.huni \{[^}]*background: var\(--zemin, var\(--arka\)\)/,
+            /\.huni \.adimlar \.eylem \{[^}]*var\(--alt-renk, var\(--arka\)\)/,
+        );
+    });
+});
+
+describe("tema — kart (G6)", () => {
+    const koyu = {
+        ...VARSAYILAN_TEMA,
+        arkaPlan: "#1e3a8a",
+        metinRengi: "#0f172a",
+        kartRengi: "#ffffff",
+    };
+    it("kart: iç yüzeyler kart rengiyle (--arka), zemin arka plan rengi", () => {
+        const d = temaDegiskenleri(koyu);
+        expect(d["--arka"]).toBe("#ffffff");
+        expect(d["--kart"]).toBe("#ffffff");
+        expect(d["--alt-renk"]).toBe("#ffffff");
+        expect(d["--zemin"]).toBe("#1e3a8a");
+        expect(d["--kart-golge"]).toBeTruthy();
+    });
+    it("kart + geçiş: geçiş arka plan renginden başlar", () => {
+        const d = temaDegiskenleri({
+            ...koyu,
+            zemin: { tur: "gecis", ikinciRenk: "#312e81" },
+        });
+        expect(d["--zemin"]).toBe("linear-gradient(180deg, #1e3a8a, #312e81)");
+        expect(d["--arka"]).toBe("#ffffff");
+        expect(d["--alt-renk"]).toBe("#ffffff");
+    });
+    it("kartsız: kart değişkeni yok; zemin sayfa kökünde, .huni saydam", () => {
+        expect(Object.keys(temaDegiskenleri(VARSAYILAN_TEMA))).not.toContain(
+            "--kart",
         );
         expect(css).toMatch(
-            /\.huni \.adimlar \.eylem \{[^}]*var\(--alt-renk, var\(--arka\)\)/,
+            /html:has\(> body\.huni\) \{[^}]*background: var\(--zemin, var\(--arka\)\)/,
+        );
+        expect(css).toMatch(
+            /\.huni \{[^}]*background: var\(--kart, transparent\)/,
+        );
+        expect(css).toMatch(
+            /\.huni \{[^}]*box-shadow: var\(--kart-golge, none\)/,
+        );
+        // Kartta yanlarda zemin görünür; kartsız genişlik değişmez.
+        expect(css).toMatch(
+            /\.huni \{[^}]*max-width: min\(520px, calc\(100% - 32px - 2 \* var\(--kart-bosluk, 0px\)\)\)/,
         );
     });
 });
@@ -77,6 +118,8 @@ describe("tema — düğme yazısı", () => {
 describe("huni.css", () => {
     // Puck ana sayfanın stillerini önizleme iframe'ine kopyalıyor: kapsamsız
     // bir kural (ör. "button") düzenleyicinin kendi düğmelerini boyar.
+    // Tek istisna (G6): html:has(> body.huni) — yalnız gövdesi .huni olan
+    // huni sayfasında eşleşir; Puck'ta .huni bir div, düzenleyici boyanmaz.
     it("her kural .huni altında (:root yalnız değişken)", () => {
         // @keyframes içi (from/to) seçici değil; @media başlığı atlanır, içi denetlenir.
         const kurallar = css
@@ -90,7 +133,8 @@ describe("huni.css", () => {
         );
         expect(seciciler.length).toBeGreaterThan(5);
         for (const s of seciciler) {
-            if (s !== ":root") expect(s).toMatch(/^\.huni\b/);
+            if (s !== ":root" && s !== "html:has(> body.huni)")
+                expect(s).toMatch(/^\.huni\b/);
         }
     });
 

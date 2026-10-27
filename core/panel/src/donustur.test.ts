@@ -292,6 +292,17 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("G6 kart: gidiş-dönüş aynı; 'yok' seçilince tanımdan çıkar", () => {
+        const kartli: Tanim = {
+            ...temel,
+            tema: { ...VARSAYILAN, kartRengi: "#ffffff" },
+        };
+        const veri = tanimdanPuck(kartli, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(kartli);
+        veri.root.props!.kart = "yok";
+        expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);

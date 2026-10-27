@@ -156,4 +156,25 @@ describe("önizleme = huni: tema", () => {
         );
         expect(cikti).toContain("background:var(--zemin, var(--arka))");
     });
+    it("G6 kart → --kart değişkeni dış kutuda (.huni kartı çizer)", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        const ciz = (kartRengi: string): string =>
+            html(
+                kok({
+                    ...tanimdanPuck(
+                        { ...tanim, tema: { ...tanim.tema!, kartRengi } },
+                        VARSAYILAN,
+                    ).root.props,
+                    children: "ICERIK",
+                    puck: {},
+                }),
+            );
+        const cikti = ciz("#1e293b");
+        expect(cikti).toContain("--kart:#1e293b");
+        expect(cikti).toContain("--arka:#1e293b");
+        expect(cikti).toContain("--zemin:#0b1220");
+        // Okunurluk uyarısı çekirdekle aynı kural: kart varsa metin ↔ kart.
+        expect(cikti).not.toContain("okunurluğu");
+        expect(ciz("#f8fafc")).toContain("okunurluğu");
+    });
 });

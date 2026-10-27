@@ -4,6 +4,11 @@
    düzenleyicinin kendi düğmelerini de boyardı. Değişkenler tema.ts
    temaDegiskenleri'nden; buradaki varsayılanlar Tema::VARSAYILAN ile aynı
    (tema.test.ts ölçer). */
+/* G3/G6: zemin sayfa kökünde (geçiş/görsel tanımlıysa tema.ts --zemin,
+   yoksa düz renk). Yalnız huni sayfası — Puck'ta dış kutu çizer. */
+html:has(> body.huni) {
+    background: var(--zemin, var(--arka));
+}
 :root {
     --ana: #2563eb;
     --ana-yazi: #ffffff;
@@ -20,12 +25,17 @@
     --yuzey: color-mix(in srgb, var(--metin) 4%, var(--arka));
     --cizgi: color-mix(in srgb, var(--metin) 14%, var(--arka));
     font: 17px/1.5 var(--yazi-tipi);
-    /* G3: geçiş/görsel tanımlıysa onu (tema.ts --zemin), yoksa düz renk. */
-    background: var(--zemin, var(--arka));
+    /* G6: kart varsa gövde kartı çizer (zemin sayfa kökünde, aşağıda);
+       yoksa saydam — eskisi gibi zemin görünür. */
+    background: var(--kart, transparent);
+    border-radius: var(--kart-kose, 0);
+    box-shadow: var(--kart-golge, none);
     color: var(--metin);
-    margin: 0 auto;
+    margin: var(--kart-bosluk, 0px) auto;
     padding: 16px;
-    max-width: 520px;
+    /* G6: kartta yanlarda da zemin görünsün (ölçüm: gorunum-g6.md);
+       kartsız boşluk 0 — eski genişlik. Dolgu 2 × 16px. */
+    max-width: min(520px, calc(100% - 32px - 2 * var(--kart-bosluk, 0px)));
     -webkit-font-smoothing: antialiased;
 }
 .huni h1 {
@@ -371,7 +381,7 @@
 .huni main {
     display: flex;
     flex-direction: column;
-    min-height: calc(100dvh - 32px);
+    min-height: calc(100dvh - 32px - 2 * var(--kart-bosluk, 0px));
 }
 .huni .adimlar {
     flex: 1;

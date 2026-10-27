@@ -33,7 +33,7 @@ final class Tema
     public const AI_ORNEKLERI = [
         'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20],
         'teknoloji / üretkenlik' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b']],
-        'finans / ciddi' => ['anaRenk' => '#1e3a8a', 'arkaPlan' => '#f8fafc', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4],
+        'finans / ciddi' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff'],
         'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3']],
         'iletişim / sosyal' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'sistem', 'kose' => 16],
     ];
@@ -57,6 +57,8 @@ final class Tema
             .'metinRengi ile arkaPlan arasındaki kontrast en az '.self::ASGARI_KONTRAST.':1 olmalı — düşükse kayıt reddedilir. Düğme yazısının rengini sayfa kendisi seçer. '
             // G3 + G1 ölçümü: ekranın çoğu zemin; yalnız ana renk değişirse huniler aynı görünür.
             .'Görünümü en çok zemin değiştirir: arkaPlan\'ı ürüne göre seç; isteğe bağlı zemin alanı düz rengin yerine geçiş {"tur":"gecis","ikinciRenk":"#rrggbb"} (metin alt renkte de okunmalı) ya da görsel {"tur":"gorsel","gorsel":"<görsel kimliği>","karartma":0–'.self::AZAMI_KARARTMA.'} (yalnız bu uygulamaya yüklenmiş görsel; karartma yetersizse hata en az değeri söyler). '
+            // G6
+            .'İsteğe bağlı kartRengi ("#rrggbb"): içerik zeminin üstünde bu renkte kartta durur; o zaman metin kartın üstündedir — okunurluk metinRengi ↔ kartRengi ölçülür, zemin (arkaPlan/geçiş/görsel) yalnız çevrede kalır ve koyu olabilir. '
             .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler
             // Ç72: üretilen görünümü görmeden düzeltemez.
             ."\nKaydettikten sonra ekran_goruntusu ile en az ilk adımı ve ödeme ekranını gör; okunmayan, taşan ya da sıkışık bir şey varsa düzeltip yeniden kaydet.";
@@ -69,8 +71,8 @@ final class Tema
             return ['tema bir nesne olmalı'];
         }
         $beklenen = array_keys(self::VARSAYILAN);
-        // G3: zemin isteğe bağlı; ayrı denetlenir.
-        $var = array_values(array_diff(array_map(strval(...), array_keys($tema)), ['zemin']));
+        // G3 zemin, G6 kartRengi isteğe bağlı; ayrı denetlenir.
+        $var = array_values(array_diff(array_map(strval(...), array_keys($tema)), ['zemin', 'kartRengi']));
         sort($var);
         sort($beklenen);
         if ($var !== $beklenen) {
@@ -88,13 +90,18 @@ final class Tema
         if (!\is_int($tema['kose']) || $tema['kose'] < 0 || $tema['kose'] > self::AZAMI_KOSE) {
             $h[] = 'tema kose: 0–'.self::AZAMI_KOSE.' tam sayı olmalı';
         }
+        $kart = $tema['kartRengi'] ?? null;
+        if (\array_key_exists('kartRengi', $tema) && (!\is_string($kart) || 1 !== preg_match('/^#[0-9a-f]{6}$/', $kart))) {
+            $h[] = 'tema kartRengi: #rrggbb biçiminde (küçük harf) renk olmalı';
+        }
         if ([] === $h && \is_string($tema['metinRengi']) && \is_string($tema['arkaPlan'])) {
-            $oran = self::kontrast($tema['metinRengi'], $tema['arkaPlan']);
+            // G6: kart varsa metin kartın üstünde; zemin yalnız çevrede.
+            $oran = self::kontrast($tema['metinRengi'], \is_string($kart) ? $kart : $tema['arkaPlan']);
             if ($oran < self::ASGARI_KONTRAST) {
-                $h[] = \sprintf('tema: metin arka planda okunmuyor (kontrast %.2f:1, en az %.1f:1)', $oran, self::ASGARI_KONTRAST);
+                $h[] = \sprintf('tema: metin '.(\is_string($kart) ? 'kartta' : 'arka planda').' okunmuyor (kontrast %.2f:1, en az %.1f:1)', $oran, self::ASGARI_KONTRAST);
             }
             if ([] === $h && \array_key_exists('zemin', $tema)) {
-                $h = self::zeminHatalari($tema['zemin'], $tema['metinRengi'], $tema['arkaPlan']);
+                $h = self::zeminHatalari($tema['zemin'], $tema['metinRengi'], $tema['arkaPlan'], !\is_string($kart));
             }
         }
 
@@ -105,11 +112,12 @@ final class Tema
      * G3: geçişte metin alt renkte de okunmalı. Görselde içerik bilinmez:
      * karartma katmanı (arkaPlan rengi, %k) görsel en kötü durumda tam siyah
      * ya da tam beyaz olsa da metni okutmalı — sRGB'de karışım (CSS
-     * color-mix in srgb ile aynı).
+     * color-mix in srgb ile aynı). G6: kart varsa metin zeminde değil —
+     * yalnız biçim denetlenir.
      *
      * @return list<string>
      */
-    private static function zeminHatalari(mixed $zemin, string $metin, string $arka): array
+    private static function zeminHatalari(mixed $zemin, string $metin, string $arka, bool $metinZeminde): array
     {
         $tur = \is_array($zemin) ? ($zemin['tur'] ?? null) : null;
         $alanlar = match ($tur) {
@@ -134,7 +142,7 @@ final class Tema
             }
             $oran = self::kontrast($metin, $ikinci);
 
-            return $oran < self::ASGARI_KONTRAST
+            return $metinZeminde && $oran < self::ASGARI_KONTRAST
                 ? [\sprintf('tema zemin: metin geçişin alt renginde okunmuyor (kontrast %.2f:1, en az %.1f:1)', $oran, self::ASGARI_KONTRAST)]
                 : [];
         }
@@ -149,7 +157,7 @@ final class Tema
             self::kontrast($metin, self::karistir($arka, '#000000', $y)),
             self::kontrast($metin, self::karistir($arka, '#ffffff', $y)),
         ) >= self::ASGARI_KONTRAST;
-        if ($okunur($k)) {
+        if (!$metinZeminde || $okunur($k)) {
             return [];
         }
         $enAz = null;

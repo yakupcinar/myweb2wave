@@ -442,6 +442,16 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     min: 0,
                     max: 95,
                 },
+                // G6: kart varsa okunurluk metin ↔ kart rengi ölçülür.
+                kart: {
+                    type: "radio",
+                    label: "İçerik kartı",
+                    options: [
+                        { label: "Yok", value: "yok" },
+                        { label: "Var", value: "var" },
+                    ],
+                },
+                kartRengi: renkAlani("Kart rengi"),
             },
             render: ({
                 children,
@@ -456,6 +466,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 ikinciRenk,
                 zeminGorseli,
                 karartma,
+                kart,
+                kartRengi,
             }) => {
                 const tema = ozelTema === "evet";
                 // Dış kutu huni sayfasındaki <body>'nin yerine: arka plan
@@ -469,6 +481,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                   metinRengi,
                                   yaziTipi,
                                   kose,
+                                  ...(kart === "var" ? { kartRengi } : {}),
                                   ...kokZemini({
                                       zeminTuru,
                                       ikinciRenk,
@@ -481,7 +494,13 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     background: "var(--zemin, var(--arka))",
                     minHeight: "100vh",
                 } as CSSProperties;
-                const oran = tema ? kontrast(metinRengi, arkaPlan) : 21;
+                // Çekirdekle aynı kural (Tema.php): kart varsa metin kartın üstünde.
+                const oran = tema
+                    ? kontrast(
+                          metinRengi,
+                          kart === "var" ? kartRengi : arkaPlan,
+                      )
+                    : 21;
                 return (
                     <div style={degiskenler}>
                         {oran < 4.5 ? (

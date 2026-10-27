@@ -77,6 +77,9 @@ export type KokProps = {
     ikinciRenk: string;
     zeminGorseli: string;
     karartma: number;
+    /** G6: "yok" = içerik doğrudan zeminde. */
+    kart: "yok" | "var";
+    kartRengi: string;
 };
 export type Bilesenler = {
     Tanitim: TanitimProps;
@@ -135,6 +138,8 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                     tema.zemin?.tur === "gorsel" ? tema.zemin.gorsel : "",
                 karartma:
                     tema.zemin?.tur === "gorsel" ? tema.zemin.karartma : 70,
+                kart: tema.kartRengi ? "var" : "yok",
+                kartRengi: tema.kartRengi ?? "#ffffff",
             },
         },
         content: tanim.adimlar.map((adim: Adim, i: number) => {
@@ -335,6 +340,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
             metinRengi: k.metinRengi,
             yaziTipi: k.yaziTipi,
             kose: Number(k.kose),
+            ...(k.kart === "var" ? { kartRengi: k.kartRengi } : {}),
             ...kokZemini(k),
         };
     }
