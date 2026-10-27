@@ -450,6 +450,45 @@ paths:
         "422": { description: İstem boş ya da çok uzun, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "429": { description: Saatlik sınır, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "503": { description: AI kapalı (anahtar yok), content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar:
+    get:
+      operationId: panelUygulamalari
+      summary: Paneldeki uygulamalar (A4)
+      responses:
+        "200":
+          description: Uygulama adları
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [uygulamalar]
+                properties:
+                  uygulamalar: { type: array, items: { type: string } }
+  /panel/api/uygulamalar/{app}/baglam:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelUrunBaglami
+      summary: Uygulamanın ürün bağlamı (A4) — AI asistanının sistem istemine girer
+      responses:
+        "200": { description: Bağlam (boş alanlar ""), content: { application/json: { schema: { $ref: "#/components/schemas/UrunBaglami" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    put:
+      operationId: panelUrunBaglamiKaydet
+      summary: Ürün bağlamını kaydeder (tamamını)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, description: Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u), schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UrunBaglami" }
+      responses:
+        "200": { description: Kaydedilen bağlam, content: { application/json: { schema: { $ref: "#/components/schemas/UrunBaglami" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Alan çok uzun ya da geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -474,6 +513,17 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
   schemas:
+    UrunBaglami:
+      description: "A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar"
+      type: object
+      additionalProperties: false
+      required: [urun, kategori, kitle, ton, yasaklar]
+      properties:
+        urun: { type: string, maxLength: 1000, description: Ürün ne yapıyor }
+        kategori: { type: string, maxLength: 100 }
+        kitle: { type: string, maxLength: 500, description: Hedef kitle }
+        ton: { type: string, maxLength: 200, description: Metinlerin tonu }
+        yasaklar: { type: string, maxLength: 1000, description: Asla yazılmayacaklar / kaçınılacaklar }
     PanelHatalari:
       type: object
       additionalProperties: false

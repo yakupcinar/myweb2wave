@@ -27,7 +27,7 @@ final class PanelAiTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, medya, ai_istekleri');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, medya, ai_istekleri, uygulama_baglamlari');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
@@ -135,6 +135,7 @@ final class PanelAiTest extends WebTestCase
         self::assertSame('default', self::yol($g, 'fallbacks'));
         self::assertStringContainsString('server-side-fallback-2026-07-01', implode("\n", SahteClaude::$basliklar[0]));
         self::assertSame(['type' => 'ephemeral'], self::yol($g, 'system', 0, 'cache_control'));
+        self::assertCount(1, (array) self::yol($g, 'system'), 'bağlam yokken ek blok yok');
         // Açık huni kapsamı: yeni huni yok, yayınlama yok.
         $araclar = self::yol($g, 'tools');
         self::assertIsArray($araclar);
@@ -147,6 +148,28 @@ final class PanelAiTest extends WebTestCase
         $ilk = self::metin(self::yol($g, 'messages', 0, 'content'));
         self::assertStringContainsString('Başlığı değiştir', $ilk);
         self::assertStringContainsString((string) $this->huniler->taslakImzasi('keepchat', 'genel'), $ilk);
+    }
+
+    /** A4: ürün bağlamı sistem isteminde ayrı blok; önbellek işareti yalnız SON blokta (öncesini de kapsar). */
+    public function testUrunBaglamiSistemIstemine(): void
+    {
+        $this->girisYap();
+        $this->db->insert('uygulama_baglamlari', ['app' => 'keepchat', 'kitle' => 'Aileler', 'yasaklar' => 'Rakip adı verme']);
+        SahteClaude::sirala([SahteClaude::metin('Tamam.')]);
+
+        $this->sohbet('Başlığı değiştir');
+
+        $sistem = self::yol(SahteClaude::$istekler[0], 'system');
+        self::assertIsArray($sistem);
+        self::assertCount(2, $sistem);
+        $ilk = self::yol($sistem, 0);
+        self::assertIsArray($ilk);
+        self::assertArrayNotHasKey('cache_control', $ilk);
+        self::assertSame(['type' => 'ephemeral'], self::yol($sistem, 1, 'cache_control'));
+        $baglam = self::metin(self::yol($sistem, 1, 'text'));
+        self::assertStringContainsString('Hedef kitle: Aileler', $baglam);
+        self::assertStringContainsString('Asla yazma / kaçın: Rakip adı verme', $baglam);
+        self::assertStringNotContainsString('Kategori:', $baglam, 'boş alan gönderilmez');
     }
 
     public function testTurSiniriDonguyuKeser(): void

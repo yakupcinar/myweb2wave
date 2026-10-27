@@ -124,7 +124,7 @@
   - [x] **A1** · konsol: `app:huni-arac <app> <araç>` (JSON `--girdi`/stdin) — Claude Code depodan promptla huni kurar; `ai-a1-konsol.md`
   - [x] **A2** · panel AI arka ucu (`ai-a2-panel-arka-uc.md`; gerçek Claude ölçülmedi — anahtar yok): `/panel/api/ai/sohbet` (oturum+CSRF, SSE akış), PHP SDK tool runner, `claude-opus-5-5`, doğrulama döngüsü, yalnız taslak, tur/jeton/hız sınırı, istek kaydı + maliyet; sahte API ile testler (`SahteRevenueCat` deseni). **Anahtar yok (kullanıcı 2026-10-27, boş kalacak)** → anahtar boşsa panelde "AI kapalı", istek gitmez; testler sahte API'yle; anahtarı kullanıcı `core/.env.local`'e kendisi yazar
   - [x] **A3** · panel AI arayüzü: Puck eklentisi (sohbet, canlı adımlar, geri al) — `ai-a3-panel-arayuz.md`; "AI ile yeni huni" P2'ye ertelendi
-  - [ ] **A4** · ürün bağlamı: uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine
+  - [x] **A4** · ürün bağlamı (`ai-a4-urun-baglami.md`): uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine
   - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
   - [ ] **A5** · MCP sunucusu: aynı araçlar; önce stdio (yerel, Claude Desktop/Code), dağıtımdan sonra HTTP `/mcp` + uygulama başına belirteç; yıkıcı araç yok

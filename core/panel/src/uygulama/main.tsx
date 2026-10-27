@@ -7,13 +7,17 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
+import { Baglam } from "./sayfalar/Baglam";
 import { Rapor } from "./sayfalar/Rapor";
 
 export const yollar = [
     {
         path: "/panel",
         element: <Duzen />,
-        children: [{ index: true, element: <Rapor /> }],
+        children: [
+            { index: true, element: <Rapor /> },
+            { path: "baglam", element: <Baglam /> },
+        ],
     },
 ];
 

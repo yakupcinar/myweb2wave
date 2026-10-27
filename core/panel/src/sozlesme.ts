@@ -246,10 +246,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paneldeki uygulamalar (A4) */
+        get: operations["panelUygulamalari"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/baglam": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** Uygulamanın ürün bağlamı (A4) — AI asistanının sistem istemine girer */
+        get: operations["panelUrunBaglami"];
+        /** Ürün bağlamını kaydeder (tamamını) */
+        put: operations["panelUrunBaglamiKaydet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar */
+        UrunBaglami: {
+            /** @description Ürün ne yapıyor */
+            urun: string;
+            kategori: string;
+            /** @description Hedef kitle */
+            kitle: string;
+            /** @description Metinlerin tonu */
+            ton: string;
+            /** @description Asla yazılmayacaklar / kaçınılacaklar */
+            yasaklar: string;
+        };
         PanelHatalari: {
             hatalar: string[];
         };
@@ -1174,6 +1223,115 @@ export interface operations {
             };
             /** @description AI kapalı (anahtar yok) */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUygulamalari: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uygulama adları */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        uygulamalar: string[];
+                    };
+                };
+            };
+        };
+    };
+    panelUrunBaglami: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlam (boş alanlar "") */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UrunBaglami"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUrunBaglamiKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UrunBaglami"];
+            };
+        };
+        responses: {
+            /** @description Kaydedilen bağlam */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UrunBaglami"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Alan çok uzun ya da geçersiz */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

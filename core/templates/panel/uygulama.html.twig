@@ -11,6 +11,6 @@
         <script type="module" src="{{ betik }}"></script>
     </head>
     <body>
-        <div id="panel-uygulama"></div>
+        <div id="panel-uygulama" data-jeton="{{ csrf_token(constant('App\\Controller\\PanelUygulamaController::JETON')) }}"></div>
     </body>
 </html>

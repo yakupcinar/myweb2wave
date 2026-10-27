@@ -46,6 +46,7 @@ final readonly class HuniAsistani
         private AiAyarlari $ayarlar,
         private HuniAraclari $araclar,
         private Huniler $huniler,
+        private UrunBaglami $baglam,
         private Connection $db,
         private HttpClientInterface $http,
     ) {
@@ -78,6 +79,18 @@ final readonly class HuniAsistani
                 'inputSchema' => $a['input_schema'],
             ], $this->araclar->tanimlar($kapsam));
             $efor = Effort::from($this->ayarlar->efor);
+            // Önbellek: araçlar + sistem istemi (+ A4 ürün bağlamı) her turda aynı
+            // önek; işaret SON blokta, öncesini de kapsar.
+            $metinler = [$this->sistemIstemi($kapsam)];
+            if (null !== $baglam = $this->baglam->istemMetni($app)) {
+                $metinler[] = $baglam;
+            }
+            $son = \count($metinler) - 1;
+            $sistem = array_map(
+                static fn (string $m, int $i): BetaTextBlockParam => BetaTextBlockParam::with(text: $m, cacheControl: $i === $son ? ['type' => 'ephemeral'] : null),
+                $metinler,
+                array_keys($metinler),
+            );
             $mesajlar = [BetaMessageParam::with(content: $this->ilkMesaj($app, $huni, $istem), role: 'user')];
 
             while (true) {
@@ -93,8 +106,7 @@ final readonly class HuniAsistani
                     model: $this->ayarlar->model,
                     fallbacks: 'default',
                     outputConfig: ['effort' => $efor],
-                    // Önbellek: araçlar + sistem istemi her istekte aynı (önek).
-                    system: [['type' => 'text', 'text' => $this->sistemIstemi($kapsam), 'cacheControl' => ['type' => 'ephemeral']]],
+                    system: $sistem,
                     tools: $araclar,
                     betas: [self::YEDEK_BETA],
                 );

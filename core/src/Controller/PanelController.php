@@ -26,6 +26,7 @@ final class PanelController extends AbstractController
      * veriler /panel/api/* uçlarından. Derlenmemişse açık hata.
      */
     #[Route('/panel', name: 'panel', methods: ['GET'])]
+    #[Route('/panel/baglam', name: 'panel_baglam', methods: ['GET'])]
     public function uygulama(Varliklar $varliklar): Response
     {
         $giris = $varliklar->giris('src/uygulama/main.tsx');
