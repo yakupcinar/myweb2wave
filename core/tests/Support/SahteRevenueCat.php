@@ -49,6 +49,10 @@ final class SahteRevenueCat
     /** @param array<string, mixed> $secenekler */
     public function __invoke(string $method, string $url, array $secenekler = []): ResponseInterface
     {
+        // Tek sahte fabrika (mock_response_factory); Claude istekleri ayrı kayıtta (A2).
+        if (str_starts_with($url, 'https://api.anthropic.com/')) {
+            return (new SahteClaude())($method, $url, $secenekler);
+        }
         $basliklar = $secenekler['headers'] ?? [];
         $govde = $secenekler['body'] ?? '';
         self::$istekler[] = [

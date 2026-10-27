@@ -407,6 +407,49 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PanelRaporu" }
+  /panel/api/ai/durum:
+    get:
+      operationId: panelAiDurumu
+      summary: Panel AI asistanı açık mı (A2) — anahtar yoksa kapalı
+      responses:
+        "200":
+          description: Durum
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PanelAiDurumu" }
+  /panel/api/ai/huniler/{app}/{huni}/sohbet:
+    post:
+      operationId: panelAiSohbet
+      summary: İstemi açık huninin TASLAĞINA uygular (A2); ilerleme Server-Sent Events. Yayınlamaz.
+      parameters:
+        - { name: app, in: path, required: true, schema: { type: string } }
+        - { name: huni, in: path, required: true, schema: { $ref: "#/components/schemas/HuniKimligi" } }
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          description: Düzenleyici sayfasının jetonu (huni-<app>)
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [istem]
+              properties:
+                istem: { type: string, minLength: 1, maxLength: 4000 }
+      responses:
+        "200":
+          description: "Olay akışı: her olay `event: <tur>` + `data: <JSON>` (PanelAiOlayi); son olay bitti"
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Huni yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: İstem boş ya da çok uzun, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "429": { description: Saatlik sınır, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "503": { description: AI kapalı (anahtar yok), content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -431,6 +474,36 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
   schemas:
+    PanelHatalari:
+      type: object
+      additionalProperties: false
+      required: [hatalar]
+      properties:
+        hatalar: { type: array, items: { type: string } }
+    PanelAiDurumu:
+      type: object
+      additionalProperties: false
+      required: [acik, model]
+      properties:
+        acik: { type: boolean }
+        model: { type: string }
+    PanelAiOlayi:
+      description: "SSE olayının data alanı; tur, event satırıyla aynı"
+      oneOf:
+        - { type: object, additionalProperties: false, required: [tur, metin], properties: { tur: { type: string, enum: [metin] }, metin: { type: string } } }
+        - { type: object, additionalProperties: false, required: [tur, ad], properties: { tur: { type: string, enum: [arac] }, ad: { type: string } } }
+        - { type: object, additionalProperties: false, required: [tur, ad, hata], properties: { tur: { type: string, enum: [arac_sonucu] }, ad: { type: string }, hata: { type: boolean } } }
+        - { type: object, additionalProperties: false, required: [tur, imza], properties: { tur: { type: string, enum: [taslak] }, imza: { type: [string, "null"] } } }
+        - { type: object, additionalProperties: false, required: [tur, mesaj], properties: { tur: { type: string, enum: [hata] }, mesaj: { type: string } } }
+        - type: object
+          additionalProperties: false
+          required: [tur, sonuc, kaydedildi, tur_sayisi, maliyetMikrodolar]
+          properties:
+            tur: { type: string, enum: [bitti] }
+            sonuc: { type: string, enum: [tamam, tur_siniri, reddedildi, jeton_siniri, hata] }
+            kaydedildi: { type: boolean }
+            tur_sayisi: { type: integer, minimum: 0 }
+            maliyetMikrodolar: { type: [integer, "null"] }
     PanelSayimi:
       type: object
       additionalProperties: false

@@ -212,10 +212,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/ai/durum": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panel AI asistanı açık mı (A2) — anahtar yoksa kapalı */
+        get: operations["panelAiDurumu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/ai/huniler/{app}/{huni}/sohbet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** İstemi açık huninin TASLAĞINA uygular (A2); ilerleme Server-Sent Events. Yayınlamaz. */
+        post: operations["panelAiSohbet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        PanelHatalari: {
+            hatalar: string[];
+        };
+        PanelAiDurumu: {
+            acik: boolean;
+            model: string;
+        };
+        /** @description SSE olayının data alanı; tur, event satırıyla aynı */
+        PanelAiOlayi: {
+            /** @enum {string} */
+            tur: "metin";
+            metin: string;
+        } | {
+            /** @enum {string} */
+            tur: "arac";
+            ad: string;
+        } | {
+            /** @enum {string} */
+            tur: "arac_sonucu";
+            ad: string;
+            hata: boolean;
+        } | {
+            /** @enum {string} */
+            tur: "taslak";
+            imza: string | null;
+        } | {
+            /** @enum {string} */
+            tur: "hata";
+            mesaj: string;
+        } | {
+            /** @enum {string} */
+            tur: "bitti";
+            /** @enum {string} */
+            sonuc: "tamam" | "tur_siniri" | "reddedildi" | "jeton_siniri" | "hata";
+            kaydedildi: boolean;
+            tur_sayisi: number;
+            maliyetMikrodolar: number | null;
+        };
         PanelSayimi: {
             ziyaret: number;
             odemeye_gecti: number;
@@ -1009,6 +1081,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PanelRaporu"];
+                };
+            };
+        };
+    };
+    panelAiDurumu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Durum */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelAiDurumu"];
+                };
+            };
+        };
+    };
+    panelAiSohbet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Düzenleyici sayfasının jetonu (huni-<app>) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                huni: components["schemas"]["HuniKimligi"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    istem: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Olay akışı: her olay `event: <tur>` + `data: <JSON>` (PanelAiOlayi); son olay bitti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Huni yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description İstem boş ya da çok uzun */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Saatlik sınır */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description AI kapalı (anahtar yok) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
                 };
             };
         };
