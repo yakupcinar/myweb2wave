@@ -19,4 +19,5 @@ G3 ekran panosunda aynı temada düğme bazen varsayılan mavi, bazen tema rengi
 - Kırma 11/11 kırmızı: K1 `zemin` alan denetiminden düşmez · K2 geçiş kontrastı yok · K3 yalnız siyah görsel denetlenir (açık metinde beyaz görsel bağlayıcı) · K4 karartma sınırı yok · K5 zemin görseli sahiplik dışı · K6 medya kökü yok · K7 CSS yedeği yok · K8 alt çubuk eski renge solar · K9 Puck'tan zemin çıkmaz · **K10 Puck dış kutusu zemini çizmez — ilk denemede tutmadı (test yoktu) → `onizleme.test.tsx`'e test eklendi, K10b kırmızı** · K11 AI örneklerinde zemin yok.
 - Gerçek sistem (konsol aracı, KeepChat `genel` taslağı; önce yedeklendi, sonra **aynen geri yüklendi** — tanım ve imza yedekle eşit): karartma %30 → "en az %64 olmalı (şu an %30)"; geçiş (#0b1120 → #1e3a8a) ve görsel (%70) kaydedildi, üç adımın ekran görüntüsü okunur.
 - `bin/kontrol` yeşil (283 çekirdek testi).
+- CI: koşu 40514023120, SHA 401ff9b, `KONTROL: YEŞİL`, 283 test.
 - **Ölçülmedi:** Puck düzenleyicide yeni alanların görsel kontrolü (tarayıcıda açılmadı); iOS Safari'de `background` + yapışık çubuk davranışı.
