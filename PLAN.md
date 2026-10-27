@@ -120,11 +120,13 @@
   - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
 - [ ] **Huni görünüm yüzeyi** (Ç71 (b); kullanıcı 2026-10-27: "AI birebir aynı quiz verdi, renk farkı yok yazı farkı yok"). Bugün görünüm = huni başına 5 tema alanı + logo; adım başına çeşit yok. (a) AI yönergesi yapıldı (`docs/decisions/ai-tema-yonergesi.md`). Her adım `/blok`; her yeni alan = sözleşme `HuniTemasi`/adım şeması + `Tema.php`/`Tanim.php` + `huni-bilesenleri` + Puck alanı + `Tema::aiYonergesi` örnekleri (AI ancak sözleşmedekini üretebilir):
-  - [ ] G1 · ölç: web2wave + örnek huni repolarındaki görünüm seçenekleri; hangi ayar ekranda en çok fark yaratır → sıra (kod alınmaz, kural 12)
-  - [ ] G2 · yazı tipleri: daha çok cihaz yığını ya da kendi sunucumuzdan font — dış font yasak (KVKK, `Tema.php` başlığı) → kullanıcı kararı
-  - [ ] G3 · arka plan: renk geçişi / görsel (E2.3 görsel altyapısı), kontrast ölçümü korunur
-  - [ ] G4 · düğme biçimi (dolu / çerçeve / hap) + seçenek kartı düzeni (liste / ızgara / görselli)
-  - [ ] G5 · adım başına görünüm çeşidi (ör. tanıtım: görsel üstte / tam ekran) — T1 blok kataloğuyla çakışır, sırası orada kararlaştırılır
+  - [x] G1 · 2026-10-27, `docs/decisions/gorunum-g1.md`: envanter (web2wave, Formbricks) + 19 varyant × 3 adım ekran ölçümü; zemin baskın, yapısal ayarlar ikinci, düğme/köşe küçük. Sıra aşağıda (ölçüme göre); Ç75, Ç76
+  - [ ] G3 · arka plan: renk geçişi / görsel (+ karartma; E2.3 görsel altyapısı), kontrast ölçümü korunur — **en büyük etki**
+  - [ ] G6 · içerik kartı: zemin üstünde kart (arka plan, gölge/kenarlık)
+  - [ ] G7 · tipografi ölçeği + yoğunluk + hizalama — birkaç ön ayar (serbest piksel değil)
+  - [ ] G2 · yazı tipleri: kendi sunucumuzdan font — dış font yasak (KVKK, `Tema.php` başlığı) → kullanıcı kararı; ekran kabına aynı fontlar (Ç76)
+  - [ ] G5 · adım başına görünüm çeşidi (ör. tanıtım: görsel üstte / tam ekran) — boş alanı doldurur; T1 blok kataloğuyla çakışır, sırası orada kararlaştırılır
+  - [ ] G4 · düğme biçimi (dolu / çerçeve / hap) + seçenek kartı düzeni (liste / ızgara / görselli) — ölçülen etki düşük; ızgara soru adımında
 - [ ] **YOL HARİTASI — AI asistanı + platform temelleri** (kullanıcı 2026-10-27: "MCP'yi içine göm, prompt iç arayüzde"; araştırma `docs/decisions/ai-asistan-arastirmasi.md`, `web2wave-platform-yapisi.md`). Sıra bağımlılığa göre; her adım `/blok`, ayrı commit:
   - [x] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)
   - [x] **A1** · konsol: `app:huni-arac <app> <araç>` (JSON `--girdi`/stdin) — Claude Code depodan promptla huni kurar; `ai-a1-konsol.md`
