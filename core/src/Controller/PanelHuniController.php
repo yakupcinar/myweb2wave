@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Huni\Huniler;
 use App\Huni\Tema;
+use App\Panel\Varliklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,8 +33,7 @@ final class PanelHuniController extends AbstractController
         private readonly array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private readonly string $funnelBaseUrl,
-        #[Autowire('%kernel.project_dir%/public/varliklar/panel/.vite/manifest.json')]
-        private readonly string $editorManifesti,
+        private readonly Varliklar $varliklar,
     ) {
     }
 
@@ -131,18 +131,16 @@ final class PanelHuniController extends AbstractController
 
     /**
      * Huni düzenleyicisi (E2.4, React + Puck; b2: tek düzenleyici — klasik
-     * form düzenleyicisi kaldırıldı, Ç53). Betik/stil adresleri
-     * Vite manifestinden — içerik özetli adlar (tuzak §30). Derlenmemişse
-     * sessizce boş sayfa değil, açık hata.
+     * form düzenleyicisi kaldırıldı, Ç53). Betik/stil: Varliklar (manifest).
+     * Derlenmemişse sessizce boş sayfa değil, açık hata.
      */
     #[Route('/{app}/{ad}', name: 'panel_huni', methods: ['GET'])]
     public function duzenle(string $app, string $ad): Response
     {
         $this->uygulama($app);
         $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
-        $manifest = is_file($this->editorManifesti) ? json_decode((string) file_get_contents($this->editorManifesti), true) : null;
-        $giris = \is_array($manifest) && \is_array($manifest['src/main.tsx'] ?? null) ? $manifest['src/main.tsx'] : null;
-        if (null === $giris || !\is_string($giris['file'] ?? null)) {
+        $giris = $this->varliklar->giris('src/main.tsx');
+        if (null === $giris) {
             return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm panel npm run build', 503));
         }
 
@@ -154,8 +152,8 @@ final class PanelHuniController extends AbstractController
             'planlar' => array_keys($this->uygulamalar[$app]),
             'tema_varsayilan' => Tema::VARSAYILAN,
             'yazi_tipleri' => Tema::YAZI_TIPLERI,
-            'betik' => '/varliklar/panel/'.$giris['file'],
-            'stiller' => array_map(static fn (mixed $c): string => '/varliklar/panel/'.(\is_string($c) ? $c : ''), \is_array($giris['css'] ?? null) ? $giris['css'] : []),
+            'betik' => $giris['betik'],
+            'stiller' => $giris['stiller'],
         ]));
     }
 

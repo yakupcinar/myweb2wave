@@ -391,6 +391,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /panel/api/rapor:
+    get:
+      operationId: panelRaporu
+      summary: Panel raporu (A6/2, B5) — yalnız oturumlu yönetici; girişsizse güvenlik duvarı /panel/giris'e yönlendirir
+      parameters:
+        - name: gun
+          in: query
+          required: false
+          description: Zaman aralığı; tanınmayan değer 30 sayılır
+          schema: { type: integer, enum: [7, 30, 90], default: 30 }
+      responses:
+        "200":
+          description: Seçilen aralıktaki sayımlar, izin oranı, anket ve ziyaret satırları
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PanelRaporu" }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -415,6 +431,95 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
   schemas:
+    PanelSayimi:
+      type: object
+      additionalProperties: false
+      required: [ziyaret, odemeye_gecti, odedi]
+      properties:
+        ziyaret: { type: integer, minimum: 0 }
+        odemeye_gecti: { type: integer, minimum: 0 }
+        odedi: { type: integer, minimum: 0 }
+    PanelRaporu:
+      type: object
+      additionalProperties: false
+      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari]
+      properties:
+        gun: { type: integer, enum: [7, 30, 90] }
+        gunler:
+          type: array
+          items: { type: integer, enum: [7, 30, 90] }
+        azami:
+          description: Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar
+          type: integer
+        sayimlar:
+          type: object
+          additionalProperties: false
+          required: [reklam, organik]
+          properties:
+            reklam: { $ref: "#/components/schemas/PanelSayimi" }
+            organik: { $ref: "#/components/schemas/PanelSayimi" }
+        izinler:
+          description: Ç56 (3) — yalnız sayı, kim olduğu yok
+          type: object
+          additionalProperties: false
+          required: [kabul, red, secmeyen]
+          properties:
+            kabul: { type: integer, minimum: 0 }
+            red: { type: integer, minimum: 0 }
+            secmeyen: { type: integer, minimum: 0 }
+        satirlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [zaman, app, huni, kaynak, kampanya, reklam, asama, durum, email]
+            properties:
+              zaman: { type: string }
+              app: { type: string }
+              huni: { type: [string, "null"] }
+              kaynak: { type: string }
+              kampanya: { type: [string, "null"] }
+              reklam: { type: boolean }
+              asama: { type: string, enum: ["sayfayı gördü", "ödemeye geçti", "ödedi"] }
+              durum: { type: [string, "null"] }
+              email:
+                description: Maskeli (a***@example.com); açık e-posta panele hiç gelmez
+                type: [string, "null"]
+        adimlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [app, huni, sira, adim, ulasan]
+            properties:
+              app: { type: string }
+              huni: { type: string }
+              sira: { type: integer, minimum: 0 }
+              adim: { type: string }
+              ulasan: { type: integer, minimum: 0 }
+        cevaplar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [app, soru, secenek, sayi]
+            properties:
+              app: { type: string }
+              soru: { type: string }
+              secenek: { type: string }
+              sayi: { type: integer, minimum: 0 }
+        metinCevaplari:
+          description: 90 gün içinde, en yeni azami kadar
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [zaman, app, soru, cevap]
+            properties:
+              zaman: { type: string }
+              app: { type: string }
+              soru: { type: string }
+              cevap: { type: string }
     AtifAlani:
       type: string
       maxLength: 500

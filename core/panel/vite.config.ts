@@ -1,11 +1,13 @@
 // Panel (B5; E2.4 huni düzenleyicisi: React + Puck). Çıktı çekirdeğin public/
 // dizinine, içerik özetli adlarla (tuzak §30) + manifest; Twig manifestten okur.
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
     plugins: [
         react(),
+        tailwindcss(),
         {
             // Bekçi: dedupe kalkarsa derleme kırmızı (kırma denemesiyle ölçüldü).
             name: "tek-react",
@@ -24,6 +26,8 @@ export default defineConfig({
         outDir: "../public/varliklar/panel",
         emptyOutDir: true,
         manifest: true,
-        rollupOptions: { input: "src/main.tsx" },
+        // İki giriş (B5 geçişi): düzenleyici sayfası ve panel uygulaması;
+        // P3'te düzenleyici uygulamanın sayfası olur.
+        rollupOptions: { input: ["src/main.tsx", "src/uygulama/main.tsx"] },
     },
 });

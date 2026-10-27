@@ -195,10 +195,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/rapor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panel raporu (A6/2, B5) — yalnız oturumlu yönetici; girişsizse güvenlik duvarı /panel/giris'e yönlendirir */
+        get: operations["panelRaporu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        PanelSayimi: {
+            ziyaret: number;
+            odemeye_gecti: number;
+            odedi: number;
+        };
+        PanelRaporu: {
+            /** @enum {integer} */
+            gun: 7 | 30 | 90;
+            gunler: (7 | 30 | 90)[];
+            /** @description Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar */
+            azami: number;
+            sayimlar: {
+                reklam: components["schemas"]["PanelSayimi"];
+                organik: components["schemas"]["PanelSayimi"];
+            };
+            /** @description Ç56 (3) — yalnız sayı, kim olduğu yok */
+            izinler: {
+                kabul: number;
+                red: number;
+                secmeyen: number;
+            };
+            satirlar: {
+                zaman: string;
+                app: string;
+                huni: string | null;
+                kaynak: string;
+                kampanya: string | null;
+                reklam: boolean;
+                /** @enum {string} */
+                asama: "sayfayı gördü" | "ödemeye geçti" | "ödedi";
+                durum: string | null;
+                /** @description Maskeli (a***@example.com); açık e-posta panele hiç gelmez */
+                email: string | null;
+            }[];
+            adimlar: {
+                app: string;
+                huni: string;
+                sira: number;
+                adim: string;
+                ulasan: number;
+            }[];
+            cevaplar: {
+                app: string;
+                soru: string;
+                secenek: string;
+                sayi: number;
+            }[];
+            /** @description 90 gün içinde, en yeni azami kadar */
+            metinCevaplari: {
+                zaman: string;
+                app: string;
+                soru: string;
+                cevap: string;
+            }[];
+        };
         AtifAlani: string;
         HuniYayini: {
             huni: components["schemas"]["HuniKimligi"];
@@ -914,6 +986,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    panelRaporu: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Seçilen aralıktaki sayımlar, izin oranı, anket ve ziyaret satırları */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelRaporu"];
                 };
             };
         };

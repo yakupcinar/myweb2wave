@@ -40,3 +40,41 @@ Geçmiş kayıtlardaki `core/editor` anmaları tarih olarak bırakıldı.
   K2 betik adresi eski yol → `PanelHuniTest` 1 kırmızı 🔴.
 - `bin/kontrol` **YEŞİL**, EXIT=0 (panel-npm/biçim/tip/test/derle, 233
   çekirdek testi).
+
+## P1 — iskelet + Rapor (2026-10-27)
+**Kurulan:** `core/panel/src/uygulama/` — `main.tsx` (React Router
+`createBrowserRouter`, TanStack Query; yollar dışa açık → test aynı ağacı
+bellek yönlendiricisiyle kurar), `Duzen.tsx` (sol menü, `NavLink` →
+`aria-current`; Huniler P2'ye kadar düz bağlantı), `api.ts` (openapi-fetch,
+tipler sözleşmeden; `oturumDustu` → girişe), `ui/` (cn, Dugme, Kart, Rozet,
+Tablo — shadcn yöntemi, cva + tailwind-merge), `bicim.ts` (yüzde "33,3 %",
+UTC zaman), `stil.css` (Tailwind 4 `@theme`; açık/koyu değişkenler
+`panel-gorunum.md` ile aynı). Vite iki giriş: düzenleyici + uygulama.
+Sürümler iki haftadan eski (react-router 8.4.0, @tanstack/react-query
+5.104.2, radix-ui 1.8.1, tailwindcss 4.3.3, lucide-react 1.55.0; daha yeni
+olanlar bilerek alınmadı); openapi-fetch ve test araçları huniyle aynı.
+**Çekirdek:** `/panel` → `panel/uygulama.html.twig` kabuğu (`Varliklar`
+servisi manifestten; düzenleyici de onu kullanır), `/panel/api/rapor` JSON
+(sözleşme `PanelRaporu`), `panel/index.html.twig` silindi.
+**Testler kararla taşındı:** veri kararları (sayım, izin, gün aralığı, 30'a
+düşme, maskeli e-posta, anket, serbest yanıt, girişsiz → yönlendirme,
+başlıklar) `PanelTest`'te JSON + sözleşme doğrulaması; gösterim kararları
+(özet toplamı, yüzde biçimi, şerit genişliği, zararlı metin yazı olarak,
+menü işareti, gün adresten) `Rapor.test.tsx`'te.
+Marka bağlantısı ilk hâlinde `NavLink`'ti → "bulunulan sayfa" iki öğe;
+test yakaladı, düz `Link`.
+
+| # | Bozulan | Sonuç |
+|---|---|---|
+| K1 | özet yalnız reklam ziyareti | 🔴 Rapor.test |
+| K2 | şerit hep %100 | 🔴 (ilk deneme sed eşleşmedi → KOŞULMADI; yeniden) |
+| K3 | gün adresten okunmaz | 🔴 |
+| K4 | Rapor menüde düz Link | 🔴 |
+| K5 | JSON alanı sözleşme dışı ad | 🔴 7 (sözleşme doğrulaması) |
+| K6 | gün aralığı denetimi yok | 🔴 1 (sözleşme: enum) |
+
+**Gerçek:** derlenmiş panel, örnek yanıt veren statik önizlemede (oturum
+yok — panel şifresi bende değil) masaüstü 1280 px ve 235 px; görünüm Twig
+sürümüyle aynı. **Ölçülmedi:** canlı oturumla `/panel` (kullanıcıda).
+`bin/kontrol` **YEŞİL**, EXIT=0, 232 çekirdek testi / 1.653 doğrulama
+(ilk koşu phpstan: testteki JSON dizisi tipi; `@var` atama satırına).
