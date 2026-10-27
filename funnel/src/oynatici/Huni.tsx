@@ -241,7 +241,7 @@ function Oynatici({
           ) : null}
         </div>
       ) : null}
-      <div ref={kutu} data-gecis={gecti ? "" : undefined}>
+      <div ref={kutu} className="adimlar" data-gecis={gecti ? "" : undefined}>
         {tanim.adimlar.map((adim, i) => {
           const soru = adim.tur === "soru" ? adim : null;
           const cevaplar = soru ? (secimler[soru.id] ?? []) : [];

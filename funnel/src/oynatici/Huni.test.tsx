@@ -586,6 +586,13 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     // Geri sütunu ilk adımda da üst çubukta yer tutar: ikinci adımda
     // ilerleme çubuğu ve içerik kaymaz.
     expect(document.querySelector(".ust-cubuk > progress")).not.toBeNull();
+    // Mobil görünüm: ana düğme adımın .eylem alanında (CSS onu .adimlar
+    // altında alta yapıştırır).
+    expect(
+      document.querySelector(
+        '.adimlar > [data-sira="0"] > section > .eylem > button.ana',
+      ),
+    ).not.toBeNull();
     // İlk kaydı effect yazar; beklenmezse geçmiş null kalır (aralıklı, §33).
     await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
     fireEvent.click(screen.getByText("Başla"));

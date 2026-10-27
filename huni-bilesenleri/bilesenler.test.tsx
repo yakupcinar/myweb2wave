@@ -112,8 +112,11 @@ describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
         expect(html).toContain(
             '<ul class="faydalar"><li>Sınırsız sohbet</li><li>Reklamsız</li></ul>',
         );
-        // Ç19/Ç21: Stripe'tan gelen fiyat metnin altında.
-        expect(html).toContain('<p>9,99 €</p><p class="fiyat">€9,99 / ay</p>');
+        // Ç19/Ç21: Stripe'tan gelen fiyat faydaların altında, seçili plan
+        // kartında; düğme hemen ardından (mobil görünüm).
+        expect(html).toContain(
+            '</ul><div class="plan-karti"><span class="isaret" aria-hidden="true"></span><p class="fiyat">€9,99 / ay</p></div><div class="eylem">',
+        );
         expect(html).toContain(
             '<a href="https://ornek.com/sartlar" target="_blank" rel="noopener noreferrer">Kullanım şartları</a>',
         );
@@ -208,7 +211,7 @@ describe("DOM huni sayfasıyla aynı", () => {
             '<button type="button" class="ana">Abone ol',
         );
         expect(soru()).toMatch(
-            /<div class="secenekler"><button type="button">.*<span>Ailemle<\/span>/,
+            /<div class="secenekler" data-tur="tekli"><button type="button">.*<span>Ailemle<\/span><span class="isaret" aria-hidden="true"><\/span>/,
         );
     });
     it("yorum metnini kaynak adıyla alıntı olarak gösterir ve devam eder", () => {
@@ -260,6 +263,13 @@ describe("DOM huni sayfasıyla aynı", () => {
             ).toBeGreaterThanOrEqual(44);
         }
     });
+    it("yapışık ana düğme yalnız huni oynatıcısında (.adimlar), panelde değil", () => {
+        // Puck önizlemesinde adımlar alt alta: yapışık düğme her adımı kaplardı.
+        const yapisik = [
+            ...css.matchAll(/([^{}]+)\{[^}]*position:\s*sticky[^}]*\}/g),
+        ].map((m) => (m[1] ?? "").replace(/\/\*[\s\S]*?\*\//g, "").trim());
+        expect(yapisik).toEqual([".huni .adimlar .eylem"]);
+    });
     it("bileşenlerin her sınıfı huni.css'te .huni altında boyanır", () => {
         const siniflar = new Set(
             Array.from(
@@ -277,10 +287,13 @@ describe("DOM huni sayfasıyla aynı", () => {
         );
         expect([...siniflar].sort()).toEqual([
             "ana",
+            "eylem",
             "faydalar",
             "fiyat",
+            "isaret",
             "kapak",
             "logo",
+            "plan-karti",
             "secenek-gorseli",
             "secenekler",
             "serbest-yanit",

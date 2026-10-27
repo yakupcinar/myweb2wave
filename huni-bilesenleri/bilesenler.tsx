@@ -39,6 +39,11 @@ export function Logo({
     return <Gorsel id={gorsel} medyaKoku={medyaKoku} sinif="logo" />;
 }
 
+/** Adımın ana düğmesi (ve ödeme hatası): huni oynatıcısında telefonda alta yapışır. */
+function Eylem({ children }: { children: ReactNode }): ReactNode {
+    return <div className="eylem">{children}</div>;
+}
+
 // Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
 type GorselAlani = {
     gorsel?: string | undefined;
@@ -73,9 +78,11 @@ export function Tanitim({
             ) : null}
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
-            <button type="button" className="ana" onClick={onDugme}>
-                {dugme}
-            </button>
+            <Eylem>
+                <button type="button" className="ana" onClick={onDugme}>
+                    {dugme}
+                </button>
+            </Eylem>
         </section>
     );
 }
@@ -131,7 +138,7 @@ export function Soru({
                     />
                 </label>
             ) : (
-                <div className="secenekler">
+                <div className="secenekler" data-tur={secimTuru}>
                     {secenekler.map((s, i) => (
                         <button
                             key={i}
@@ -160,24 +167,27 @@ export function Soru({
                                 />
                             ) : null}
                             <span>{s.metin}</span>
+                            <span className="isaret" aria-hidden="true" />
                         </button>
                     ))}
                 </div>
             )}
             {secimTuru === "coklu" || secimTuru === "metin" ? (
-                <button
-                    type="button"
-                    className="ana"
-                    disabled={
-                        (secimTuru === "coklu" && secili.length === 0) ||
-                        (secimTuru === "metin" &&
-                            yanitZorunlu &&
-                            !cevapMetni.trim())
-                    }
-                    onClick={onDevam}
-                >
-                    {devamDugmesi}
-                </button>
+                <Eylem>
+                    <button
+                        type="button"
+                        className="ana"
+                        disabled={
+                            (secimTuru === "coklu" && secili.length === 0) ||
+                            (secimTuru === "metin" &&
+                                yanitZorunlu &&
+                                !cevapMetni.trim())
+                        }
+                        onClick={onDevam}
+                    >
+                        {devamDugmesi}
+                    </button>
+                </Eylem>
             ) : null}
         </section>
     );
@@ -222,7 +232,6 @@ export function Paywall({
         <section>
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
-            {fiyat ? <p className="fiyat">{fiyat}</p> : null}
             {faydalar.length ? (
                 <ul className="faydalar">
                     {faydalar.map((f, i) => (
@@ -230,15 +239,24 @@ export function Paywall({
                     ))}
                 </ul>
             ) : null}
-            <button
-                type="button"
-                className="ana"
-                onClick={onDugme}
-                disabled={kapali}
-            >
-                {dugme}
-            </button>
-            {hata ? <p role="alert">{hata}</p> : null}
+            {fiyat ? (
+                // Tek plan: kart seçili görünür (ödeme adımındaki plan bu).
+                <div className="plan-karti">
+                    <span className="isaret" aria-hidden="true" />
+                    <p className="fiyat">{fiyat}</p>
+                </div>
+            ) : null}
+            <Eylem>
+                {hata ? <p role="alert">{hata}</p> : null}
+                <button
+                    type="button"
+                    className="ana"
+                    onClick={onDugme}
+                    disabled={kapali}
+                >
+                    {dugme}
+                </button>
+            </Eylem>
             {baglantilar.length ? (
                 <p className="yasal">
                     {baglantilar.map(([alan, ad], i) => (
@@ -283,9 +301,11 @@ export function Yorum({
                     {unvan ? ` · ${unvan}` : null}
                 </footer>
             </blockquote>
-            <button type="button" className="ana" onClick={onDugme}>
-                {dugme}
-            </button>
+            <Eylem>
+                <button type="button" className="ana" onClick={onDugme}>
+                    {dugme}
+                </button>
+            </Eylem>
         </section>
     );
 }

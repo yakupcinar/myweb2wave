@@ -150,6 +150,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§35** | **Betikle doldurulan alanın DOM değeri uygulamanın durumu değildir** — olay görünmeyen kopyaya gitmiş olabilir; önce uygulamanın kendi göstergesini oku. |
 | **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi. |
 | **§37** | **iCloud'daki masaüstünde** üretilen dizinler (`var/cache`…) " 2" çakışma kopyası alır — `cache:clear` kod değişmeden kırmızı; önce `find . -name "* 2"`. |
+| **§38** | **Docker'daki Vite sunucusu macOS'taki dosya değişikliğini görmeyebilir** — tarayıcı eski stili hatasız çizer; önce sunulan dosyayı `curl` ile oku, eskiyse kabı yeniden başlat. |
 
 ---
 

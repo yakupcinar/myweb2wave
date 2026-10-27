@@ -221,3 +221,13 @@ ona takılıyor. **Ölçüm (2026-10-26):** `defaults read com.apple.finder
 FXICloudDriveDesktop` = 1; `find core/var -name "* 2"` üç dizin; `du` 0 B,
 bağlantı sayısı 65535; silmek 5 dk'yı aştı. **Doğrusu:** projeyi iCloud
 dışında tut (ya da `.nosync`); kırmızıda önce `find . -name "* 2"`.
+
+## §38 — Docker'daki Vite geliştirme sunucusu macOS'taki değişikliği görmez
+**Belirti:** `huni-bilesenleri/huni.css` değişti, testler yeni kuralı
+gördü; tarayıcı (yenileme dahil) **eski stili** çizdi, hata yok.
+**Sebep:** `huni-dev` kabı günlerdir açık; bağlı dizindeki dosya olayı
+kaba ulaşmadı, Vite modülü önbellekten verdi. **Ölçüm (2026-10-27,
+`huni-mobil-gorunum.md`):** `curl …/@fs/huni-bilesenleri/huni.css` yeni
+sınıfı **0** kez, aynı adres `?t=1` ile **1** kez içerdi; kap yeniden
+başlayınca 1. **Doğrusu:** tarayıcıda görsel ölçümden önce sunulan dosyayı
+`curl` ile oku; eskiyse `docker restart huni-dev`.

@@ -113,6 +113,12 @@
   - [ ] L18 · Ç23 ölü bağlantı denetimi · Ç14 Dependabot
   - [ ] L19 · Ç54 yöne göre geçiş + yumuşak ilerleme çubuğu
   - [ ] L20 · Ç50 Preact denemesi (ölç; iyiyse geç)
+- [ ] **Huni mobil görünüm** (kullanıcı 2026-10-27: "huniyi sevmedim, örnek repolara bak"; yön: mobil uygulama gibi). `docs/decisions/huni-mobil-gorunum.md`
+  - [x] 1 · görünüm: seçenek kartları + işaret, alta yapışık düğme, plan kartı — 2026-10-27
+  - [x] 2 · tek seçimde otomatik ilerleme — zaten vardı
+  - [ ] 3 · seçenek simgesi (emoji): sözleşme + çekirdek + Puck alanı
+  - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
+  - [ ] 5 · başarı / iptal sayfaları aynı görünümde
 
 ## 2. Backlog
 
