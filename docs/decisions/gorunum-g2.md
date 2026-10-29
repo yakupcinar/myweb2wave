@@ -16,5 +16,6 @@ Kullanıcı: önce "sunucu mu soruyorsun?" — hayır, fontların **nereden** ge
 - Kırma 8/8 kırmızı: K1 `@import` yok · K2 yuvarlak Nunito'suz · K3 dosya yok · K4 Google adresi · K5 PHP listesi eksik · K6 `swap` yok · K7 AI örneği eski font · **K8 bütçe — ilk deneme tutmadı: yerine konan dosyayla toplam 71,7 KB, sınırın altındaydı (denemenin kusuru); K8b 90 KB'lık dosyayla kırmızı (127 788 > 81 920).** Prettier `fontlar.css`'te tırnağı değiştirince test tek tırnağa bağlıydı → tırnaktan bağımsız yapıldı, K3 yeniden koşuldu: kırmızı.
 - Derleme: huni ve panel çıktısında 8 `.woff2` içerik özetli adla; çıktılarda dış font adresi yok.
 - Gerçek sistem (ekran kabı, KeepChat taslağı yedeklendi → **aynen geri yüklendi**): beş yazı tipi çekildi — Lora, Nunito, Manrope, Outfit gerçekten çiziliyor (sistemden ~%2,7 piksel farklı; G1'de `yuvarlak` kapta sistemle aynıydı, fark %0); Türkçe karakterler doğru.
+- CI: koşu 40966250257, SHA a5fde31, `KONTROL: YEŞİL`, 289 test (imaj ve derleme sıfırdan).
 - `bin/kontrol` yeşil (289 çekirdek testi).
 - **Ölçülmedi:** gerçek iPhone/Android'de ilk yükleme süresi ve font değişimi anı (FOUT); yavaş ağda.
