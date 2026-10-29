@@ -23,7 +23,7 @@ import {
     temaDegiskenleri,
     VARSAYILAN_TEMA,
 } from "../../../huni-bilesenleri/tema";
-import { kokZemini } from "./donustur";
+import { kokOnAyarlari, kokZemini } from "./donustur";
 import type { Bilesenler, KokProps, SecenekProps, SoruProps } from "./donustur";
 
 export type Ortam = {
@@ -452,6 +452,33 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     ],
                 },
                 kartRengi: renkAlani("Kart rengi"),
+                // G7: ön ayarlar (serbest piksel değil).
+                baslikBoyu: {
+                    type: "radio",
+                    label: "Başlık boyu",
+                    options: [
+                        { label: "Küçük", value: "kucuk" },
+                        { label: "Normal", value: "normal" },
+                        { label: "Büyük", value: "buyuk" },
+                    ],
+                },
+                yogunluk: {
+                    type: "radio",
+                    label: "Boşluk",
+                    options: [
+                        { label: "Sık", value: "sik" },
+                        { label: "Normal", value: "normal" },
+                        { label: "Ferah", value: "ferah" },
+                    ],
+                },
+                hizalama: {
+                    type: "radio",
+                    label: "Başlık hizası",
+                    options: [
+                        { label: "Sol", value: "sol" },
+                        { label: "Orta", value: "orta" },
+                    ],
+                },
             },
             render: ({
                 children,
@@ -468,6 +495,9 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 karartma,
                 kart,
                 kartRengi,
+                baslikBoyu,
+                yogunluk,
+                hizalama,
             }) => {
                 const tema = ozelTema === "evet";
                 // Dış kutu huni sayfasındaki <body>'nin yerine: arka plan
@@ -482,6 +512,11 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                   yaziTipi,
                                   kose,
                                   ...(kart === "var" ? { kartRengi } : {}),
+                                  ...kokOnAyarlari({
+                                      baslikBoyu,
+                                      yogunluk,
+                                      hizalama,
+                                  }),
                                   ...kokZemini({
                                       zeminTuru,
                                       ikinciRenk,

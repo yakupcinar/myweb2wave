@@ -156,6 +156,28 @@ describe("önizleme = huni: tema", () => {
         );
         expect(cikti).toContain("background:var(--zemin, var(--arka))");
     });
+    it("G7 ön ayarları dış kutuda değişken olarak", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        const cikti = html(
+            kok({
+                ...tanimdanPuck(
+                    {
+                        ...tanim,
+                        tema: {
+                            ...tanim.tema!,
+                            baslikBoyu: "buyuk",
+                            hizalama: "orta",
+                        },
+                    },
+                    VARSAYILAN,
+                ).root.props,
+                children: "ICERIK",
+                puck: {},
+            }),
+        );
+        expect(cikti).toContain("--baslik-boyu:36px");
+        expect(cikti).toContain("--hiza:center");
+    });
     it("G6 kart → --kart değişkeni dış kutuda (.huni kartı çizer)", () => {
         const kok = yap.root?.render as (p: unknown) => ReactNode;
         const ciz = (kartRengi: string): string =>

@@ -303,6 +303,24 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("G7 ön ayarlar: varsayılan dışı değerler gidiş-dönüş aynı; varsayılan yazılmaz", () => {
+        const ayarli: Tanim = {
+            ...temel,
+            tema: {
+                ...VARSAYILAN,
+                baslikBoyu: "buyuk",
+                yogunluk: "sik",
+                hizalama: "orta",
+            },
+        };
+        const veri = tanimdanPuck(ayarli, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(ayarli);
+        veri.root.props!.baslikBoyu = "normal";
+        veri.root.props!.yogunluk = "normal";
+        veri.root.props!.hizalama = "sol";
+        expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);

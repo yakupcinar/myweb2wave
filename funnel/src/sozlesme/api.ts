@@ -476,6 +476,21 @@ export interface components {
             /** @enum {string} */
             yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono";
             kose: number;
+            /**
+             * @description G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px
+             * @enum {string}
+             */
+            baslikBoyu?: "kucuk" | "normal" | "buyuk";
+            /**
+             * @description G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah
+             * @enum {string}
+             */
+            yogunluk?: "sik" | "normal" | "ferah";
+            /**
+             * @description G7: başlık ve açıklama hizası (yoksa sol)
+             * @enum {string}
+             */
+            hizalama?: "sol" | "orta";
             /** @description G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır */
             kartRengi?: string;
             /** @description G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer */

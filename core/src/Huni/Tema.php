@@ -26,15 +26,22 @@ final class Tema
     /** WCAG AA, normal metin. */
     public const ASGARI_KONTRAST = 4.5;
 
+    /** G7: yerleşim ön ayarları (serbest piksel değil); yoksa ilk değerin anlamı (normal / sol). */
+    public const ON_AYARLAR = [
+        'baslikBoyu' => ['kucuk', 'normal', 'buyuk'],
+        'yogunluk' => ['sik', 'normal', 'ferah'],
+        'hizalama' => ['sol', 'orta'],
+    ];
+
     /** G3: görsel zeminde karartma katmanının üst sınırı (%100 görseli tamamen örterdi). */
     public const AZAMI_KARARTMA = 95;
 
     /** Ç71: AI'a yön veren örnekler (kopya değil) — her biri yayından geçer (TemaTest). */
     public const AI_ORNEKLERI = [
-        'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20],
+        'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah'],
         'teknoloji / üretkenlik' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b']],
         'finans / ciddi' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff'],
-        'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3']],
+        'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta'],
         'iletişim / sosyal' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'sistem', 'kose' => 16],
     ];
 
@@ -57,6 +64,8 @@ final class Tema
             .'metinRengi ile arkaPlan arasındaki kontrast en az '.self::ASGARI_KONTRAST.':1 olmalı — düşükse kayıt reddedilir. Düğme yazısının rengini sayfa kendisi seçer. '
             // G3 + G1 ölçümü: ekranın çoğu zemin; yalnız ana renk değişirse huniler aynı görünür.
             .'Görünümü en çok zemin değiştirir: arkaPlan\'ı ürüne göre seç; isteğe bağlı zemin alanı düz rengin yerine geçiş {"tur":"gecis","ikinciRenk":"#rrggbb"} (metin alt renkte de okunmalı) ya da görsel {"tur":"gorsel","gorsel":"<görsel kimliği>","karartma":0–'.self::AZAMI_KARARTMA.'} (yalnız bu uygulamaya yüklenmiş görsel; karartma yetersizse hata en az değeri söyler). '
+            // G7
+            .'İsteğe bağlı yerleşim ön ayarları (yoksa normal/sol): baslikBoyu '.implode('|', self::ON_AYARLAR['baslikBoyu']).', yogunluk '.implode('|', self::ON_AYARLAR['yogunluk']).', hizalama '.implode('|', self::ON_AYARLAR['hizalama']).' — büyük başlık, ferah boşluk ve ortalı metin renk değiştirmeden huninin karakterini belirgin değiştirir; ürüne göre seç (ör. sakin ürün ferah, enerjik ürün büyük + orta, yoğun içerik sik). '
             // G6
             .'İsteğe bağlı kartRengi ("#rrggbb"): içerik zeminin üstünde bu renkte kartta durur; o zaman metin kartın üstündedir — okunurluk metinRengi ↔ kartRengi ölçülür, zemin (arkaPlan/geçiş/görsel) yalnız çevrede kalır ve koyu olabilir. '
             .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler
@@ -71,8 +80,8 @@ final class Tema
             return ['tema bir nesne olmalı'];
         }
         $beklenen = array_keys(self::VARSAYILAN);
-        // G3 zemin, G6 kartRengi isteğe bağlı; ayrı denetlenir.
-        $var = array_values(array_diff(array_map(strval(...), array_keys($tema)), ['zemin', 'kartRengi']));
+        // G3 zemin, G6 kartRengi, G7 ön ayarlar isteğe bağlı; ayrı denetlenir.
+        $var = array_values(array_diff(array_map(strval(...), array_keys($tema)), ['zemin', 'kartRengi', ...array_keys(self::ON_AYARLAR)]));
         sort($var);
         sort($beklenen);
         if ($var !== $beklenen) {
@@ -89,6 +98,11 @@ final class Tema
         }
         if (!\is_int($tema['kose']) || $tema['kose'] < 0 || $tema['kose'] > self::AZAMI_KOSE) {
             $h[] = 'tema kose: 0–'.self::AZAMI_KOSE.' tam sayı olmalı';
+        }
+        foreach (self::ON_AYARLAR as $alan => $degerler) {
+            if (\array_key_exists($alan, $tema) && !\in_array($tema[$alan], $degerler, true)) {
+                $h[] = "tema {$alan}: ".implode(', ', $degerler).' olmalı';
+            }
         }
         $kart = $tema['kartRengi'] ?? null;
         if (\array_key_exists('kartRengi', $tema) && (!\is_string($kart) || 1 !== preg_match('/^#[0-9a-f]{6}$/', $kart))) {

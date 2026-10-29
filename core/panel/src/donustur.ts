@@ -8,6 +8,9 @@ import type { components } from "./sozlesme";
 export type Tanim = components["schemas"]["HuniTanimi"];
 export type Tema = components["schemas"]["HuniTemasi"];
 type Zemin = NonNullable<Tema["zemin"]>;
+type OnAyar<K extends "baslikBoyu" | "yogunluk" | "hizalama"> = NonNullable<
+    Tema[K]
+>;
 type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
 type YaziTipi = Tema["yaziTipi"];
@@ -80,6 +83,10 @@ export type KokProps = {
     /** G6: "yok" = içerik doğrudan zeminde. */
     kart: "yok" | "var";
     kartRengi: string;
+    /** G7: "normal"/"sol" tanıma yazılmaz (yoksa aynı anlam). */
+    baslikBoyu: OnAyar<"baslikBoyu">;
+    yogunluk: OnAyar<"yogunluk">;
+    hizalama: OnAyar<"hizalama">;
 };
 export type Bilesenler = {
     Tanitim: TanitimProps;
@@ -140,6 +147,9 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                     tema.zemin?.tur === "gorsel" ? tema.zemin.karartma : 70,
                 kart: tema.kartRengi ? "var" : "yok",
                 kartRengi: tema.kartRengi ?? "#ffffff",
+                baslikBoyu: tema.baslikBoyu ?? "normal",
+                yogunluk: tema.yogunluk ?? "normal",
+                hizalama: tema.hizalama ?? "sol",
             },
         },
         content: tanim.adimlar.map((adim: Adim, i: number) => {
@@ -341,6 +351,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
             yaziTipi: k.yaziTipi,
             kose: Number(k.kose),
             ...(k.kart === "var" ? { kartRengi: k.kartRengi } : {}),
+            ...kokOnAyarlari(k),
             ...kokZemini(k),
         };
     }
@@ -362,4 +373,15 @@ export function kokZemini(
             },
         };
     return {};
+}
+
+/** G7: kök alanlarından yerleşim ön ayarları; varsayılan değer yazılmaz. */
+export function kokOnAyarlari(
+    k: Pick<KokProps, "baslikBoyu" | "yogunluk" | "hizalama">,
+): Pick<Tema, "baslikBoyu" | "yogunluk" | "hizalama"> {
+    return {
+        ...(k.baslikBoyu !== "normal" ? { baslikBoyu: k.baslikBoyu } : {}),
+        ...(k.yogunluk !== "normal" ? { yogunluk: k.yogunluk } : {}),
+        ...(k.hizalama !== "sol" ? { hizalama: k.hizalama } : {}),
+    };
 }

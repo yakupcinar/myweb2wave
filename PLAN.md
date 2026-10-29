@@ -123,7 +123,7 @@
   - [x] G1 · 2026-10-27, `docs/decisions/gorunum-g1.md`: envanter (web2wave, Formbricks) + 19 varyant × 3 adım ekran ölçümü; zemin baskın, yapısal ayarlar ikinci, düğme/köşe küçük. Sıra aşağıda (ölçüme göre); Ç75, Ç76
   - [x] G3 · 2026-10-27, `docs/decisions/gorunum-g3.md`: `tema.zemin` geçiş / görsel + karartma (en kötü görsele göre eşik, hata en az değeri söyler); Puck alanları, AI örnekleri; yan bulgu: tema boyamadan sonra uygulanıyordu → `useLayoutEffect` (§40). Kırma 11/11
   - [x] G6 · 2026-10-27, `docs/decisions/gorunum-g6.md`: `tema.kartRengi`; kart varsa okunurluk metin ↔ kart (koyu zemin + açık kart geçerli), zemin sayfa kökünde, yanlarda boşluk; Puck alanı + aynı kurallı uyarı, AI örneği. Kırma 11/11
-  - [ ] G7 · tipografi ölçeği + yoğunluk + hizalama — birkaç ön ayar (serbest piksel değil)
+  - [x] G7 · 2026-10-30, `docs/decisions/gorunum-g7.md`: `baslikBoyu` (kucuk/normal/buyuk), `yogunluk` (sik/normal/ferah), `hizalama` (sol/orta); Puck alanları, AI örnekleri; gerçek düzen farkı %71–88. Kırma 9/9
   - [ ] G2 · yazı tipleri: kendi sunucumuzdan font — dış font yasak (KVKK, `Tema.php` başlığı) → kullanıcı kararı; ekran kabına aynı fontlar (Ç76)
   - [ ] G5 · adım başına görünüm çeşidi (ör. tanıtım: görsel üstte / tam ekran) — boş alanı doldurur; T1 blok kataloğuyla çakışır, sırası orada kararlaştırılır
   - [ ] G4 · düğme biçimi (dolu / çerçeve / hap) + seçenek kartı düzeni (liste / ızgara / görselli) — ölçülen etki düşük; ızgara soru adımında

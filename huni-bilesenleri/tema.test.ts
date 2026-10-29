@@ -102,6 +102,61 @@ describe("tema — kart (G6)", () => {
     });
 });
 
+describe("tema — yerleşim ön ayarları (G7)", () => {
+    it("tanımlı ön ayar değişkene dönüşür", () => {
+        const d = temaDegiskenleri({
+            ...VARSAYILAN_TEMA,
+            baslikBoyu: "buyuk",
+            yogunluk: "ferah",
+            hizalama: "orta",
+        });
+        expect([
+            d["--baslik-boyu"],
+            d["--baslik-agirlik"],
+            d["--ara"],
+            d["--hiza"],
+        ]).toEqual(["36px", "850", "1.4", "center"]);
+        const k = temaDegiskenleri({
+            ...VARSAYILAN_TEMA,
+            baslikBoyu: "kucuk",
+            yogunluk: "sik",
+            hizalama: "sol",
+        });
+        expect([
+            k["--baslik-boyu"],
+            k["--baslik-agirlik"],
+            k["--ara"],
+            k["--hiza"],
+        ]).toEqual(["24px", "700", "0.75", "left"]);
+    });
+    it("ön ayar yoksa değişken yazılmaz; CSS yedeği bugünkü değerler", () => {
+        const d = temaDegiskenleri(VARSAYILAN_TEMA);
+        for (const ad of [
+            "--baslik-boyu",
+            "--baslik-agirlik",
+            "--ara",
+            "--hiza",
+        ])
+            expect(Object.keys(d)).not.toContain(ad);
+        expect(css).toMatch(
+            /\.huni h1 \{[^}]*font-size: var\(--baslik-boyu, 28px\)/,
+        );
+        expect(css).toMatch(
+            /\.huni h1 \{[^}]*font-weight: var\(--baslik-agirlik, 750\)/,
+        );
+        expect(css).toMatch(/\.huni h1 \{[^}]*text-align: var\(--hiza, left\)/);
+        expect(css).toMatch(
+            /\.huni section > p \{[^}]*text-align: var\(--hiza, left\)/,
+        );
+        expect(css).toMatch(
+            /\.huni \.secenekler \{[^}]*gap: calc\(12px \* var\(--ara, 1\)\)/,
+        );
+        expect(css).toMatch(
+            /\.huni \.secenekler button \{[^}]*min-height: calc\(60px \* var\(--ara, 1\)\)/,
+        );
+    });
+});
+
 describe("tema — düğme yazısı", () => {
     // Bağımsız: koyu mavi üzerinde beyaz, sarı üzerinde siyah okunur
     // (parlaklık 0,19 ve 0,93) — formülden değil renkten (tuzak §3).

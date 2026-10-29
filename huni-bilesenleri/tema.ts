@@ -19,7 +19,20 @@ export type Tema = {
     zemin?: Zemin;
     /** G6: içerik bu renkte kartta; okunurluk metin ↔ kart (çekirdek ölçer). */
     kartRengi?: string;
+    /** G7: yerleşim ön ayarları; yoksa huni.css'teki bugünkü değerler. */
+    baslikBoyu?: "kucuk" | "normal" | "buyuk";
+    yogunluk?: "sik" | "normal" | "ferah";
+    hizalama?: "sol" | "orta";
 };
+
+/** G7: ön ayar → CSS değeri (gorunum-g7.md). "normal"/"sol" = huni.css yedeği. */
+const BASLIK = {
+    kucuk: ["24px", "700"],
+    normal: ["28px", "750"],
+    buyuk: ["36px", "850"],
+} as const;
+const ARA = { sik: "0.75", normal: "1", ferah: "1.4" } as const;
+const HIZA = { sol: "left", orta: "center" } as const;
 
 /** Tema::VARSAYILAN ile aynı; huni.css'teki :root değerleri de bundan (testle). */
 export const VARSAYILAN_TEMA: Tema = {
@@ -74,6 +87,14 @@ export function temaDegiskenleri(
         "--yazi-tipi": YAZI_TIPLERI[tema.yaziTipi],
         ...(tema.zemin ? zeminDegiskenleri(tema, tema.zemin, medyaKoku) : {}),
         ...(tema.kartRengi ? kartDegiskenleri(tema, tema.kartRengi) : {}),
+        ...(tema.baslikBoyu
+            ? {
+                  "--baslik-boyu": BASLIK[tema.baslikBoyu][0],
+                  "--baslik-agirlik": BASLIK[tema.baslikBoyu][1],
+              }
+            : {}),
+        ...(tema.yogunluk ? { "--ara": ARA[tema.yogunluk] } : {}),
+        ...(tema.hizalama ? { "--hiza": HIZA[tema.hizalama] } : {}),
     };
 }
 

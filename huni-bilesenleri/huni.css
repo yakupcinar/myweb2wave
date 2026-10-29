@@ -38,11 +38,14 @@ html:has(> body.huni) {
     max-width: min(520px, calc(100% - 32px - 2 * var(--kart-bosluk, 0px)));
     -webkit-font-smoothing: antialiased;
 }
+/* G7: başlık ölçeği, yoğunluk (--ara çarpanı) ve hiza tema ön ayarından
+   (tema.ts); yedekler bugünkü değerler. */
 .huni h1 {
-    margin: 20px 0 8px;
-    font-size: 28px;
+    margin: calc(20px * var(--ara, 1)) 0 8px;
+    font-size: var(--baslik-boyu, 28px);
     line-height: 1.2;
-    font-weight: 750;
+    font-weight: var(--baslik-agirlik, 750);
+    text-align: var(--hiza, left);
     letter-spacing: -0.02em;
     text-wrap: balance;
     overflow-wrap: anywhere;
@@ -53,7 +56,8 @@ html:has(> body.huni) {
     outline: none;
 }
 .huni section > p {
-    margin: 0 0 20px;
+    margin: 0 0 calc(20px * var(--ara, 1));
+    text-align: var(--hiza, left);
     color: var(--soluk);
 }
 .huni progress {
@@ -81,8 +85,8 @@ html:has(> body.huni) {
 }
 .huni .secenekler {
     display: grid;
-    gap: 12px;
-    margin: 8px 0 24px;
+    gap: calc(12px * var(--ara, 1));
+    margin: 8px 0 calc(24px * var(--ara, 1));
 }
 .huni .serbest-yanit {
     display: grid;
@@ -157,8 +161,8 @@ html:has(> body.huni) {
     align-items: center;
     gap: 12px;
     width: 100%;
-    min-height: 60px;
-    padding: 12px 16px;
+    min-height: calc(60px * var(--ara, 1));
+    padding: calc(12px * var(--ara, 1)) 16px;
     border: 1.5px solid var(--cizgi);
     background: var(--yuzey);
     font-weight: 550;

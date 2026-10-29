@@ -29,12 +29,14 @@ final class TemaTest extends TestCase
         self::assertGreaterThanOrEqual(2, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['zemin']))));
         // G6: kartlı örnek de (koyu zemin + açık kart — kartsız geçersiz olurdu).
         self::assertGreaterThanOrEqual(1, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['kartRengi']))));
+        // G7: yerleşim ön ayarı kullanan örnekler de (G1: başlık ve boşluk düzeni en çok değiştiriyor).
+        self::assertGreaterThanOrEqual(2, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => [] !== array_intersect_key($t, Tema::ON_AYARLAR))));
         // Ana renkler birbirinden ve varsayılandan farklı.
         self::assertCount(\count(Tema::AI_ORNEKLERI) + 1, array_unique([...array_column(Tema::AI_ORNEKLERI, 'anaRenk'), Tema::VARSAYILAN['anaRenk']]));
 
         $y = Tema::aiYonergesi();
         // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
-        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi'] as $parca) {
+        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi', 'baslikBoyu', 'yogunluk', 'hizalama'] as $parca) {
             self::assertStringContainsString($parca, $y);
         }
         foreach (Tema::AI_ORNEKLERI as $tema) {
@@ -113,6 +115,13 @@ final class TemaTest extends TestCase
         self::assertStringContainsString('karartma: 0–95', implode('', Tema::hatalar(['kartRengi' => '#ffffff', 'zemin' => ['tur' => 'gorsel', 'gorsel' => str_repeat('a', 64), 'karartma' => 99]] + $koyuZemin)));
     }
 
+    /** G7: ön ayarlar isteğe bağlı; yalnız tanımlı değerler. */
+    public function testYerlesimOnAyarlari(): void
+    {
+        self::assertSame([], Tema::hatalar(['baslikBoyu' => 'buyuk', 'yogunluk' => 'ferah', 'hizalama' => 'orta'] + Tema::VARSAYILAN));
+        self::assertSame([], Tema::hatalar(['baslikBoyu' => 'kucuk', 'yogunluk' => 'sik', 'hizalama' => 'sol'] + Tema::VARSAYILAN));
+    }
+
     #[DataProvider('bozuklar')]
     public function testBicimKurallari(string $beklenen, mixed $tema): void
     {
@@ -124,6 +133,9 @@ final class TemaTest extends TestCase
     {
         $v = Tema::VARSAYILAN;
         yield 'büyük harf hex' => ['#rrggbb', ['anaRenk' => '#2563EB'] + $v];
+        yield 'başlık boyu bilinmeyen' => ['tema baslikBoyu: kucuk, normal, buyuk', ['baslikBoyu' => '40px'] + $v];
+        yield 'yoğunluk bilinmeyen' => ['tema yogunluk: sik, normal, ferah', ['yogunluk' => 'genis'] + $v];
+        yield 'hizalama bilinmeyen' => ['tema hizalama: sol, orta', ['hizalama' => 'sag'] + $v];
         yield 'kart rengi büyük harf' => ['tema kartRengi: #rrggbb', ['kartRengi' => '#FFFFFF'] + $v];
         yield 'zemin bilinmeyen tür' => ['tema zemin: tur gecis ya da gorsel', ['zemin' => ['tur' => 'video']] + $v];
         yield 'zemin nesne değil' => ['tema zemin: tur gecis ya da gorsel', ['zemin' => 'gecis'] + $v];

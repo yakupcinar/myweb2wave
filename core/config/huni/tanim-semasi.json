@@ -112,6 +112,32 @@
                     "minimum": 0,
                     "maximum": 32
                 },
+                "baslikBoyu": {
+                    "description": "G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px",
+                    "type": "string",
+                    "enum": [
+                        "kucuk",
+                        "normal",
+                        "buyuk"
+                    ]
+                },
+                "yogunluk": {
+                    "description": "G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah",
+                    "type": "string",
+                    "enum": [
+                        "sik",
+                        "normal",
+                        "ferah"
+                    ]
+                },
+                "hizalama": {
+                    "description": "G7: başlık ve açıklama hizası (yoksa sol)",
+                    "type": "string",
+                    "enum": [
+                        "sol",
+                        "orta"
+                    ]
+                },
                 "kartRengi": {
                     "description": "G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır",
                     "type": "string",
