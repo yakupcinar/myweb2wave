@@ -3,7 +3,8 @@
 // formül tema-ornekleri.json ile ölçülür: TemaTest.php ve tema.test.ts aynı
 // dosyayı okur.
 
-export type YaziTipi = "sistem" | "serif" | "yuvarlak" | "mono";
+export type YaziTipi =
+    "sistem" | "serif" | "yuvarlak" | "mono" | "modern" | "geometrik";
 
 /** G3: düz arka plan yerine geçiş ya da görsel (okunurluğu çekirdek ölçer). */
 export type Zemin =
@@ -43,12 +44,19 @@ export const VARSAYILAN_TEMA: Tema = {
     kose: 10,
 };
 
-/** Yalnız cihaz yazı tipleri — dışarıdan font yüklemek IP'yi üçüncü tarafa yollar (Ç12). */
+/**
+ * Cihaz yazı tipleri ya da huniyle birlikte gelen dosyalar ("… Variable",
+ * fontlar/fontlar.css) — dış font servisi IP'yi üçüncü tarafa yollardı
+ * (Ç12). G2: barındırılan aile her cihazda (ve AI'ın ekran görüntüsünde)
+ * aynı çizilir; yüklenene kadar yedek yığın görünür (font-display: swap).
+ */
 export const YAZI_TIPLERI: Record<YaziTipi, string> = {
     sistem: "system-ui, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    yuvarlak: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, sans-serif",
+    serif: "'Lora Variable', Georgia, 'Times New Roman', serif",
+    yuvarlak: "'Nunito Variable', ui-rounded, system-ui, sans-serif",
     mono: "ui-monospace, 'SF Mono', Menlo, monospace",
+    modern: "'Manrope Variable', system-ui, sans-serif",
+    geometrik: "'Outfit Variable', system-ui, sans-serif",
 };
 
 /** WCAG göreli parlaklık; hex #rrggbb. */

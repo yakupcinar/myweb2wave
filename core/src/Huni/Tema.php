@@ -6,8 +6,9 @@ namespace App\Huni;
 
 /**
  * Huni başına görünüm (A8 / E2.2): üç renk, yazı tipi, köşe. Yazı tipleri
- * yalnız CİHAZIN kendi yazı tipleri — dışarıdan font yüklemek ziyaretçinin
- * IP'sini üçüncü tarafa yollar (KVKK/çerez onayı, Ç12). Okunurluk
+ * cihazın kendisi ya da huniyle birlikte sunulan dosyalar (G2,
+ * huni-bilesenleri/fontlar) — dış font servisi (Google Fonts) ziyaretçinin
+ * IP'sini üçüncü tarafa yollardı (KVKK/çerez onayı, Ç12). Okunurluk
  * yayından önce ölçülür: metin/arka plan kontrastı WCAG AA (4,5:1).
  * Düğme yazısı huni sayfasında siyah/beyazdan kontrastı yüksek olanı seçilir.
  */
@@ -19,7 +20,7 @@ final class Tema
     ];
 
     /** Seçilebilir yazı tipleri — huni sayfası bunları cihaz yazı tipi yığınına çevirir. */
-    public const YAZI_TIPLERI = ['sistem', 'serif', 'yuvarlak', 'mono'];
+    public const YAZI_TIPLERI = ['sistem', 'serif', 'yuvarlak', 'mono', 'modern', 'geometrik'];
 
     public const AZAMI_KOSE = 32;
 
@@ -42,7 +43,7 @@ final class Tema
         'teknoloji / üretkenlik' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b']],
         'finans / ciddi' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff'],
         'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta'],
-        'iletişim / sosyal' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'sistem', 'kose' => 16],
+        'iletişim / sosyal' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'modern', 'kose' => 16],
     ];
 
     /**

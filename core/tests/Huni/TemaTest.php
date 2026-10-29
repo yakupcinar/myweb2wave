@@ -31,6 +31,8 @@ final class TemaTest extends TestCase
         self::assertGreaterThanOrEqual(1, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['kartRengi']))));
         // G7: yerleşim ön ayarı kullanan örnekler de (G1: başlık ve boşluk düzeni en çok değiştiriyor).
         self::assertGreaterThanOrEqual(2, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => [] !== array_intersect_key($t, Tema::ON_AYARLAR))));
+        // G2: huniyle gelen yeni yazı tiplerinden en az biri örnekte.
+        self::assertNotSame([], array_intersect(['modern', 'geometrik'], array_column(Tema::AI_ORNEKLERI, 'yaziTipi')));
         // Ana renkler birbirinden ve varsayılandan farklı.
         self::assertCount(\count(Tema::AI_ORNEKLERI) + 1, array_unique([...array_column(Tema::AI_ORNEKLERI, 'anaRenk'), Tema::VARSAYILAN['anaRenk']]));
 

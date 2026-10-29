@@ -1,3 +1,4 @@
+@import "./fontlar/fontlar.css";
 /* Huni görünümü — huni sayfası ve panel düzenleyicisi aynı dosyayı yükler
    (B4/H1). Kurallar .huni altında: Puck ana sayfanın stillerini önizleme
    iframe'ine kopyalıyor (syncHostStyles), kapsamsız bir "button" kuralı

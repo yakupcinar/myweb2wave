@@ -473,8 +473,11 @@ export interface components {
             anaRenk: string;
             arkaPlan: string;
             metinRengi: string;
-            /** @enum {string} */
-            yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono";
+            /**
+             * @description sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)
+             * @enum {string}
+             */
+            yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono" | "modern" | "geometrik";
             kose: number;
             /**
              * @description G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px

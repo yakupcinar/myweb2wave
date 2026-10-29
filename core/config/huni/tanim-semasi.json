@@ -99,12 +99,15 @@
                     "pattern": "^#[0-9a-f]{6}$"
                 },
                 "yaziTipi": {
+                    "description": "sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)",
                     "type": "string",
                     "enum": [
                         "sistem",
                         "serif",
                         "yuvarlak",
-                        "mono"
+                        "mono",
+                        "modern",
+                        "geometrik"
                     ]
                 },
                 "kose": {

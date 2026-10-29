@@ -780,7 +780,10 @@ components:
         anaRenk: { type: string, pattern: "^#[0-9a-f]{6}$" }
         arkaPlan: { type: string, pattern: "^#[0-9a-f]{6}$" }
         metinRengi: { type: string, pattern: "^#[0-9a-f]{6}$" }
-        yaziTipi: { type: string, enum: [sistem, serif, yuvarlak, mono] }
+        yaziTipi:
+          description: "sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)"
+          type: string
+          enum: [sistem, serif, yuvarlak, mono, modern, geometrik]
         kose: { type: integer, minimum: 0, maximum: 32 }
         baslikBoyu:
           description: "G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px"

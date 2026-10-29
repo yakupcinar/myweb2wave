@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import css from "./huni.css?raw";
 import ornekler from "./tema-ornekleri.json";
@@ -157,6 +159,54 @@ describe("tema — yerleşim ön ayarları (G7)", () => {
     });
 });
 
+describe("fontlar (G2)", () => {
+    const fontCss = readFileSync(
+        join(__dirname, "fontlar/fontlar.css"),
+        "utf8",
+    );
+    // Yığının başındaki barındırılan aile ("X Variable") fontlar.css'te tanımlı olmalı.
+    const barindirilan = Object.entries(YAZI_TIPLERI).flatMap(
+        ([tip, yigin]) => {
+            const ad = /^'([^']+ Variable)'/.exec(yigin)?.[1];
+            return ad ? [[tip, ad] as const] : [];
+        },
+    );
+    it("serif, yuvarlak, modern, geometrik huniyle birlikte gelen fonttan başlar", () => {
+        expect(barindirilan.map(([t]) => t).sort()).toEqual([
+            "geometrik",
+            "modern",
+            "serif",
+            "yuvarlak",
+        ]);
+    });
+    it.each(barindirilan)(
+        "%s: latin + latin-ext tanımlı, dosyalar var, ≤ 80 KB",
+        (_t, ad) => {
+            const bloklar = fontCss
+                .split("@font-face")
+                // Tırnak türü biçimlendiriciye bağlı (Prettier çift tırnak yazar).
+                .filter((b) =>
+                    new RegExp(`font-family: ["']${ad}["']`).test(b),
+                );
+            expect(bloklar).toHaveLength(2);
+            let toplam = 0;
+            for (const b of bloklar) {
+                const dosya = /src: url\(\.\/([^)]+)\)/.exec(b)?.[1] ?? "";
+                const yol = join(__dirname, "fontlar", dosya);
+                expect(existsSync(yol), dosya).toBe(true);
+                toplam += statSync(yol).size;
+                expect(b).toContain("font-display: swap");
+            }
+            expect(toplam).toBeLessThanOrEqual(80 * 1024);
+        },
+    );
+    it("KVKK: hiçbir CSS dış adrese bağlanmaz; huni.css fontları kendi dosyasından alır", () => {
+        for (const metin of [css, fontCss])
+            expect(metin).not.toMatch(/https?:\/\//);
+        expect(css).toMatch(/^@import "\.\/fontlar\/fontlar\.css";/m);
+    });
+});
+
 describe("tema — düğme yazısı", () => {
     // Bağımsız: koyu mavi üzerinde beyaz, sarı üzerinde siyah okunur
     // (parlaklık 0,19 ve 0,93) — formülden değil renkten (tuzak §3).
@@ -179,7 +229,9 @@ describe("huni.css", () => {
         // @keyframes içi (from/to) seçici değil; @media başlığı atlanır, içi denetlenir.
         const kurallar = css
             .replace(/@keyframes[^{]+\{(?:[^{}]*\{[^}]*\})*\s*\}/g, "")
-            .replace(/@media[^{]+\{/g, "");
+            .replace(/@media[^{]+\{/g, "")
+            // G2: @import (fontlar.css) seçici değil; @font-face o dosyada.
+            .replace(/@import[^;]+;/g, "");
         const seciciler = [...kurallar.matchAll(/([^{}]+)\{/g)].flatMap((m) =>
             (m[1] ?? "")
                 .replace(/\/\*[\s\S]*?\*\//g, "")
