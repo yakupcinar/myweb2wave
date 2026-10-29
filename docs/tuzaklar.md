@@ -191,3 +191,69 @@ ve veritabanı hiç değişmemişti; buna dayanan "düzeltme" geri alındı.
 **Doğrusu:** değişikliğin uygulamaya ulaştığını önce uygulamanın kendi
 göstergesinden oku (durum notu, kayıt, ağ isteği); gerçek klavye/fare olayı
 (`computer` aracı) ya da `form_input` kullan.
+
+## §36 — CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer
+**Belirti:** yeni huni ucu sunucu testlerinde ve happy-dom testlerinde
+yeşil; tarayıcıda ekranda her şey normal (şerit kalkıyor, seçim kaydoluyor)
+ama veritabanına hiçbir şey yazılmıyor. **Sebep:** `nelmio_cors` yalnız
+listedeki yollara izin veriyor; ön kontrol başarısız → `fetch` hata verir,
+huni bildirim hatalarını bilerek yutar (akış durmasın). Sunucu testinde
+köken yok, happy-dom'da CORS yok. **Ölçüm (2026-10-21, `huni-izin-h6a.md`):**
+Resource Timing'de izin isteği **durum 0**, `izin_at` boş; yol listesine
+eklenince 204. **Doğrusu:** tarayıcıdan çağrılan her yeni uç için önce
+`OPTIONS` + `Origin` ile CORS testi (kırmızı), sonra listeye ekle.
+
+## §11 — Aracın yanıtı ölçtüğün şeyin yanıtı sanılır (örnek: tarayıcı uzantısı 503)
+**Belirti:** Claude in Chrome ağ kaydı çekirdeğe giden çapraz kökenli
+POST/DELETE'i **503** gösterdi (`ilerleme`, `izin`; 2026-10-26).
+**Sebep:** uzantının kaydı; sunucu isteği işlemişti. **Ölçüm:** çekirdek
+günlüğünde rota eşleşti + işlem commit edildi; DB'de satır var; aynı istek
+sayfadan `fetch` ile 204. **Doğrusu:** uzantının durum kodunu kanıt sayma;
+sunucu günlüğü ya da DB'den oku.
+
+## §37 — iCloud'daki masaüstünde üretilen dizin çakışma kopyası alır
+**Belirti:** `composer install` → `cache:clear` aralıksız kırmızı:
+`Failed to remove directory "/app/var/cache/de~" … Directory not empty`;
+kod değişmemişken. **Sebep:** masaüstü iCloud Drive'a eşitleniyor; iCloud
+önbellek dizinlerinde `Symfony 2`, `pools 2` gibi 0 B yer tutucu kopyalar
+yaratıyor, silme yarışı yarıda kalan `de~`'yi bırakıyor ve sonraki her koşu
+ona takılıyor. **Ölçüm (2026-10-26):** `defaults read com.apple.finder
+FXICloudDriveDesktop` = 1; `find core/var -name "* 2"` üç dizin; `du` 0 B,
+bağlantı sayısı 65535; silmek 5 dk'yı aştı. **Doğrusu:** projeyi iCloud
+dışında tut (ya da `.nosync`); kırmızıda önce `find . -name "* 2"`.
+
+## §38 — Docker'daki Vite geliştirme sunucusu macOS'taki değişikliği görmez
+**Belirti:** `huni-bilesenleri/huni.css` değişti, testler yeni kuralı
+gördü; tarayıcı (yenileme dahil) **eski stili** çizdi, hata yok.
+**Sebep:** `huni-dev` kabı günlerdir açık; bağlı dizindeki dosya olayı
+kaba ulaşmadı, Vite modülü önbellekten verdi. **Ölçüm (2026-10-27,
+`huni-mobil-gorunum.md`):** `curl …/@fs/huni-bilesenleri/huni.css` yeni
+sınıfı **0** kez, aynı adres `?t=1` ile **1** kez içerdi; kap yeniden
+başlayınca 1. **Doğrusu:** tarayıcıda görsel ölçümden önce sunulan dosyayı
+`curl` ile oku; eskiyse `docker restart huni-dev`.
+
+## §39 — Testing Library `getByText`/`findByText` gizli öğeyi de bulur
+**Belirti:** "önizlemede ikinci adımdan başlar" testi `findByText("Kiminle?")`
+ile yeşil olurdu — adım ekranda değilken. Tersine "ilk adım yok" iddiası
+(`queryByText("Merhaba")` null) kod doğruyken kırmızı.
+**Sebep:** huni oynatıcısı bütün adımları DOM'da tutar, görünmeyenleri
+`hidden` ile gizler; metin sorguları `hidden`'ı (ve `display:none`'ı)
+**süzmez** — bulunmak görünmek değildir. **Ölçüm (2026-10-27,
+`ai-ekran-goruntusu.md`):** kod yokken "gerçek ziyarette adım yok sayılır"
+testi `queryByText("Kiminle?")` ile kırmızıydı; DOM'da `<h1>Kiminle?</h1>`
+gizli adımın içindeydi. **Doğrusu:** görünürlüğü ayrıca ölç —
+`el.closest("[hidden]") === null` (ya da `toBeVisible`) — ve olumlu iddiayı
+da görünürlükle yaz.
+
+## §40 — Boyamadan sonra uygulanan tema + CSS geçişi = ilk görünüm ara renk
+**Belirti:** aynı temayla çekilen ekran görüntülerinde düğme bazen
+varsayılan mavi, bazen tema rengi; hata yok, testler yeşil.
+**Sebep:** tema değişkenleri `useEffect`'te (ilk boyamadan sonra) köke
+yazılıyor; düğmede `transition: background-color 120ms` var → öğe önce
+varsayılanla çiziliyor, sonra geçişle temaya dönüyor. Ziyaretçi her
+açılışta parlama görüyor. jsdom boyama yapmadığı için Testing Library
+iki effect'i ayırt edemez — test hep yeşil. **Ölçüm (2026-10-27,
+`gorunum-g3.md`):** 6 çekimde 4'ü ara renk → `useLayoutEffect` ile 6/6
+hedef renk. **Doğrusu:** ilk çizimi etkileyen değişkeni boyamadan önce
+yaz (`useLayoutEffect` / sunucuda); görsel iddiayı gerçek tarayıcıda,
+birden çok çekimle ölç.

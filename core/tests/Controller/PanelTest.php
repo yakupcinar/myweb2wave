@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Panel\YoneticiSaglayici;
+use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -24,7 +25,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -98,26 +99,50 @@ final class PanelTest extends WebTestCase
         self::assertSame([], $this->client->getResponse()->headers->getCookies());
     }
 
-    public function testSayimlarReklamOrganikAyriVeDonusum(): void
+    public function testRaporUcuGirisYapmadanGirise(): void
     {
-        $this->veriKur();
-        $this->girisYapmis();
+        // Panel uygulaması oturum düşmesini bu yönlendirmeden tanır (oturum.ts).
+        $this->client->request('GET', '/panel/api/rapor');
 
-        $this->client->request('GET', '/panel');
-
-        self::assertResponseStatusCodeSame(200);
-        self::assertSame(['2', '2', '1', '50,0 %'], $this->kart('reklam'));
-        self::assertSame(['1', '0', '0', '0,0 %'], $this->kart('organik'));
+        self::assertResponseRedirects('/panel/giris');
     }
 
-    public function testGunAraligiEskiZiyaretiAyirir(): void
+    public function testSayimlarReklamOrganikAyri(): void
     {
         $this->veriKur();
         $this->girisYapmis();
 
-        $this->client->request('GET', '/panel?gun=90');
+        $r = $this->rapor();
 
-        self::assertSame(['2', '0', '0', '0,0 %'], $this->kart('organik'));
+        self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'odedi' => 1], $r['sayimlar']['reklam']);
+        self::assertSame(['ziyaret' => 1, 'odemeye_gecti' => 0, 'odedi' => 0], $r['sayimlar']['organik']);
+        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
+        self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
+    }
+
+    /** Ç56 (3): izin oranı — yalnız sayı; seçmeyen = ne kabul ne ret. */
+    public function testIzinSayilari(): void
+    {
+        foreach (['izin_at = now()', 'izin_at = now()', 'izin_red_at = now()', 'true'] as $i => $kosul) {
+            $id = $this->ziyaretEkle([], ($i + 1).' minutes');
+            if ('true' !== $kosul) {
+                $this->db->executeStatement("UPDATE huni_ziyaretleri SET {$kosul} WHERE id = :id", ['id' => $id]);
+            }
+        }
+        $this->girisYapmis();
+
+        self::assertSame(['kabul' => 2, 'red' => 1, 'secmeyen' => 1], $this->rapor()['izinler']);
+    }
+
+    public function testGunAraligiEskiZiyaretiAyirirTanimsizAralik30(): void
+    {
+        $this->veriKur();
+        $this->girisYapmis();
+
+        $r = $this->rapor('?gun=90');
+        self::assertSame(90, $r['gun']);
+        self::assertSame(2, $r['sayimlar']['organik']['ziyaret']);
+        self::assertSame(30, $this->rapor('?gun=5')['gun']);
     }
 
     public function testSatirdaAsamaKaynakVeMaskeliEposta(): void
@@ -125,38 +150,24 @@ final class PanelTest extends WebTestCase
         $this->veriKur();
         $this->girisYapmis();
 
-        $this->client->request('GET', '/panel');
-        $html = (string) $this->client->getResponse()->getContent();
+        $r = $this->rapor();
 
-        $odeyen = $this->client->getCrawler()->filter('tbody tr')->first()->filter('td')->each(static fn ($td): string => trim($td->text()));
-        self::assertSame(['keepchat', '—', 'reklam · meta', 'ekim-1', 'ödedi', 'active', 'a***@example.com'], \array_slice($odeyen, 1));
-        self::assertStringNotContainsString('ayse@example.com', $html);
+        $odeyen = $r['satirlar'][0];
+        unset($odeyen['zaman']);
+        self::assertSame(['app' => 'keepchat', 'huni' => null, 'kaynak' => 'meta', 'kampanya' => 'ekim-1', 'reklam' => true, 'asama' => 'ödedi', 'durum' => 'active', 'email' => 'a***@example.com'], $odeyen);
+        self::assertStringNotContainsString('ayse@example.com', (string) $this->client->getResponse()->getContent());
     }
 
-    public function testZararliUtmMetniKacislanir(): void
-    {
-        $this->db->insert('huni_ziyaretleri', ['app' => 'keepchat', 'utm_source' => '<script>alert(1)</script>']);
-        $this->girisYapmis();
-
-        $this->client->request('GET', '/panel');
-        $html = (string) $this->client->getResponse()->getContent();
-
-        self::assertStringNotContainsString('<script>alert(1)', $html);
-        self::assertStringContainsString('&lt;script&gt;alert(1)', $html);
-    }
-
-    public function testAnketAdimlariUlasanVeOran(): void
+    public function testAnketAdimlariVeCevaplar(): void
     {
         $this->anketKur();
         $this->girisYapmis();
 
-        $this->client->request('GET', '/panel');
+        $r = $this->rapor();
 
-        self::assertSame(
-            [['—', '1', 'karsilama', '3', '100 %'], ['—', '2', 'kiminle', '2', '67 %'], ['—', '3', 'cihaz', '1', '33 %']],
-            $this->tablo('adimlar'),
-        );
-        self::assertSame([['kiminle', 'aile', '2'], ['kiminle', 'is', '1']], $this->tablo('cevaplar'));
+        self::assertSame([3, 2, 1], array_column($r['adimlar'], 'ulasan'));
+        self::assertSame(['karsilama', 'kiminle', 'cihaz'], array_column($r['adimlar'], 'adim'));
+        self::assertSame([['kiminle', 'aile', 2], ['kiminle', 'is', 2]], array_map(static fn (array $c): array => [$c['soru'], $c['secenek'], $c['sayi']], $r['cevaplar']));
     }
 
     public function testAnketAraligiEskiZiyaretinAdiminiSaymaz(): void
@@ -166,23 +177,23 @@ final class PanelTest extends WebTestCase
         $this->db->insert('huni_adimlari', ['ziyaret_id' => $eski, 'sira' => 0, 'adim' => 'karsilama']);
         $this->girisYapmis();
 
-        $this->client->request('GET', '/panel');
-        self::assertSame('3', $this->tablo('adimlar')[0][3]);
-
-        $this->client->request('GET', '/panel?gun=90');
-        self::assertSame('4', $this->tablo('adimlar')[0][3]);
+        self::assertSame(3, $this->rapor()['adimlar'][0]['ulasan']);
+        self::assertSame(4, $this->rapor('?gun=90')['adimlar'][0]['ulasan']);
     }
 
-    public function testAnketYokkenBolumGorunmez(): void
+    public function testSerbestYanitYalnizOturumluPanelde(): void
     {
+        $z = $this->ziyaretEkle([], '1 hour');
+        $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => 1, 'adim' => 'hedef']);
+        $this->db->insert('huni_metin_cevaplari', ['ziyaret_id' => $z, 'soru' => 'hedef', 'cevap' => 'Daha iyi uyumak']);
+        $this->client->request('GET', '/panel/api/rapor');
+        self::assertResponseRedirects('/panel/giris');
+
         $this->girisYapmis();
-
-        $this->client->request('GET', '/panel');
-
-        self::assertSelectorNotExists('[data-bolum=adimlar]');
+        self::assertSame(['Daha iyi uyumak'], array_column($this->rapor()['metinCevaplari'], 'cevap'));
     }
 
-    /** Üç ziyaret: biri 3 adım, biri 2, biri 1; kiminle → aile, aile, is. */
+    /** Üç ziyaret: biri çoklu aile+iş, biri aile, biri iş seçer. */
     private function anketKur(): void
     {
         foreach ([3 => 'aile', 2 => 'aile', 1 => null] as $kac => $cevap) {
@@ -191,14 +202,10 @@ final class PanelTest extends WebTestCase
                 $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => $sira, 'adim' => $adim]);
             }
             $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => $cevap ?? 'is']);
+            if (3 === $kac) {
+                $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => 'is']);
+            }
         }
-    }
-
-    /** @return list<list<string>> */
-    private function tablo(string $bolum): array
-    {
-        return $this->client->getCrawler()->filter("[data-bolum={$bolum}] tbody tr")
-            ->each(static fn ($tr): array => $tr->filter('td')->each(static fn ($td): string => trim($td->text())));
     }
 
     private function giris(string $ad, string $sifre): void
@@ -216,10 +223,24 @@ final class PanelTest extends WebTestCase
         $this->client->loginUser($saglayici->loadUserByIdentifier('yonetici'), 'panel');
     }
 
-    /** @return list<string> sayfayı gördü, ödemeye geçti, ödedi, dönüşüm */
-    private function kart(string $kaynak): array
+    /**
+     * Rapor ucu; yanıt sözleşmeye (PanelRaporu) göre doğrulanır — şekil
+     * orada ölçüldü, tip açıklaması yalnız erişim için.
+     *
+     * @return array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>,
+     *               satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>,
+     *               cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>}
+     */
+    private function rapor(string $sorgu = ''): array
     {
-        return $this->client->getCrawler()->filter(".kart[data-kaynak={$kaynak}] dd")->each(static fn ($dd): string => trim($dd->text()));
+        $this->client->request('GET', '/panel/api/rapor'.$sorgu);
+        self::assertResponseIsSuccessful();
+        $yanit = $this->client->getResponse();
+        Sozlesme::yanitiDogrula('GET', '/panel/api/rapor', $yanit);
+        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>} $govde */
+        $govde = json_decode((string) $yanit->getContent(), true);
+
+        return $govde;
     }
 
     /**

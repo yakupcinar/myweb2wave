@@ -9,6 +9,7 @@ use App\Huni\Tanim;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -23,11 +24,15 @@ final readonly class ZiyaretController
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
+        private RateLimiterFactory $huniZiyaretLimiter,
     ) {
     }
 
     public function __invoke(Request $request): JsonResponse
     {
+        if (!$this->huniZiyaretLimiter->create((string) $request->getClientIp())->consume()->isAccepted()) {
+            return new JsonResponse(['error' => 'too_many_requests'], 429);
+        }
         $govde = $request->toArray();
         $app = $govde['app'] ?? null;
         if (!\is_string($app) || !isset($this->uygulamalar[$app])) {
@@ -45,11 +50,13 @@ final readonly class ZiyaretController
 
         $huni = $govde['huni'] ?? null;
         $surum = $govde['surum'] ?? null;
-        if ((null !== $surum && (!\is_int($surum) || $surum < 1))
+        $izin = $govde['izin'] ?? null;
+        if ((null !== $izin && !\is_bool($izin))
+            || (null !== $surum && (!\is_int($surum) || $surum < 1))
             || (null !== $huni && (!\is_string($huni) || 1 !== preg_match(Tanim::KIMLIK, $huni)))) {
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
 
-        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum)], 201);
+        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum, $izin)], 201);
     }
 }

@@ -1,9 +1,15 @@
+@import "./fontlar/fontlar.css";
 /* Huni görünümü — huni sayfası ve panel düzenleyicisi aynı dosyayı yükler
    (B4/H1). Kurallar .huni altında: Puck ana sayfanın stillerini önizleme
    iframe'ine kopyalıyor (syncHostStyles), kapsamsız bir "button" kuralı
    düzenleyicinin kendi düğmelerini de boyardı. Değişkenler tema.ts
    temaDegiskenleri'nden; buradaki varsayılanlar Tema::VARSAYILAN ile aynı
    (tema.test.ts ölçer). */
+/* G3/G6: zemin sayfa kökünde (geçiş/görsel tanımlıysa tema.ts --zemin,
+   yoksa düz renk). Yalnız huni sayfası — Puck'ta dış kutu çizer. */
+html:has(> body.huni) {
+    background: var(--zemin, var(--arka));
+}
 :root {
     --ana: #2563eb;
     --ana-yazi: #ffffff;
@@ -12,57 +18,214 @@
     --kose: 10px;
     --yazi-tipi: system-ui, sans-serif;
 }
+/* Mobil uygulama görünümü (openFunnel'dan davranış fikri, kod değil —
+   docs/decisions/huni-mobil-gorunum.md). Türetilen renkler temadan:
+   soluk metin, kart yüzeyi, çizgi. */
 .huni {
+    --soluk: color-mix(in srgb, var(--metin) 64%, var(--arka));
+    --yuzey: color-mix(in srgb, var(--metin) 4%, var(--arka));
+    --cizgi: color-mix(in srgb, var(--metin) 14%, var(--arka));
     font: 17px/1.5 var(--yazi-tipi);
-    background: var(--arka);
+    /* G6: kart varsa gövde kartı çizer (zemin sayfa kökünde, aşağıda);
+       yoksa saydam — eskisi gibi zemin görünür. */
+    background: var(--kart, transparent);
+    border-radius: var(--kart-kose, 0);
+    box-shadow: var(--kart-golge, none);
     color: var(--metin);
-    margin: 0 auto;
+    margin: var(--kart-bosluk, 0px) auto;
     padding: 16px;
-    max-width: 520px;
+    /* G6: kartta yanlarda da zemin görünsün (ölçüm: gorunum-g6.md);
+       kartsız boşluk 0 — eski genişlik. Dolgu 2 × 16px. */
+    max-width: min(520px, calc(100% - 32px - 2 * var(--kart-bosluk, 0px)));
+    -webkit-font-smoothing: antialiased;
+}
+/* G7: başlık ölçeği, yoğunluk (--ara çarpanı) ve hiza tema ön ayarından
+   (tema.ts); yedekler bugünkü değerler. */
+.huni h1 {
+    margin: calc(20px * var(--ara, 1)) 0 8px;
+    font-size: var(--baslik-boyu, 28px);
+    line-height: 1.2;
+    font-weight: var(--baslik-agirlik, 750);
+    text-align: var(--hiza, left);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+/* Odak programla gelir (ekran okuyucu yeni adımı okusun); başlık
+   etkileşimli değil, çerçeve çizilmez. */
+.huni h1[tabindex]:focus {
+    outline: none;
+}
+.huni section > p {
+    margin: 0 0 calc(20px * var(--ara, 1));
+    text-align: var(--hiza, left);
+    color: var(--soluk);
 }
 .huni progress {
+    -webkit-appearance: none;
+    appearance: none;
     accent-color: var(--ana);
+    display: block;
     width: 100%;
     height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--cizgi);
+    overflow: hidden;
+}
+.huni progress::-webkit-progress-bar {
+    background: var(--cizgi);
+}
+.huni progress::-webkit-progress-value {
+    background: var(--ana);
+    border-radius: 999px;
+}
+.huni progress::-moz-progress-bar {
+    background: var(--ana);
+    border-radius: 999px;
 }
 .huni .secenekler {
     display: grid;
-    gap: 10px;
+    gap: calc(12px * var(--ara, 1));
+    margin: 8px 0 calc(24px * var(--ara, 1));
+}
+.huni .serbest-yanit {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+    color: var(--soluk);
+    font-size: 15px;
+}
+.huni .serbest-yanit textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 112px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--cizgi);
+    border-radius: var(--kose);
+    background: var(--yuzey);
+    color: var(--metin);
+    font: inherit;
+    resize: vertical;
+}
+.huni .serbest-yanit textarea:focus {
+    outline: none;
+    border-color: var(--ana);
+}
+.huni p.yardim-metni {
+    margin: 0 0 16px;
 }
 .huni button {
     font: inherit;
     padding: 12px 16px;
     border-radius: var(--kose);
-    border: 1px solid color-mix(in srgb, var(--metin) 30%, transparent);
+    border: 1px solid var(--cizgi);
     background: transparent;
     color: inherit;
     text-align: left;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.huni button:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--ana) 45%, transparent);
+    outline-offset: 2px;
 }
 .huni button.ana {
+    display: block;
+    width: 100%;
+    min-height: 56px;
     background: var(--ana);
     color: var(--ana-yazi);
     border-color: var(--ana);
+    font-weight: 650;
     text-align: center;
-    width: 100%;
+    box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--ana) 55%, transparent);
+}
+.huni button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.huni button.ana:disabled {
+    box-shadow: none;
 }
 .huni img.kapak {
     display: block;
     width: 100%;
     height: auto;
-    border-radius: var(--kose);
-    margin-top: 12px;
+    border-radius: calc(var(--kose) * 1.5);
+    margin: 8px 0 4px;
 }
+/* Seçenek kartı: yüzey, kalın çizgi, sağda seçim işareti (tekli yuvarlak,
+   çoklu kare). */
 .huni .secenekler button {
     display: flex;
     align-items: center;
     gap: 12px;
+    width: 100%;
+    min-height: calc(60px * var(--ara, 1));
+    padding: calc(12px * var(--ara, 1)) 16px;
+    border: 1.5px solid var(--cizgi);
+    background: var(--yuzey);
+    font-weight: 550;
+}
+.huni .secenekler button > span:not(.isaret) {
+    flex: 1;
+}
+.huni .secenekler button:hover {
+    border-color: color-mix(in srgb, var(--ana) 55%, var(--cizgi));
+}
+.huni .secenekler button[aria-pressed="true"] {
+    border-color: var(--ana);
+    background: color-mix(in srgb, var(--ana) 10%, var(--arka));
+}
+.huni .isaret {
+    flex: none;
+    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--cizgi);
+    border-radius: 50%;
+}
+.huni .secenekler[data-tur="coklu"] .isaret {
+    border-radius: 6px;
+}
+.huni .secenekler button[aria-pressed="true"] .isaret,
+.huni .plan-karti .isaret {
+    border-color: var(--ana);
+    background: var(--ana);
+}
+/* Onay imi: iki kenarlı döndürülmüş kutu (ana-yazi renginde). */
+.huni .secenekler button[aria-pressed="true"] .isaret::after,
+.huni .plan-karti .isaret::after {
+    content: "";
+    display: block;
+    width: 5px;
+    height: 10px;
+    margin: 2px auto 0;
+    border: solid var(--ana-yazi);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
 }
 .huni img.secenek-gorseli {
     width: 48px;
     height: 48px;
     object-fit: cover;
     border-radius: calc(var(--kose) / 2);
+}
+.huni .yorum-alinti {
+    margin: 20px 0;
+    padding: 20px;
+    border: 0;
+    background: var(--yuzey);
+    border-radius: calc(var(--kose) * 1.5);
+}
+.huni .yorum-alinti p {
+    margin: 0 0 12px;
+    font-size: 18px;
+}
+.huni .yorum-alinti footer {
+    font-size: 14px;
+    color: var(--soluk);
 }
 .huni .onizleme {
     background: #fde68a;
@@ -79,10 +242,193 @@
     .huni [data-gecis] > [data-sira] {
         animation: huni-adim-gir 220ms ease-out;
     }
+    .huni button {
+        transition:
+            transform 120ms ease-out,
+            border-color 120ms,
+            background-color 120ms;
+    }
+    .huni button:active:not(:disabled) {
+        transform: scale(0.98);
+    }
 }
 @keyframes huni-adim-gir {
     from {
         opacity: 0;
         transform: translateY(8px);
+    }
+}
+/* Reklam ölçümü onay şeridi (H6a, yalnız huni sayfası). Akışta, üstte. */
+.huni .izin-seridi {
+    font-size: 13px;
+    line-height: 1.45;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: calc(var(--kose) * 1.5);
+    background: var(--yuzey);
+    color: var(--soluk);
+}
+.huni .izin-seridi p {
+    margin: 0 0 10px;
+}
+.huni .izin-dugmeleri {
+    display: flex;
+    gap: 8px;
+}
+.huni .izin-dugmeleri button {
+    flex: 1;
+    min-height: 44px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--metin);
+    background: var(--arka);
+}
+.huni button.izin-ayarlari {
+    display: block;
+    margin: 18px auto 0;
+    /* Ç61: dokunma alanı ≥ 44 px, okunur yazı. */
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    font-size: 15px;
+    color: var(--soluk);
+    text-decoration: underline;
+}
+/* Üst çubuk: solda 44 px geri sütunu (ilk adımda boş, yer tutar), sağda
+   ilerleme. */
+.huni .ust-cubuk {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin: 0 0 8px -10px;
+}
+.huni .ust-cubuk progress {
+    grid-column: 2;
+}
+.huni button.geri {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--metin);
+}
+.huni button.geri:hover {
+    background: color-mix(in srgb, var(--metin) 8%, transparent);
+}
+/* Ç61 (3): paywall fayda listesi ve yasal bağlantılar; fiyat seçili plan
+   kartında. */
+.huni .plan-karti {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 20px;
+    padding: 16px;
+    border: 2px solid var(--ana);
+    border-radius: calc(var(--kose) * 1.5);
+    background: color-mix(in srgb, var(--ana) 8%, var(--arka));
+}
+.huni p.fiyat {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 750;
+    color: var(--metin);
+}
+.huni ul.faydalar {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 20px;
+    padding: 0;
+    list-style: none;
+}
+.huni ul.faydalar li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.huni ul.faydalar li::before {
+    content: "✓";
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ana) 14%, var(--arka));
+    color: var(--ana);
+    font-size: 13px;
+    font-weight: 800;
+}
+.huni p.yasal {
+    margin: 16px 0 0;
+    font-size: 13px;
+    text-align: center;
+    color: var(--soluk);
+}
+.huni p.yasal a {
+    color: inherit;
+}
+.huni img.logo {
+    display: block;
+    max-width: 160px;
+    max-height: 40px;
+    margin: 0 0 12px;
+}
+/* Telefonda adım ekranı doldurur, ana düğme alta yapışır. Yalnız huni
+   oynatıcısı: .adimlar ve [data-sira] Puck önizlemesinde yok (orada adımlar
+   alt alta; yapışık düğme her birini kaplardı). Gizli adım [hidden] kalır. */
+.huni main {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - 32px - 2 * var(--kart-bosluk, 0px));
+}
+.huni .adimlar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.huni .adimlar > [data-sira]:not([hidden]),
+.huni .adimlar > [data-sira] > section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.huni .adimlar .eylem {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 16px 0 max(8px, env(safe-area-inset-bottom));
+    background: linear-gradient(transparent, var(--alt-renk, var(--arka)) 16px);
+}
+.huni .eylem p[role="alert"] {
+    margin: 0 0 10px;
+    color: #b91c1c;
+    font-size: 15px;
+}
+/* Ç61 (5): logo ve masaüstü düzeni — geniş ekranda sütun üstten boşluklu,
+   ince kenarlı kart; düğme yapışmaz, içeriğin altında durur. */
+@media (min-width: 768px) {
+    .huni {
+        margin-top: 8vh;
+        padding: 32px 40px;
+        border: 1px solid var(--cizgi);
+        border-radius: calc(var(--kose) * 2);
+        box-shadow: 0 24px 48px -24px
+            color-mix(in srgb, var(--metin) 25%, transparent);
+    }
+    .huni main {
+        min-height: 0;
+    }
+    .huni .adimlar .eylem {
+        position: static;
+        margin-top: 8px;
+        padding: 0;
+        background: none;
     }
 }

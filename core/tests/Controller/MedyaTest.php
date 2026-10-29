@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Huni\Huniler;
+use App\Huni\Tema;
 use App\Panel\YoneticiSaglayici;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -25,7 +26,7 @@ final class MedyaTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE medya, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $this->db->executeStatement('TRUNCATE medya, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari');
         // .env.test: MEDYA_DIZINI=%kernel.project_dir%/var/test-medya (resolve: ile çözülmeli).
         $this->dizin = \dirname(__DIR__, 2).'/var/test-medya';
         foreach (glob($this->dizin.'/*') ?: [] as $f) {
@@ -166,6 +167,10 @@ final class MedyaTest extends WebTestCase
         ]];
 
         self::assertSame([], $huniler->taslakKaydet('keepchat', 'genel', $tanim($id)));
+        // G3: zemin görseli de aynı kural.
+        $zeminli = static fn (string $g): array => $tanim($id) + ['tema' => ['zemin' => ['tur' => 'gorsel', 'gorsel' => $g, 'karartma' => 80]] + Tema::VARSAYILAN];
+        self::assertSame([], $huniler->taslakKaydet('keepchat', 'genel', $zeminli($id)));
+        self::assertStringContainsString('bu uygulamada yok', implode('', $huniler->taslakKaydet('keepchat', 'genel', $zeminli(str_repeat('c', 64)))));
         self::assertStringContainsString('bu uygulamada yok', implode('', $huniler->taslakKaydet('keepchat', 'genel', $tanim(str_repeat('b', 64)))));
         self::assertStringContainsString('görsel kimliği geçersiz', implode('', $huniler->taslakKaydet('keepchat', 'genel', $tanim('../../x'))));
         $this->db->executeStatement("UPDATE medya SET app = 'baska'");

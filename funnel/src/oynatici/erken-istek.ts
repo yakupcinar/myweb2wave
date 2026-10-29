@@ -13,6 +13,8 @@ export function tanimIstegi(app: string, kok: string): Promise<unknown> {
     yol += "/taslak";
     sorgu.set("huni", adres.get("huni") ?? "");
     sorgu.set("anahtar", onizleme);
+    // Ç70: panelden yayındaki sürüme ölçümsüz bakış.
+    if (adres.get("yayin") === "1") sorgu.set("yayin", "1");
   } else {
     for (const ad of [
       "k",

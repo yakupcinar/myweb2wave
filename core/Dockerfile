@@ -3,21 +3,21 @@
 # tekrarlanabilir değil.
 FROM dunglas/frankenphp:1.13.1-php8.4-bookworm@sha256:14007e6207a57651cb402970a44e5f2df15bfeffcbdeb5bbb322271949878b07 AS taban
 
-RUN install-php-extensions pdo_pgsql intl opcache zip gd
+RUN install-php-extensions pdo_pgsql intl opcache zip gd sockets
 COPY docker/myweb2wave.ini $PHP_INI_DIR/conf.d/myweb2wave.ini
 
 COPY --from=composer:2.10.3 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Panel sürükle-bırak düzenleyicisi (E2.4): React + Puck derlemesi. Çıktı
+# Panel (B5; E2.4 sürükle-bırak düzenleyicisi dahil): React derlemesi. Çıktı
 # (içerik özetli adlar + manifest) üretim aşamasına kopyalanır; Node imajı
 # huniyle aynı, digest'e sabit.
-FROM node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS editor
-WORKDIR /editor
-COPY editor/package.json editor/package-lock.json ./
+FROM node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS panel
+WORKDIR /panel
+COPY panel/package.json panel/package-lock.json ./
 RUN npm ci --no-audit --no-fund
-COPY editor/ ./
+COPY panel/ ./
 RUN npm run build
 
 # Üretim (deploy/compose.yaml): kod imajın içinde, geliştirme bağımlılıkları
@@ -37,7 +37,7 @@ COPY bin bin/
 COPY config config/
 COPY migrations migrations/
 COPY public public/
-COPY --from=editor /public/varliklar/editor public/varliklar/editor/
+COPY --from=panel /public/varliklar/panel public/varliklar/panel/
 COPY src src/
 COPY templates templates/
 

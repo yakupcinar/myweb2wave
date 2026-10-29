@@ -85,6 +85,28 @@ final readonly class Rapor
     }
 
     /**
+     * Ç56 (3): reklam ölçümü izni — kabul / ret / seçmeyen (yalnız sayı).
+     *
+     * @return array{kabul: int, red: int, secmeyen: int}
+     */
+    public function izinler(int $gun): array
+    {
+        $s = $this->db->fetchAssociative(
+            'SELECT count(*) FILTER (WHERE izin_at IS NOT NULL) AS kabul,
+                    count(*) FILTER (WHERE izin_red_at IS NOT NULL) AS red,
+                    count(*) FILTER (WHERE izin_at IS NULL AND izin_red_at IS NULL) AS secmeyen
+             FROM huni_ziyaretleri WHERE created_at >= now() - make_interval(days => :gun)',
+            ['gun' => $gun],
+        );
+
+        return [
+            'kabul' => self::sayi($s['kabul'] ?? 0),
+            'red' => self::sayi($s['red'] ?? 0),
+            'secmeyen' => self::sayi($s['secmeyen'] ?? 0),
+        ];
+    }
+
+    /**
      * Anket hunisi: her adıma kaç ziyaret ulaştı (uygulama + huni başına, A8).
      * Adım adı huni tanımından gelir; tanım değiştiyse aynı sıradaki en son ad.
      *
@@ -122,6 +144,24 @@ final readonly class Rapor
              WHERE z.created_at >= now() - make_interval(days => :gun)
              GROUP BY z.app, c.soru, c.secenek
              ORDER BY z.app, c.soru, sayi DESC, c.secenek',
+            ['gun' => $gun],
+        ));
+    }
+
+    /** @return list<array{zaman: string, app: string, soru: string, cevap: string}> */
+    public function metinCevaplari(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'zaman' => self::dizge($s['created_at']),
+            'app' => self::dizge($s['app']),
+            'soru' => self::dizge($s['soru']),
+            'cevap' => self::dizge($s['cevap']),
+        ], $this->db->fetchAllAssociative(
+            'SELECT z.created_at, z.app, c.soru, c.cevap
+             FROM huni_metin_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
+             WHERE z.created_at >= now() - make_interval(days => :gun)
+             ORDER BY c.updated_at DESC
+             LIMIT '.self::AZAMI_SATIR,
             ['gun' => $gun],
         ));
     }

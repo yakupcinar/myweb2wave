@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Huni\Huniler;
 use App\Huni\Tema;
+use App\Panel\Varliklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,10 +33,7 @@ final class PanelHuniController extends AbstractController
         private readonly array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private readonly string $funnelBaseUrl,
-        #[Autowire('%kernel.project_dir%/public/varliklar/huni-duzenleyici.js')]
-        private readonly string $duzenleyiciDosyasi,
-        #[Autowire('%kernel.project_dir%/public/varliklar/editor/.vite/manifest.json')]
-        private readonly string $editorManifesti,
+        private readonly Varliklar $varliklar,
     ) {
     }
 
@@ -48,7 +46,9 @@ final class PanelHuniController extends AbstractController
             $uygulamalar[] = [
                 'ad' => $app,
                 'adres' => $this->funnelBaseUrl.'/'.$app.'/',
-                'huniler' => $this->huniler->huniler($app),
+                // "Aç": yayınlanmışsa yayındaki sürüm, değilse taslak — ikisi de süreli önizleme, ziyaret sayılmaz (Ç70).
+                'huniler' => array_map(fn (array $h): array => $h + ['ac' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$h['ad']
+                    .(null === $h['yayinda'] ? '' : '&yayin=1').'&onizleme='.$this->huniler->onizlemeAnahtari($app, $h['ad'], time())], $this->huniler->huniler($app)),
                 'kurallar' => $this->huniler->kurallar($app),
             ];
         }
@@ -103,6 +103,25 @@ final class PanelHuniController extends AbstractController
         return $this->redirectToRoute('panel_huniler');
     }
 
+    /** Ç41: ziyaretsiz huni silinir, ziyaretli arşivlenir; varsayılan kaldırılamaz. */
+    #[Route('/{app}/{ad}/kaldir', name: 'panel_huni_kaldir', methods: ['POST'])]
+    public function kaldir(Request $request, string $app, string $ad): RedirectResponse
+    {
+        $this->uygulama($app);
+        $sonuc = '';
+        if ($this->islem($request, $app, function () use ($app, $ad, &$sonuc): array {
+            $sonuc = $this->huniler->kaldir($app, $ad);
+
+            return \in_array($sonuc, ['silindi', 'arsivlendi'], true) ? [] : [$sonuc];
+        }, null)) {
+            $this->addFlash('tamam', 'silindi' === $sonuc
+                ? "'{$ad}' silindi."
+                : "'{$ad}' arşivlendi — ziyaret verisi raporda kalır, kuralları kaldırıldı.");
+        }
+
+        return $this->redirectToRoute('panel_huniler');
+    }
+
     #[Route('/{app}/{ad}/varsayilan', name: 'panel_huni_varsayilan', methods: ['POST'])]
     public function varsayilan(Request $request, string $app, string $ad): RedirectResponse
     {
@@ -112,55 +131,31 @@ final class PanelHuniController extends AbstractController
         return $this->redirectToRoute('panel_huniler');
     }
 
+    /**
+     * Huni düzenleyicisi (E2.4, React + Puck; b2: tek düzenleyici — klasik
+     * form düzenleyicisi kaldırıldı, Ç53). Betik/stil: Varliklar (manifest).
+     * Derlenmemişse sessizce boş sayfa değil, açık hata.
+     */
     #[Route('/{app}/{ad}', name: 'panel_huni', methods: ['GET'])]
     public function duzenle(string $app, string $ad): Response
     {
         $this->uygulama($app);
         $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
-
-        return self::korumali($this->render('panel/huni.html.twig', [
-            // 'app' DEĞİL: Twig'in global app'ini ezer, flaşlar üretimde sessizce kaybolur (tuzak §29).
-            'uygulama' => $app,
-            'huni' => $ad,
-            'taslak' => $taslak,
-            'planlar' => array_keys($this->uygulamalar[$app]),
-            'tema_varsayilan' => Tema::VARSAYILAN,
-            'yazi_tipleri' => Tema::YAZI_TIPLERI,
-            'surumler' => $this->huniler->surumler($app, $ad),
-            'farkli' => $this->huniler->taslakFarkli($app, $ad),
-            'onizleme' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $ad, time()),
-            'huni_adresi' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$ad,
-            // Dosyanın Cache-Control'ü yok: tarayıcı tahminle eski kopyayı
-            // çalıştırıyordu (ölçüldü, tuzak §30). İçerik özeti değişince adres değişir.
-            'duzenleyici_surumu' => substr((string) md5_file($this->duzenleyiciDosyasi), 0, 10),
-        ]));
-    }
-
-    /**
-     * Sürükle-bırak düzenleyici (E2.4, React + Puck). Betik/stil adresleri
-     * Vite manifestinden — içerik özetli adlar (tuzak §30). Derlenmemişse
-     * sessizce boş sayfa değil, açık hata.
-     */
-    #[Route('/{app}/{ad}/surukle', name: 'panel_huni_surukle', methods: ['GET'])]
-    public function surukle(string $app, string $ad): Response
-    {
-        $this->uygulama($app);
-        $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
-        $manifest = is_file($this->editorManifesti) ? json_decode((string) file_get_contents($this->editorManifesti), true) : null;
-        $giris = \is_array($manifest) && \is_array($manifest['src/main.tsx'] ?? null) ? $manifest['src/main.tsx'] : null;
-        if (null === $giris || !\is_string($giris['file'] ?? null)) {
-            return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm editor npm run build', 503));
+        $giris = $this->varliklar->giris('src/main.tsx');
+        if (null === $giris) {
+            return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm panel npm run build', 503));
         }
 
         return self::korumali($this->render('panel/huni-surukle.html.twig', [
             'uygulama' => $app,
             'huni' => $ad,
             'taslak' => $taslak,
+            'imza' => $this->huniler->taslakImzasi($app, $ad),
             'planlar' => array_keys($this->uygulamalar[$app]),
             'tema_varsayilan' => Tema::VARSAYILAN,
             'yazi_tipleri' => Tema::YAZI_TIPLERI,
-            'betik' => '/varliklar/editor/'.$giris['file'],
-            'stiller' => array_map(static fn (mixed $c): string => '/varliklar/editor/'.(\is_string($c) ? $c : ''), \is_array($giris['css'] ?? null) ? $giris['css'] : []),
+            'betik' => $giris['betik'],
+            'stiller' => $giris['stiller'],
         ]));
     }
 
@@ -172,9 +167,17 @@ final class PanelHuniController extends AbstractController
         if (!$this->isCsrfTokenValid('huni-'.$app, $request->headers->get('X-CSRF-Token', ''))) {
             return new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403);
         }
-        $hatalar = $this->huniler->taslakKaydet($app, $ad, $request->toArray()['tanim'] ?? null);
+        $govde = $request->toArray();
+        // Ç39: imzasız kayıt da çakışma sayılır — düzenleyici hep yollar.
+        $imza = \is_string($govde['imza'] ?? null) ? $govde['imza'] : '';
+        $hatalar = $this->huniler->taslakKaydet($app, $ad, $govde['tanim'] ?? null, $imza);
+        if ([Huniler::CAKISMA] === $hatalar) {
+            return new JsonResponse(['hatalar' => $hatalar], 409);
+        }
 
-        return new JsonResponse(['hatalar' => $hatalar], [] === $hatalar ? 200 : 422);
+        return [] === $hatalar
+            ? new JsonResponse(['hatalar' => [], 'imza' => $this->huniler->taslakImzasi($app, $ad)])
+            : new JsonResponse(['hatalar' => $hatalar], 422);
     }
 
     /**
@@ -224,37 +227,7 @@ final class PanelHuniController extends AbstractController
             return new JsonResponse(['hatalar' => ["v{$surum} bulunamadı."]], 404);
         }
 
-        return new JsonResponse(['tanim' => $this->huniler->taslak($app, $ad)]);
-    }
-
-    #[Route('/{app}/{ad}/yayinla', name: 'panel_huni_yayinla', methods: ['POST'])]
-    public function yayinla(Request $request, string $app, string $ad): RedirectResponse
-    {
-        $this->uygulama($app);
-        $surum = 0;
-        $tamam = $this->islem($request, $app, function () use ($app, $ad, &$surum): array {
-            $sonuc = $this->huniler->yayinla($app, $ad);
-            if (\is_array($sonuc)) {
-                return $sonuc;
-            }
-            $surum = $sonuc;
-
-            return [];
-        }, null);
-        if ($tamam) {
-            $this->addFlash('tamam', "{$ad} v{$surum} yayında. Ziyaretçiler en geç 1 dakika içinde görür.");
-        }
-
-        return $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]);
-    }
-
-    #[Route('/{app}/{ad}/surumler/{surum}/taslaga', name: 'panel_huni_geri_yukle', methods: ['POST'], requirements: ['surum' => '\d+'])]
-    public function geriYukle(Request $request, string $app, string $ad, int $surum): RedirectResponse
-    {
-        $this->uygulama($app);
-        $this->islem($request, $app, fn (): array => $this->huniler->surumuTaslagaAl($app, $ad, $surum) ? [] : ["v{$surum} bulunamadı."], "v{$surum} taslağa alındı. Yayınlamak için \"Yayınla\".");
-
-        return $this->redirectToRoute('panel_huni', ['app' => $app, 'ad' => $ad]);
+        return new JsonResponse(['tanim' => $this->huniler->taslak($app, $ad), 'imza' => $this->huniler->taslakImzasi($app, $ad)]);
     }
 
     /**

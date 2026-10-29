@@ -81,6 +81,7 @@ paths:
                 ttclid: { $ref: "#/components/schemas/AtifAlani" }
                 huni: { $ref: "#/components/schemas/HuniKimligi" }
                 surum: { type: integer, minimum: 1, description: "Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır" }
+                izin: { type: boolean, description: "Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz" }
       responses:
         "201":
           description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
@@ -95,6 +96,11 @@ paths:
         "400": { description: Gövde JSON değil }
         "422":
           description: Bilinmeyen uygulama ya da geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "429":
+          description: "Ç34: bu IP'den dakikada 120'den fazla ziyaret; huni yine çalışır"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -124,19 +130,20 @@ paths:
   /huni/{app}/taslak:
     get:
       operationId: getDraftFunnel
-      summary: İmzalı, süreli önizleme anahtarıyla bir huninin taslağı (A7)
+      summary: İmzalı, süreli önizleme anahtarıyla bir huninin taslağı ya da yayındaki sürümü (A7, Ç70)
       parameters:
         - $ref: "#/components/parameters/App"
         - { name: huni, in: query, required: true, schema: { $ref: "#/components/schemas/HuniKimligi" } }
         - { name: anahtar, in: query, required: true, schema: { type: string } }
+        - { name: yayin, in: query, required: false, description: "1 ise taslak yerine yayındaki son sürüm (Ç70: panelden ölçümsüz bakış)", schema: { type: string, enum: ["1"] } }
       responses:
         "200":
-          description: Taslak (surum null)
+          description: Taslak (surum null) ya da yayin=1 ile yayındaki sürüm
           content:
             application/json:
               schema: { $ref: "#/components/schemas/HuniYayini" }
         "403":
-          description: Anahtar yok, yanlış ya da süresi geçmiş
+          description: Anahtar yok, yanlış ya da süresi geçmiş; yayin=1 ise huni yayınlanmamış
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -158,6 +165,15 @@ paths:
                 sira: { type: integer, minimum: 0, maximum: 50, description: Adımın huni tanımındaki sırası }
                 adim: { $ref: "#/components/schemas/HuniKimligi" }
                 cevap: { $ref: "#/components/schemas/HuniKimligi" }
+                cevaplar:
+                  type: array
+                  minItems: 1
+                  maxItems: 8
+                  uniqueItems: true
+                  items: { $ref: "#/components/schemas/HuniKimligi" }
+                cevapMetni: { type: string, maxLength: 500 }
+              not:
+                required: [cevap, cevaplar]
       responses:
         "204": { description: Kaydedildi }
         "400": { description: Gövde JSON değil }
@@ -168,6 +184,47 @@ paths:
               schema: { $ref: "#/components/schemas/Hata" }
         "422":
           description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+  /huni/ziyaretler/{ziyaret}/izin:
+    post:
+      operationId: grantMeasurementConsent
+      summary: Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                fbclid: { $ref: "#/components/schemas/AtifAlani" }
+                ttclid: { $ref: "#/components/schemas/AtifAlani" }
+      responses:
+        "204": { description: Kaydedildi }
+        "400": { description: Gövde JSON değil }
+        "404":
+          description: Ziyaret yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "422":
+          description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+    delete:
+      operationId: revokeMeasurementConsent
+      summary: Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: İzin geri alındı }
+        "404":
+          description: Ziyaret yok
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -335,6 +392,167 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /panel/api/rapor:
+    get:
+      operationId: panelRaporu
+      summary: Panel raporu (A6/2, B5) — yalnız oturumlu yönetici; girişsizse güvenlik duvarı /panel/giris'e yönlendirir
+      parameters:
+        - name: gun
+          in: query
+          required: false
+          description: Zaman aralığı; tanınmayan değer 30 sayılır
+          schema: { type: integer, enum: [7, 30, 90], default: 30 }
+      responses:
+        "200":
+          description: Seçilen aralıktaki sayımlar, izin oranı, anket ve ziyaret satırları
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PanelRaporu" }
+  /panel/api/ai/durum:
+    get:
+      operationId: panelAiDurumu
+      summary: Panel AI asistanı açık mı (A2) — anahtar yoksa kapalı
+      responses:
+        "200":
+          description: Durum
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PanelAiDurumu" }
+  /panel/api/ai/huniler/{app}/{huni}/sohbet:
+    post:
+      operationId: panelAiSohbet
+      summary: İstemi açık huninin TASLAĞINA uygular (A2); ilerleme Server-Sent Events. Yayınlamaz.
+      parameters:
+        - { name: app, in: path, required: true, schema: { type: string } }
+        - { name: huni, in: path, required: true, schema: { $ref: "#/components/schemas/HuniKimligi" } }
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          description: Düzenleyici sayfasının jetonu (huni-<app>)
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [istem]
+              properties:
+                istem: { type: string, minLength: 1, maxLength: 4000 }
+      responses:
+        "200":
+          description: "Olay akışı: her olay `event: <tur>` + `data: <JSON>` (PanelAiOlayi); son olay bitti"
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Huni yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: İstem boş ya da çok uzun, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "429": { description: Saatlik sınır, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "503": { description: AI kapalı (anahtar yok), content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar:
+    get:
+      operationId: panelUygulamalari
+      summary: Paneldeki uygulamalar (A4)
+      responses:
+        "200":
+          description: Uygulama adları
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [uygulamalar]
+                properties:
+                  uygulamalar: { type: array, items: { type: string } }
+  /panel/api/uygulamalar/{app}/baglam:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelUrunBaglami
+      summary: Uygulamanın ürün bağlamı (A4) — AI asistanının sistem istemine girer
+      responses:
+        "200": { description: Bağlam (boş alanlar ""), content: { application/json: { schema: { $ref: "#/components/schemas/UrunBaglami" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    put:
+      operationId: panelUrunBaglamiKaydet
+      summary: Ürün bağlamını kaydeder (tamamını)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, description: Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u), schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UrunBaglami" }
+      responses:
+        "200": { description: Kaydedilen bağlam, content: { application/json: { schema: { $ref: "#/components/schemas/UrunBaglami" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Alan çok uzun ya da geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/anahtarlar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiAnahtarlari
+      summary: Kişisel API anahtarları (A5a, MCP) — anahtarın kendisi yok, yalnız önek
+      responses:
+        "200":
+          description: MCP adresi ve anahtarlar
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [mcpAdresi, anahtarlar]
+                properties:
+                  mcpAdresi: { type: string }
+                  anahtarlar: { type: array, items: { $ref: "#/components/schemas/ApiAnahtari" } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiAnahtariOlustur
+      summary: Yeni anahtar — kendisi YALNIZ bu yanıtta döner
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ad]
+              properties:
+                ad: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        "201":
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [id, ad, anahtar]
+                properties:
+                  id: { type: integer }
+                  ad: { type: string }
+                  anahtar: { type: string, pattern: "^mw2w_[0-9a-f]{48}$" }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Ad geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/anahtarlar/{id}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    delete:
+      operationId: panelApiAnahtariIptal
+      summary: Anahtarı iptal eder (geri alınamaz)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "204": { description: İptal edildi }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Yok ya da zaten iptal, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -359,6 +577,153 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
   schemas:
+    ApiAnahtari:
+      type: object
+      additionalProperties: false
+      required: [id, ad, onek, olusturma, sonKullanim, iptal]
+      properties:
+        id: { type: integer }
+        ad: { type: string }
+        onek: { type: string, description: "Anahtarın ilk 11 karakteri (mw2w_xxxxxx) — tanımak için" }
+        olusturma: { type: string }
+        sonKullanim: { type: [string, "null"] }
+        iptal: { type: boolean }
+    UrunBaglami:
+      description: "A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar"
+      type: object
+      additionalProperties: false
+      required: [urun, kategori, kitle, ton, yasaklar]
+      properties:
+        urun: { type: string, maxLength: 1000, description: Ürün ne yapıyor }
+        kategori: { type: string, maxLength: 100 }
+        kitle: { type: string, maxLength: 500, description: Hedef kitle }
+        ton: { type: string, maxLength: 200, description: Metinlerin tonu }
+        yasaklar: { type: string, maxLength: 1000, description: Asla yazılmayacaklar / kaçınılacaklar }
+    PanelHatalari:
+      type: object
+      additionalProperties: false
+      required: [hatalar]
+      properties:
+        hatalar: { type: array, items: { type: string } }
+    PanelAiDurumu:
+      type: object
+      additionalProperties: false
+      required: [acik, model]
+      properties:
+        acik: { type: boolean }
+        model: { type: string }
+    PanelAiOlayi:
+      description: "SSE olayının data alanı; tur, event satırıyla aynı"
+      oneOf:
+        - { type: object, additionalProperties: false, required: [tur, metin], properties: { tur: { type: string, enum: [metin] }, metin: { type: string } } }
+        - { type: object, additionalProperties: false, required: [tur, ad], properties: { tur: { type: string, enum: [arac] }, ad: { type: string } } }
+        - { type: object, additionalProperties: false, required: [tur, ad, hata], properties: { tur: { type: string, enum: [arac_sonucu] }, ad: { type: string }, hata: { type: boolean } } }
+        - type: object
+          additionalProperties: false
+          required: [tur, imza, tanim]
+          properties:
+            tur: { type: string, enum: [taslak] }
+            imza: { type: [string, "null"] }
+            tanim: { $ref: "#/components/schemas/HuniTanimi" }
+        - { type: object, additionalProperties: false, required: [tur, mesaj], properties: { tur: { type: string, enum: [hata] }, mesaj: { type: string } } }
+        - type: object
+          additionalProperties: false
+          required: [tur, sonuc, kaydedildi, tur_sayisi, maliyetMikrodolar]
+          properties:
+            tur: { type: string, enum: [bitti] }
+            sonuc: { type: string, enum: [tamam, tur_siniri, reddedildi, jeton_siniri, hata] }
+            kaydedildi: { type: boolean }
+            tur_sayisi: { type: integer, minimum: 0 }
+            maliyetMikrodolar: { type: [integer, "null"] }
+    PanelSayimi:
+      type: object
+      additionalProperties: false
+      required: [ziyaret, odemeye_gecti, odedi]
+      properties:
+        ziyaret: { type: integer, minimum: 0 }
+        odemeye_gecti: { type: integer, minimum: 0 }
+        odedi: { type: integer, minimum: 0 }
+    PanelRaporu:
+      type: object
+      additionalProperties: false
+      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari]
+      properties:
+        gun: { type: integer, enum: [7, 30, 90] }
+        gunler:
+          type: array
+          items: { type: integer, enum: [7, 30, 90] }
+        azami:
+          description: Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar
+          type: integer
+        sayimlar:
+          type: object
+          additionalProperties: false
+          required: [reklam, organik]
+          properties:
+            reklam: { $ref: "#/components/schemas/PanelSayimi" }
+            organik: { $ref: "#/components/schemas/PanelSayimi" }
+        izinler:
+          description: Ç56 (3) — yalnız sayı, kim olduğu yok
+          type: object
+          additionalProperties: false
+          required: [kabul, red, secmeyen]
+          properties:
+            kabul: { type: integer, minimum: 0 }
+            red: { type: integer, minimum: 0 }
+            secmeyen: { type: integer, minimum: 0 }
+        satirlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [zaman, app, huni, kaynak, kampanya, reklam, asama, durum, email]
+            properties:
+              zaman: { type: string }
+              app: { type: string }
+              huni: { type: [string, "null"] }
+              kaynak: { type: string }
+              kampanya: { type: [string, "null"] }
+              reklam: { type: boolean }
+              asama: { type: string, enum: ["sayfayı gördü", "ödemeye geçti", "ödedi"] }
+              durum: { type: [string, "null"] }
+              email:
+                description: Maskeli (a***@example.com); açık e-posta panele hiç gelmez
+                type: [string, "null"]
+        adimlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [app, huni, sira, adim, ulasan]
+            properties:
+              app: { type: string }
+              huni: { type: string }
+              sira: { type: integer, minimum: 0 }
+              adim: { type: string }
+              ulasan: { type: integer, minimum: 0 }
+        cevaplar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [app, soru, secenek, sayi]
+            properties:
+              app: { type: string }
+              soru: { type: string }
+              secenek: { type: string }
+              sayi: { type: integer, minimum: 0 }
+        metinCevaplari:
+          description: 90 gün içinde, en yeni azami kadar
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [zaman, app, soru, cevap]
+            properties:
+              zaman: { type: string }
+              app: { type: string }
+              soru: { type: string }
+              cevap: { type: string }
     AtifAlani:
       type: string
       maxLength: 500
@@ -370,6 +735,21 @@ components:
         huni: { $ref: "#/components/schemas/HuniKimligi" }
         surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
         tanim: { $ref: "#/components/schemas/HuniTanimi" }
+        fiyatlar:
+          description: >-
+            Ç19/Ç21: plan → Stripe fiyatı (tek kaynak). Stripe'a ulaşılamazsa
+            ya da fiyat tek aralıklı yinelenen değilse yok — paywall yalnız
+            metnini gösterir.
+          type: object
+          additionalProperties: { $ref: "#/components/schemas/PlanFiyati" }
+    PlanFiyati:
+      type: object
+      additionalProperties: false
+      required: [tutar, paraBirimi, aralik]
+      properties:
+        tutar: { type: number, description: Ana birimde (9.99) }
+        paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
+        aralik: { type: string, enum: [day, week, month, year] }
     HuniTanimi:
       description: Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)
       type: object
@@ -378,6 +758,9 @@ components:
       properties:
         sayfaBasligi: { type: string, minLength: 1, maxLength: 120 }
         tema: { $ref: "#/components/schemas/HuniTemasi" }
+        logo:
+          description: "Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız)"
+          allOf: [{ $ref: "#/components/schemas/GorselKimligi" }]
         adimlar:
           type: array
           minItems: 2
@@ -386,6 +769,7 @@ components:
             oneOf:
               - $ref: "#/components/schemas/TanitimAdimi"
               - $ref: "#/components/schemas/SoruAdimi"
+              - $ref: "#/components/schemas/YorumAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
     HuniTemasi:
       description: "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)"
@@ -396,8 +780,49 @@ components:
         anaRenk: { type: string, pattern: "^#[0-9a-f]{6}$" }
         arkaPlan: { type: string, pattern: "^#[0-9a-f]{6}$" }
         metinRengi: { type: string, pattern: "^#[0-9a-f]{6}$" }
-        yaziTipi: { type: string, enum: [sistem, serif, yuvarlak, mono] }
+        yaziTipi:
+          description: "sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)"
+          type: string
+          enum: [sistem, serif, yuvarlak, mono, modern, geometrik]
         kose: { type: integer, minimum: 0, maximum: 32 }
+        baslikBoyu:
+          description: "G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px"
+          type: string
+          enum: [kucuk, normal, buyuk]
+        yogunluk:
+          description: "G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah"
+          type: string
+          enum: [sik, normal, ferah]
+        hizalama:
+          description: "G7: başlık ve açıklama hizası (yoksa sol)"
+          type: string
+          enum: [sol, orta]
+        kartRengi:
+          description: "G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır"
+          type: string
+          pattern: "^#[0-9a-f]{6}$"
+        zemin:
+          description: "G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer"
+          oneOf:
+            - $ref: "#/components/schemas/ZeminGecisi"
+            - $ref: "#/components/schemas/ZeminGorseli"
+    ZeminGecisi:
+      description: "Yukarıdan aşağı arkaPlan → ikinciRenk; metin ikinciRenk üstünde de 4,5:1"
+      type: object
+      additionalProperties: false
+      required: [tur, ikinciRenk]
+      properties:
+        tur: { type: string, enum: [gecis] }
+        ikinciRenk: { type: string, pattern: "^#[0-9a-f]{6}$" }
+    ZeminGorseli:
+      description: "Görsel kaplar, üstünde arkaPlan renginde yarı saydam katman (karartma %). Karartma, görsel en kötü durumda (tam siyah ya da tam beyaz) olsa da metni 4,5:1 okutacak kadar olmalı"
+      type: object
+      additionalProperties: false
+      required: [tur, gorsel, karartma]
+      properties:
+        tur: { type: string, enum: [gorsel] }
+        gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+        karartma: { type: integer, minimum: 0, maximum: 95 }
     TanitimAdimi:
       type: object
       additionalProperties: false
@@ -406,18 +831,25 @@ components:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [tanitim] }
         gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+        gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+        ilerlemeGoster: { type: boolean }
     SoruAdimi:
       type: object
       additionalProperties: false
-      required: [id, tur, soru, secenekler]
+      required: [id, tur, soru]
       properties:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [soru] }
         soru: { type: string }
+        aciklama: { type: string, maxLength: 500 }
+        ilerlemeGoster: { type: boolean }
+        secimTuru: { type: string, enum: [tekli, coklu, metin] }
+        yanitZorunlu: { type: boolean }
+        devamDugmesi: { type: string }
         secenekler:
           type: array
           items:
@@ -428,7 +860,22 @@ components:
               id: { $ref: "#/components/schemas/HuniKimligi" }
               metin: { type: string }
               gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+              gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
               hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    YorumAdimi:
+      description: Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik, metin, yazar, unvan, dugme]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [yorum] }
+        baslik: { type: string, minLength: 1, maxLength: 200 }
+        metin: { type: string, maxLength: 1000 }
+        yazar: { type: string, minLength: 1, maxLength: 80 }
+        unvan: { type: string, maxLength: 100 }
+        dugme: { type: string, minLength: 1, maxLength: 60 }
+        ilerlemeGoster: { type: boolean }
     AdimHedefi:
       description: >-
         H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma
@@ -445,7 +892,28 @@ components:
         baslik: { type: string }
         metin: { type: string }
         dugme: { type: string }
+        ilerlemeGoster: { type: boolean }
         plan: { type: string, enum: [monthly] }
+        faydalar:
+          description: "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)"
+          type: array
+          minItems: 1
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        sartlar: { $ref: "#/components/schemas/YasalAdres" }
+        gizlilik: { $ref: "#/components/schemas/YasalAdres" }
+        iptal: { $ref: "#/components/schemas/YasalAdres" }
+    YasalAdres:
+      description: >-
+        Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https —
+        javascript: gibi şemalar huni sayfasında betik çalıştırırdı.
+      type: string
+      pattern: "^https://[^\\s]{1,490}$"
+    GorselMetni:
+      description: "Ç44: görselin alt metni (yalnız görselle); yoksa görsel dekoratif sayılır (alt boş)"
+      type: string
+      minLength: 1
+      maxLength: 200
     GorselKimligi:
       description: "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)"
       type: string

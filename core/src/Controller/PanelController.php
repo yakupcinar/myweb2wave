@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Panel\Rapor;
+use App\Panel\Varliklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
@@ -19,22 +21,42 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
  */
 final class PanelController extends AbstractController
 {
+    /**
+     * Panel uygulaması (B5): React kabuğu. Sayfaları istemci yönlendirir;
+     * veriler /panel/api/* uçlarından. Derlenmemişse açık hata.
+     */
     #[Route('/panel', name: 'panel', methods: ['GET'])]
-    public function index(Request $request, Rapor $rapor): Response
+    #[Route('/panel/baglam', name: 'panel_baglam', methods: ['GET'])]
+    #[Route('/panel/anahtarlar', name: 'panel_anahtarlar', methods: ['GET'])]
+    public function uygulama(Varliklar $varliklar): Response
+    {
+        $giris = $varliklar->giris('src/uygulama/main.tsx');
+        if (null === $giris) {
+            return self::korumali(new Response('Panel derlenmemiş: docker compose run --rm panel npm run build', 503));
+        }
+
+        return self::korumali($this->render('panel/uygulama.html.twig', $giris));
+    }
+
+    /** Rapor verisi (sözleşme: PanelRaporu). */
+    #[Route('/panel/api/rapor', name: 'panel_api_rapor', methods: ['GET'])]
+    public function rapor(Request $request, Rapor $rapor): JsonResponse
     {
         $gun = $request->query->getInt('gun', 30);
         if (!\in_array($gun, Rapor::GUNLER, true)) {
             $gun = 30;
         }
 
-        return self::korumali($this->render('panel/index.html.twig', [
+        return self::korumali(new JsonResponse([
             'gun' => $gun,
             'gunler' => Rapor::GUNLER,
+            'azami' => Rapor::AZAMI_SATIR,
             'sayimlar' => $rapor->sayimlar($gun),
+            'izinler' => $rapor->izinler($gun),
             'satirlar' => $rapor->satirlar($gun),
             'adimlar' => $rapor->adimlar($gun),
             'cevaplar' => $rapor->cevaplar($gun),
-            'azami' => Rapor::AZAMI_SATIR,
+            'metinCevaplari' => $rapor->metinCevaplari($gun),
         ]));
     }
 
@@ -61,6 +83,13 @@ final class PanelController extends AbstractController
         throw new \LogicException('logout güvenlik duvarında');
     }
 
+    /**
+     * @template T of Response
+     *
+     * @param T $yanit
+     *
+     * @return T
+     */
     private static function korumali(Response $yanit): Response
     {
         $yanit->headers->set('Cache-Control', 'no-store');

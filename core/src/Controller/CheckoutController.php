@@ -72,7 +72,7 @@ final readonly class CheckoutController
         // yoksa ya da tanınmazsa ödeme yine açılır.
         $ziyaret = $govde['ziyaret'] ?? null;
         if (\is_string($ziyaret)) {
-            $this->ziyaretler->oturumBagla($ziyaret, $app, $session->id);
+            $this->ziyaretler->oturumBagla($ziyaret, $app, $session->id, $request->getClientIp(), $request->headers->get('User-Agent'));
         }
 
         return new JsonResponse(['url' => $session->url], 201);

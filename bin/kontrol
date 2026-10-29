@@ -28,10 +28,10 @@ adim() {
 
 core()   { docker compose run --rm -T core   sh -c "$1"; }
 funnel() { docker compose run --rm -T funnel sh -c "$1"; }
-editor() { docker compose run --rm -T editor sh -c "$1"; }
+panel() { docker compose run --rm -T panel sh -c "$1"; }
 sozlesme() { docker compose run --rm -T contract sh -c "$1"; }
-# Ortak huni bileşenleri (B4/H1) düzenleyici kabında, düzenleyicinin node_modules'uyla.
-bilesen() { docker compose run --rm -T -w /huni-bilesenleri editor sh -c "$1"; }
+# Ortak huni bileşenleri (B4/H1) panel kabında, panelin node_modules'uyla.
+bilesen() { docker compose run --rm -T -w /huni-bilesenleri panel sh -c "$1"; }
 
 # 0 · Ortam (tuzak §14)
 df -h . | tail -1
@@ -40,6 +40,14 @@ adim ortam-db     docker compose up -d --wait db stripe-mock
 # Bağımlılıklar: temiz ortamda vendor/ yok. Yerelde var diye atlanınca CI
 # EXIT=127 verdi (2026-10-19) — kapı yerel duruma dayanmamalı.
 adim core-kur     core   'composer install --no-interaction --no-progress'
+
+# Ç60: geliştirme DB'si göç gerisinde mi — kapı DEĞİL, uyarı. Test DB'si
+# aşağıda göçlenir; dev DB geride kalınca testler yeşilken tarayıcıda 500
+# (H6a'da ve 2026-10-26'da iki kez). CI'da dev DB'ye göç yok → atlanır.
+if [ -z "${CI:-}" ] && ! core 'php bin/console doctrine:migrations:up-to-date' > "$LOG/dev-goc.log" 2>&1; then
+  echo "UYARI dev-goc: geliştirme DB'si göç gerisinde → docker compose exec core php bin/console doctrine:migrations:migrate -n"
+  tail -3 "$LOG/dev-goc.log" | sed 's/^/    │ /'
+fi
 
 # 1 · Biçim
 adim core-bicim   core   'vendor/bin/php-cs-fixer check --diff'
@@ -50,30 +58,33 @@ adim funnel-bicim funnel 'npm run -s format:check'
 # Yeniden üret, depodakiyle karşılaştır — elle düzenleme ya da üretmeyi
 # unutmak burada kırmızı olur.
 adim sozlesme-kur sozlesme 'npm ci --no-audit --no-fund'
-adim sozlesme-guncel sozlesme 'npx openapi-typescript openapi.yaml -o /tmp/api.ts > /dev/null && cmp /tmp/api.ts /funnel/src/sozlesme/api.ts && cmp /tmp/api.ts /editor-src/sozlesme.ts'
-adim editor-npm   editor 'npm ci --no-audit --no-fund'
-adim editor-bicim editor 'npm run -s format:check'
+adim sozlesme-guncel sozlesme 'npx openapi-typescript openapi.yaml -o /tmp/api.ts > /dev/null && cmp /tmp/api.ts /funnel/src/sozlesme/api.ts && cmp /tmp/api.ts /panel-src/sozlesme.ts'
+adim panel-npm    panel 'npm ci --no-audit --no-fund'
+adim panel-bicim  panel 'npm run -s format:check'
 adim bilesen-bicim bilesen 'npm run -s format:check'
 
 # 2 · Statik analiz
 adim core-composer core  'composer validate --strict --no-check-publish'
 adim core-stan    core   'vendor/bin/phpstan analyse --no-progress --memory-limit=1G'
+# A0: AI araç şeması (config/huni/tanim-semasi.json) sözleşmeden üretilir;
+# sözleşme değişip yeniden üretilmezse kırmızı (TypeScript tipleriyle aynı).
+adim huni-sema    core   'php bin/console app:huni-semasi --kontrol'
 adim funnel-tip   funnel 'npm run -s check'
-adim editor-tip   editor 'npm run -s check'
+adim panel-tip    panel 'npm run -s check'
 adim bilesen-tip  bilesen 'npm run -s check'
 # D1: tanım HTML taşıyamaz — huniyi ve önizlemeyi çizen kodda HTML enjeksiyonu yok.
-adim html-yok     sh -c '! grep -rnF --exclude-dir=node_modules dangerouslySetInnerHTML huni-bilesenleri core/editor/src funnel/src'
+adim html-yok     sh -c '! grep -rnF --exclude-dir=node_modules dangerouslySetInnerHTML huni-bilesenleri core/panel/src funnel/src'
 
 # 3 · Test + derleme
 adim core-testdb  core   'php bin/console doctrine:database:create --env=test --if-not-exists'
 # Göç ŞART: temiz ortamda (CI) tablo yok; yerelde elle uygulanmış olması
 # kapıyı yalancı yeşil yapar (core-kur dersiyle aynı).
 adim core-goc     core   'php bin/console doctrine:migrations:migrate -n --env=test'
-adim editor-test  editor 'npm run -s test'
+adim panel-test   panel 'npm run -s test'
 adim bilesen-test bilesen 'npm run -s test'
 adim funnel-test  funnel 'npm run -s test'
 # Düzenleyici çekirdek testinden ÖNCE derlenir: panel sayfası manifestten okur.
-adim editor-derle editor 'npm run -s build'
+adim panel-derle  panel 'npm run -s build'
 adim core-test    core   'vendor/bin/phpunit --no-progress'
 adim funnel-derle funnel 'npm run -s build'
 # Bütçe (B4/H0 (c)): huninin bütün JS'i gzip'te ≤ 90 KB. React 67 KB'ı tek

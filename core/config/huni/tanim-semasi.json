@@ -1,0 +1,442 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$comment": "ÜRETİLDİ: contract/openapi.yaml → bin/console app:huni-semasi. Elle düzenleme.",
+    "$defs": {
+        "AdimHedefi": {
+            "description": "H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım.",
+            "allOf": [
+                {
+                    "$ref": "#/$defs/HuniKimligi"
+                }
+            ]
+        },
+        "GorselKimligi": {
+            "description": "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+        },
+        "GorselMetni": {
+            "description": "Ç44: görselin alt metni (yalnız görselle); yoksa görsel dekoratif sayılır (alt boş)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+        },
+        "HuniKimligi": {
+            "description": "Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/)",
+            "type": "string",
+            "pattern": "^[a-z0-9_-]{1,64}$"
+        },
+        "HuniTanimi": {
+            "description": "Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "sayfaBasligi",
+                "adimlar"
+            ],
+            "properties": {
+                "sayfaBasligi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                },
+                "tema": {
+                    "$ref": "#/$defs/HuniTemasi"
+                },
+                "logo": {
+                    "description": "Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız)",
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/GorselKimligi"
+                        }
+                    ]
+                },
+                "adimlar": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 50,
+                    "items": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/$defs/TanitimAdimi"
+                            },
+                            {
+                                "$ref": "#/$defs/SoruAdimi"
+                            },
+                            {
+                                "$ref": "#/$defs/YorumAdimi"
+                            },
+                            {
+                                "$ref": "#/$defs/PaywallAdimi"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "HuniTemasi": {
+            "description": "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "anaRenk",
+                "arkaPlan",
+                "metinRengi",
+                "yaziTipi",
+                "kose"
+            ],
+            "properties": {
+                "anaRenk": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "arkaPlan": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "metinRengi": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "yaziTipi": {
+                    "description": "sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)",
+                    "type": "string",
+                    "enum": [
+                        "sistem",
+                        "serif",
+                        "yuvarlak",
+                        "mono",
+                        "modern",
+                        "geometrik"
+                    ]
+                },
+                "kose": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 32
+                },
+                "baslikBoyu": {
+                    "description": "G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px",
+                    "type": "string",
+                    "enum": [
+                        "kucuk",
+                        "normal",
+                        "buyuk"
+                    ]
+                },
+                "yogunluk": {
+                    "description": "G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah",
+                    "type": "string",
+                    "enum": [
+                        "sik",
+                        "normal",
+                        "ferah"
+                    ]
+                },
+                "hizalama": {
+                    "description": "G7: başlık ve açıklama hizası (yoksa sol)",
+                    "type": "string",
+                    "enum": [
+                        "sol",
+                        "orta"
+                    ]
+                },
+                "kartRengi": {
+                    "description": "G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır",
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "zemin": {
+                    "description": "G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer",
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/ZeminGecisi"
+                        },
+                        {
+                            "$ref": "#/$defs/ZeminGorseli"
+                        }
+                    ]
+                }
+            }
+        },
+        "PaywallAdimi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik",
+                "metin",
+                "dugme",
+                "plan"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "paywall"
+                    ]
+                },
+                "baslik": {
+                    "type": "string"
+                },
+                "metin": {
+                    "type": "string"
+                },
+                "dugme": {
+                    "type": "string"
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                },
+                "plan": {
+                    "type": "string",
+                    "enum": [
+                        "monthly"
+                    ]
+                },
+                "faydalar": {
+                    "description": "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                    }
+                },
+                "sartlar": {
+                    "$ref": "#/$defs/YasalAdres"
+                },
+                "gizlilik": {
+                    "$ref": "#/$defs/YasalAdres"
+                },
+                "iptal": {
+                    "$ref": "#/$defs/YasalAdres"
+                }
+            }
+        },
+        "SoruAdimi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "soru"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "soru"
+                    ]
+                },
+                "soru": {
+                    "type": "string"
+                },
+                "aciklama": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                },
+                "secimTuru": {
+                    "type": "string",
+                    "enum": [
+                        "tekli",
+                        "coklu",
+                        "metin"
+                    ]
+                },
+                "yanitZorunlu": {
+                    "type": "boolean"
+                },
+                "devamDugmesi": {
+                    "type": "string"
+                },
+                "secenekler": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "id",
+                            "metin"
+                        ],
+                        "properties": {
+                            "id": {
+                                "$ref": "#/$defs/HuniKimligi"
+                            },
+                            "metin": {
+                                "type": "string"
+                            },
+                            "gorsel": {
+                                "$ref": "#/$defs/GorselKimligi"
+                            },
+                            "gorselMetni": {
+                                "$ref": "#/$defs/GorselMetni"
+                            },
+                            "hedef": {
+                                "$ref": "#/$defs/AdimHedefi"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "TanitimAdimi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik",
+                "metin",
+                "dugme"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "tanitim"
+                    ]
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                },
+                "baslik": {
+                    "type": "string"
+                },
+                "metin": {
+                    "type": "string"
+                },
+                "dugme": {
+                    "type": "string"
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "YasalAdres": {
+            "description": "Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı.",
+            "type": "string",
+            "pattern": "^https://[^\\s]{1,490}$"
+        },
+        "YorumAdimi": {
+            "description": "Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik",
+                "metin",
+                "yazar",
+                "unvan",
+                "dugme"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "yorum"
+                    ]
+                },
+                "baslik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                },
+                "metin": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "yazar": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                },
+                "unvan": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "dugme": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ZeminGecisi": {
+            "description": "Yukarıdan aşağı arkaPlan → ikinciRenk; metin ikinciRenk üstünde de 4,5:1",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "ikinciRenk"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gecis"
+                    ]
+                },
+                "ikinciRenk": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                }
+            }
+        },
+        "ZeminGorseli": {
+            "description": "Görsel kaplar, üstünde arkaPlan renginde yarı saydam katman (karartma %). Karartma, görsel en kötü durumda (tam siyah ya da tam beyaz) olsa da metni 4,5:1 okutacak kadar olmalı",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "gorsel",
+                "karartma"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gorsel"
+                    ]
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "karartma": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 95
+                }
+            }
+        }
+    }
+}

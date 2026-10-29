@@ -4,13 +4,28 @@
 // (huni-bilesenleri). Ölçüm (ziyaret, adım, cevap, ödeme) oynatıcının işi;
 // tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey kaydedilmez,
 // ödeme kapalı. D1–D15: docs/decisions/huni-oynatici-h0.md (b).
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Adim } from "../../../huni-bilesenleri/bilesenler";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
-import { ilerlemeBildir, ziyaretBaslat, type Govde } from "../lib/ziyaret";
+import { fiyatMetni } from "../lib/fiyat";
+import { izinOku, izinYaz, type Izin } from "../lib/izin";
+import {
+  ilerlemeBildir,
+  izinBildir,
+  izinGeriAl,
+  ziyaretBaslat,
+  type Govde,
+} from "../lib/ziyaret";
 import type { components } from "../sozlesme/api";
 import { tanimIstegi } from "./erken-istek";
+import IzinSeridi from "./IzinSeridi";
 
 type Yayin = components["schemas"]["HuniYayini"];
 type App = Govde<"/huni/ziyaretler">["app"];
@@ -62,13 +77,40 @@ function Oynatici({
   onizleme: boolean;
 }): ReactNode {
   const { tanim } = yayin;
+  // H6a: reklam ölçümü izni — daha önce seçildiyse bu tarayıcıda hatırlanır.
+  const [izin, setIzin] = useState<Izin | null>(izinOku);
+  const [geriAlGerekir, setGeriAlGerekir] = useState(false);
+  const [izinKaydediliyor, setIzinKaydediliyor] = useState(false);
+  const [izinHatasi, setIzinHatasi] = useState("");
+  // Uçuştaki Kabul isteği: geri alma bunu bekler (Ç58).
+  const izinIstegi = useRef<Promise<void>>(Promise.resolve());
   // Ziyaret bir kez açılır; önizlemede hiç açılmaz, adım/cevap da gitmez.
+  // Tıklama kimlikleri yalnız önceden verilmiş izinle (yoksa Kabul'de ayrıca).
   const [ziyaretSozu] = useState(() =>
     onizleme
       ? Promise.resolve(undefined)
-      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined),
+      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined, izinOku()),
   );
-  const [mevcut, setMevcut] = useState(0);
+  // Ç72: önizlemede ?adim=<kimlik> o adımdan başlar (ekran görüntüsü aracı);
+  // gerçek ziyarette yok sayılır — ölçüm hep ilk adımdan.
+  const [ilkSira] = useState(() => {
+    if (!onizleme) return 0;
+    const adim = new URLSearchParams(window.location.search).get("adim");
+    return Math.max(
+      0,
+      tanim.adimlar.findIndex((a) => a.id === adim),
+    );
+  });
+  const [mevcut, setMevcut] = useState(ilkSira);
+  // Ç75: AI'ın ekran görüntüsü ziyaretçinin gördüğünü göstersin — şerit yok,
+  // ödeme düğmesi soluk değil (önizlemede yine ödeme başlamaz, aşağıda).
+  const [ekranCekimi] = useState(
+    () => new URLSearchParams(window.location.search).get("ekran") === "1",
+  );
+  const [secimler, setSecimler] = useState<Record<string, string[]>>({});
+  const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
+    {},
+  );
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
   // (opaklık 0'dan başlasa ilk anlamlı boyama gecikirdi). Adımla aynı
   // çizimde açılır; effect'te açılsa yeni adım bir kare görünüp titrerdi.
@@ -78,24 +120,27 @@ function Oynatici({
   const ilkAdim = useRef(true);
 
   // Tema: değerler çekirdekte doğrulandı; yine de CSS'e setProperty ile.
-  useEffect(() => {
+  // İlk boyamadan ÖNCE (layout effect): sonra yazılırsa düğme önce varsayılan
+  // renkle çizilip 120 ms'de temaya geçiyordu — ziyaretçi parlama, ekran
+  // görüntüsü ara renk görüyordu (ölçüm: gorunum-g3.md).
+  useLayoutEffect(() => {
     document.title = tanim.sayfaBasligi;
     if (!tanim.tema) return;
     const kok = document.documentElement.style;
-    for (const [ad, deger] of Object.entries(temaDegiskenleri(tanim.tema)))
+    for (const [ad, deger] of Object.entries(temaDegiskenleri(tanim.tema, KOK)))
       kok.setProperty(ad, deger);
   }, [tanim]);
 
   // Geri tuşu bir önceki adıma döner, sayfadan çıkmaz.
   useEffect(() => {
-    history.replaceState({ adim: 0 }, "");
+    history.replaceState({ adim: ilkSira }, "");
     const geri = (e: PopStateEvent): void => {
       setGecti(true);
       setMevcut((e.state as { adim?: number } | null)?.adim ?? 0);
     };
     window.addEventListener("popstate", geri);
     return () => window.removeEventListener("popstate", geri);
-  }, []);
+  }, [ilkSira]);
 
   // Her gösterilen adım bildirilir; ilk adım dışında başlığa odak.
   useEffect(() => {
@@ -148,49 +193,184 @@ function Oynatici({
     setOdeme({ suruyor: false, hata });
   }
 
+  async function izinSec(secim: Izin): Promise<void> {
+    if (secim === "hayir" && geriAlGerekir) {
+      setIzinKaydediliyor(true);
+      await izinIstegi.current;
+      const geriAlindi = await izinGeriAl(ziyaretSozu);
+      setIzinKaydediliyor(false);
+      if (!geriAlindi) {
+        setIzinHatasi(
+          "İzin tercihiniz sunucuya iletilemedi. Lütfen tekrar deneyin.",
+        );
+        return;
+      }
+    }
+    izinYaz(secim);
+    setIzin(secim);
+    setGeriAlGerekir(false);
+    setIzinHatasi("");
+    if (secim === "evet") izinIstegi.current = izinBildir(ziyaretSozu);
+    // Ç56 (3): ilk ret de çekirdeğe yazılsın (oran raporu); hata yutulur.
+    else if (!geriAlGerekir) void izinGeriAl(ziyaretSozu);
+  }
+
   return (
     <>
-      {onizleme ? (
+      {!onizleme && izin === null ? (
+        <IzinSeridi
+          onSec={izinSec}
+          bekliyor={izinKaydediliyor}
+          hata={izinHatasi}
+        />
+      ) : null}
+      {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
+      {onizleme && !ekranCekimi ? (
         <p className="onizleme">
-          Önizleme — taslak; hiçbir şey kaydedilmez, ödeme kapalı.
+          Önizleme —{" "}
+          {new URLSearchParams(window.location.search).get("yayin") === "1"
+            ? "yayındaki sürüm"
+            : "taslak"}
+          ; hiçbir şey kaydedilmez, ödeme kapalı.
         </p>
       ) : null}
-      <progress max={tanim.adimlar.length} value={mevcut + 1} />
-      <div ref={kutu} data-gecis={gecti ? "" : undefined}>
-        {tanim.adimlar.map((adim, i) => (
-          <div
-            key={`${i}-${adim.id}`}
-            data-adim={adim.id}
-            data-sira={i}
-            hidden={i !== mevcut}
-          >
-            <Adim
-              adim={adim}
-              medyaKoku={KOK}
-              onIleri={() =>
-                ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
-              }
-              onSecim={(s) => {
-                if (adim.tur !== "soru") return;
-                ilerlemeBildir(
-                  ziyaretSozu,
-                  mevcut,
-                  adim.id,
-                  adim.secenekler[s]?.id,
-                );
-                ileri(adim.secenekler[s]?.hedef);
-              }}
-              odeme={{
-                kapali: onizleme || odeme.suruyor,
-                hata: odeme.hata,
-                onDugme: () => {
-                  if (adim.tur === "paywall") void aboneOl(adim.plan);
-                },
-              }}
-            />
-          </div>
-        ))}
+      {mevcut > 0 || tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+        // Geri ve ilerleme tek satırda; geri sütunu ilk adımda da yer tutar,
+        // ikinci adımda sayfa kaymaz.
+        <div className="ust-cubuk">
+          {mevcut > 0 ? (
+            // Ç61: tarayıcı geri tuşuyla aynı yol (popstate) — dallanmada da
+            // gelinen adıma döner.
+            <button
+              className="geri"
+              type="button"
+              aria-label="Geri"
+              onClick={() => history.back()}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+              >
+                <path
+                  d="M15 5l-7 7 7 7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.25"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+          {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+            <progress max={tanim.adimlar.length} value={mevcut + 1} />
+          ) : null}
+        </div>
+      ) : null}
+      <div ref={kutu} className="adimlar" data-gecis={gecti ? "" : undefined}>
+        {tanim.adimlar.map((adim, i) => {
+          const soru = adim.tur === "soru" ? adim : null;
+          const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
+          const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
+          const secili = soru
+            ? (soru.secenekler ?? []).flatMap((s, j) =>
+                cevaplar.includes(s.id) ? [j] : [],
+              )
+            : [];
+          return (
+            <div
+              key={`${i}-${adim.id}`}
+              data-adim={adim.id}
+              data-sira={i}
+              hidden={i !== mevcut}
+            >
+              <Adim
+                adim={adim}
+                medyaKoku={KOK}
+                onIleri={() =>
+                  ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
+                }
+                onSecim={(s) => {
+                  if (adim.tur !== "soru") return;
+                  ilerlemeBildir(
+                    ziyaretSozu,
+                    mevcut,
+                    adim.id,
+                    adim.secenekler?.[s]?.id,
+                  );
+                  ileri(adim.secenekler?.[s]?.hedef);
+                }}
+                secili={secili}
+                cevapMetni={cevapMetni}
+                onMetinDegistir={(metin) => {
+                  if (adim.tur !== "soru" || adim.secimTuru !== "metin") return;
+                  setSerbestYanilar((once) => ({ ...once, [adim.id]: metin }));
+                }}
+                onSecenekDegistir={(s) => {
+                  if (adim.tur !== "soru") return;
+                  const id = adim.secenekler?.[s]?.id;
+                  if (!id) return;
+                  setSecimler((once) => {
+                    const seciliCevaplar = once[adim.id] ?? [];
+                    return {
+                      ...once,
+                      [adim.id]: seciliCevaplar.includes(id)
+                        ? seciliCevaplar.filter((cevap) => cevap !== id)
+                        : [...seciliCevaplar, id],
+                    };
+                  });
+                }}
+                onCokluDevam={() => {
+                  if (adim.tur !== "soru") return;
+                  if (adim.secimTuru === "metin") {
+                    if (adim.yanitZorunlu && !cevapMetni.trim()) return;
+                    ilerlemeBildir(
+                      ziyaretSozu,
+                      mevcut,
+                      adim.id,
+                      undefined,
+                      cevapMetni,
+                    );
+                    ileri();
+                    return;
+                  }
+                  if (!cevaplar.length) return;
+                  ilerlemeBildir(ziyaretSozu, mevcut, adim.id, cevaplar);
+                  ileri();
+                }}
+                odeme={{
+                  kapali: (onizleme && !ekranCekimi) || odeme.suruyor,
+                  hata: odeme.hata,
+                  fiyat:
+                    adim.tur === "paywall"
+                      ? fiyatMetni(yayin.fiyatlar?.[adim.plan])
+                      : undefined,
+                  onDugme: () => {
+                    // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
+                    if (onizleme) return;
+                    if (adim.tur === "paywall") void aboneOl(adim.plan);
+                  },
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
+      {!onizleme && izin !== null ? (
+        <button
+          className="izin-ayarlari"
+          type="button"
+          onClick={() => {
+            setGeriAlGerekir(izin === "evet");
+            setIzinHatasi("");
+            setIzin(null);
+          }}
+        >
+          Gizlilik ayarları
+        </button>
+      ) : null}
     </>
   );
 }

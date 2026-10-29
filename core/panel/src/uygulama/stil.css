@@ -1,0 +1,66 @@
+/* Panel uygulaması görünümü (B5): Tailwind + renk değişkenleri. Açık ve koyu
+   tema sistem ayarından; koyu web2wave'e yakın (panel-gorunum.md). Bileşenler
+   renkleri adlarıyla kullanır (bg-yuzey, text-soluk…), ham renk yazmaz. */
+@import "tailwindcss";
+
+@theme {
+    --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --color-zemin: var(--zemin);
+    --color-yuzey: var(--yuzey);
+    --color-yuzey-2: var(--yuzey-2);
+    --color-kenar: var(--kenar);
+    --color-metin: var(--metin);
+    --color-soluk: var(--soluk);
+    --color-vurgu: var(--vurgu);
+    --color-vurgu-yazi: var(--vurgu-yazi);
+    --color-iyi: var(--iyi);
+    --color-iyi-zemin: var(--iyi-zemin);
+    --color-uyari: var(--uyari);
+    --color-uyari-zemin: var(--uyari-zemin);
+    --color-tehlike: var(--tehlike);
+    --color-tehlike-zemin: var(--tehlike-zemin);
+}
+
+:root {
+    color-scheme: light;
+    --zemin: #f5f6f8;
+    --yuzey: #ffffff;
+    --yuzey-2: #f0f2f5;
+    --kenar: #e3e6eb;
+    --metin: #111827;
+    --soluk: #6b7280;
+    --vurgu: #2563eb;
+    --vurgu-yazi: #ffffff;
+    --iyi: #15803d;
+    --iyi-zemin: #dcfce7;
+    --uyari: #a16207;
+    --uyari-zemin: #fef3c7;
+    --tehlike: #dc2626;
+    --tehlike-zemin: #fee2e2;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --zemin: #0b0d12;
+        --yuzey: #141821;
+        --yuzey-2: #1b2030;
+        --kenar: #262c3a;
+        --metin: #e7e9ee;
+        --soluk: #8b93a7;
+        --vurgu: #5b8cff;
+        --vurgu-yazi: #0b0d12;
+        --iyi: #4ade80;
+        --iyi-zemin: #14532d66;
+        --uyari: #fbbf24;
+        --uyari-zemin: #78350f55;
+        --tehlike: #f87171;
+        --tehlike-zemin: #7f1d1d55;
+    }
+}
+
+@layer base {
+    body {
+        @apply bg-zemin text-metin text-sm antialiased;
+    }
+}

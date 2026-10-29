@@ -26,6 +26,11 @@
 | Çok huni + kurallar (A8 / E2.1) | ✅ 117 test, kırma 8/8, tarayıcıda tek adres → iki huni | `docs/decisions/cok-huni.md` |
 | Stripe → RevenueCat (A9) | ✅ 126 test, kırma 9/9; gerçek RevenueCat ölçülmedi (Ç43) | `docs/decisions/revenuecat.md` |
 | Huni teması (E2.2) | ✅ 141 test, kırma 6/6, tarayıcıda koyu tema + kontrast reddi | `docs/decisions/tema.md` |
+| Huni adım ayarları | ✅ 187 çekirdek testi + editör/oynatıcı testleri, kırma 3/3; panel görsel kontrolü bekliyor | `docs/decisions/huni-adim-ayarları.md` |
+| Huni çoklu seçim (E2.4b) | ✅ 191 çekirdek testi, editör 18 + bileşen 20 + huni 37 test; kırma 4/4; yerel API/DB göçü + HTTP 200 | `docs/decisions/huni-coklu-secim.md` |
+| Huni müşteri yorumu (E2.4b) | ✅ 192 çekirdek testi, editör 20 + bileşen 21 + huni 38 test; kırma 3/3; sözleşme, önizleme ve oynatıcı | `docs/decisions/huni-yorum.md` |
+| Soru açıklaması (E2.4c) | ✅ 193 çekirdek testi, editör 22 + bileşen 22 + huni 38 test; kırma 3/3; boşken yok, tanım ↔ Puck ↔ önizleme | `docs/decisions/huni-soru-aciklamasi.md` |
+| Huni serbest yanıt (E2.4b) | ✅ 198 çekirdek testi / 1.239 kontrol; editör 19, bileşen 11, oynatıcı 37; kırma 3/3; göç + gerçek HTTP 204 ve DB kaydı; `bin/kontrol` yeşil | `docs/decisions/huni-serbest-metin.md` |
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
@@ -66,18 +71,86 @@
   - [x] **H1** — 2026-10-21, `docs/decisions/huni-bilesenleri-h1.md`: `huni-bilesenleri/` (`Tanitim`/`Soru`/`Paywall` + `tema.ts` + `huni.css`), bağımlılıksız — düzenleyicinin `node_modules`'u bağlanır, `dedupe` + `tek-react` bekçisi; Puck ve huni sayfası aynı CSS/tema; `Tema.php` ile ortak örnek dosyası; `bin/kontrol` +4 adım (`html-yok` dahil). Kalanlar Ç51
   - [x] **H2** — 2026-10-21, `docs/decisions/huni-oynatici-h2.md`: `funnel/src/oynatici/Huni.tsx` tek React adacığı (`client:only`), H1 bileşenleriyle; tanım isteği satır içi betikte (JS'i beklemiyor); D1–D15 = 22 test, kırma 27 deneme · 36 koşu (2 sahte/koşulmadı → düzeltildi, 2 tutmadı → gereksiz satır kaldırıldı); JS 73,2 KB gzip (`funnel-butce` ≤ 90 KB). Kalanlar Ç52 (ikinci JS turu, ölçülemeyen duvar saati)
   - [x] **H3** — 2026-10-21, `docs/decisions/huni-onizleme-h3.md`: aynı tanım iki bağımsız yoldan (Puck alanları / tanım → `Adim`) aynı DOM (düzenleyici testi, kırma 6/6); tarayıcıda 9 öğe × 12 hesaplanmış özellik fark 0; geçerli önizleme bağlantısı yürüdü. Klasik düzenleyici kaldı (Ç45, kullanıcı kararı)
-  - [x] **b1 · yayınla/önizleme/sürümler Puck'ta** (Ç45) — 2026-10-21, `docs/decisions/puck-yayin-b1.md`: üst çubuk Kaydet · Önizle · Yayınla · Sürümler; 3 JSON ucu; kaydedilmemişken yayın/önizleme/geri yükleme kapalı; kırma 9/10 (+S9 tutmadı → koruma access_control'da, S9b). Sırada **b2** (klasik düzenleyiciyi silmek; önce Safari) — Ç53
+  - [x] **b1 · yayınla/önizleme/sürümler Puck'ta** (Ç45) — 2026-10-21, `docs/decisions/puck-yayin-b1.md`: üst çubuk Kaydet · Önizle · Yayınla · Sürümler; 3 JSON ucu; kaydedilmemişken yayın/önizleme/geri yükleme kapalı; kırma 9/10 (+S9 tutmadı → koruma access_control'da, S9b). Safari dar ekran menüsü düzeltildi ve görsel kontrol edildi (94b8eee). Sırada **b2** (kullanıcı Puck'ı gerçek kullanımda denedikten sonra klasik düzenleyiciyi silmek; Ç53).
+  - [x] **Açık kaynak web-funnel/anket arayüzü repo listesi** — 2026-10-23: yüksek yıldızlı Formbricks, HeyForm, SurveyJS Library, OpnForm, Xiaoju Survey; doğrudan huni örnekleri OpenFunnel / OpenFunnels. Yıldız, lisans ve UI inceleme hedefi `docs/decisions/huni-arayuz-repo-arastirmasi.md` içinde. Sıradaki görsel araştırma iki doğrudan huni örneğiyle başlar. Kod alınmaz (CLAUDE.md §2.12).
+  - [x] **Puck üst çubuk durum görünürlüğü** — 2026-10-23: kaydedilmemiş / yayına hazır taslak / yayındaki sürüm renkli ve ekran okuyucuya duyurulan etiket; HeyForm/OpenFunnels yayın akışından davranışsal esin, kod kopyası yok. Editör 24/24 test + üretim derlemesi. Ayrıntı: `docs/decisions/huni-arayuz-repo-arastirmasi.md`.
+  - [x] **Puck soru arketipleri** — 2026-10-23: tek seçim / çoklu seçim / serbest yanıt ekleme menüsünde ayrı hazır blok; kayıtta tek `soru` şeması korunur. OpenFunnel README davranış fikri; kod yok. Editör 26/26 + TypeScript denetimi. Ayrıntı: `docs/decisions/huni-arayuz-repo-arastirmasi.md`.
   - [x] **Ada önyükleme** (Ç52 (1)) — 2026-10-21, `docs/decisions/ada-onyukleme.md`: derlemede `modulepreload`; ikinci JS turu kalktı, içerik yalnız tanımı bekliyor (ısınmış: ilk bildirim 142 ms, H0 230)
   - [x] **H4** — 2026-10-21, `docs/decisions/huni-gecisler-h4.md`: yalnız CSS (`@keyframes`, 220 ms), ilk adımda yok (`data-gecis`), `prefers-reduced-motion`'a uyar; JS +23 B; kırma 5/5. Kalanlar Ç54
   - [x] **H5** — 2026-10-21, `docs/decisions/huni-dallanma-h5.md` (A11): seçenek ve tanıtım düğmesi → hedef adım, yalnız ileri; skor yok; sözleşme + çekirdek + oynatıcı + Puck açılır listesi; kırma 9/9. XState/Zustand GEREKMEDİ (iki `useState` yetti). Kalanlar Ç55
-  - [ ] **H6 · Olay/piksel noktası** — tek `olayBildir` (bugünkü `ilerlemeBildir`'in yerine): çekirdek ölçümü + Meta Pixel / TikTok Pixel / GA4. Ön koşul: çerez onayı (Ç12, Ç34) ve sunucu bildirimiyle tekilleştirme (Ç28) — aşağıdaki "Reklam ağına dönüşüm" maddesiyle aynı blok. Başarı sayfasında piksel `session_id`'yi görmemeli (A10, Ç46)
-- [ ] **E2.4b yeni bileşen türleri** (ör. yorum/sosyal kanıt, çoklu seçim, metin girişi) — çekirdek Tanim + sözleşme + Puck + ortak bileşen; **H2'den SONRA** (yeni tür bir kez, ortak bileşen olarak yazılsın)
-- [ ] Reklam ağına dönüşüm (Meta CAPI / TikTok Events) + çerez onayı (A6, Ç12, Ç34) — ücretli trafikten önce
+  - [x] **H6a · onay şeridi** (A12) — 2026-10-21, `docs/decisions/huni-izin-h6a.md`: herkese Kabul/Reddet; tıklama kimlikleri yalnız izinle; `docs/decisions/huni-izin-geri-alma.md`: ayarı yeniden açıp aktif ziyaretten izni geri alır, kuyruktaki paylaşım iptal edilir. Ç56 hukuki metin/bağlantı ve raporlama açık.
+  - [x] **H6b · sunucu dönüşümü** — 2026-10-23, `docs/decisions/huni-donusum-h6b.md`: Stripe webhook'unda yalnız izinli ve ödenmiş ziyaret için Meta CAPI + TikTok Events API; kuyruk/yeniden deneme; IP/UA geçici tutulur ve kuyruk yükü en geç 7 günde silinir. Gerçek reklam hesabı doğrulaması için Meta Pixel ID + erişim anahtarı + test olay kodu ve TikTok Pixel ID + erişim anahtarı gerekir; henüz yapılmadı.
+  - [x] **H6c · tarayıcı pikselleri** — `docs/decisions/huni-donusum-h6c.md`; izin + doğrulanmış satın alma sonrası Meta `Purchase` / TikTok `CompletePayment`, sunucu ile aynı Stripe `event_id`; yerel test ve gerçek HTTP geçti. Reklam hesabı doğrulaması ve Ç56 hukuk/izin açık.
+  - [x] **H6 · reklam olayları** — H6a–c tamamlandı: izin şeridi, çekirdek ölçümü, Meta + TikTok sunucu/tarayıcı satın alma olayları ve aynı kimlikle tekilleştirme. H6a.1 aktif ziyaretten izni geri alır. GA4 A12'de reddedildi; canlı hesap testi ve Ç56 hâlâ ücretli trafik ön koşulu.
+- [x] **E2.4b ilk yeni soru türü: çoklu seçim** — 2026-10-22, `docs/decisions/huni-coklu-secim.md`
+- [x] **E2.4b müşteri yorumu/sosyal kanıt adımı** — 2026-10-22, `docs/decisions/huni-yorum.md`
+- [x] **E2.4c soru açıklaması** — 2026-10-22, `docs/decisions/huni-soru-aciklamasi.md`
+- [x] **E2.4b serbest metin soru türü** — 2026-10-23, `docs/decisions/huni-serbest-metin.md`
+- [ ] Reklam ölçümünün canlıya hazır olması — H6b sunucu aktarımı tamam; H6c tarayıcı pikselleri + Ç56 hukuk/izin açıkları tamamlanmadan ücretli trafikten önce kapanmaz.
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
 - [ ] **Ödeme sağlayıcısı araştırması** — Ç10
 - [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
 - [x] **`/kontrol`** — `bin/kontrol`, kırma K4–K7
+- [ ] **DÖNGÜ KUYRUĞU — A13** (kararlar 2026-10-26, `pre-setup.md` A13). Sırayla, her biri ayrı blok (`/blok`), bitince commit + push; dış girdi gerekirse açık uca yaz, atla. İşaretle ve `docs/decisions/`e taşı:
+  - [x] L1 · Ç60 dev DB göçü + `bin/kontrol` uyarı adımı · Ç62 `reference.php` `.gitignore` — `docs/decisions/dev-goc-uyari.md`
+  - [x] L2 · Ç58 izin yarışı — istemcide sıralama — `docs/decisions/huni-izin-yarisi.md`
+  - [x] L3 · Ç59 terk edilen ödeme IP/UA — `checkout.session.expired` + 48 sa cron — `docs/decisions/odeme-ip-temizligi.md`
+  - [x] L4 · Ç61 Puck: yalnız 3 hazır soru türü, kayıttan doğru türle açılış, benzersiz kimlik — `docs/decisions/puck-soru-turleri.md` (tarayıcı: kullanıcı bakacak)
+  - [x] L5 · Ç55 ulaşılamayan adım uyarısı + yeniden adlandırmada hedef güncelleme — `docs/decisions/puck-akis-denetimi.md` (tarayıcı: kullanıcı)
+  - [x] L6 · Ç61 huni: görünür geri düğmesi + okunur gizlilik bağlantısı — `docs/decisions/huni-geri-gizlilik.md`
+  - [x] L7 · Ç61 paywall: fayda listesi + şartlar/gizlilik/iptal bağlantı alanları — `docs/decisions/paywall-fayda-yasal.md`
+  - [x] L8 · Ç61 tema: logo + masaüstü düzeni — `docs/decisions/huni-logo-masaustu.md`
+  - [x] L9 · Ç44 görsel alt metni (+ logo medya kontrolü) — `docs/decisions/gorsel-alt-metni.md`
+  - [x] L10 · Ç19/Ç21 fiyat tek kaynak (Stripe → çekirdek → paywall); Adaptive Pricing açık kalır (Ç19 yerel para farkı açık) — `docs/decisions/fiyat-tek-kaynak.md` (kullanıcı: paywall metninden elle fiyatı sil)
+  - [x] L11 · Ç53 b2 klasik düzenleyiciyi sil — `docs/decisions/puck-tek-duzenleyici-b2.md`
+  - [x] L12 · Ç39 eşzamanlı kayıt 409 — `docs/decisions/eszamanli-kayit.md`
+  - [x] L13 · Ç41 panel oturumu 8 sa + uyarı · Ç35 oturumlar DB'de — `docs/decisions/panel-oturum.md`
+  - [x] L14 · Ç41 huni arşivleme/silme — `docs/decisions/huni-arsiv.md`
+  - [x] L15 · Ç34 ziyaret hız sınırı + sekmede ziyaret sürdürme (+ güvenilir vekil, H6b IP hatası) — `docs/decisions/ziyaret-hiz-siniri.md`
+  - [x] L16 · Ç56-3 izin oranı raporu — `docs/decisions/izin-orani.md`
+  - [x] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock — `docs/decisions/webhook-butunluk-past-due.md`
+  - [ ] L18 · Ç23 ölü bağlantı denetimi · Ç14 Dependabot
+  - [ ] L19 · Ç54 yöne göre geçiş + yumuşak ilerleme çubuğu
+  - [ ] L20 · Ç50 Preact denemesi (ölç; iyiyse geç)
+- [ ] **Huni mobil görünüm** (kullanıcı 2026-10-27: "huniyi sevmedim, örnek repolara bak"; yön: mobil uygulama gibi). `docs/decisions/huni-mobil-gorunum.md`
+  - [x] 1 · görünüm: seçenek kartları + işaret, alta yapışık düğme, plan kartı — 2026-10-27
+  - [x] 2 · tek seçimde otomatik ilerleme — zaten vardı
+  - [ ] 3 · seçenek simgesi (emoji): sözleşme + çekirdek + Puck alanı
+  - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
+  - [ ] 5 · başarı / iptal sayfaları aynı görünümde
+- [ ] **Huni görünüm yüzeyi** (Ç71 (b); kullanıcı 2026-10-27: "AI birebir aynı quiz verdi, renk farkı yok yazı farkı yok"). Bugün görünüm = huni başına 5 tema alanı + logo; adım başına çeşit yok. (a) AI yönergesi yapıldı (`docs/decisions/ai-tema-yonergesi.md`). Her adım `/blok`; her yeni alan = sözleşme `HuniTemasi`/adım şeması + `Tema.php`/`Tanim.php` + `huni-bilesenleri` + Puck alanı + `Tema::aiYonergesi` örnekleri (AI ancak sözleşmedekini üretebilir):
+  - [x] G1 · 2026-10-27, `docs/decisions/gorunum-g1.md`: envanter (web2wave, Formbricks) + 19 varyant × 3 adım ekran ölçümü; zemin baskın, yapısal ayarlar ikinci, düğme/köşe küçük. Sıra aşağıda (ölçüme göre); Ç75, Ç76
+  - [x] G3 · 2026-10-27, `docs/decisions/gorunum-g3.md`: `tema.zemin` geçiş / görsel + karartma (en kötü görsele göre eşik, hata en az değeri söyler); Puck alanları, AI örnekleri; yan bulgu: tema boyamadan sonra uygulanıyordu → `useLayoutEffect` (§40). Kırma 11/11
+  - [x] G6 · 2026-10-27, `docs/decisions/gorunum-g6.md`: `tema.kartRengi`; kart varsa okunurluk metin ↔ kart (koyu zemin + açık kart geçerli), zemin sayfa kökünde, yanlarda boşluk; Puck alanı + aynı kurallı uyarı, AI örneği. Kırma 11/11
+  - [x] G7 · 2026-10-30, `docs/decisions/gorunum-g7.md`: `baslikBoyu` (kucuk/normal/buyuk), `yogunluk` (sik/normal/ferah), `hizalama` (sol/orta); Puck alanları, AI örnekleri; gerçek düzen farkı %71–88. Kırma 9/9
+  - [x] G2 · 2026-10-30, `docs/decisions/gorunum-g2.md`: kullanıcı kararı seçenek 3 — fontlar huniyle birlikte (Fontsource OFL, latin + latin-ext); serif → Lora, yuvarlak → Nunito, yeni modern (Manrope), geometrik (Outfit); KVKK bekçisi (CSS'te dış adres yok), aile başına ≤ 80 KB. Kırma 8/8
+  - [ ] G5 · adım başına görünüm çeşidi (ör. tanıtım: görsel üstte / tam ekran) — boş alanı doldurur; T1 blok kataloğuyla çakışır, sırası orada kararlaştırılır
+  - [ ] G4 · düğme biçimi (dolu / çerçeve / hap) + seçenek kartı düzeni (liste / ızgara / görselli) — ölçülen etki düşük; ızgara soru adımında
+- [ ] **YOL HARİTASI — AI asistanı + platform temelleri** (kullanıcı 2026-10-27: "MCP'yi içine göm, prompt iç arayüzde"; araştırma `docs/decisions/ai-asistan-arastirmasi.md`, `web2wave-platform-yapisi.md`). Sıra bağımlılığa göre; her adım `/blok`, ayrı commit:
+  - [x] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)
+  - [x] **A1** · konsol: `app:huni-arac <app> <araç>` (JSON `--girdi`/stdin) — Claude Code depodan promptla huni kurar; `ai-a1-konsol.md`
+  - [x] **A2** · panel AI arka ucu (`ai-a2-panel-arka-uc.md`; gerçek Claude ölçülmedi — anahtar yok): `/panel/api/ai/sohbet` (oturum+CSRF, SSE akış), PHP SDK tool runner, `claude-opus-5-5`, doğrulama döngüsü, yalnız taslak, tur/jeton/hız sınırı, istek kaydı + maliyet; sahte API ile testler (`SahteRevenueCat` deseni). **Anahtar yok (kullanıcı 2026-10-27, boş kalacak)** → anahtar boşsa panelde "AI kapalı", istek gitmez; testler sahte API'yle; anahtarı kullanıcı `core/.env.local`'e kendisi yazar
+  - [x] **A3** · panel AI arayüzü: Puck eklentisi (sohbet, canlı adımlar, geri al) — `ai-a3-panel-arayuz.md`; "AI ile yeni huni" P2'ye ertelendi
+  - [x] **A4** · ürün bağlamı (`ai-a4-urun-baglami.md`): uygulama başına profil (kategori, kitle, ton, yasaklar) panelde, sistem istemine
+  - [ ] **SIRADAKİ (B6, kullanıcı 2026-10-27): A5 öne alındı** — dışarıya açık MCP sunucusu (URL); önce araştırma (aktarım, kimlik, herkese açık adres), sonra kurulum. Anahtar gerekmez (kullanıcının Claude aboneliği).
+  - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
+  - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
+  - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
+    - [x] A5a · (`mcp-a5a.md`) kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost
+    - [x] A5+ · (`ai-ekran-goruntusu.md`, Ç72 (1)) `ekran_goruntusu` aracı: başsız Chrome kabı (`ekran`), önizlemede `?adim=`, MCP görüntü içeriği; gerçek MCP HTTP ile ölçüldü. Kalan: Ç72 (2)–(4), Ç73, Ç74
+    - [ ] A5b · herkese açık adres (geçici Cloudflare tüneli onayla / dağıtım) + claude.ai özel bağlayıcı
+    - [ ] A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa
+  - [ ] **A6** · değerlendirme: brief seti → geçerli tanım oranı, tur, maliyet (A2 sonrası, model/efor ayarı için)
+  - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
+- [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
+  - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
+  - [x] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
+  - [ ] P2 · Huniler: liste, yeni, varsayılan, sil/arşiv, kurallar — JSON uçlar + sayfa; Twig silinir · + "AI ile yeni huni" (A0 `yeni_huni`, kapsamsız sohbet ucu; A3'ten)
+  - [ ] P3 · Puck düzenleyici panelin sayfası (sayfa yenilemeden); `huni-surukle.html.twig` silinir
+  - [ ] P4 · grafik: günlük ziyaret / ödeme serisi (Recharts)
+  - [ ] P5 · Kullanıcılar (CRM): e-posta / UTM / kampanya araması, abonelik durumu (TanStack Table)
+- [x] **Panel görünümü** (kullanıcı 2026-10-27: "basit siyah ekran, web2wave'e bak") — sol menü, özet, huni şeridi, açık/koyu tema. `docs/decisions/panel-gorunum.md`
 
 ## 2. Backlog
 

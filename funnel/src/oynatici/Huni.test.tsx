@@ -7,20 +7,30 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "vitest";
 import type { components } from "../sozlesme/api";
 import Huni from "./Huni";
 
 type Yayin = components["schemas"]["HuniYayini"];
 type Istek = { yontem: string; yol: string; sorgu: string; govde: unknown };
 type Yanit = { durum: number; govde?: unknown };
+type Cevap = Yanit | "ag-hatasi";
 
 // openapi-fetch fetch'i istemci kurulurken alır (cekirdek.ts, içe aktarmada):
 // sahte, içe aktarmalardan ÖNCE yerinde olmalı.
 const ag = vi.hoisted(() => {
   const ag = {
     istekler: [] as Istek[],
-    yanitla: (_i: Istek): Yanit | "ag-hatasi" => ({ durum: 404 }),
+    // Söz dönerse yanıt bekletilir: uçuştaki istekle yarış ölçülür (Ç58).
+    yanitla: (_i: Istek): Cevap | Promise<Cevap> => ({ durum: 404 }),
   };
   globalThis.fetch = async (girdi: RequestInfo | URL, init?: RequestInit) => {
     const r = new Request(girdi, init);
@@ -33,7 +43,7 @@ const ag = vi.hoisted(() => {
       govde: metin ? JSON.parse(metin) : undefined,
     };
     ag.istekler.push(istek);
-    const y = ag.yanitla(istek);
+    const y = await ag.yanitla(istek);
     if (y === "ag-hatasi") throw new TypeError("Failed to fetch");
     return new Response(
       y.govde === undefined ? null : JSON.stringify(y.govde),
@@ -119,6 +129,8 @@ beforeEach(() => {
     return { durum: 404 };
   };
   delete window.huniTanimi;
+  window.localStorage.clear(); // izin seçimi testler arasında sızmasın
+  window.sessionStorage.clear(); // Ç34: sekmedeki ziyaret de
   document.documentElement.removeAttribute("style");
   document.title = "";
 });
@@ -199,6 +211,63 @@ describe("D3 — önizleme", () => {
   });
 });
 
+describe("Ç70 — yayındaki sürümün önizlemesi", () => {
+  it("yayin=1: taslak ucuna yayin gider, şerit yayındaki der; ziyaret yok, ödeme kapalı", async () => {
+    kur("?huni=fitness&yayin=1&onizleme=abc");
+    await yuklendi();
+    const [g] = istekler("GET", "/huni/keepchat/taslak");
+    expect(Object.fromEntries(new URLSearchParams(g?.sorgu))).toEqual({
+      huni: "fitness",
+      anahtar: "abc",
+      yayin: "1",
+    });
+    screen.getByText(
+      "Önizleme — yayındaki sürüm; hiçbir şey kaydedilmez, ödeme kapalı.",
+    );
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect((screen.getByText("Abone ol") as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ag.istekler.filter((i) => i.yontem === "POST")).toEqual([]);
+  });
+});
+
+describe("Ç72 — önizlemede adım seçimi (ekran görüntüsü)", () => {
+  // Adımların hepsi DOM'da; görünmeyen `hidden` taşır — görünürlük ölçülür.
+  const gorunur = (metin: string): boolean =>
+    screen.getByText(metin).closest("[hidden]") === null;
+  it("önizlemede adim=<kimlik> o adımdan başlar", async () => {
+    kur("?huni=fitness&onizleme=abc&adim=kiminle");
+    await yuklendi();
+    expect(gorunur("Kiminle?")).toBe(true);
+    expect(gorunur("Merhaba")).toBe(false);
+  });
+  it("bilinmeyen adım ilk adımdan başlar", async () => {
+    kur("?huni=fitness&onizleme=abc&adim=yok");
+    await yuklendi();
+    expect(gorunur("Merhaba")).toBe(true);
+  });
+  it("Ç75 ekran=1: şerit yok, ödeme düğmesi ziyaretçideki gibi etkin; tıklanınca ödeme başlamaz", async () => {
+    kur("?huni=fitness&onizleme=abc&ekran=1&adim=paywall");
+    await yuklendi();
+    expect(screen.queryByText(/Önizleme —/)).toBeNull();
+    const dugme = screen.getByText("Abone ol") as HTMLButtonElement;
+    expect(gorunur("Abone ol")).toBe(true);
+    expect(dugme.disabled).toBe(false);
+    fireEvent.click(dugme);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(ag.istekler.filter((i) => i.yontem === "POST")).toEqual([]);
+  });
+  it("gerçek ziyarette adim yok sayılır (ölçüm ilk adımdan)", async () => {
+    kur("?adim=kiminle");
+    await yuklendi();
+    expect(gorunur("Merhaba")).toBe(true);
+    expect(gorunur("Kiminle?")).toBe(false);
+  });
+});
+
 describe("D1 · D2 · D6 · D8 — çizim", () => {
   it("metin HTML olarak yorumlanmaz", async () => {
     tanim = {
@@ -234,6 +303,185 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     fireEvent.click(screen.getByText("Başla"));
     expect(cubuk.value).toBe(2);
   });
+
+  it("ilerleme çubuğu yalnız kapatıldığı adımda gizlenir", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        adimlar: [
+          { ...yayin().tanim.adimlar[0]!, ilerlemeGoster: false },
+          ...yayin().tanim.adimlar.slice(1),
+        ],
+      }),
+    };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("progress")).toBeNull();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(document.querySelector("progress")).not.toBeNull();
+  });
+
+  it("çoklu seçimde yanıtları işaretler, düğmeyle gönderir ve sonraki adıma geçer", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.tur === "soru"
+              ? {
+                  ...adim,
+                  aciklama: "Birden fazla seçenek seçebilirsin.",
+                  secimTuru: "coklu",
+                  devamDugmesi: "Seçimleri gönder",
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    screen.getByText("Birden fazla seçenek seçebilirsin.");
+
+    const devamDugmesi = screen.getByRole("button", {
+      name: "Seçimleri gönder",
+    });
+    expect((devamDugmesi as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByText("Ailemle"));
+    fireEvent.click(screen.getByText("İş"));
+    expect(
+      screen
+        .getByRole("button", { name: "Ailemle" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect((devamDugmesi as HTMLButtonElement).disabled).toBe(false);
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    fireEvent.click(devamDugmesi);
+
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    await waitFor(() => expect(ilerlemeler()).toHaveLength(4));
+    expect(ilerlemeler()[2]).toEqual({
+      sira: 1,
+      adim: "kiminle",
+      cevaplar: ["aile", "is"],
+    });
+  });
+
+  it("serbest yanıtı yazıp isteğe bağlı Devam ile ayrı alan olarak gönderir", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.tur === "soru"
+              ? {
+                  id: adim.id,
+                  tur: "soru",
+                  soru: adim.soru,
+                  secimTuru: "metin",
+                  devamDugmesi: "Devam et",
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    const alan = screen.getByRole("textbox", { name: "Yanıtınız" });
+    fireEvent.change(alan, { target: { value: "Daha iyi uyumak istiyorum" } });
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    fireEvent.click(screen.getByRole("button", { name: "Devam et" }));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    await waitFor(() => expect(ilerlemeler()).toHaveLength(4));
+    expect(ilerlemeler()[2]).toEqual({
+      sira: 1,
+      adim: "kiminle",
+      cevapMetni: "Daha iyi uyumak istiyorum",
+    });
+  });
+
+  it("zorunlu serbest yanıtta boşken ilerlemez", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.tur === "soru"
+              ? {
+                  id: adim.id,
+                  tur: "soru",
+                  soru: adim.soru,
+                  secimTuru: "metin",
+                  yanitZorunlu: true,
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    const devam = screen.getByRole("button", { name: "Devam" });
+    expect((devam as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(devam);
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    fireEvent.change(screen.getByRole("textbox", { name: "Yanıtınız" }), {
+      target: { value: "Bir cevap" },
+    });
+    expect((devam as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("yorum adımı alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: [
+            temel.tanim.adimlar[0]!,
+            temel.tanim.adimlar[1]!,
+            {
+              id: "yorum",
+              tur: "yorum",
+              baslik: "Kullanıcı deneyimi",
+              metin: "Günlük işlerim artık daha kolay.",
+              yazar: "Ayşe",
+              unvan: "KeepChat kullanıcısı",
+              dugme: "Devam et",
+            },
+            temel.tanim.adimlar[2]!,
+          ],
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kullanıcı deneyimi"));
+    screen.getByText("Günlük işlerim artık daha kolay.");
+    screen.getByText("Ayşe");
+    fireEvent.click(screen.getByText("Devam et"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+  });
 });
 
 describe("D7 — tema", () => {
@@ -262,6 +510,28 @@ describe("D7 — tema", () => {
       ).toEqual(["#16a34a", "#000000", "#0b1220", "#f8fafc", "20px"]),
     );
     expect(s.getPropertyValue("--yazi-tipi")).toContain("ui-monospace");
+  });
+  it("G3: zemin görseli çekirdeğin medya adresinden kökte", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        tema: {
+          anaRenk: "#2563eb",
+          arkaPlan: "#ffffff",
+          metinRengi: "#111827",
+          yaziTipi: "sistem",
+          kose: 10,
+          zemin: { tur: "gorsel", gorsel: G, karartma: 70 },
+        },
+      }),
+    };
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(
+        document.documentElement.style.getPropertyValue("--zemin"),
+      ).toContain(`url("${KOK}/medya/${G}.webp")`),
+    );
   });
   it("tema yoksa kökte değişken yazılmaz (huni.css varsayılanı)", async () => {
     kur();
@@ -310,6 +580,111 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     expect(gorunenBaslik()).toBe("Kiminle?");
     fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
     await waitFor(() => expect(gorunenBaslik()).toBe("Merhaba"));
+  });
+  it("paywall fiyatı yanıttaki Stripe fiyatından; yoksa satır yok (Ç19/Ç21)", async () => {
+    tanim = {
+      durum: 200,
+      govde: {
+        ...yayin(),
+        fiyatlar: {
+          monthly: { tutar: 9.99, paraBirimi: "EUR", aralik: "month" },
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    expect(
+      document.querySelector('[data-adim="paywall"] p.fiyat')?.textContent,
+    ).toBe("€9,99 / ay");
+    cleanup();
+    tanim = { durum: 200, govde: yayin() };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("p.fiyat")).toBeNull();
+  });
+  it("aynı sekmede yeniden yükleme yeni ziyaret açmaz; başka sürüm açar (Ç34)", async () => {
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+    );
+    cleanup();
+    kur(); // sayfa yenilendi
+    await yuklendi();
+    await waitFor(() => expect(ilerlemeler().length).toBeGreaterThan(1));
+    expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1);
+    cleanup();
+    tanim = { durum: 200, govde: { ...yayin(), surum: 5 } };
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(2),
+    );
+  });
+
+  it("sekme deposu yoksa yine ziyaret açılır (Ç34)", async () => {
+    const asil = Object.getOwnPropertyDescriptor(window, "sessionStorage");
+    Object.defineProperty(window, "sessionStorage", {
+      configurable: true,
+      get: () => {
+        throw new DOMException("engelli", "SecurityError");
+      },
+    });
+    try {
+      kur();
+      await yuklendi();
+      await waitFor(() =>
+        expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+      );
+    } finally {
+      if (asil) Object.defineProperty(window, "sessionStorage", asil);
+    }
+  });
+
+  it("logo varsa sayfanın başında, yoksa hiç yok (Ç61)", async () => {
+    tanim = {
+      durum: 200,
+      govde: { ...yayin(), tanim: { ...yayin().tanim, logo: G } },
+    };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("img.logo")?.getAttribute("src")).toBe(
+      `${KOK}/medya/${G}.webp`,
+    );
+    cleanup();
+    tanim = { durum: 200, govde: yayin() };
+    kur();
+    await yuklendi();
+    expect(document.querySelector("img.logo")).toBeNull();
+  });
+  it("Geri düğmesi ilk adımda yok; sonrakinde önceki adıma döner (Ç61)", async () => {
+    kur();
+    await yuklendi();
+    const geri = () => screen.queryByRole("button", { name: "Geri" });
+    expect(geri()).toBeNull();
+    // Geri sütunu ilk adımda da üst çubukta yer tutar: ikinci adımda
+    // ilerleme çubuğu ve içerik kaymaz.
+    expect(document.querySelector(".ust-cubuk > progress")).not.toBeNull();
+    // Mobil görünüm: ana düğme adımın .eylem alanında (CSS onu .adimlar
+    // altında alta yapıştırır).
+    expect(
+      document.querySelector(
+        '.adimlar > [data-sira="0"] > section > .eylem > button.ana',
+      ),
+    ).not.toBeNull();
+    // İlk kaydı effect yazar; beklenmezse geçmiş null kalır (aralıklı, §33).
+    await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
+    fireEvent.click(screen.getByText("Başla"));
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    expect(
+      document.querySelector(".ust-cubuk > button.geri + progress"),
+    ).not.toBeNull();
+    // Tarayıcının geri tuşuyla aynı yol: geçmişten bir adım geri (dallanmada
+    // da gelinen adıma döner).
+    fireEvent.click(geri()!);
+    await waitFor(() => expect(gorunenBaslik()).toBe("Merhaba"));
+    expect(history.state).toEqual({ adim: 0 });
+    expect(geri()).toBeNull();
   });
   it("adım değişince başlığa odak; ilk adımda odak çalınmaz", async () => {
     kur();
@@ -429,6 +804,184 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     expect(history.state).toEqual({ adim: 3 });
     devam();
     expect(gorunenBaslik()).toBe("Pro");
+  });
+});
+
+describe("H6a — reklam ölçümü izni (A12)", () => {
+  const ADRES = "?utm_source=meta&fbclid=IwAR0abc&ttclid=E.C.P.x";
+  const ziyaretGovdesi = (): unknown =>
+    istekler("POST", "/huni/ziyaretler")[0]?.govde;
+  const izinler = (): Istek[] => istekler("POST", `/huni/ziyaretler/${Z}/izin`);
+  const bekleZiyaret = (): Promise<void> =>
+    waitFor(() => expect(ilerlemeler()).toHaveLength(1));
+
+  it("ilk ziyaret: şerit var, tıklama kimliği gitmez (UTM gider)", async () => {
+    kur(ADRES);
+    await yuklendi();
+    await bekleZiyaret();
+    expect(
+      screen.getByRole("complementary", { name: "Reklam ölçümü izni" }),
+    ).toBeTruthy();
+    expect(ziyaretGovdesi()).toEqual({
+      app: "keepchat",
+      huni: "varsayilan",
+      surum: 4,
+      utm_source: "meta",
+    });
+  });
+
+  it("Kabul: kimlikler izin ucuna gider, şerit kalkar, seçim hatırlanır", async () => {
+    kur(ADRES);
+    await yuklendi();
+    fireEvent.click(screen.getByText("Kabul et"));
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    expect(izinler()[0]?.govde).toEqual({
+      fbclid: "IwAR0abc",
+      ttclid: "E.C.P.x",
+    });
+    expect(screen.queryByText("Kabul et")).toBeNull();
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("evet");
+  });
+
+  it("Reddet: izin isteği yok, şerit kalkar, seçim hatırlanır", async () => {
+    kur(ADRES);
+    await yuklendi();
+    fireEvent.click(screen.getByText("Reddet"));
+    await bekleZiyaret();
+    expect(izinler()).toEqual([]);
+    // Ç56 (3): ret çekirdeğe yazılır (oran raporu) — geri alma ucuyla.
+    await waitFor(() =>
+      expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
+    );
+    expect(screen.queryByText("Reddet")).toBeNull();
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
+  });
+
+  it("önceden izin verilmiş: şerit yok, kimlikler ziyaretle birlikte", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    kur(ADRES);
+    await yuklendi();
+    await bekleZiyaret();
+    expect(screen.queryByText("Kabul et")).toBeNull();
+    expect(ziyaretGovdesi()).toMatchObject({
+      fbclid: "IwAR0abc",
+      ttclid: "E.C.P.x",
+      izin: true,
+    });
+    expect(izinler()).toEqual([]);
+  });
+
+  it("önceden reddedilmiş: şerit yok, kimlik yok", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "hayir");
+    kur(ADRES);
+    await yuklendi();
+    await bekleZiyaret();
+    expect(screen.queryByText("Kabul et")).toBeNull();
+    expect(ziyaretGovdesi()).not.toHaveProperty("fbclid");
+    expect(ziyaretGovdesi()).toHaveProperty("izin", false); // Ç56 (3)
+  });
+
+  it("gizlilik ayarından izin geri alınca çekirdeğe silme isteği yollar", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    const oncekiYanitle = ag.yanitla;
+    ag.yanitla = (i) =>
+      i.yontem === "DELETE" ? { durum: 204 } : oncekiYanitle(i);
+    kur(ADRES);
+    await yuklendi();
+
+    fireEvent.click(screen.getByRole("button", { name: "Gizlilik ayarları" }));
+    fireEvent.click(screen.getByText("Reddet"));
+
+    await waitFor(() =>
+      expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
+    );
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
+    expect(screen.queryByText("Reddet")).toBeNull();
+  });
+
+  it("izin geri alma isteği başarısızsa kullanıcı yeniden deneyebilsin diye şeridi açık tutar", async () => {
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    const oncekiYanitle = ag.yanitla;
+    ag.yanitla = (i) =>
+      i.yontem === "DELETE" ? "ag-hatasi" : oncekiYanitle(i);
+    kur(ADRES);
+    await yuklendi();
+
+    fireEvent.click(screen.getByRole("button", { name: "Gizlilik ayarları" }));
+    fireEvent.click(screen.getByText("Reddet"));
+
+    await screen.findByRole("alert");
+    expect(screen.getByText("Reddet")).toBeTruthy();
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("evet");
+  });
+
+  it("Kabul isteği uçuştayken geri alınırsa silme ondan SONRA gider (Ç58)", async () => {
+    // Önce varan silmeyi geç varan Kabul ezerdi: tarayıcı "hayir", çekirdek
+    // izinli → satın alma reklam ağlarına giderdi.
+    let kabulBitir = (): void => undefined;
+    const oncekiYanitle = ag.yanitla;
+    ag.yanitla = (i) => {
+      if (i.yontem === "DELETE") return { durum: 204 };
+      if (i.yontem === "POST" && i.yol.endsWith("/izin"))
+        return new Promise<Cevap>((coz) => {
+          kabulBitir = () => coz({ durum: 204 });
+        });
+      return oncekiYanitle(i);
+    };
+    kur(ADRES);
+    await yuklendi();
+
+    fireEvent.click(screen.getByText("Kabul et"));
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Gizlilik ayarları" }));
+    fireEvent.click(screen.getByText("Reddet"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toEqual([]);
+
+    kabulBitir();
+    await waitFor(() =>
+      expect(istekler("DELETE", `/huni/ziyaretler/${Z}/izin`)).toHaveLength(1),
+    );
+    expect(window.localStorage.getItem("huni-reklam-izni")).toBe("hayir");
+  });
+
+  it("yeniden kullanılan ziyarette önceden verilmiş izin izin ucuna gider (Ç34)", async () => {
+    window.sessionStorage.setItem("huni-ziyaret:keepchat:varsayilan:4", Z);
+    window.localStorage.setItem("huni-reklam-izni", "evet");
+    kur(ADRES);
+    await yuklendi();
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    expect(istekler("POST", "/huni/ziyaretler")).toEqual([]);
+    expect(izinler()[0]?.govde).toEqual({
+      fbclid: "IwAR0abc",
+      ttclid: "E.C.P.x",
+    });
+  });
+
+  it("önizlemede şerit yok", async () => {
+    kur(`?onizleme=abc&${ADRES.slice(1)}`);
+    await yuklendi();
+    expect(screen.queryByText("Kabul et")).toBeNull();
+  });
+
+  it("tarayıcı deposu yoksa şerit yine çalışır", async () => {
+    // Gizli pencere / engelli site verisi: localStorage'a ERİŞMEK hata verir.
+    // (Storage.prototype sahtesi happy-dom'da tutmadı — kırma V10.)
+    const asil = Object.getOwnPropertyDescriptor(window, "localStorage");
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get: () => {
+        throw new DOMException("engelli", "SecurityError");
+      },
+    });
+    onTestFinished(() => {
+      if (asil) Object.defineProperty(window, "localStorage", asil);
+    });
+    kur(ADRES);
+    await yuklendi();
+    fireEvent.click(screen.getByText("Kabul et"));
+    await waitFor(() => expect(izinler()).toHaveLength(1));
+    expect(screen.queryByText("Kabul et")).toBeNull();
   });
 });
 

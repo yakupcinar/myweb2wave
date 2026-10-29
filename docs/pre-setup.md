@@ -146,6 +146,42 @@ hedef (döngü; doğrulama tek geçişte biter) · skor (puan + sonuç metni ya 
 puana göre plan — ölçülmüş ihtiyaç yok, kural 6a; puana göre plan ödeme
 kuralını değiştirirdi). Kayıt: `docs/decisions/huni-dallanma-h5.md`.
 
+**A12 · Reklam ölçümü: Meta + TikTok, piksel + sunucu, herkese onay şeridi,
+yalnız abonelik olayı** (2026-10-21, kullanıcı; B4/H6, A6'nın uygulanışı).
+Hunide herkese Kabul/Reddet şeridi; tıklama kimlikleri yalnız izinle
+saklanır. Abonelik başlayınca çekirdek Meta Conversions API + TikTok Events
+API'ye bildirir (yalnız izinli ziyaret); tarayıcıda Meta Pixel + TikTok Pixel
+yalnız izinden sonra, platformların standart satın alma olaylarıyla
+(`Purchase` / `CompletePayment`) sunucuyla aynı `event_id` (tekilleştirme).
+**Reddedilen:** yalnız Meta (önerilen; kullanıcı ikisini seçti) · GA4 (analiz
+bizde, A6) · yalnız sunucu (önerilen; kullanıcı eşleşme kalitesi için piksel
+de istedi — hunide üçüncü taraf betik, onaydan sonra) · konuma göre onay
+(ülke tespiti + hangi ülkeler hukuki karar) · onaysız test · huni olayları
+(ViewContent, InitiateCheckout — daha çok veri paylaşımı). Metinler hukuken
+doğrulanmadı (Ç12). Kayıtlar: `docs/decisions/huni-izin-h6a.md` (H6a),
+H6b, H6c.
+
+**A13 · İnceleme kararları paketi** (2026-10-26, kullanıcı; Ç58–Ç62 ve
+eski açık uçlar). Yapılacaklar: Ç58 izin yarışı **istemcide sıralanır**
+(reddedilen: sunucu sıra numarası — sözleşme + göç, ölçülmüş ihtiyaç yok) ·
+Ç59 terk edilen ödemede IP/UA `checkout.session.expired` + 48 sa cron
+temizliği · Ç60 dev DB'ye göç + `bin/kontrol`'de **uyarı** (kırmızı değil;
+CI'da dev DB yok) · Ç62 `reference.php` `.gitignore` · Ç61 Puck'ta yalnız
+3 hazır soru türü + benzersiz kimlik; paywall fayda listesi + yasal
+bağlantı alanları, görünür geri düğmesi, logo + masaüstü düzeni, okunur
+gizlilik bağlantısı · Ç55 ulaşılamayan adıma **uyarı** (yayın engellenmez;
+reddedilen: yayında reddetmek) + yeniden adlandırmada hedef güncelleme ·
+Ç44 alt metin (silme yok) · Ç53 b2 klasik düzenleyici silinir · Ç39
+eşzamanlı kayıt 409 · Ç41 8 sa oturum + uyarı, huni arşivleme · Ç35
+oturumlar DB'de (**2FA şimdilik hayır**) · Ç34 ziyaret hız sınırı +
+sekmede ziyaret sürdürme · Ç23 ölü bağlantı denetimi · Ç14 Dependabot ·
+Ç19/Ç21 fiyat tek kaynak Stripe; **Adaptive Pricing AÇIK kalır**
+(kullanıcı 2026-10-26, ilk "kapat" kararını geri aldı) · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
+testi · Ç20 past_due test clock · Ç54 yöne göre geçiş · Ç50 Preact
+denemesi (ölç, iyiyse geç). Reddedilen / ertelenen: Ç32 bağlama geçmişi.
+Dış girdi bekleyenler (sunucu, anahtarlar, hukuk, KeepChat, anket metni)
+döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.
@@ -249,6 +285,56 @@ tanımlanamadı); rakiplerin React'i animasyon/durum için seçtiği (çıkarım
 **Bedeli:** huni JS'i ~12 KB → React ile büyür (bütçe ölçülerek konur);
 yeni ortak paket, iki tüketici (huni + düzenleyici) ve Docker bağlaması.
 Geçiş planı: `PLAN.md` §1 (H0–H6).
+
+**B5 · Panel ayrı React uygulaması; Symfony panel için JSON veri servisi**
+(2026-10-27, kullanıcı: "yapılarını nasıl kurmuşlar, basite kaçmayalım,
+geliştirmemiz ileride kesilmesin"). Rakip ölçümü
+(`docs/decisions/panel-mimari-arastirmasi.md`): OpnForm (Laravel API +
+ayrı Nuxt SPA), HeyForm (NestJS + ayrı React webapp + ayrı form-renderer),
+Formbricks (Next.js + ayrı Preact anket paketi + ortak types), openFunnel
+(admin/builder/runtime + engine) — dördünde de yönetim paneli **ayrı
+istemci uygulaması**, ziyaretçi tarafı **ayrı hafif paket**, tipler ortak.
+Bizde huni (Astro+React), ortak bileşen ve OpenAPI tipleri var; eksik olan
+panel (Twig sayfaları + ayrı sayfada Puck). Twig'de CRM araması, grafik, A/B,
+sayfa yenilemeden düzenleme, çoklu dil zorlaşır.
+- Panel = `core/panel` (bugünkü `core/editor` büyür): Vite + React +
+  React Router, **Radix** (erişilebilir davranış) + **Tailwind** (stil;
+  bileşen kodu depoda, shadcn yöntemi), **TanStack Query** (veri), TanStack
+  Table (tablo), Recharts (grafik). Aynı adresten (`/panel/*`) Symfony
+  sunar: aynı köken, mevcut oturum + giriş formu korunur, CSRF başlıkla.
+- Panel uçları `/panel/api/*` JSON, **OpenAPI sözleşmesinde**; tipler
+  üretilir (huniyle aynı yol). Puck düzenleyici panelin bir sayfası olur.
+- Giriş sayfası Symfony formu kalır (güvenlik bileşeni), yalnız görünüm.
+- Geçiş adım adım (`PLAN.md` "Panel React" P0–P5); her adım testli, ayrı
+  commit; eski Twig sayfası, yerine gelen React sayfası testle eşlenince
+  silinir.
+**Reddedilen:** Twig + Symfony UX (Turbo/Stimulus) — grafik/filtre/CRM'de
+sınır, düzenleyiciyle iki dünya · Next.js ayrı sunucu (Formbricks) — ikinci
+Node sunucusu ve ikinci arka uç, oturum ve dağıtım iki yerde (B2'nin
+gerekçesi) · hazır tasarım sistemi (Mantine/Ant) — görünüm özelleştirmesi
+zor, büyük bağımlılığa kilit · kendi CSS + Radix — her bileşenin stili elle.
+**Bedeli:** panel JS'i büyür (panel herkese açık değil; bütçe yok ama
+ölçülür), bağımlılık sayısı artar (Dependabot, L18), Twig panel testleri
+JSON uç testlerine dönüşür.
+
+**B6 · AI'ın ilk kapısı dışarıya açılan MCP sunucusu (URL)** (2026-10-27,
+kullanıcı: "Quiz Builder için en mantıklı yol, ilk aşamada sistemi yalnızca
+dışarıya açılan bir MCP sunucusu (URL) olarak inşa etmek"). Önceki sıra
+(`ai-asistan-arastirmasi.md`): panel içi sohbet (A2/A3) önce, MCP (A5) sonra
+ve önce yerel stdio. Yeni sıra: **MCP (HTTP, URL) önce**.
+- Gerekçe: MCP'ye Claude Desktop / claude.ai kullanıcının KENDİ Claude
+  aboneliğiyle bağlanır; model Anthropic'te çalışır, bizde yalnız araçlar →
+  **ANTHROPIC_API_KEY gerekmez** (kullanıcıda anahtar yok, A2/A3 kapalı
+  duruyor). web2wave ve FunnelFox'ta da aynı kapı var.
+- Araçlar A0 (`HuniAraclari`) — değişmez; yalnız taslak, yayın/silme yok.
+- A2/A3 (panel içi sohbet) kalır, kapalı; ikinci aşama. Silinmez.
+- Yerel stdio artık ilk hedef değil (yalnız geliştirme kolaylığı olarak
+  istenirse).
+**Açık (MCP araştırmasında netleşecek):** herkese açık adres — dağıtım
+ertelenmişti (sunucu yok); yerel deneme için tünel (ör. Cloudflare Tunnel)
+mi, önce sunucu mu · kimlik — uygulama başına belirteç (Bearer) mı, claude.ai
+özel bağlayıcısı için OAuth mu · PHP'de MCP HTTP aktarımı (`mcp/sdk` 0.9,
+`symfony/mcp-bundle` beta; iki hafta kuralı).
 
 ## §C — Araç ortamı
 

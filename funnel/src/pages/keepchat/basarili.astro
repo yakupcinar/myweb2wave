@@ -34,6 +34,8 @@
     </main>
     <script>
       import { cekirdek } from "../../lib/cekirdek";
+      import { izinOku } from "../../lib/izin";
+      import { satinAlmaOlayiGonder } from "../../lib/reklam-pikselleri";
 
       const DENEME = 8;
       const ARALIK_MS = 1500;
@@ -72,6 +74,14 @@
         if (durum) durum.textContent = "Ödemeniz alındı.";
         const a = document.getElementById("giris-baglantisi");
         if (adres && a) {
+          // Giriş bağlantısı yalnız ödenmiş Stripe oturumu doğrulanınca verilir.
+          // session_id yukarıda URL'den silindi; yalnız izin varsa piksele gider.
+          satinAlmaOlayiGonder({
+            izin: izinOku() === "evet",
+            oturum,
+            metaPixelId: import.meta.env.PUBLIC_META_PIXEL_ID,
+            tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID,
+          });
           a.setAttribute("href", adres);
           goster("giris");
           goster("kurulum");

@@ -7,11 +7,16 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "anthropic-ai/sdk": "0.57.0",
+        "chrome-php/chrome": "^1.16.1",
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.7",
+        "mcp/sdk": "0.8.1",
         "nelmio/cors-bundle": "^2.6",
+        "nyholm/psr7": "^1.8",
         "psr/log": "^3.0",
+        "psr/simple-cache": "^3.0",
         "stripe/stripe-php": "^22.0",
         "symfony/console": "7.4.*",
         "symfony/dotenv": "7.4.*",
@@ -19,6 +24,7 @@
         "symfony/framework-bundle": "7.4.*",
         "symfony/http-client": "7.4.*",
         "symfony/mailer": "7.4.*",
+        "symfony/psr-http-message-bridge": "7.4.*",
         "symfony/rate-limiter": "7.4.*",
         "symfony/runtime": "7.4.*",
         "symfony/security-bundle": "7.4.*",
@@ -80,7 +86,6 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.95",
         "league/openapi-psr7-validator": "^0.24",
-        "nyholm/psr7": "^1.8",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-doctrine": "^2.0",
@@ -88,7 +93,6 @@
         "phpstan/phpstan-symfony": "^2.1",
         "phpunit/phpunit": "^13.4",
         "symfony/browser-kit": "7.4.*",
-        "symfony/css-selector": "7.4.*",
-        "symfony/psr-http-message-bridge": "7.4.*"
+        "symfony/css-selector": "7.4.*"
     }
 }

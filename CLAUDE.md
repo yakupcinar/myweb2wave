@@ -96,12 +96,13 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 |---|---|
 | **Tam doğrulama** | `bin/kontrol > /tmp/k.log 2>&1; echo EXIT=$?` · `/kontrol` · `sinayici` |
 | Biçim | `docker compose run --rm -T core vendor/bin/php-cs-fixer fix` · `… funnel npm run format` |
-| Statik analiz | `… core vendor/bin/phpstan analyse` (max) · `… funnel npm run check` |
+| Statik analiz | `… core vendor/bin/phpstan analyse --memory-limit=1G` (max; bayraksız işçi 128M'de ölür) · `… funnel npm run check` |
 | Test | `docker compose run --rm -T core vendor/bin/phpunit` · `… funnel npm test` (huni oynatıcısı) |
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
-| Sözleşme → huni + panel düzenleyicisi tipleri | `docker compose run --rm contract npm run uret` (`contract/openapi.yaml` değişince) |
-| Panel düzenleyicisi (Puck) | `docker compose run --rm editor npm run build` · `… editor npm test` |
+| Sözleşme → huni + panel tipleri + AI araç şeması | `docker compose run --rm contract npm run uret` + `… core bin/console app:huni-semasi` (`contract/openapi.yaml` değişince) |
+| AI araçları (A0/A1) | `… core bin/console app:huni-arac keepchat --liste` · `… app:huni-arac keepchat taslak_kaydet < istek.json` · `ekran_goruntusu` → `core/var/ekran/*.jpg` (`ekran` kabı + `huni-dev` gerekir) |
+| Panel (React, B5; Puck dahil) | `docker compose run --rm panel npm run build` · `… panel npm test` |
 
 ---
 
@@ -148,6 +149,11 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§33** | Testing Library'de **metnin görünmesi `useEffect`'in koştuğunu garanti etmez** — effect'e bağlı iddia aralıklı kırmızı, olumsuz iddia yalancı yeşil; `waitFor`. |
 | **§34** | **Gizli sekmede animasyon zaman çizelgesi durur** — opaklık 0'da "takılı" görünür, FCP/LCP yok; önce `visibilityState` + `document.timeline.currentTime` oku. |
 | **§35** | **Betikle doldurulan alanın DOM değeri uygulamanın durumu değildir** — olay görünmeyen kopyaya gitmiş olabilir; önce uygulamanın kendi göstergesini oku. |
+| **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi. |
+| **§37** | **iCloud'daki masaüstünde** üretilen dizinler (`var/cache`…) " 2" çakışma kopyası alır — `cache:clear` kod değişmeden kırmızı; önce `find . -name "* 2"`. |
+| **§38** | **Docker'daki Vite sunucusu macOS'taki dosya değişikliğini görmeyebilir** — tarayıcı eski stili hatasız çizer; önce sunulan dosyayı `curl` ile oku, eskiyse kabı yeniden başlat. |
+| **§39** | Testing Library **metin sorgusu `hidden` öğeyi de bulur** — "adım görünüyor" testi yalancı yeşil; görünürlüğü ayrıca ölç (`closest("[hidden]")`). |
+| **§40** | **Boyamadan sonra (`useEffect`) yazılan tema + CSS geçişi** ilk görünümü ara renkte çizer — jsdom görmez; `useLayoutEffect`, ölçüm gerçek tarayıcıda. |
 
 ---
 
@@ -159,6 +165,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | [docs/pre-setup.md](docs/pre-setup.md) | **Kararlar ve NEDEN'leri** + reddedilen alternatifler + risk tablosu |
 | [docs/decisions/acik-uclar.md](docs/decisions/acik-uclar.md) | Karara dönüşmemiş gözlemler (Ç-no) |
 | [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzakların tam metni, ölçümü ve doğrusu |
+| [docs/adresler.md](docs/adresler.md) | Panel sayfaları, huni sayfaları, portlar ve API uçları (yerel) |
 | [docs/uygulama-entegrasyonu.md](docs/uygulama-entegrasyonu.md) | Bir uygulama (KeepChat…) çekirdeğe nasıl bağlanır: anahtar, uçlar, akış, App Store kuralları |
 | [docs/yontem/](docs/yontem/README.md) | **Yöntem el kitabı** (okuyucu için, bölümlü): nasıl ve neden böyle çalışıyoruz; kayıtlara bağlantı verir, kopyalamaz |
 | `.claude/skills/` | `blok` (işin dokuz adımı) · `kirma` (testin ölçtüğünü kanıtla) · `belge` (bilgiyi depoya yaz) · `kontrol` (tam doğrulama — **yığına göre doldur**) |

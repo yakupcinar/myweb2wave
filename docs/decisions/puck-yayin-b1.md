@@ -64,3 +64,21 @@ başlığından (taslak ucuyla aynı). Klasik sayfanın form uçları aynen kald
      yükle" → alan "B1 Deneme", not "Kaydedildi, yayında değil", Yayınla açık
   6. Önizle bağlantısı → huni `document.title` = "B1 Deneme" + önizleme şeridi
 - `b1deneme` yerel veritabanında kaldı (huni silme yok, Ç41).
+
+## 2026-10-23 — Dar ekran düzenlemesi
+
+Puck üst çubuğunun yaklaşık 720 px altında satır kırmasına izin verildi; durum
+mesajı ayrı satıra alınır, düğmelerin dokunma alanı en az 40 px olur ve sürüm
+menüsü dar pencerede taşmadan kaydırılır. 420 px altında sürüm menüsü tam satıra
+geçer. Safari'de (yerel panel, dar pencere ve Puck'ın küçük ekran önizlemesi)
+sürüm menüsünün pencerenin solundan kesildiği görüldü. Dar ekranda menü artık
+iki yandan sabit boşlukla ekrana sığar. Safari yenilemesinden sonra v1–v5 ve
+"Taslağa geri yükle" düğmeleri menü içinde görünür kaldı; taslakta değişiklik
+yapılmadı. Ekran görüntüsüyle önce kesik, sonra tam görünen menü doğrulandı.
+Twig lint: 1 dosya geçerli. `bin/kontrol`: EXIT=0, KONTROL: YEŞİL; çekirdek
+205 test / 1.294 assertion. Aşama günlüklerinin süre toplamı 91 sn; ortamda
+disk %99, 3,4 GiB boştu. Kontrolün ürettiği `core/config/reference.php`,
+koşum öncesi çalışma alanı yedeğine geri alındı (`cmp` ile eşitlik ölçüldü).
+
+b2'ye geçmeden önce kullanıcının Puck'ı gerçek kullanımda denemesi bekleniyor;
+klasik düzenleyici yedek olarak kalıyor.

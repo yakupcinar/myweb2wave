@@ -65,7 +65,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** İmzalı, süreli önizleme anahtarıyla bir huninin taslağı (A7) */
+        /** İmzalı, süreli önizleme anahtarıyla bir huninin taslağı ya da yayındaki sürümü (A7, Ç70) */
         get: operations["getDraftFunnel"];
         put?: never;
         post?: never;
@@ -87,6 +87,24 @@ export interface paths {
         /** Anket adımına ulaşıldı ya da adımın cevabı verildi (A6) */
         post: operations["recordFunnelProgress"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/huni/ziyaretler/{ziyaret}/izin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Onay şeridinde reklam ölçümüne izin verildi (H6a, A12); o anki tıklama kimlikleri */
+        post: operations["grantMeasurementConsent"];
+        /** Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil */
+        delete: operations["revokeMeasurementConsent"];
         options?: never;
         head?: never;
         patch?: never;
@@ -177,53 +195,365 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/rapor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panel raporu (A6/2, B5) — yalnız oturumlu yönetici; girişsizse güvenlik duvarı /panel/giris'e yönlendirir */
+        get: operations["panelRaporu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/ai/durum": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Panel AI asistanı açık mı (A2) — anahtar yoksa kapalı */
+        get: operations["panelAiDurumu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/ai/huniler/{app}/{huni}/sohbet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** İstemi açık huninin TASLAĞINA uygular (A2); ilerleme Server-Sent Events. Yayınlamaz. */
+        post: operations["panelAiSohbet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paneldeki uygulamalar (A4) */
+        get: operations["panelUygulamalari"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/baglam": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** Uygulamanın ürün bağlamı (A4) — AI asistanının sistem istemine girer */
+        get: operations["panelUrunBaglami"];
+        /** Ürün bağlamını kaydeder (tamamını) */
+        put: operations["panelUrunBaglamiKaydet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/anahtarlar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** Kişisel API anahtarları (A5a, MCP) — anahtarın kendisi yok, yalnız önek */
+        get: operations["panelApiAnahtarlari"];
+        put?: never;
+        /** Yeni anahtar — kendisi YALNIZ bu yanıtta döner */
+        post: operations["panelApiAnahtariOlustur"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/anahtarlar/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Anahtarı iptal eder (geri alınamaz) */
+        delete: operations["panelApiAnahtariIptal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ApiAnahtari: {
+            id: number;
+            ad: string;
+            /** @description Anahtarın ilk 11 karakteri (mw2w_xxxxxx) — tanımak için */
+            onek: string;
+            olusturma: string;
+            sonKullanim: string | null;
+            iptal: boolean;
+        };
+        /** @description A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar */
+        UrunBaglami: {
+            /** @description Ürün ne yapıyor */
+            urun: string;
+            kategori: string;
+            /** @description Hedef kitle */
+            kitle: string;
+            /** @description Metinlerin tonu */
+            ton: string;
+            /** @description Asla yazılmayacaklar / kaçınılacaklar */
+            yasaklar: string;
+        };
+        PanelHatalari: {
+            hatalar: string[];
+        };
+        PanelAiDurumu: {
+            acik: boolean;
+            model: string;
+        };
+        /** @description SSE olayının data alanı; tur, event satırıyla aynı */
+        PanelAiOlayi: {
+            /** @enum {string} */
+            tur: "metin";
+            metin: string;
+        } | {
+            /** @enum {string} */
+            tur: "arac";
+            ad: string;
+        } | {
+            /** @enum {string} */
+            tur: "arac_sonucu";
+            ad: string;
+            hata: boolean;
+        } | {
+            /** @enum {string} */
+            tur: "taslak";
+            imza: string | null;
+            tanim: components["schemas"]["HuniTanimi"];
+        } | {
+            /** @enum {string} */
+            tur: "hata";
+            mesaj: string;
+        } | {
+            /** @enum {string} */
+            tur: "bitti";
+            /** @enum {string} */
+            sonuc: "tamam" | "tur_siniri" | "reddedildi" | "jeton_siniri" | "hata";
+            kaydedildi: boolean;
+            tur_sayisi: number;
+            maliyetMikrodolar: number | null;
+        };
+        PanelSayimi: {
+            ziyaret: number;
+            odemeye_gecti: number;
+            odedi: number;
+        };
+        PanelRaporu: {
+            /** @enum {integer} */
+            gun: 7 | 30 | 90;
+            gunler: (7 | 30 | 90)[];
+            /** @description Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar */
+            azami: number;
+            sayimlar: {
+                reklam: components["schemas"]["PanelSayimi"];
+                organik: components["schemas"]["PanelSayimi"];
+            };
+            /** @description Ç56 (3) — yalnız sayı, kim olduğu yok */
+            izinler: {
+                kabul: number;
+                red: number;
+                secmeyen: number;
+            };
+            satirlar: {
+                zaman: string;
+                app: string;
+                huni: string | null;
+                kaynak: string;
+                kampanya: string | null;
+                reklam: boolean;
+                /** @enum {string} */
+                asama: "sayfayı gördü" | "ödemeye geçti" | "ödedi";
+                durum: string | null;
+                /** @description Maskeli (a***@example.com); açık e-posta panele hiç gelmez */
+                email: string | null;
+            }[];
+            adimlar: {
+                app: string;
+                huni: string;
+                sira: number;
+                adim: string;
+                ulasan: number;
+            }[];
+            cevaplar: {
+                app: string;
+                soru: string;
+                secenek: string;
+                sayi: number;
+            }[];
+            /** @description 90 gün içinde, en yeni azami kadar */
+            metinCevaplari: {
+                zaman: string;
+                app: string;
+                soru: string;
+                cevap: string;
+            }[];
+        };
         AtifAlani: string;
         HuniYayini: {
             huni: components["schemas"]["HuniKimligi"];
             /** @description Yayınlanmış sürüm; taslakta null */
             surum: number | null;
             tanim: components["schemas"]["HuniTanimi"];
+            /** @description Ç19/Ç21: plan → Stripe fiyatı (tek kaynak). Stripe'a ulaşılamazsa ya da fiyat tek aralıklı yinelenen değilse yok — paywall yalnız metnini gösterir. */
+            fiyatlar?: {
+                [key: string]: components["schemas"]["PlanFiyati"];
+            };
+        };
+        PlanFiyati: {
+            /** @description Ana birimde (9.99) */
+            tutar: number;
+            paraBirimi: string;
+            /** @enum {string} */
+            aralik: "day" | "week" | "month" | "year";
         };
         /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
         HuniTanimi: {
             sayfaBasligi: string;
             tema?: components["schemas"]["HuniTemasi"];
-            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["PaywallAdimi"])[];
+            /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
+            logo?: components["schemas"]["GorselKimligi"];
+            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
         HuniTemasi: {
             anaRenk: string;
             arkaPlan: string;
             metinRengi: string;
-            /** @enum {string} */
-            yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono";
+            /**
+             * @description sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)
+             * @enum {string}
+             */
+            yaziTipi: "sistem" | "serif" | "yuvarlak" | "mono" | "modern" | "geometrik";
             kose: number;
+            /**
+             * @description G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px
+             * @enum {string}
+             */
+            baslikBoyu?: "kucuk" | "normal" | "buyuk";
+            /**
+             * @description G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah
+             * @enum {string}
+             */
+            yogunluk?: "sik" | "normal" | "ferah";
+            /**
+             * @description G7: başlık ve açıklama hizası (yoksa sol)
+             * @enum {string}
+             */
+            hizalama?: "sol" | "orta";
+            /** @description G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır */
+            kartRengi?: string;
+            /** @description G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer */
+            zemin?: components["schemas"]["ZeminGecisi"] | components["schemas"]["ZeminGorseli"];
+        };
+        /** @description Yukarıdan aşağı arkaPlan → ikinciRenk; metin ikinciRenk üstünde de 4,5:1 */
+        ZeminGecisi: {
+            /** @enum {string} */
+            tur: "gecis";
+            ikinciRenk: string;
+        };
+        /** @description Görsel kaplar, üstünde arkaPlan renginde yarı saydam katman (karartma %). Karartma, görsel en kötü durumda (tam siyah ya da tam beyaz) olsa da metni 4,5:1 okutacak kadar olmalı */
+        ZeminGorseli: {
+            /** @enum {string} */
+            tur: "gorsel";
+            gorsel: components["schemas"]["GorselKimligi"];
+            karartma: number;
         };
         TanitimAdimi: {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */
             tur: "tanitim";
             gorsel?: components["schemas"]["GorselKimligi"];
+            gorselMetni?: components["schemas"]["GorselMetni"];
             baslik: string;
             metin: string;
             dugme: string;
             hedef?: components["schemas"]["AdimHedefi"];
+            ilerlemeGoster?: boolean;
         };
         SoruAdimi: {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */
             tur: "soru";
             soru: string;
-            secenekler: {
+            aciklama?: string;
+            ilerlemeGoster?: boolean;
+            /** @enum {string} */
+            secimTuru?: "tekli" | "coklu" | "metin";
+            yanitZorunlu?: boolean;
+            devamDugmesi?: string;
+            secenekler?: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
                 gorsel?: components["schemas"]["GorselKimligi"];
+                gorselMetni?: components["schemas"]["GorselMetni"];
                 hedef?: components["schemas"]["AdimHedefi"];
             }[];
+        };
+        /** @description Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir */
+        YorumAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "yorum";
+            baslik: string;
+            metin: string;
+            yazar: string;
+            unvan: string;
+            dugme: string;
+            ilerlemeGoster?: boolean;
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
         AdimHedefi: components["schemas"]["HuniKimligi"];
@@ -234,9 +564,19 @@ export interface components {
             baslik: string;
             metin: string;
             dugme: string;
+            ilerlemeGoster?: boolean;
             /** @enum {string} */
             plan: "monthly";
+            /** @description Ç61: paywall'da madde madde fayda listesi (isteğe bağlı) */
+            faydalar?: string[];
+            sartlar?: components["schemas"]["YasalAdres"];
+            gizlilik?: components["schemas"]["YasalAdres"];
+            iptal?: components["schemas"]["YasalAdres"];
         };
+        /** @description Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı. */
+        YasalAdres: string;
+        /** @description Ç44: görselin alt metni (yalnız görselle); yoksa görsel dekoratif sayılır (alt boş) */
+        GorselMetni: string;
         /** @description Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3) */
         GorselKimligi: string;
         /** @description Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/) */
@@ -362,6 +702,8 @@ export interface operations {
                     huni?: components["schemas"]["HuniKimligi"];
                     /** @description Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır */
                     surum?: number;
+                    /** @description Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz */
+                    izin?: boolean;
                 };
             };
         };
@@ -387,6 +729,15 @@ export interface operations {
             };
             /** @description Bilinmeyen uygulama ya da geçersiz alan */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Ç34: bu IP'den dakikada 120'den fazla ziyaret; huni yine çalışır */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -439,6 +790,8 @@ export interface operations {
             query: {
                 huni: components["schemas"]["HuniKimligi"];
                 anahtar: string;
+                /** @description 1 ise taslak yerine yayındaki son sürüm (Ç70: panelden ölçümsüz bakış) */
+                yayin?: "1";
             };
             header?: never;
             path: {
@@ -448,7 +801,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Taslak (surum null) */
+            /** @description Taslak (surum null) ya da yayin=1 ile yayındaki sürüm */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -457,7 +810,7 @@ export interface operations {
                     "application/json": components["schemas"]["HuniYayini"];
                 };
             };
-            /** @description Anahtar yok, yanlış ya da süresi geçmiş */
+            /** @description Anahtar yok, yanlış ya da süresi geçmiş; yayin=1 ise huni yayınlanmamış */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -484,6 +837,8 @@ export interface operations {
                     sira: number;
                     adim: components["schemas"]["HuniKimligi"];
                     cevap?: components["schemas"]["HuniKimligi"];
+                    cevaplar?: components["schemas"]["HuniKimligi"][];
+                    cevapMetni?: string;
                 };
             };
         };
@@ -513,6 +868,87 @@ export interface operations {
             };
             /** @description Geçersiz alan */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    grantMeasurementConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    fbclid?: components["schemas"]["AtifAlani"];
+                    ttclid?: components["schemas"]["AtifAlani"];
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Geçersiz alan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    revokeMeasurementConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İzin geri alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -758,6 +1194,371 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    panelRaporu: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Seçilen aralıktaki sayımlar, izin oranı, anket ve ziyaret satırları */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelRaporu"];
+                };
+            };
+        };
+    };
+    panelAiDurumu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Durum */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelAiDurumu"];
+                };
+            };
+        };
+    };
+    panelAiSohbet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Düzenleyici sayfasının jetonu (huni-<app>) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                huni: components["schemas"]["HuniKimligi"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    istem: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Olay akışı: her olay `event: <tur>` + `data: <JSON>` (PanelAiOlayi); son olay bitti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Huni yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description İstem boş ya da çok uzun */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Saatlik sınır */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description AI kapalı (anahtar yok) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUygulamalari: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Uygulama adları */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        uygulamalar: string[];
+                    };
+                };
+            };
+        };
+    };
+    panelUrunBaglami: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlam (boş alanlar "") */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UrunBaglami"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUrunBaglamiKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UrunBaglami"];
+            };
+        };
+        responses: {
+            /** @description Kaydedilen bağlam */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UrunBaglami"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Alan çok uzun ya da geçersiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtarlari: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description MCP adresi ve anahtarlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        mcpAdresi: string;
+                        anahtarlar: components["schemas"]["ApiAnahtari"][];
+                    };
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtariOlustur: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ad: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Oluşturuldu */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: number;
+                        ad: string;
+                        anahtar: string;
+                    };
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Ad geçersiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtariIptal: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İptal edildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Yok ya da zaten iptal */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
                 };
             };
         };

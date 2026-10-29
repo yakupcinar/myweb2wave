@@ -10,23 +10,46 @@ function Gorsel({
     id,
     medyaKoku,
     sinif,
+    alt = "",
 }: {
     id: string;
     medyaKoku: string;
     sinif: string;
+    /** Ç44: boş = dekoratif. */
+    alt?: string | undefined;
 }): ReactNode {
     return (
         <img
             className={sinif}
             src={`${medyaKoku}/medya/${id}.webp`}
-            alt=""
+            alt={alt}
             decoding="async"
         />
     );
 }
 
+/** Ç61 (5): sayfanın başındaki logo; başlık ürünü zaten adlandırır → alt boş. */
+export function Logo({
+    gorsel,
+    medyaKoku,
+}: {
+    gorsel: string;
+    medyaKoku: string;
+}): ReactNode {
+    return <Gorsel id={gorsel} medyaKoku={medyaKoku} sinif="logo" />;
+}
+
+/** Adımın ana düğmesi (ve ödeme hatası): huni oynatıcısında telefonda alta yapışır. */
+function Eylem({ children }: { children: ReactNode }): ReactNode {
+    return <div className="eylem">{children}</div>;
+}
+
 // Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
-type GorselAlani = { gorsel?: string | undefined; medyaKoku: string };
+type GorselAlani = {
+    gorsel?: string | undefined;
+    gorselMetni?: string | undefined;
+    medyaKoku: string;
+};
 type Tiklama = { onDugme?: (() => void) | undefined };
 
 export function Tanitim({
@@ -34,6 +57,7 @@ export function Tanitim({
     metin,
     dugme,
     gorsel,
+    gorselMetni,
     medyaKoku,
     onDugme,
 }: {
@@ -45,58 +69,146 @@ export function Tanitim({
     return (
         <section>
             {gorsel ? (
-                <Gorsel id={gorsel} medyaKoku={medyaKoku} sinif="kapak" />
+                <Gorsel
+                    id={gorsel}
+                    medyaKoku={medyaKoku}
+                    sinif="kapak"
+                    alt={gorselMetni}
+                />
             ) : null}
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
-            <button type="button" className="ana" onClick={onDugme}>
-                {dugme}
-            </button>
+            <Eylem>
+                <button type="button" className="ana" onClick={onDugme}>
+                    {dugme}
+                </button>
+            </Eylem>
         </section>
     );
 }
 
 export function Soru({
     soru,
-    secenekler,
+    aciklama = "",
+    secenekler = [],
+    secimTuru = "tekli",
+    yanitZorunlu = false,
+    cevapMetni = "",
+    secili = [],
+    devamDugmesi = "Devam",
     medyaKoku,
     onSecim,
+    onSecenekDegistir,
+    onMetinDegistir,
+    onDevam,
 }: {
     soru: string;
-    secenekler: ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[];
+    aciklama?: string | undefined;
+    secenekler?:
+        ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[] | undefined;
+    secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+    yanitZorunlu?: boolean | undefined;
+    cevapMetni?: string | undefined;
+    secili?: number[] | undefined;
+    devamDugmesi?: string | undefined;
     medyaKoku: string;
     /** Seçeneğin sırası; kimliği çağıran bilir. */
     onSecim?: ((sira: number) => void) | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
+    onDevam?: (() => void) | undefined;
 }): ReactNode {
     return (
         <section>
             <h1 tabIndex={-1}>{soru}</h1>
-            <div className="secenekler">
-                {secenekler.map((s, i) => (
+            {aciklama ? <p className="yardim-metni">{aciklama}</p> : null}
+            {secimTuru === "metin" ? (
+                <label className="serbest-yanit">
+                    Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
+                    <textarea
+                        aria-label="Yanıtınız"
+                        required={yanitZorunlu}
+                        maxLength={500}
+                        rows={4}
+                        value={cevapMetni}
+                        readOnly={!onMetinDegistir}
+                        onChange={(e) =>
+                            onMetinDegistir?.(e.currentTarget.value)
+                        }
+                    />
+                </label>
+            ) : (
+                <div className="secenekler" data-tur={secimTuru}>
+                    {secenekler.map((s, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-pressed={
+                                secimTuru === "coklu"
+                                    ? secili.includes(i)
+                                    : undefined
+                            }
+                            onClick={
+                                secimTuru === "coklu"
+                                    ? onSecenekDegistir
+                                        ? () => onSecenekDegistir(i)
+                                        : undefined
+                                    : onSecim
+                                      ? () => onSecim(i)
+                                      : undefined
+                            }
+                        >
+                            {s.gorsel ? (
+                                <Gorsel
+                                    id={s.gorsel}
+                                    medyaKoku={medyaKoku}
+                                    sinif="secenek-gorseli"
+                                    alt={s.gorselMetni}
+                                />
+                            ) : null}
+                            <span>{s.metin}</span>
+                            <span className="isaret" aria-hidden="true" />
+                        </button>
+                    ))}
+                </div>
+            )}
+            {secimTuru === "coklu" || secimTuru === "metin" ? (
+                <Eylem>
                     <button
-                        key={i}
                         type="button"
-                        onClick={onSecim ? () => onSecim(i) : undefined}
+                        className="ana"
+                        disabled={
+                            (secimTuru === "coklu" && secili.length === 0) ||
+                            (secimTuru === "metin" &&
+                                yanitZorunlu &&
+                                !cevapMetni.trim())
+                        }
+                        onClick={onDevam}
                     >
-                        {s.gorsel ? (
-                            <Gorsel
-                                id={s.gorsel}
-                                medyaKoku={medyaKoku}
-                                sinif="secenek-gorseli"
-                            />
-                        ) : null}
-                        <span>{s.metin}</span>
+                        {devamDugmesi}
                     </button>
-                ))}
-            </div>
+                </Eylem>
+            ) : null}
         </section>
     );
 }
+
+/** Ç61 (3): yasal bağlantı adları sabit; adresi çekirdek yalnız https ise kabul eder. */
+const YASAL = [
+    ["sartlar", "Kullanım şartları"],
+    ["gizlilik", "Gizlilik politikası"],
+    ["iptal", "İptal ve iade"],
+] as const;
 
 export function Paywall({
     baslik,
     metin,
     dugme,
+    fiyat,
+    faydalar = [],
+    sartlar,
+    gizlilik,
+    iptal,
     onDugme,
     kapali = false,
     hata = "",
@@ -104,23 +216,96 @@ export function Paywall({
     baslik: string;
     metin: string;
     dugme: string;
+    /** Ç19/Ç21: biçimlenmiş Stripe fiyatı ("€9,99 / ay"); yoksa satır yok. */
+    fiyat?: string | undefined;
+    faydalar?: string[] | undefined;
+    sartlar?: string | undefined;
+    gizlilik?: string | undefined;
+    iptal?: string | undefined;
     /** Önizlemede ve ödeme isteği sürerken (çift tıklama yok, D13). */
     kapali?: boolean;
     hata?: string;
 } & Tiklama): ReactNode {
+    const adresler = { sartlar, gizlilik, iptal };
+    const baglantilar = YASAL.filter(([alan]) => adresler[alan]);
     return (
         <section>
             <h1 tabIndex={-1}>{baslik}</h1>
             <p>{metin}</p>
-            <button
-                type="button"
-                className="ana"
-                onClick={onDugme}
-                disabled={kapali}
-            >
-                {dugme}
-            </button>
-            {hata ? <p role="alert">{hata}</p> : null}
+            {faydalar.length ? (
+                <ul className="faydalar">
+                    {faydalar.map((f, i) => (
+                        <li key={i}>{f}</li>
+                    ))}
+                </ul>
+            ) : null}
+            {fiyat ? (
+                // Tek plan: kart seçili görünür (ödeme adımındaki plan bu).
+                <div className="plan-karti">
+                    <span className="isaret" aria-hidden="true" />
+                    <p className="fiyat">{fiyat}</p>
+                </div>
+            ) : null}
+            <Eylem>
+                {hata ? <p role="alert">{hata}</p> : null}
+                <button
+                    type="button"
+                    className="ana"
+                    onClick={onDugme}
+                    disabled={kapali}
+                >
+                    {dugme}
+                </button>
+            </Eylem>
+            {baglantilar.length ? (
+                <p className="yasal">
+                    {baglantilar.map(([alan, ad], i) => (
+                        <span key={alan}>
+                            {i ? " · " : null}
+                            <a
+                                href={adresler[alan]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {ad}
+                            </a>
+                        </span>
+                    ))}
+                </p>
+            ) : null}
+        </section>
+    );
+}
+
+export function Yorum({
+    baslik,
+    metin,
+    yazar,
+    unvan,
+    dugme,
+    onDugme,
+}: {
+    baslik: string;
+    metin: string;
+    yazar: string;
+    unvan: string;
+    dugme: string;
+} & Tiklama): ReactNode {
+    return (
+        <section>
+            <h1 tabIndex={-1}>{baslik}</h1>
+            <blockquote className="yorum-alinti">
+                <p>{metin}</p>
+                <footer>
+                    <strong>{yazar}</strong>
+                    {unvan ? ` · ${unvan}` : null}
+                </footer>
+            </blockquote>
+            <Eylem>
+                <button type="button" className="ana" onClick={onDugme}>
+                    {dugme}
+                </button>
+            </Eylem>
         </section>
     );
 }
@@ -133,17 +318,43 @@ export type TanimAdimi =
           metin: string;
           dugme: string;
           gorsel?: string;
+          gorselMetni?: string;
       }
     | {
           tur: "soru";
           soru: string;
-          secenekler: { metin: string; gorsel?: string }[];
+          aciklama?: string;
+          secimTuru?: "tekli" | "coklu" | "metin";
+          yanitZorunlu?: boolean;
+          devamDugmesi?: string;
+          secenekler?: {
+              metin: string;
+              gorsel?: string;
+              gorselMetni?: string;
+          }[];
       }
-    | { tur: "paywall"; baslik: string; metin: string; dugme: string };
+    | {
+          tur: "yorum";
+          baslik: string;
+          metin: string;
+          yazar: string;
+          unvan: string;
+          dugme: string;
+      }
+    | {
+          tur: "paywall";
+          baslik: string;
+          metin: string;
+          dugme: string;
+          faydalar?: string[];
+          sartlar?: string;
+          gizlilik?: string;
+          iptal?: string;
+      };
 
 /**
  * Tanımdan adım (B4/H3): huni oynatıcısı bunu çizer. Puck kendi alanlarından
- * aynı bileşenleri ayrı yoldan çağırır; core/editor/src/onizleme.test.tsx
+ * aynı bileşenleri ayrı yoldan çağırır; core/panel/src/onizleme.test.tsx
  * iki yolun aynı DOM'u verdiğini ölçer (önizleme = huni).
  */
 export function Adim({
@@ -151,13 +362,29 @@ export function Adim({
     medyaKoku,
     onIleri,
     onSecim,
+    secili,
+    onSecenekDegistir,
+    onCokluDevam,
+    cevapMetni,
+    onMetinDegistir,
     odeme = {},
 }: {
     adim: TanimAdimi;
     medyaKoku: string;
     onIleri?: () => void;
     onSecim?: (sira: number) => void;
-    odeme?: { onDugme?: () => void; kapali?: boolean; hata?: string };
+    secili?: number[] | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onCokluDevam?: (() => void) | undefined;
+    cevapMetni?: string | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
+    odeme?: {
+        onDugme?: () => void;
+        kapali?: boolean;
+        hata?: string;
+        /** Ç19/Ç21: biçimlenmiş Stripe fiyatı. */
+        fiyat?: string | undefined;
+    };
 }): ReactNode {
     switch (adim.tur) {
         case "tanitim":
@@ -167,6 +394,7 @@ export function Adim({
                     metin={adim.metin}
                     dugme={adim.dugme}
                     gorsel={adim.gorsel}
+                    gorselMetni={adim.gorselMetni}
                     medyaKoku={medyaKoku}
                     onDugme={onIleri}
                 />
@@ -175,9 +403,18 @@ export function Adim({
             return (
                 <Soru
                     soru={adim.soru}
+                    aciklama={adim.aciklama}
                     secenekler={adim.secenekler}
+                    secimTuru={adim.secimTuru}
+                    yanitZorunlu={adim.yanitZorunlu}
+                    cevapMetni={cevapMetni}
+                    devamDugmesi={adim.devamDugmesi}
+                    secili={secili}
                     medyaKoku={medyaKoku}
                     onSecim={onSecim}
+                    onSecenekDegistir={onSecenekDegistir}
+                    onDevam={onCokluDevam}
+                    onMetinDegistir={onMetinDegistir}
                 />
             );
         case "paywall":
@@ -186,7 +423,22 @@ export function Adim({
                     baslik={adim.baslik}
                     metin={adim.metin}
                     dugme={adim.dugme}
+                    faydalar={adim.faydalar}
+                    sartlar={adim.sartlar}
+                    gizlilik={adim.gizlilik}
+                    iptal={adim.iptal}
                     {...odeme}
+                />
+            );
+        case "yorum":
+            return (
+                <Yorum
+                    baslik={adim.baslik}
+                    metin={adim.metin}
+                    yazar={adim.yazar}
+                    unvan={adim.unvan}
+                    dugme={adim.dugme}
+                    onDugme={onIleri}
                 />
             );
     }
