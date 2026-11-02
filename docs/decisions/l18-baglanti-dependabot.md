@@ -14,3 +14,4 @@
 - **Ölçülmedi / sınır (Ç80):** Dependabot yapılandırmayı **yalnız varsayılan daldan (`main`)** okur; iş `h6-olay`'da (PR #40) — birleşene kadar hiçbir PR açılmaz. GitHub'ın yapılandırmayı gerçekten kabul ettiği birleşmeden sonra "Insights → Dependency graph → Dependabot"tan okunur.
 
 `bin/kontrol` yeşil (313 çekirdek testi + `funnel-baglanti`).
+- CI: koşu 41404083397, SHA ff12c23, `KONTROL: YEŞİL` (`funnel-baglanti` CI'da da koştu), 313 test.

@@ -115,7 +115,8 @@ function Oynatici({
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
   // (opaklık 0'dan başlasa ilk anlamlı boyama gecikirdi). Adımla aynı
   // çizimde açılır; effect'te açılsa yeni adım bir kare görünüp titrerdi.
-  const [gecti, setGecti] = useState(false);
+  // L19: yön de taşınır — ileri sağdan, geri soldan kayar.
+  const [gecis, setGecis] = useState<"ileri" | "geri">();
   const [odeme, setOdeme] = useState({ suruyor: false, hata: "" });
   const kutu = useRef<HTMLDivElement>(null);
   const ilkAdim = useRef(true);
@@ -139,7 +140,7 @@ function Oynatici({
   useEffect(() => {
     history.replaceState({ adim: ilkSira }, "");
     const geri = (e: PopStateEvent): void => {
-      setGecti(true);
+      setGecis("geri");
       setMevcut((e.state as { adim?: number } | null)?.adim ?? 0);
     };
     window.addEventListener("popstate", geri);
@@ -175,7 +176,7 @@ function Oynatici({
       : mevcut + 1;
     if (sira <= mevcut || sira >= tanim.adimlar.length) return;
     history.pushState({ adim: sira }, "");
-    setGecti(true);
+    setGecis("ileri");
     setMevcut(sira);
   }
 
@@ -279,11 +280,22 @@ function Oynatici({
             </button>
           ) : null}
           {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
-            <progress max={tanim.adimlar.length} value={mevcut + 1} />
+            // L19 / Ç54 (3): yerel progress geçiş desteklemiyor (atlıyordu) —
+            // ekran okuyucu için yerinde ama görünmez; görünen dolgu yumuşak.
+            <div className="ilerleme">
+              <progress max={tanim.adimlar.length} value={mevcut + 1} />
+              <span
+                className="ilerleme-dolum"
+                aria-hidden="true"
+                style={{
+                  width: `${((mevcut + 1) / tanim.adimlar.length) * 100}%`,
+                }}
+              />
+            </div>
           ) : null}
         </div>
       ) : null}
-      <div ref={kutu} className="adimlar" data-gecis={gecti ? "" : undefined}>
+      <div ref={kutu} className="adimlar" data-gecis={gecis}>
         {tanim.adimlar.map((adim, i) => {
           const soru = adim.tur === "soru" ? adim : null;
           const cevaplar = soru ? (secimler[soru.id] ?? []) : [];

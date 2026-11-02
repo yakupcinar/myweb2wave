@@ -336,8 +336,15 @@ html:has(> body.huni) {
    animasyon kendiliğinden baştan başlar. Puck önizlemesinde bu kutular yok.
    Hareket azaltmayı seçen kullanıcıya hiç uygulanmaz. */
 @media (prefers-reduced-motion: no-preference) {
-    .huni [data-gecis] > [data-sira] {
-        animation: huni-adim-gir 220ms ease-out;
+    /* L19: yöne göre — ileri sağdan, geri soldan. */
+    .huni [data-gecis="ileri"] > [data-sira] {
+        animation: huni-adim-ileri 220ms ease-out;
+    }
+    .huni [data-gecis="geri"] > [data-sira] {
+        animation: huni-adim-geri 220ms ease-out;
+    }
+    .huni .ilerleme-dolum {
+        transition: width 300ms ease-out;
     }
     /* Mobil görünüm 4: yükleme çubuğu ve maddeler. */
     .huni .yukleme-cubuk span {
@@ -397,10 +404,16 @@ html:has(> body.huni) {
         transform: translateY(4px);
     }
 }
-@keyframes huni-adim-gir {
+@keyframes huni-adim-ileri {
     from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateX(16px);
+    }
+}
+@keyframes huni-adim-geri {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
     }
 }
 /* Reklam ölçümü onay şeridi (H6a, yalnız huni sayfası). Akışta, üstte. */
@@ -450,8 +463,29 @@ html:has(> body.huni) {
     min-height: 44px;
     margin: 0 0 8px -10px;
 }
-.huni .ust-cubuk progress {
+.huni .ust-cubuk .ilerleme {
     grid-column: 2;
+}
+/* L19 / Ç54 (3): görünen çubuk dolgu; yerel progress ekran okuyucu için
+   aynı yerde, görünmez (geçiş desteklemediği için atlıyordu). */
+.huni .ilerleme {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--cizgi);
+    overflow: hidden;
+}
+.huni .ilerleme progress {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    opacity: 0;
+}
+.huni .ilerleme-dolum {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--ana);
 }
 .huni button.geri {
     display: grid;

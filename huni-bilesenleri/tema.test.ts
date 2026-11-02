@@ -273,14 +273,24 @@ describe("huni.css", () => {
             /@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?\})\s*\}/.exec(
                 css,
             );
+        // L19: yöne göre — ileri sağdan, geri soldan; çubuk dolgusu yumuşak.
         expect(medya?.[1]).toMatch(
-            /\.huni \[data-gecis\] > \[data-sira\][^}]*animation: huni-adim-gir/,
+            /\.huni \[data-gecis="ileri"\] > \[data-sira\][^}]*animation: huni-adim-ileri/,
+        );
+        expect(medya?.[1]).toMatch(
+            /\.huni \[data-gecis="geri"\] > \[data-sira\][^}]*animation: huni-adim-geri/,
+        );
+        expect(medya?.[1]).toMatch(
+            /\.huni \.ilerleme-dolum \{[^}]*transition: width/,
         );
         const disi = css
             .replace(medya?.[0] ?? "", "")
             .replace(/\/\*[\s\S]*?\*\//g, "");
         expect(disi).not.toMatch(/animation\s*:/);
-        expect(disi).toMatch(/@keyframes huni-adim-gir/);
+        expect(disi).toMatch(/@keyframes huni-adim-ileri/);
+        expect(disi).toMatch(/@keyframes huni-adim-geri/);
+        // Geçiş de yalnız blokta: hareket azaltmada çubuk atlar.
+        expect(disi).not.toMatch(/transition: width/);
     });
 
     // Tema yokken huni sayfası değişken yazmaz, :root'takiler geçerli;

@@ -300,8 +300,15 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     await waitFor(() => expect(document.title).toBe("KeepChat Pro"));
     const cubuk = document.querySelector("progress") as HTMLProgressElement;
     expect([cubuk.max, cubuk.value]).toEqual([3, 1]);
+    // L19 / Ç54 (3): görünen çubuk dolgu; yerel progress ekran okuyucu için.
+    const dolum = (): number =>
+      parseFloat(
+        (document.querySelector(".ilerleme-dolum") as HTMLElement).style.width,
+      );
+    expect(dolum()).toBeCloseTo(33.33, 1);
     fireEvent.click(screen.getByText("Başla"));
     expect(cubuk.value).toBe(2);
+    expect(dolum()).toBeCloseTo(66.67, 1);
   });
 
   it("ilerleme çubuğu yalnız kapatıldığı adımda gizlenir", async () => {
@@ -736,7 +743,9 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     expect(geri()).toBeNull();
     // Geri sütunu ilk adımda da üst çubukta yer tutar: ikinci adımda
     // ilerleme çubuğu ve içerik kaymaz.
-    expect(document.querySelector(".ust-cubuk > progress")).not.toBeNull();
+    expect(
+      document.querySelector(".ust-cubuk > .ilerleme > progress"),
+    ).not.toBeNull();
     // Mobil görünüm: ana düğme adımın .eylem alanında (CSS onu .adimlar
     // altında alta yapıştırır).
     expect(
@@ -749,7 +758,7 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     fireEvent.click(screen.getByText("Başla"));
     expect(gorunenBaslik()).toBe("Kiminle?");
     expect(
-      document.querySelector(".ust-cubuk > button.geri + progress"),
+      document.querySelector(".ust-cubuk > button.geri + .ilerleme"),
     ).not.toBeNull();
     // Tarayıcının geri tuşuyla aynı yol: geçmişten bir adım geri (dallanmada
     // da gelinen adıma döner).
@@ -1062,12 +1071,12 @@ describe("H4 — geçiş", () => {
   // başlamasın (ilk anlamlı boyama), sonraki her adım değişiminde başlasın.
   const kutu = (): Element | null =>
     document.querySelector("[data-sira]")?.parentElement ?? null;
-  it("ilk adımda yok; ileri geçişte var", async () => {
+  it("ilk adımda yok; ileri geçişte 'ileri' (L19: yöne göre)", async () => {
     kur();
     await yuklendi();
     expect(kutu()?.hasAttribute("data-gecis")).toBe(false);
     fireEvent.click(screen.getByText("Başla"));
-    expect(kutu()?.hasAttribute("data-gecis")).toBe(true);
+    expect(kutu()?.getAttribute("data-gecis")).toBe("ileri");
   });
   it("geri tuşuyla da var", async () => {
     kur();
@@ -1076,7 +1085,9 @@ describe("H4 — geçiş", () => {
     // gör, yoksa olay dinleyiciden önce gider — CI'da kırmızıydı (tuzak §33).
     await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
     fireEvent(window, new PopStateEvent("popstate", { state: { adim: 0 } }));
-    await waitFor(() => expect(kutu()?.hasAttribute("data-gecis")).toBe(true));
+    await waitFor(() =>
+      expect(kutu()?.getAttribute("data-gecis")).toBe("geri"),
+    );
   });
 });
 
