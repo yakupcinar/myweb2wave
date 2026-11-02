@@ -192,6 +192,45 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
     }
 
+    /**
+     * T3a: kural tabanlı yönlendirme — özellik sözlükteki adlarla, cevap bu ya
+     * da önceki adımdan, hedef yalnız ileri.
+     *
+     * @param array<mixed> $kurallar
+     *
+     * @return array<mixed>
+     */
+    private static function yonlendirmeli(array $kurallar): array
+    {
+        $t = self::tanim('X');
+        $t['adimlar'][1]['yonlendirme'] = $kurallar;
+        // Sonraki adımda da soru var: "cevap.ara" yalnız sıra yüzünden reddedilmeli.
+        array_splice($t['adimlar'], 2, 0, [self::ekran([['tur' => 'soru', 'secenekler' => [['id' => 'x', 'metin' => 'X'], ['id' => 'y', 'metin' => 'Y']]]], ['id' => 'ara', 'baslik' => 'Ara', 'dugme' => null])]);
+
+        return $t;
+    }
+
+    public function testYonlendirmeGecerliYayindaSozlesmeyeUyar(): void
+    {
+        $t = self::yonlendirmeli([
+            ['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'icerir', 'deger' => 'a']], 'hedef' => 'paywall'],
+            ['baglac' => 'herhangi', 'kosullar' => [
+                ['ozellik' => 'utm.source', 'islem' => 'esit', 'deger' => 'meta'],
+                ['ozellik' => 'izin.reklam', 'islem' => 'var'],
+                ['ozellik' => 'huni.surum', 'islem' => 'esit_degil', 'deger' => 2],
+                ['ozellik' => 'cevap.soru1', 'islem' => 'icermez', 'deger' => 'b'],
+                ['ozellik' => 'utm.campaign', 'islem' => 'yok'],
+            ], 'hedef' => 'ara'],
+        ]);
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $t));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     /** T1c: bloksuz ekran (başlık + düğme, ör. "Teşekkürler!") geçerli — boş metinli tanıtım böyle taşınır. */
     public function testBloksuzEkranGecerli(): void
     {
@@ -426,6 +465,23 @@ final class HuniTest extends WebTestCase
         yield 'ekran düzen bilinmeyen' => ['adım 2: duzen: ust, kahraman, tamEkran', $ekr([$b], $kapak + ['duzen' => 'yan'])];
         yield 'tam ekranda kutu' => ['blok 2: tam ekranda yalnız baslik, metin, maddeler, istatistik', $ekr([$b, ['tur' => 'kutu', 'metin' => 'x']], $kapak + ['duzen' => 'tamEkran'])];
         yield 'tam ekranda soru' => ['blok 1: tam ekranda yalnız', $ekr([['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]]], $kapak + ['duzen' => 'tamEkran', 'dugme' => null])];
+        // T3a: yönlendirme kuralları.
+        $kural = static fn (array $kosul, array $ek = []): array => self::yonlendirmeli([array_merge(['kosullar' => [$kosul], 'hedef' => 'paywall'], $ek)]);
+        yield 'kural liste değil' => ['yonlendirme 1–10 kurallık liste', self::yonlendirmeli(['x' => 1])];
+        yield 'kural fazla alan' => ['kural 1: alanlar tam olarak', $kural(['ozellik' => 'utm.source', 'islem' => 'var'], ['renk' => 'x'])];
+        yield 'kural hedefi geriye' => ['kural 1: hedef sonraki adımlardan', $kural(['ozellik' => 'utm.source', 'islem' => 'var'], ['hedef' => 'giris'])];
+        yield 'kural bağlacı' => ['kural 1: baglac hepsi ya da herhangi', $kural(['ozellik' => 'utm.source', 'islem' => 'var'], ['baglac' => 'ya'])];
+        yield 'koşulsuz kural' => ['kural 1: kosullar 1–5', self::yonlendirmeli([['kosullar' => [], 'hedef' => 'paywall']])];
+        yield 'bilinmeyen özellik' => ['koşul 1: ozellik sözlükte yok: cihaz.tur', $kural(['ozellik' => 'cihaz.tur', 'islem' => 'var'])];
+        yield 'hunide bilinmeyen özellik' => ['koşul 1: odeme.durum hunide bilinmez', $kural(['ozellik' => 'odeme.durum', 'islem' => 'var'])];
+        yield 'sonraki adımın cevabı' => ['koşul 1: cevap.ara bu adımda ya da önceki adımlarda sorulmuyor', $kural(['ozellik' => 'cevap.ara', 'islem' => 'var'])];
+        yield 'olmayan seçenek' => ['koşul 1: deger soru1 sorusunun seçeneklerinden olmalı (a, b)', $kural(['ozellik' => 'cevap.soru1', 'islem' => 'icerir', 'deger' => 'c'])];
+        yield 'listede eşit' => ['koşul 1: cevap.soru1 için islem icerir, icermez, var ya da yok', $kural(['ozellik' => 'cevap.soru1', 'islem' => 'esit', 'deger' => 'a'])];
+        yield 'metinde içerir' => ['koşul 1: utm.source için islem esit, esit_degil, var ya da yok', $kural(['ozellik' => 'utm.source', 'islem' => 'icerir', 'deger' => 'a'])];
+        yield 'değersiz eşit' => ['koşul 1: deger gerekli', $kural(['ozellik' => 'utm.source', 'islem' => 'esit'])];
+        yield 'var ile değer' => ['koşul 1: var ve yok değer almaz', $kural(['ozellik' => 'utm.source', 'islem' => 'var', 'deger' => 'x'])];
+        yield 'sürüm metin' => ['koşul 1: huni.surum değeri tam sayı olmalı', $kural(['ozellik' => 'huni.surum', 'islem' => 'esit', 'deger' => '2'])];
+        yield 'uzun değer' => ['koşul 1: deger 1–200 karakter', $kural(['ozellik' => 'utm.source', 'islem' => 'esit', 'deger' => str_repeat('a', 201)])];
         // T1b: soru bloğu.
         $iki = [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']];
         $tekli = ['tur' => 'soru', 'secenekler' => $iki];

@@ -24,7 +24,12 @@ import {
     VARSAYILAN_TEMA,
 } from "../../../huni-bilesenleri/tema";
 import { BLOK_BILESENLERI, kokOnAyarlari, kokZemini } from "./donustur";
-import type { Bilesenler, KokProps, SecenekProps } from "./donustur";
+import type {
+    Bilesenler,
+    KokProps,
+    SecenekProps,
+    YonlendirmeProps,
+} from "./donustur";
 
 export type Ortam = {
     planlar: string[];
@@ -219,6 +224,110 @@ export function hedefSecenekleri(
             })),
     ];
 }
+
+/**
+ * T3a: koşulun özellik seçenekleri — T2 sözlüğünün hunide bilinen adları
+ * (ödeme/abonelik yok; core/src/Ozellik/Ozellikler.php ile eş tutulur, kayıtta
+ * çekirdek yine denetler) + bu ve önceki ekranların soruları.
+ */
+const SABIT_OZELLIKLER = [
+    ["utm.source", "Reklam kaynağı (utm_source)"],
+    ["utm.medium", "Reklam ortamı (utm_medium)"],
+    ["utm.campaign", "Kampanya (utm_campaign)"],
+    ["utm.content", "Reklam içeriği (utm_content)"],
+    ["utm.term", "Anahtar kelime (utm_term)"],
+    ["izin.reklam", "Reklam ölçümü izni (evet / hayir)"],
+    ["huni", "Huni adı"],
+    ["huni.surum", "Huni sürümü (sayı)"],
+    ["adim.son", "En ileri adım"],
+] as const;
+export function ozellikSecenekleri(
+    appState: AppState,
+    bilesen: string,
+): SelectField["options"] {
+    const icerik = appState.data.content;
+    const sira = icerik.findIndex((o) => o.props["id"] === bilesen);
+    return [
+        ...SABIT_OZELLIKLER.map(([value, label]) => ({ label, value })),
+        ...icerik
+            .slice(0, sira + 1)
+            .filter(
+                (o) =>
+                    Array.isArray(o.props["bloklar"]) &&
+                    (o.props["bloklar"] as { type: string }[]).some(
+                        (b) => b.type === "SoruBlogu",
+                    ),
+            )
+            .map((o) => ({
+                label: `Cevap: ${String(o.props["kimlik"])}`,
+                value: `cevap.${String(o.props["kimlik"])}`,
+            })),
+    ];
+}
+
+const yonlendirmeAlani = {
+    type: "array" as const,
+    label: "Koşullu yönlendirme (ilk tutan kural; tutmazsa düğmenin hedefi)",
+    max: 10,
+    getItemSummary: (k: YonlendirmeProps) =>
+        `${k.kosullar?.[0]?.ozellik ?? "koşul"}${(k.kosullar?.length ?? 0) > 1 ? " …" : ""} → ${k.hedef || "?"}`,
+    defaultItemProps: {
+        baglac: "hepsi" as const,
+        kosullar: [
+            { ozellik: "utm.source", islem: "esit" as const, deger: "" },
+        ],
+        hedef: "",
+    },
+    arrayFields: {
+        baglac: {
+            type: "radio" as const,
+            label: "Koşullar",
+            options: [
+                { label: "Hepsi tutmalı (VE)", value: "hepsi" },
+                { label: "Biri yeter (VEYA)", value: "herhangi" },
+            ],
+        },
+        kosullar: {
+            type: "array" as const,
+            label: "Koşullar (1–5)",
+            max: 5,
+            getItemSummary: (c: YonlendirmeProps["kosullar"][number]) =>
+                `${c.ozellik} ${c.islem} ${c.deger}`.trim(),
+            defaultItemProps: {
+                ozellik: "utm.source",
+                islem: "esit" as const,
+                deger: "",
+            },
+            arrayFields: {
+                ozellik: {
+                    type: "select" as const,
+                    label: "Özellik",
+                    options: SABIT_OZELLIKLER.map(([value, label]) => ({
+                        label,
+                        value,
+                    })),
+                },
+                islem: {
+                    type: "select" as const,
+                    label: "İşlem (cevaplarda içerir/içermez)",
+                    options: [
+                        { label: "eşittir", value: "esit" },
+                        { label: "eşit değil", value: "esit_degil" },
+                        { label: "içerir (cevap)", value: "icerir" },
+                        { label: "içermez (cevap)", value: "icermez" },
+                        { label: "var", value: "var" },
+                        { label: "yok", value: "yok" },
+                    ],
+                },
+                deger: {
+                    type: "text" as const,
+                    label: "Değer (cevapta seçenek kimliği; var/yok'ta boş)",
+                },
+            },
+        },
+        hedef: { ...hedefAlani, label: "Gidilecek adım" },
+    },
+};
 
 /**
  * Ekleme anında kimliğe Puck blok kimliğinden kısa ek (Ç61): aynı türden
@@ -534,16 +643,46 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     },
                     ilerlemeGoster: ilerlemeAlani,
                     hedef: tanitimHedefAlani,
+                    yonlendirme: yonlendirmeAlani,
                 },
-                resolveFields: (veri, { fields, appState }) => ({
-                    ...fields,
-                    hedef: {
-                        ...tanitimHedefAlani,
-                        options: hedefSecenekleri(appState, veri.props.id),
-                    },
-                }),
+                resolveFields: (veri, { fields, appState }) => {
+                    const hedefler = hedefSecenekleri(appState, veri.props.id);
+                    return {
+                        ...fields,
+                        hedef: { ...tanitimHedefAlani, options: hedefler },
+                        // T3a: kural hedefi zorunlu ("sıradaki" yok); özellikler bu ekrana göre.
+                        yonlendirme: {
+                            ...yonlendirmeAlani,
+                            arrayFields: {
+                                ...yonlendirmeAlani.arrayFields,
+                                hedef: {
+                                    ...yonlendirmeAlani.arrayFields.hedef,
+                                    options: hedefler.filter(
+                                        (o) => o.value !== "",
+                                    ),
+                                },
+                                kosullar: {
+                                    ...yonlendirmeAlani.arrayFields.kosullar,
+                                    arrayFields: {
+                                        ...yonlendirmeAlani.arrayFields.kosullar
+                                            .arrayFields,
+                                        ozellik: {
+                                            ...yonlendirmeAlani.arrayFields
+                                                .kosullar.arrayFields.ozellik,
+                                            options: ozellikSecenekleri(
+                                                appState,
+                                                veri.props.id,
+                                            ),
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    };
+                },
                 defaultProps: {
                     kimlik: "ekran",
+                    yonlendirme: [],
                     baslik: "Yeni ekran",
                     gorsel: "",
                     gorselMetni: "",

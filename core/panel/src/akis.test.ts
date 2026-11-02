@@ -432,3 +432,106 @@ describe("ekran düğmesi yuvadaki soruya uyar (Ç84, Ç87)", () => {
         expect(ekranDugmeleri(once!)).toBeNull();
     });
 });
+
+// T3a: kural hedefleri de yol; kimlik değişince kural hedefi ve koşuldaki
+// cevap.<eski> taşınır (taşınmasa kural sessizce hiç tutmazdı).
+describe("T3a: yönlendirme kuralları", () => {
+    const kurallı = (hedef: string): Tanim => ({
+        sayfaBasligi: "x",
+        adimlar: [
+            {
+                id: "s",
+                tur: "ekran",
+                baslik: "?",
+                bloklar: [],
+                dugme: "D",
+                hedef: "son",
+                yonlendirme: [
+                    {
+                        kosullar: [
+                            {
+                                ozellik: "utm.source",
+                                islem: "esit",
+                                deger: "meta",
+                            },
+                        ],
+                        hedef,
+                    },
+                ],
+            },
+            { id: "ara", tur: "ekran", baslik: "C", bloklar: [], dugme: "D" },
+            { id: "son", tur: "ekran", baslik: "E", bloklar: [], dugme: "F" },
+            paywall,
+        ],
+    });
+    it("kural hedefi ulaşılabilir sayılır", () => {
+        expect(ulasilamayanlar(kurallı("son"))).toEqual(["ara"]);
+        expect(ulasilamayanlar(kurallı("ara"))).toEqual([]);
+    });
+    it("kimlik değişince kural hedefi ve koşuldaki cevap adı taşınır", () => {
+        const t: Tanim = {
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "s",
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secenekler: [
+                                { id: "a", metin: "A" },
+                                { id: "b", metin: "B" },
+                            ],
+                        },
+                    ],
+                    yonlendirme: [
+                        {
+                            kosullar: [
+                                {
+                                    ozellik: "cevap.s",
+                                    islem: "icerir",
+                                    deger: "a",
+                                },
+                            ],
+                            hedef: "son",
+                        },
+                    ],
+                },
+                {
+                    id: "son",
+                    tur: "ekran",
+                    baslik: "E",
+                    bloklar: [],
+                    dugme: "F",
+                },
+                paywall,
+            ],
+        };
+        const once = tanimdanPuck(t, VARSAYILAN);
+        const ad = (v: HuniVerisi, i: number, kimlik: string): HuniVerisi => ({
+            ...v,
+            content: v.content.map((o, j) =>
+                j === i
+                    ? ({ ...o, props: { ...o.props, kimlik } } as typeof o)
+                    : o,
+            ),
+        });
+        const kural = (v: HuniVerisi | null) =>
+            (
+                v!.content[0]!.props as {
+                    yonlendirme: {
+                        hedef: string;
+                        kosullar: { ozellik: string }[];
+                    }[];
+                }
+            ).yonlendirme[0]!;
+        expect(
+            kural(hedefleriYenidenAdlandir(once, ad(once, 1, "kapanis"))).hedef,
+        ).toBe("kapanis");
+        expect(
+            kural(hedefleriYenidenAdlandir(once, ad(once, 0, "kiminle")))
+                .kosullar[0]!.ozellik,
+        ).toBe("cevap.kiminle");
+    });
+});

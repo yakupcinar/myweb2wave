@@ -61,6 +61,10 @@ export function ulasilamayanlar(tanim: Tanim): string[] {
         const adim = adimlar[i];
         if (!adim || gorulen.has(i)) continue;
         gorulen.add(i);
+        // T3a: her kural hedefi de bir yol (koşul hangi ziyaretçide tutacak bilinmez).
+        if (adim.tur === "ekran")
+            for (const k of adim.yonlendirme ?? [])
+                kuyruk.push(sira(k.hedef, i));
         const blokSorusu =
             adim.tur === "ekran"
                 ? adim.bloklar.find((b) => b.tur === "soru")
@@ -84,7 +88,11 @@ export function disaridakiBloklar(veri: HuniVerisi): string[] {
         .map((o) => o.type);
 }
 
-type Hedefli = { hedef?: string; secenekler?: { hedef?: string }[] };
+type Hedefli = {
+    hedef?: string;
+    secenekler?: { hedef?: string }[];
+    yonlendirme?: { hedef: string; kosullar: { ozellik: string }[] }[];
+};
 
 /** T1: kökte adım olmayan (bloğun yuvadan taşmış hâli) öğenin kimliği yok. */
 const kimligi = (o: { props: object }): string =>
@@ -92,8 +100,8 @@ const kimligi = (o: { props: object }): string =>
 
 /**
  * Bir bloğun kimliği değişince (aynı Puck bloğu, eski ad artık hiçbir
- * blokta yok) ona işaret eden tanıtım ve seçenek hedeflerini yeni ada
- * taşır. Değişiklik yoksa null — çağıran gereksiz yazmasın.
+ * blokta yok) ona işaret eden ekran, seçenek ve kural hedeflerini ve
+ * koşullardaki cevap adını yeni ada taşır. Değişiklik yoksa null — çağıran gereksiz yazmasın.
  */
 export function hedefleriYenidenAdlandir(
     once: HuniVerisi,
@@ -118,6 +126,21 @@ export function hedefleriYenidenAdlandir(
     const tasinmis = <P extends Hedefli>(p: P): P => ({
         ...p,
         ...("hedef" in p ? { hedef: tasi(p.hedef) } : {}),
+        // T3a: kural hedefi ve koşuldaki cevap.<eski> (taşınmasa kural hiç tutmazdı).
+        ...(p.yonlendirme
+            ? {
+                  yonlendirme: p.yonlendirme.map((k) => ({
+                      ...k,
+                      hedef: tasi(k.hedef) ?? k.hedef,
+                      kosullar: k.kosullar.map((c) => {
+                          const yeni = c.ozellik.startsWith("cevap.")
+                              ? tasi(c.ozellik.slice(6))
+                              : undefined;
+                          return yeni ? { ...c, ozellik: `cevap.${yeni}` } : c;
+                      }),
+                  })),
+              }
+            : {}),
         ...(p.secenekler
             ? {
                   secenekler: p.secenekler.map((s) => ({

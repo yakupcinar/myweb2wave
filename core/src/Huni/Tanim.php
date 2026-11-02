@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Huni;
 
+use App\Ozellik\Ozellikler;
+
 /**
  * Huni tanımının biçimi (A7) — yayından ÖNCE burada doğrulanır; huni
  * sayfası yalnız buradan geçmiş tanımı görür. Sözleşme: contract
@@ -31,9 +33,17 @@ final class Tanim
     public const EKRAN_YONERGESI = 'İçerik adımı ekrandır (T1c: tanıtım, soru ve yorum adımı yok): baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
         .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin seçimde dugme gönderir). '
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
+        .'Koşullu yönlendirme (isteğe bağlı, ekranda): yonlendirme: [{"kosullar": [{"ozellik": "cevap.<bu ya da önceki ekran>", "islem": "icerir", "deger": "<seçenek kimliği>"}], "hedef": "<sonraki adım>"}] — ilk tutan kural kazanır; özellikler utm.source/medium/campaign/content/term, izin.reklam, huni, huni.surum, adim.son, cevap.<adım>; seçmeli cevapta icerir/icermez, diğerlerinde esit/esit_degil, her biri için var/yok; birden çok koşulda "baglac": "herhangi" VEYA yapar. Yalnız kişiselleştirme gerçekten gerekiyorsa kullan (ör. farklı kitleye farklı ekran). '
         .'Karşılama, neden bu ürün, nasıl çalışır, güvence gibi ekranları farklı blok dizilişleriyle kur; tüm huniyi aynı dizilişle doldurma. '
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
         .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
+
+    /** T3a: koşul işlemleri — listede (seçmeli cevap) ve tek değerde. */
+    private const LISTE_ISLEMLERI = ['icerir', 'icermez', 'var', 'yok'];
+    private const DEGER_ISLEMLERI = ['esit', 'esit_degil', 'var', 'yok'];
+
+    /** T3a: hunide (tarayıcıda) bilinmeyen özellikler — ödemeden sonra sunucuda. */
+    private const HUNI_DISI_OZELLIKLER = ['odeme', 'abonelik'];
 
     /** T1c: tam ekran kapaklı ekranda izinli bloklar (yüzeysiz, metin). */
     public const TAM_EKRAN_BLOKLARI = ['baslik', 'metin', 'maddeler', 'istatistik'];
@@ -103,6 +113,22 @@ final class Tanim
         foreach ($adimlar as $i => $adim) {
             if (\is_array($adim) && \is_string($adim['id'] ?? null) && !isset($sira[$adim['id']])) {
                 $sira[$adim['id']] = $i;
+            }
+        }
+        // T3a: koşullar için ekranların soruları: kimlik → [seçmeli mi, seçenek kimlikleri].
+        $sorular = [];
+        foreach ($adimlar as $adim) {
+            $id = \is_array($adim) ? ($adim['id'] ?? null) : null;
+            if (!\is_array($adim) || !\is_string($id) || !\is_array($adim['bloklar'] ?? null)) {
+                continue;
+            }
+            foreach ($adim['bloklar'] as $b) {
+                if (\is_array($b) && 'soru' === ($b['tur'] ?? null)) {
+                    $sorular[$id] = [
+                        'metin' !== ($b['secimTuru'] ?? 'tekli'),
+                        array_values(array_filter(array_map(static fn (mixed $s): mixed => \is_array($s) ? ($s['id'] ?? null) : null, \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : []), \is_string(...))),
+                    ];
+                }
             }
         }
         $gorulen = [];
@@ -187,6 +213,11 @@ final class Tanim
                 }
             } elseif ('ekran' === $tur && !$tekSecimli) {
                 $h[] = "{$yer}: dugme olmalı";
+            }
+            // T3a: koşullu yönlendirme (ilk tutan kural kazanır).
+            if ('ekran' === $tur && \array_key_exists('yonlendirme', $adim)) {
+                $beklenen[] = 'yonlendirme';
+                self::yonlendirme($adim['yonlendirme'], $sira, $sorular, $i, $yer, $h);
             }
             if ($tekSecimli && \array_key_exists('hedef', $adim)) {
                 $h[] = "{$yer}: tek seçimli soru bloğunda hedef seçeneklerde verilir";
@@ -407,6 +438,112 @@ final class Tanim
         }
 
         return false;
+    }
+
+    /**
+     * T3a: yönlendirme kuralları. Koşulun özelliği T2 sözlüğünden; cevap bu ya
+     * da önceki ekranın sorusu (sonrakinin cevabı henüz yok); işlem özelliğin
+     * türüne uygun; seçmelide değer gerçek seçenek (yazım hatası sessizce hiç
+     * tutmayan kural olurdu).
+     *
+     * @param array<string, int>                       $sira
+     * @param array<string, array{bool, list<string>}> $sorular
+     * @param list<string>                             $h
+     */
+    private static function yonlendirme(mixed $kurallar, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        if (!\is_array($kurallar) || !array_is_list($kurallar) || [] === $kurallar || \count($kurallar) > 10) {
+            $h[] = "{$yer}: yonlendirme 1–10 kurallık liste olmalı";
+
+            return;
+        }
+        foreach ($kurallar as $k => $kural) {
+            $ky = "{$yer} kural ".($k + 1);
+            $istege = \is_array($kural) && \array_key_exists('baglac', $kural) ? ['baglac'] : [];
+            if (!\is_array($kural) || !self::anahtarlar($kural, ['kosullar', 'hedef', ...$istege])) {
+                $h[] = "{$ky}: alanlar tam olarak kosullar, hedef ve (isteğe bağlı) baglac olmalı";
+                continue;
+            }
+            if ([] !== $istege && !\in_array($kural['baglac'], ['hepsi', 'herhangi'], true)) {
+                $h[] = "{$ky}: baglac hepsi ya da herhangi olmalı";
+            }
+            self::hedef($kural['hedef'], $sira, $i, $ky, $h);
+            $kosullar = $kural['kosullar'];
+            if (!\is_array($kosullar) || !array_is_list($kosullar) || [] === $kosullar || \count($kosullar) > 5) {
+                $h[] = "{$ky}: kosullar 1–5 öğeli liste olmalı";
+                continue;
+            }
+            foreach ($kosullar as $j => $kosul) {
+                self::kosul($kosul, $sira, $sorular, $i, "{$ky} koşul ".($j + 1), $h);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, int>                       $sira
+     * @param array<string, array{bool, list<string>}> $sorular
+     * @param list<string>                             $h
+     */
+    private static function kosul(mixed $kosul, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        $degerli = \is_array($kosul) && \array_key_exists('deger', $kosul);
+        if (!\is_array($kosul) || !self::anahtarlar($kosul, ['ozellik', 'islem', ...($degerli ? ['deger'] : [])])) {
+            $h[] = "{$yer}: alanlar tam olarak ozellik, islem ve (isteğe bağlı) deger olmalı";
+
+            return;
+        }
+        $ozellik = $kosul['ozellik'];
+        if (!\is_string($ozellik) || null === Ozellikler::tanimi($ozellik)) {
+            $h[] = "{$yer}: ozellik sözlükte yok: ".(\is_string($ozellik) ? $ozellik : '?');
+
+            return;
+        }
+        $onek = explode('.', $ozellik, 2)[0];
+        if (\in_array($onek, self::HUNI_DISI_OZELLIKLER, true)) {
+            $h[] = "{$yer}: {$ozellik} hunide bilinmez (ödemeden sonra)";
+
+            return;
+        }
+        $soru = null;
+        if ('cevap' === $onek) {
+            $adim = substr($ozellik, 6);
+            if (!isset($sira[$adim], $sorular[$adim]) || $sira[$adim] > $i) {
+                $h[] = "{$yer}: {$ozellik} bu adımda ya da önceki adımlarda sorulmuyor";
+
+                return;
+            }
+            $soru = $sorular[$adim];
+        }
+        $liste = null !== $soru && $soru[0];
+        $islemler = $liste ? self::LISTE_ISLEMLERI : self::DEGER_ISLEMLERI;
+        $islem = $kosul['islem'];
+        if (!\in_array($islem, $islemler, true)) {
+            $h[] = "{$yer}: {$ozellik} için islem ".implode(', ', \array_slice($islemler, 0, -1)).' ya da '.end($islemler).' olmalı';
+
+            return;
+        }
+        if (\in_array($islem, ['var', 'yok'], true)) {
+            if ($degerli) {
+                $h[] = "{$yer}: var ve yok değer almaz";
+            }
+
+            return;
+        }
+        if (!$degerli) {
+            $h[] = "{$yer}: deger gerekli";
+
+            return;
+        }
+        $deger = $kosul['deger'];
+        if ('huni.surum' === $ozellik) {
+            if (!\is_int($deger)) {
+                $h[] = "{$yer}: huni.surum değeri tam sayı olmalı";
+            }
+        } elseif (!\is_string($deger) || '' === trim($deger) || mb_strlen($deger) > 200) {
+            $h[] = "{$yer}: deger 1–200 karakter metin olmalı";
+        } elseif ($liste && !\in_array($deger, $soru[1], true)) {
+            $h[] = "{$yer}: deger ".substr($ozellik, 6).' sorusunun seçeneklerinden olmalı ('.implode(', ', $soru[1]).')';
+        }
     }
 
     /** @param list<string> $h */

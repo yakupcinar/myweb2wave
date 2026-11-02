@@ -480,6 +480,48 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri)).toStrictEqual(sorulu);
     });
 
+    it("T3a: yönlendirme kuralları gidiş-dönüş aynı; varsayılan bağlaç ve boş değer yazılmaz, sürüm sayı", () => {
+        const kurallar: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((a) =>
+                a.id === "kiminle"
+                    ? {
+                          ...a,
+                          yonlendirme: [
+                              {
+                                  kosullar: [
+                                      {
+                                          ozellik: "cevap.kiminle",
+                                          islem: "icerir",
+                                          deger: "aile",
+                                      },
+                                  ],
+                                  hedef: "paywall",
+                              },
+                              {
+                                  baglac: "herhangi",
+                                  kosullar: [
+                                      {
+                                          ozellik: "huni.surum",
+                                          islem: "esit",
+                                          deger: 2,
+                                      },
+                                      { ozellik: "izin.reklam", islem: "yok" },
+                                  ],
+                                  hedef: "yorum",
+                              },
+                          ],
+                      }
+                    : a,
+            ),
+        };
+        const veri = tanimdanPuck(kurallar, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(kurallar);
+        // Kural silinince alan tanımdan çıkar (boş liste çekirdekte geçersiz).
+        (veri.content[1]!.props as { yonlendirme: unknown[] }).yonlendirme = [];
+        expect("yonlendirme" in puckTanim(veri).adimlar[1]!).toBe(false);
+    });
+
     it("T1: ekran dışına bırakılan blok tanımda türüyle kalır (çekirdek reddeder, sessizce düşmez)", () => {
         const veri = tanimdanPuck(temel, VARSAYILAN);
         veri.content.splice(1, 0, {

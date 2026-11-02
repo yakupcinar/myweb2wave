@@ -202,6 +202,8 @@ final class PanelAiTest extends WebTestCase
         self::assertStringContainsString(Tanim::EKRAN_YONERGESI, self::metin(self::yol($ilk, 'text')));
         self::assertStringContainsString('istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı', Tanim::EKRAN_YONERGESI);
         // Katalog maddesi "ad (açıklama)" biçiminde — yalın ad metnin başka yerinde de geçer (kırma B17).
+        // T3a: koşullu yönlendirme yönergede.
+        self::assertStringContainsString('yonlendirme: [{"kosullar"', Tanim::EKRAN_YONERGESI);
         foreach (array_keys(Tanim::BLOKLAR) as $blok) {
             self::assertStringContainsString("{$blok} (", Tanim::EKRAN_YONERGESI);
         }

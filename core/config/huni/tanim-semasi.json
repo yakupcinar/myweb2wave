@@ -93,6 +93,15 @@
                 "hedef": {
                     "$ref": "#/$defs/AdimHedefi"
                 },
+                "yonlendirme": {
+                    "description": "T3a: koşullu yönlendirme — ekrandan çıkarken ilk tutan kuralın hedefine gidilir; hiçbiri tutmazsa seçeneğin hedefi, sonra ekranın hedefi, sonra sıradaki adım.",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                        "$ref": "#/$defs/Yonlendirme"
+                    }
+                },
                 "ilerlemeGoster": {
                     "type": "boolean"
                 }
@@ -332,6 +341,45 @@
                 }
             }
         },
+        "Kosul": {
+            "description": "T2 özellik sözlüğünden bir ad (huni, huni.surum, utm.*, izin.reklam, cevap.<adım>, adim.son; ödeme/abonelik hunide bilinmez). Seçmeli cevap listedir: icerir / icermez (değer seçenek kimliği). Tek değerler: esit / esit_degil. Her özellik: var / yok (değersiz).",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "ozellik",
+                "islem"
+            ],
+            "properties": {
+                "ozellik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                },
+                "islem": {
+                    "type": "string",
+                    "enum": [
+                        "esit",
+                        "esit_degil",
+                        "icerir",
+                        "icermez",
+                        "var",
+                        "yok"
+                    ]
+                },
+                "deger": {
+                    "oneOf": [
+                        {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ]
+                }
+            }
+        },
         "KutuBlogu": {
             "description": "Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz",
             "type": "object",
@@ -544,6 +592,35 @@
             "description": "Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı.",
             "type": "string",
             "pattern": "^https://[^\\s]{1,490}$"
+        },
+        "Yonlendirme": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "kosullar",
+                "hedef"
+            ],
+            "properties": {
+                "baglac": {
+                    "description": "hepsi (VE, varsayılan) · herhangi (VEYA)",
+                    "type": "string",
+                    "enum": [
+                        "hepsi",
+                        "herhangi"
+                    ]
+                },
+                "kosullar": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "items": {
+                        "$ref": "#/$defs/Kosul"
+                    }
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
+                }
+            }
         },
         "YorumBlogu": {
             "description": "Kısa müşteri yorumu; puan varsa yıldızla gösterilir",

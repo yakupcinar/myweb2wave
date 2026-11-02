@@ -956,6 +956,100 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     expect(history.state).toEqual({ adim: 3 });
   });
 
+  // T3a: kural tabanlı yönlendirme — ilk tutan kural kazanır, cevap
+  // verildiği anda hesaba girer; tutmazsa eski davranış.
+  const yonlendirmeli = (): Yanit => ({
+    durum: 200,
+    govde: yayin({
+      adimlar: [
+        {
+          id: "kiminle",
+          tur: "ekran",
+          baslik: "Kiminle?",
+          bloklar: [
+            {
+              tur: "soru",
+              secenekler: [
+                { id: "aile", metin: "Ailemle" },
+                { id: "is", metin: "İş" },
+              ],
+            },
+          ],
+          yonlendirme: [
+            {
+              kosullar: [
+                { ozellik: "cevap.kiminle", islem: "icerir", deger: "aile" },
+              ],
+              hedef: "aile-ekrani",
+            },
+            {
+              kosullar: [
+                { ozellik: "utm.source", islem: "esit", deger: "meta" },
+              ],
+              hedef: "paywall",
+            },
+          ],
+        },
+        {
+          id: "is-ekrani",
+          tur: "ekran",
+          baslik: "İş için",
+          bloklar: [],
+          dugme: "Devam",
+        },
+        {
+          id: "aile-ekrani",
+          tur: "ekran",
+          baslik: "Aile",
+          bloklar: [],
+          dugme: "Devam",
+        },
+        {
+          id: "paywall",
+          tur: "paywall",
+          baslik: "Pro",
+          metin: "",
+          dugme: "Abone ol",
+          plan: "monthly",
+        },
+      ],
+    }),
+  });
+
+  it("T3a: cevaba göre kural hedefi (ilk tutan kural)", async () => {
+    tanim = yonlendirmeli();
+    kur("?utm_source=meta");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunenBaslik()).toBe("Aile");
+  });
+
+  it("T3a: tutan kural seçeneğin kendi hedefinden önce gelir", async () => {
+    const t = yonlendirmeli();
+    const adim = (t.govde as Yayin).tanim.adimlar[0];
+    if (adim?.tur !== "ekran" || adim.bloklar[0]?.tur !== "soru") throw 0;
+    adim.bloklar[0].secenekler![0]!.hedef = "is-ekrani";
+    tanim = t;
+    kur("");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunenBaslik()).toBe("Aile");
+  });
+
+  it("T3a: cevap kuralı tutmazsa sonraki kural (utm), o da tutmazsa sıradaki", async () => {
+    tanim = yonlendirmeli();
+    kur("?utm_source=meta");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("İş"));
+    expect(gorunenBaslik()).toBe("Pro");
+    cleanup();
+    tanim = yonlendirmeli();
+    kur("?utm_source=tiktok");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("İş"));
+    expect(gorunenBaslik()).toBe("İş için");
+  });
+
   it("T1b: ekrandaki tek seçimli soru cevabı ekranın kimliğiyle bildirir, seçeneğin hedefine atlar", async () => {
     tanim = {
       durum: 200,

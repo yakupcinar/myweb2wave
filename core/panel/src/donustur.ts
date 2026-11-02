@@ -14,6 +14,8 @@ type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
 type EkranAdimi = components["schemas"]["EkranAdimi"];
 type EkranBlogu = components["schemas"]["EkranBlogu"];
+type Kosul = components["schemas"]["Kosul"];
+type Yonlendirme = components["schemas"]["Yonlendirme"];
 type YaziTipi = Tema["yaziTipi"];
 
 export type SecenekProps = {
@@ -64,6 +66,14 @@ export type EkranProps = {
     ilerlemeGoster: boolean;
     /** Ç84: yalnız önizleme — tanıma yazılmaz (resolveData yuvadan hesaplar). */
     onizlemeKapali?: boolean;
+    /** T3a: koşullu yönlendirme; boş liste tanıma yazılmaz. */
+    yonlendirme: YonlendirmeProps[];
+};
+/** Puck metin alanı: değer hep dize (huni.surum kayıtta sayıya çevrilir). */
+export type YonlendirmeProps = {
+    baglac: "hepsi" | "herhangi";
+    kosullar: { ozellik: string; islem: Kosul["islem"]; deger: string }[];
+    hedef: string;
 };
 /** Blok bileşenlerinin alanları; boş isteğe bağlı alan tanıma yazılmaz. */
 export type BaslikBloguProps = { metin: string };
@@ -126,6 +136,34 @@ export type Bilesenler = {
     SoruBlogu: SoruBloguProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
+
+/**
+ * T3a: Puck kuralları → tanım. Varsayılan bağlaç (hepsi) ve var/yok'un boş
+ * değeri yazılmaz; huni.surum sayı (çekirdek tam sayı ister).
+ */
+function yonlendirmesi(kurallar: YonlendirmeProps[] | undefined): {
+    yonlendirme?: Yonlendirme[];
+} {
+    if (!kurallar?.length) return {};
+    return {
+        yonlendirme: kurallar.map((k) => ({
+            ...(k.baglac === "herhangi" ? { baglac: "herhangi" as const } : {}),
+            kosullar: (k.kosullar ?? []).map((c) => ({
+                ozellik: c.ozellik,
+                islem: c.islem,
+                ...(c.islem === "var" || c.islem === "yok"
+                    ? {}
+                    : {
+                          deger:
+                              c.ozellik === "huni.surum"
+                                  ? Number(c.deger)
+                                  : c.deger,
+                      }),
+            })),
+            hedef: k.hedef,
+        })),
+    };
+}
 
 /** T1: blok türü (tanım) ↔ Puck bileşeni. */
 export const BLOK_BILESENI = {
@@ -394,6 +432,18 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             // T1b: tek seçimli soru bloğunda düğme yok → "".
                             dugme: adim.dugme ?? "",
                             hedef: adim.hedef ?? "",
+                            yonlendirme: (adim.yonlendirme ?? []).map((k) => ({
+                                baglac: k.baglac ?? "hepsi",
+                                kosullar: k.kosullar.map((c) => ({
+                                    ozellik: c.ozellik,
+                                    islem: c.islem,
+                                    deger:
+                                        c.deger === undefined
+                                            ? ""
+                                            : String(c.deger),
+                                })),
+                                hedef: k.hedef,
+                            })),
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
@@ -463,6 +513,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                                 : {}),
                             bloklar: (p.bloklar ?? []).map(puckBloktan),
                             ...(p.dugme ? { dugme: p.dugme } : {}),
+                            ...yonlendirmesi(p.yonlendirme),
                             ...(p.ilerlemeGoster === false
                                 ? { ilerlemeGoster: false }
                                 : {}),

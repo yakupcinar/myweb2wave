@@ -12,6 +12,8 @@ import {
   type ReactNode,
 } from "react";
 import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
+import { yonlendir } from "../../../huni-bilesenleri/kosul";
+import { ozellikler, type Olay } from "../../../huni-bilesenleri/ozellikler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { fiyatMetni } from "../lib/fiyat";
@@ -135,6 +137,41 @@ function Oynatici({
     () => new URLSearchParams(window.location.search).get("ekran") === "1",
   );
   const [secimler, setSecimler] = useState<Record<string, string[]>>({});
+  // T3a: çekirdeğe giden olayların kopyası — koşullar aynı olaylardan aynı
+  // özellikleri görür (T2b). Karar anında okunur, çizim tetiklemez.
+  const olaylar = useRef<Olay[]>([]);
+  function bildir(
+    sira: number,
+    adim: string,
+    cevap?: string | string[],
+    cevapMetni?: string,
+  ): void {
+    olaylar.current.push({
+      sira,
+      adim,
+      ...(typeof cevap === "string" ? { cevap } : {}),
+      ...(Array.isArray(cevap) ? { cevaplar: cevap } : {}),
+      ...(cevapMetni !== undefined ? { cevapMetni } : {}),
+    });
+    ilerlemeBildir(ziyaretSozu, sira, adim, cevap, cevapMetni);
+  }
+  /** T3a: ekrandan çıkış — ilk tutan kural, yoksa verilen (seçenek/ekran) hedef. */
+  function cik(adim: TanimAdimi, hedef?: string): void {
+    const kural =
+      adim.tur === "ekran"
+        ? yonlendir(
+            adim.yonlendirme,
+            ozellikler({
+              huni: yayin.huni,
+              surum: yayin.surum ?? undefined,
+              adres: window.location.search,
+              izin,
+              olaylar: olaylar.current,
+            }),
+          )
+        : undefined;
+    ileri(kural ?? hedef);
+  }
   const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
     {},
   );
@@ -175,7 +212,7 @@ function Oynatici({
 
   // Her gösterilen adım bildirilir; ilk adım dışında başlığa odak.
   useEffect(() => {
-    ilerlemeBildir(ziyaretSozu, mevcut, tanim.adimlar[mevcut]?.id ?? "");
+    bildir(mevcut, tanim.adimlar[mevcut]?.id ?? "");
     if (ilkAdim.current) {
       ilkAdim.current = false;
       return;
@@ -342,17 +379,12 @@ function Oynatici({
                 adim={adim}
                 medyaKoku={KOK}
                 onIleri={() =>
-                  ileri(adim.tur === "ekran" ? adim.hedef : undefined)
+                  cik(adim, adim.tur === "ekran" ? adim.hedef : undefined)
                 }
                 onSecim={(s) => {
                   if (!soru) return;
-                  ilerlemeBildir(
-                    ziyaretSozu,
-                    mevcut,
-                    soru.id,
-                    soru.secenekler?.[s]?.id,
-                  );
-                  ileri(soru.secenekler?.[s]?.hedef);
+                  bildir(mevcut, soru.id, soru.secenekler?.[s]?.id);
+                  cik(adim, soru.secenekler?.[s]?.hedef);
                 }}
                 secili={secili}
                 cevapMetni={cevapMetni}
@@ -379,19 +411,13 @@ function Oynatici({
                   const hedef = adim.tur === "ekran" ? adim.hedef : undefined;
                   if (soru.secimTuru === "metin") {
                     if (soru.yanitZorunlu && !cevapMetni.trim()) return;
-                    ilerlemeBildir(
-                      ziyaretSozu,
-                      mevcut,
-                      soru.id,
-                      undefined,
-                      cevapMetni,
-                    );
-                    ileri(hedef);
+                    bildir(mevcut, soru.id, undefined, cevapMetni);
+                    cik(adim, hedef);
                     return;
                   }
                   if (!cevaplar.length) return;
-                  ilerlemeBildir(ziyaretSozu, mevcut, soru.id, cevaplar);
-                  ileri(hedef);
+                  bildir(mevcut, soru.id, cevaplar);
+                  cik(adim, hedef);
                 }}
                 odeme={{
                   kapali: (onizleme && !ekranCekimi) || odeme.suruyor,

@@ -555,7 +555,25 @@ export interface components {
             /** @description Zorunlu — yalnız tek seçimli soru bloğu olan ekranda yok (seçenek seçilince geçer; hedef de seçenekte) */
             dugme?: string;
             hedef?: components["schemas"]["AdimHedefi"];
+            /** @description T3a: koşullu yönlendirme — ekrandan çıkarken ilk tutan kuralın hedefine gidilir; hiçbiri tutmazsa seçeneğin hedefi, sonra ekranın hedefi, sonra sıradaki adım. */
+            yonlendirme?: components["schemas"]["Yonlendirme"][];
             ilerlemeGoster?: boolean;
+        };
+        Yonlendirme: {
+            /**
+             * @description hepsi (VE, varsayılan) · herhangi (VEYA)
+             * @enum {string}
+             */
+            baglac?: "hepsi" | "herhangi";
+            kosullar: components["schemas"]["Kosul"][];
+            hedef: components["schemas"]["AdimHedefi"];
+        };
+        /** @description T2 özellik sözlüğünden bir ad (huni, huni.surum, utm.*, izin.reklam, cevap.<adım>, adim.son; ödeme/abonelik hunide bilinmez). Seçmeli cevap listedir: icerir / icermez (değer seçenek kimliği). Tek değerler: esit / esit_degil. Her özellik: var / yok (değersiz). */
+        Kosul: {
+            ozellik: string;
+            /** @enum {string} */
+            islem: "esit" | "esit_degil" | "icerir" | "icermez" | "var" | "yok";
+            deger?: string | number;
         };
         /** @description T1 blok kataloğu; metinler düz metin */
         EkranBlogu: components["schemas"]["BaslikBlogu"] | components["schemas"]["MetinBlogu"] | components["schemas"]["GorselBlogu"] | components["schemas"]["MaddelerBlogu"] | components["schemas"]["YorumBlogu"] | components["schemas"]["IstatistikBlogu"] | components["schemas"]["KutuBlogu"] | components["schemas"]["SoruBlogu"];

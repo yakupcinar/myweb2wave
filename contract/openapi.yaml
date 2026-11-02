@@ -884,7 +884,47 @@ components:
           minLength: 1
           maxLength: 60
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+        yonlendirme:
+          description: >-
+            T3a: koşullu yönlendirme — ekrandan çıkarken ilk tutan kuralın
+            hedefine gidilir; hiçbiri tutmazsa seçeneğin hedefi, sonra ekranın
+            hedefi, sonra sıradaki adım.
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: { $ref: "#/components/schemas/Yonlendirme" }
         ilerlemeGoster: { type: boolean }
+    Yonlendirme:
+      type: object
+      additionalProperties: false
+      required: [kosullar, hedef]
+      properties:
+        baglac:
+          description: "hepsi (VE, varsayılan) · herhangi (VEYA)"
+          type: string
+          enum: [hepsi, herhangi]
+        kosullar:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: "#/components/schemas/Kosul" }
+        hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    Kosul:
+      description: >-
+        T2 özellik sözlüğünden bir ad (huni, huni.surum, utm.*, izin.reklam,
+        cevap.<adım>, adim.son; ödeme/abonelik hunide bilinmez). Seçmeli
+        cevap listedir: icerir / icermez (değer seçenek kimliği). Tek
+        değerler: esit / esit_degil. Her özellik: var / yok (değersiz).
+      type: object
+      additionalProperties: false
+      required: [ozellik, islem]
+      properties:
+        ozellik: { type: string, minLength: 1, maxLength: 80 }
+        islem: { type: string, enum: [esit, esit_degil, icerir, icermez, var, yok] }
+        deger:
+          oneOf:
+            - { type: string, minLength: 1, maxLength: 200 }
+            - { type: integer }
     EkranBlogu:
       description: "T1 blok kataloğu; metinler düz metin"
       oneOf:
