@@ -898,6 +898,11 @@ components:
             T3b: koşullu gösterim — koşul tutmazsa ekran atlanır, sıradaki
             adıma geçilir. Cevap yalnız önceki adımlardan; ilk adımda olmaz.
           $ref: "#/components/schemas/KosulGrubu"
+        degerler:
+          description: >-
+            T3c: koşullu değer — ekranın baslik, dugme, gorsel, gorselMetni
+            alanı kurala bağlanır (öğede var olmalı).
+          $ref: "#/components/schemas/KosulluDegerler"
         ilerlemeGoster: { type: boolean }
     Yonlendirme:
       type: object
@@ -914,6 +919,30 @@ components:
           maxItems: 5
           items: { $ref: "#/components/schemas/Kosul" }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    KosulluDegerler:
+      description: >-
+        T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan
+        kural kazanır, hiçbiri tutmazsa alanın kendi değeri. Gösterimde
+        hesaplanır: cevap yalnız önceki adımlardan. Soru ve maddeler
+        bloğunda yok.
+      type: array
+      minItems: 1
+      maxItems: 20
+      items:
+        type: object
+        additionalProperties: false
+        required: [kosullar, alan, deger]
+        properties:
+          baglac:
+            type: string
+            enum: [hepsi, herhangi]
+          kosullar:
+            type: array
+            minItems: 1
+            maxItems: 5
+            items: { $ref: "#/components/schemas/Kosul" }
+          alan: { type: string, minLength: 1, maxLength: 40 }
+          deger: { type: string, minLength: 1, maxLength: 1000 }
     KosulGrubu:
       type: object
       additionalProperties: false
@@ -962,6 +991,7 @@ components:
       required: [tur, metin]
       properties:
         tur: { type: string, enum: [baslik] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         metin: { type: string, minLength: 1, maxLength: 200 }
     MetinBlogu:
       description: Paragraf
@@ -970,6 +1000,7 @@ components:
       required: [tur, metin]
       properties:
         tur: { type: string, enum: [metin] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         metin: { type: string, minLength: 1, maxLength: 1000 }
     GorselBlogu:
       type: object
@@ -977,6 +1008,7 @@ components:
       required: [tur, gorsel]
       properties:
         tur: { type: string, enum: [gorsel] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         gorsel: { $ref: "#/components/schemas/GorselKimligi" }
         gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
     MaddelerBlogu:
@@ -998,6 +1030,7 @@ components:
       required: [tur, metin, yazar]
       properties:
         tur: { type: string, enum: [yorum] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         metin: { type: string, minLength: 1, maxLength: 1000 }
         yazar: { type: string, minLength: 1, maxLength: 80 }
         unvan: { type: string, maxLength: 100 }
@@ -1009,6 +1042,7 @@ components:
       required: [tur, deger, metin]
       properties:
         tur: { type: string, enum: [istatistik] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         deger: { type: string, minLength: 1, maxLength: 12 }
         metin: { type: string, minLength: 1, maxLength: 120 }
     KutuBlogu:
@@ -1018,6 +1052,7 @@ components:
       required: [tur, metin]
       properties:
         tur: { type: string, enum: [kutu] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         metin: { type: string, minLength: 1, maxLength: 500 }
         simge: { type: string, maxLength: 32 }
     SoruBlogu:

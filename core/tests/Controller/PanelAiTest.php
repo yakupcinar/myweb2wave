@@ -206,6 +206,8 @@ final class PanelAiTest extends WebTestCase
         self::assertStringContainsString('yonlendirme: [{"kosullar"', Tanim::EKRAN_YONERGESI);
         // T3b: koşullu gösterim yönergede.
         self::assertStringContainsString('goster: {"kosullar"', Tanim::EKRAN_YONERGESI);
+        // T3c: koşullu değer yönergede.
+        self::assertStringContainsString('degerler: [{"kosullar"', Tanim::EKRAN_YONERGESI);
         foreach (array_keys(Tanim::BLOKLAR) as $blok) {
             self::assertStringContainsString("{$blok} (", Tanim::EKRAN_YONERGESI);
         }

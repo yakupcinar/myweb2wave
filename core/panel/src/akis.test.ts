@@ -615,3 +615,67 @@ describe("T3b: gösterim koşulu", () => {
         ).toBe("cevap.kiminle");
     });
 });
+
+// T3c: kimlik değişince koşullu değerlerdeki cevap.<eski> (ekran ve blok) taşınır.
+describe("T3c: koşullu değerler", () => {
+    it("kimlik değişince ekran ve blok değerlerindeki cevap adı taşınır", () => {
+        const kosul = [
+            { ozellik: "cevap.s", islem: "icerir" as const, deger: "a" },
+        ];
+        const t: Tanim = {
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "s",
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secenekler: [
+                                { id: "a", metin: "A" },
+                                { id: "b", metin: "B" },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    id: "son",
+                    tur: "ekran",
+                    baslik: "E",
+                    bloklar: [
+                        {
+                            tur: "metin",
+                            metin: "m",
+                            degerler: [
+                                { kosullar: kosul, alan: "metin", deger: "M" },
+                            ],
+                        },
+                    ],
+                    dugme: "F",
+                    degerler: [{ kosullar: kosul, alan: "baslik", deger: "B" }],
+                },
+                paywall,
+            ],
+        };
+        const once = tanimdanPuck(t, VARSAYILAN);
+        const sonra: HuniVerisi = {
+            ...once,
+            content: once.content.map((o, j) =>
+                j === 0
+                    ? ({
+                          ...o,
+                          props: { ...o.props, kimlik: "kiminle" },
+                      } as typeof o)
+                    : o,
+            ),
+        };
+        type D = { degerler: { kosullar: { ozellik: string }[] }[] };
+        const ekran = hedefleriYenidenAdlandir(once, sonra)!.content[1]!
+            .props as D & { bloklar: { props: D }[] };
+        expect(ekran.degerler[0]!.kosullar[0]!.ozellik).toBe("cevap.kiminle");
+        expect(ekran.bloklar[0]!.props.degerler[0]!.kosullar[0]!.ozellik).toBe(
+            "cevap.kiminle",
+        );
+    });
+});

@@ -29,6 +29,7 @@ import type {
     KokProps,
     SecenekProps,
     YonlendirmeProps,
+    DegerProps,
 } from "./donustur";
 
 export type Ortam = {
@@ -330,6 +331,38 @@ const yonlendirmeAlani = {
         hedef: { ...hedefAlani, label: "Gidilecek adım" },
     },
 };
+
+/**
+ * T3c: koşullu değer — kural = koşullar + bir alanın yeni değeri; alan listesi
+ * bileşenin değiştirilebilir alanları (çekirdek aynı listeyi denetler).
+ */
+function degerAlani(alanlar: [string, string][]) {
+    return {
+        type: "array" as const,
+        label: "Koşullu değerler (alan başına ilk tutan kural)",
+        max: 20,
+        getItemSummary: (k: DegerProps) =>
+            `${k.alan || "?"} ← ${k.kosullar?.[0]?.ozellik ?? "koşul"}`,
+        defaultItemProps: {
+            baglac: "hepsi" as const,
+            kosullar: [
+                { ozellik: "utm.source", islem: "esit" as const, deger: "" },
+            ],
+            alan: alanlar[0]![0],
+            deger: "",
+        },
+        arrayFields: {
+            baglac: yonlendirmeAlani.arrayFields.baglac,
+            kosullar: yonlendirmeAlani.arrayFields.kosullar,
+            alan: {
+                type: "select" as const,
+                label: "Alan",
+                options: alanlar.map(([value, label]) => ({ label, value })),
+            },
+            deger: { type: "textarea" as const, label: "Yeni değer" },
+        },
+    };
+}
 
 // T3b: gösterim koşulu — yönlendirmenin koşul alanları; boş liste = hep gösterilir.
 const gosterBaglacAlani = {
@@ -658,6 +691,12 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     yonlendirme: yonlendirmeAlani,
                     gosterBaglac: gosterBaglacAlani,
                     gosterKosullar: gosterAlani,
+                    degerler: degerAlani([
+                        ["baslik", "Başlık"],
+                        ["dugme", "Düğme"],
+                        ["gorsel", "Kapak görseli (kimlik)"],
+                        ["gorselMetni", "Kapak alt metni"],
+                    ]),
                 },
                 resolveFields: (veri, { fields, appState }) => {
                     const hedefler = hedefSecenekleri(appState, veri.props.id);
@@ -713,6 +752,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     yonlendirme: [],
                     gosterBaglac: "hepsi",
                     gosterKosullar: [],
+                    degerler: [],
                     baslik: "Yeni ekran",
                     gorsel: "",
                     gorselMetni: "",
@@ -803,7 +843,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             BaslikBlogu: {
                 label: "Ara başlık",
-                fields: { metin: { type: "text", label: "Başlık" } },
+                fields: {
+                    degerler: degerAlani([["metin", "Metin"]]),
+                    metin: { type: "text", label: "Başlık" },
+                },
                 defaultProps: { metin: "Ara başlık" },
                 render: ({ metin }) => (
                     <Blok blok={{ tur: "baslik", metin }} medyaKoku="" />
@@ -811,7 +854,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             MetinBlogu: {
                 label: "Paragraf",
-                fields: { metin: { type: "textarea", label: "Metin" } },
+                fields: {
+                    degerler: degerAlani([["metin", "Metin"]]),
+                    metin: { type: "textarea", label: "Metin" },
+                },
                 defaultProps: { metin: "Metni buraya yaz." },
                 render: ({ metin }) => (
                     <Blok blok={{ tur: "metin", metin }} medyaKoku="" />
@@ -820,6 +866,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             GorselBlogu: {
                 label: "Görsel",
                 fields: {
+                    degerler: degerAlani([
+                        ["gorsel", "Görsel (kimlik)"],
+                        ["gorselMetni", "Alt metin"],
+                    ]),
                     gorsel: gorselAlani(ortam, "Görsel"),
                     gorselMetni: gorselMetniAlani,
                 },
@@ -868,6 +918,11 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             YorumBlogu: {
                 label: "Kısa yorum",
                 fields: {
+                    degerler: degerAlani([
+                        ["metin", "Metin"],
+                        ["yazar", "Yazar"],
+                        ["unvan", "Unvan"],
+                    ]),
                     metin: { type: "textarea", label: "Yorum" },
                     yazar: { type: "text", label: "Ad" },
                     unvan: { type: "text", label: "Açıklama (isteğe bağlı)" },
@@ -905,6 +960,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             IstatistikBlogu: {
                 label: "İstatistik",
                 fields: {
+                    degerler: degerAlani([
+                        ["deger", "Değer"],
+                        ["metin", "Satır"],
+                    ]),
                     deger: {
                         type: "text",
                         label: "Değer (en çok 12 karakter)",
@@ -922,6 +981,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             KutuBlogu: {
                 label: "Not kutusu",
                 fields: {
+                    degerler: degerAlani([
+                        ["metin", "Metin"],
+                        ["simge", "Simge"],
+                    ]),
                     metin: { type: "textarea", label: "Metin" },
                     simge: {
                         type: "text",

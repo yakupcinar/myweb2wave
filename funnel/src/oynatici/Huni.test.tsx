@@ -1110,6 +1110,88 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     expect(gorunenBaslik()).toBe("Aile 2");
   });
 
+  // T3c: koşullu değer — ekran başlığı önceki cevaba, blok metni UTM'ye göre.
+  const degerli = (): Yanit => ({
+    durum: 200,
+    govde: yayin({
+      adimlar: [
+        {
+          id: "kiminle",
+          tur: "ekran",
+          baslik: "Kiminle?",
+          bloklar: [
+            {
+              tur: "soru",
+              secenekler: [
+                { id: "aile", metin: "Ailemle" },
+                { id: "is", metin: "İş" },
+              ],
+            },
+          ],
+        },
+        {
+          id: "sonuc",
+          tur: "ekran",
+          baslik: "Genel",
+          bloklar: [
+            {
+              tur: "metin",
+              metin: "Herkes",
+              degerler: [
+                {
+                  kosullar: [
+                    { ozellik: "utm.source", islem: "esit", deger: "meta" },
+                  ],
+                  alan: "metin",
+                  deger: "Meta'dan",
+                },
+              ],
+            },
+          ],
+          dugme: "Devam",
+          degerler: [
+            {
+              kosullar: [
+                { ozellik: "cevap.kiminle", islem: "icerir", deger: "aile" },
+              ],
+              alan: "baslik",
+              deger: "Aile için",
+            },
+          ],
+        },
+        {
+          id: "paywall",
+          tur: "paywall",
+          baslik: "Pro",
+          metin: "",
+          dugme: "Abone ol",
+          plan: "monthly",
+        },
+      ],
+    }),
+  });
+  const gorunenMetin = (): string =>
+    document.querySelector("[data-sira]:not([hidden]) .bloklar p")
+      ?.textContent ?? "";
+
+  it("T3c: koşul tutunca ekran ve blok alanı kuralın değeri", async () => {
+    tanim = degerli();
+    kur("?utm_source=meta");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunenBaslik()).toBe("Aile için");
+    expect(gorunenMetin()).toBe("Meta'dan");
+  });
+
+  it("T3c: tutmazsa alanın kendi değeri", async () => {
+    tanim = degerli();
+    kur("");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("İş"));
+    expect(gorunenBaslik()).toBe("Genel");
+    expect(gorunenMetin()).toBe("Herkes");
+  });
+
   it("T3a: tutan kural seçeneğin kendi hedefinden önce gelir", async () => {
     const t = yonlendirmeli();
     const adim = (t.govde as Yayin).tanim.adimlar[0];

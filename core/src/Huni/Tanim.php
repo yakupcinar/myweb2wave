@@ -35,6 +35,7 @@ final class Tanim
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
         .'Koşullu yönlendirme (isteğe bağlı, ekranda): yonlendirme: [{"kosullar": [{"ozellik": "cevap.<bu ya da önceki ekran>", "islem": "icerir", "deger": "<seçenek kimliği>"}], "hedef": "<sonraki adım>"}] — ilk tutan kural kazanır; özellikler utm.source/medium/campaign/content/term, izin.reklam, huni, huni.surum, adim.son, cevap.<adım>; seçmeli cevapta icerir/icermez, diğerlerinde esit/esit_degil, her biri için var/yok; birden çok koşulda "baglac": "herhangi" VEYA yapar. Yalnız kişiselleştirme gerçekten gerekiyorsa kullan (ör. farklı kitleye farklı ekran). '
         .'Koşullu gösterim (isteğe bağlı, ilk ekran dışında): goster: {"kosullar": [...], "baglac"?} — aynı koşul biçimi, cevap yalnız ÖNCEKİ ekranlardan; tutmazsa ekran atlanır, sıradaki adıma geçilir. '
+        .'Koşullu değer (isteğe bağlı, ekranda ve soru/maddeler dışı blokta): degerler: [{"kosullar": [...], "alan": "baslik", "deger": "<yeni metin>"}] — alan öğede VAR olmalı (ekran: baslik, dugme, gorsel, gorselMetni; blok: kendi metin alanları, gorsel, simge); alan başına ilk tutan kural, tutmazsa alanın kendi değeri; cevap yalnız önceki ekranlardan. Aynı ekranı kitleye göre kişiselleştirmek için (ör. kiminle cevabına göre başlık). '
         .'Karşılama, neden bu ürün, nasıl çalışır, güvence gibi ekranları farklı blok dizilişleriyle kur; tüm huniyi aynı dizilişle doldurma. '
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
         .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
@@ -42,6 +43,9 @@ final class Tanim
     /** T3a: koşul işlemleri — listede (seçmeli cevap) ve tek değerde. */
     private const LISTE_ISLEMLERI = ['icerir', 'icermez', 'var', 'yok'];
     private const DEGER_ISLEMLERI = ['esit', 'esit_degil', 'var', 'yok'];
+
+    /** T3c: koşullu değer alabilen ekran alanları (alan → metin türü; null = görsel). */
+    private const EKRAN_DEGERLERI = ['baslik' => 'baslik', 'dugme' => 'dugme', 'gorsel' => null, 'gorselMetni' => 'gorselMetni'];
 
     /** T3a: hunide (tarayıcıda) bilinmeyen özellikler — ödemeden sonra sunucuda. */
     private const HUNI_DISI_OZELLIKLER = ['odeme', 'abonelik'];
@@ -220,6 +224,26 @@ final class Tanim
                 $beklenen[] = 'yonlendirme';
                 self::yonlendirme($adim['yonlendirme'], $sira, $sorular, $i, $yer, $h);
             }
+            // T3c: koşullu değer — ekranın ve bloklarının metin/görsel alanları.
+            if ('ekran' === $tur && \array_key_exists('degerler', $adim)) {
+                $beklenen[] = 'degerler';
+                self::degerler($adim['degerler'], $adim, self::EKRAN_DEGERLERI, $sira, $sorular, $i, $yer, $h);
+            }
+            foreach ('ekran' === $tur && \is_array($adim['bloklar'] ?? null) ? $adim['bloklar'] : [] as $j => $b) {
+                if (!\is_array($b) || !\array_key_exists('degerler', $b)) {
+                    continue;
+                }
+                $by = "{$yer} blok ".((int) $j + 1);
+                $blokTuru = \is_string($b['tur'] ?? null) ? $b['tur'] : '';
+                if ('soru' === $blokTuru || !isset(self::BLOKLAR[$blokTuru])) {
+                    $h[] = "{$by}: soru bloğunda degerler olmaz (seçenek kimlikleri koşulların dayanağı)";
+                    continue;
+                }
+                [$zorunlu, $istege] = self::BLOKLAR[$blokTuru];
+                $alanlar = array_filter($zorunlu + $istege, static fn (?string $u): bool => null !== $u)
+                    + array_intersect_key(['gorsel' => null, 'simge' => null], $zorunlu + $istege);
+                self::degerler($b['degerler'], $b, $alanlar, $sira, $sorular, $i, $by, $h);
+            }
             // T3b: koşullu gösterim — tutmazsa ekran atlanır (sıradakine geçilir).
             if ('ekran' === $tur && \array_key_exists('goster', $adim)) {
                 $beklenen[] = 'goster';
@@ -373,6 +397,8 @@ final class Tanim
             if ('soru' === $tur && ++$sorular > 1) {
                 $h[] = "{$yer}: ekranda en çok bir soru bloğu olabilir";
             }
+            // T3c: koşullu değerler ekranın döngüsünde denetlenir.
+            unset($b['degerler']);
             [$zorunlu, $istege] = self::BLOKLAR[$tur];
             $metinYaniti = 'soru' === $tur && 'metin' === ($b['secimTuru'] ?? 'tekli');
             if ('soru' === $tur && !$metinYaniti) {
@@ -486,6 +512,47 @@ final class Tanim
     }
 
     /**
+     * T3c: koşullu değerler — kural = koşullar + bir alanın yeni değeri; aynı
+     * alanda ilk tutan kural kazanır. Alan öğede VAR olmalı (yokken değer
+     * vermek görünmeyen alan açardı) ve değer o alanın kendi kuralına uyar.
+     * Gösterimde hesaplanır: cevap yalnız önceki adımlardan.
+     *
+     * @param array<mixed>                             $oge
+     * @param array<string, ?string>                   $alanlar alan → metin türü (null: görsel/simge)
+     * @param array<string, int>                       $sira
+     * @param array<string, array{bool, list<string>}> $sorular
+     * @param list<string>                             $h
+     */
+    private static function degerler(mixed $kurallar, array $oge, array $alanlar, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        if (!\is_array($kurallar) || !array_is_list($kurallar) || [] === $kurallar || \count($kurallar) > 20) {
+            $h[] = "{$yer}: degerler 1–20 kurallık liste olmalı";
+
+            return;
+        }
+        foreach ($kurallar as $k => $kural) {
+            $ky = "{$yer} degerler ".($k + 1);
+            $istege = \is_array($kural) && \array_key_exists('baglac', $kural) ? ['baglac'] : [];
+            if (!\is_array($kural) || !self::anahtarlar($kural, ['kosullar', 'alan', 'deger', ...$istege])) {
+                $h[] = "{$ky}: alanlar tam olarak kosullar, alan, deger ve (isteğe bağlı) baglac olmalı";
+                continue;
+            }
+            self::kosulGrubu($kural, $sira, $sorular, $i - 1, $ky, $h);
+            $alan = $kural['alan'];
+            if (!\is_string($alan) || !\array_key_exists($alan, $alanlar) || !\array_key_exists($alan, $oge)) {
+                $h[] = "{$ky}: ".(\is_string($alan) ? $alan : '?').' bu öğede değiştirilemez ('.implode(', ', array_keys(array_intersect_key($alanlar, $oge))).')';
+                continue;
+            }
+            $deger = $kural['deger'];
+            match ($alan) {
+                'gorsel' => self::gorsel($deger, "{$ky} {$alan}", $h),
+                'simge' => self::emoji($deger) ? null : $h[] = "{$ky} simge: tek emoji olmalı",
+                default => self::metin($deger, (string) $alanlar[$alan], "{$ky} {$alan}", $h),
+            };
+        }
+    }
+
+    /**
      * T3b: gösterim koşulu ekran çizilmeden önce hesaplanır — cevap yalnız
      * ÖNCEKİ adımlardan; ilk adımda yok (hep gösterilir, geri tuşu sade kalır).
      *
@@ -506,17 +573,30 @@ final class Tanim
 
             return;
         }
-        if ([] !== $istege && !\in_array($goster['baglac'], ['hepsi', 'herhangi'], true)) {
-            $h[] = "{$yer} goster: baglac hepsi ya da herhangi olmalı";
+        self::kosulGrubu($goster, $sira, $sorular, $i - 1, "{$yer} goster", $h);
+    }
+
+    /**
+     * T3b/T3c: bağlaç + 1–5 koşul; cevap en çok `$sinir` sıradaki adımdan.
+     *
+     * @param array<mixed>                             $grup
+     * @param array<string, int>                       $sira
+     * @param array<string, array{bool, list<string>}> $sorular
+     * @param list<string>                             $h
+     */
+    private static function kosulGrubu(array $grup, array $sira, array $sorular, int $sinir, string $yer, array &$h): void
+    {
+        if (\array_key_exists('baglac', $grup) && !\in_array($grup['baglac'], ['hepsi', 'herhangi'], true)) {
+            $h[] = "{$yer}: baglac hepsi ya da herhangi olmalı";
         }
-        $kosullar = $goster['kosullar'];
+        $kosullar = $grup['kosullar'] ?? null;
         if (!\is_array($kosullar) || !array_is_list($kosullar) || [] === $kosullar || \count($kosullar) > 5) {
-            $h[] = "{$yer} goster: kosullar 1–5 öğeli liste olmalı";
+            $h[] = "{$yer}: kosullar 1–5 öğeli liste olmalı";
 
             return;
         }
         foreach ($kosullar as $j => $kosul) {
-            self::kosul($kosul, $sira, $sorular, $i - 1, "{$yer} goster koşul ".($j + 1), $h);
+            self::kosul($kosul, $sira, $sorular, $sinir, "{$yer} koşul ".($j + 1), $h);
         }
     }
 

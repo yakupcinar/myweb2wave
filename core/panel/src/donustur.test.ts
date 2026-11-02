@@ -480,6 +480,56 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri)).toStrictEqual(sorulu);
     });
 
+    it("T3c: koşullu değerler (ekran + blok) gidiş-dönüş aynı; boşken alan yazılmaz", () => {
+        const kural = (alan: string, deger: string) => ({
+            kosullar: [
+                {
+                    ozellik: "utm.source",
+                    islem: "esit" as const,
+                    deger: "meta",
+                },
+            ],
+            alan,
+            deger,
+        });
+        const degerli: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((a) =>
+                a.id === "karsilama" && a.tur === "ekran"
+                    ? {
+                          ...a,
+                          degerler: [
+                              {
+                                  ...kural("baslik", "Meta"),
+                                  baglac: "herhangi",
+                              },
+                          ],
+                          bloklar: [
+                              {
+                                  tur: "metin",
+                                  metin: "Kısa",
+                                  degerler: [kural("metin", "Uzun")],
+                              },
+                          ],
+                      }
+                    : a,
+            ),
+        };
+        const veri = tanimdanPuck(degerli, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(degerli);
+        const ekran = veri.content[0]!.props as {
+            degerler: unknown[];
+            bloklar: { props: { degerler: unknown[] } }[];
+        };
+        ekran.degerler = [];
+        ekran.bloklar[0]!.props.degerler = [];
+        const geri = puckTanim(veri).adimlar[0]!;
+        expect("degerler" in geri).toBe(false);
+        expect("degerler" in (geri as { bloklar: object[] }).bloklar[0]!).toBe(
+            false,
+        );
+    });
+
     it("T3b: gösterim koşulu gidiş-dönüş aynı; koşulsuzken alan yazılmaz", () => {
         const kosullu: Tanim = {
             ...temel,

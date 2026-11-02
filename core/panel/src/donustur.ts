@@ -72,6 +72,14 @@ export type EkranProps = {
     /** T3b: gösterim koşulu; koşul yoksa ekran hep gösterilir (alan yazılmaz). */
     gosterBaglac: "hepsi" | "herhangi";
     gosterKosullar: YonlendirmeProps["kosullar"];
+    degerler: DegerProps[];
+};
+/** T3c: koşullu değer (Puck); boş liste tanıma yazılmaz. */
+export type DegerProps = {
+    baglac: "hepsi" | "herhangi";
+    kosullar: YonlendirmeProps["kosullar"];
+    alan: string;
+    deger: string;
 };
 /** Puck metin alanı: değer hep dize (huni.surum kayıtta sayıya çevrilir). */
 export type YonlendirmeProps = {
@@ -80,9 +88,13 @@ export type YonlendirmeProps = {
     hedef: string;
 };
 /** Blok bileşenlerinin alanları; boş isteğe bağlı alan tanıma yazılmaz. */
-export type BaslikBloguProps = { metin: string };
-export type MetinBloguProps = { metin: string };
-export type GorselBloguProps = { gorsel: string; gorselMetni: string };
+export type BaslikBloguProps = { metin: string; degerler?: DegerProps[] };
+export type MetinBloguProps = { metin: string; degerler?: DegerProps[] };
+export type GorselBloguProps = {
+    gorsel: string;
+    gorselMetni: string;
+    degerler?: DegerProps[];
+};
 export type MaddelerBloguProps = { maddeler: { metin: string }[] };
 /** 0 = puan yok. */
 export type YorumBloguProps = {
@@ -90,9 +102,18 @@ export type YorumBloguProps = {
     yazar: string;
     unvan: string;
     puan: number;
+    degerler?: DegerProps[];
 };
-export type IstatistikBloguProps = { deger: string; metin: string };
-export type KutuBloguProps = { metin: string; simge: string };
+export type IstatistikBloguProps = {
+    deger: string;
+    metin: string;
+    degerler?: DegerProps[];
+};
+export type KutuBloguProps = {
+    metin: string;
+    simge: string;
+    degerler?: DegerProps[];
+};
 /** T1b: soru bloğunun yanıt alanları (soru metni ekranın başlığı). */
 export type SoruBloguProps = {
     secenekler: SecenekProps[];
@@ -179,6 +200,28 @@ function kosulGrubu(
     };
 }
 
+/** T3c: tanım ↔ Puck koşullu değerleri. */
+type KosulluDegerler = NonNullable<EkranAdimi["degerler"]>;
+const degerProps = (d: KosulluDegerler | undefined): DegerProps[] =>
+    (d ?? []).map((k) => ({
+        baglac: k.baglac ?? "hepsi",
+        kosullar: kosulProps(k.kosullar),
+        alan: k.alan,
+        deger: k.deger,
+    }));
+const degerleri = (
+    d: DegerProps[] | undefined,
+): { degerler?: KosulluDegerler } =>
+    d?.length
+        ? {
+              degerler: d.map((k) => ({
+                  ...kosulGrubu(k.baglac, k.kosullar),
+                  alan: k.alan,
+                  deger: k.deger,
+              })),
+          }
+        : {};
+
 /** Tanım koşulları → Puck metin alanları (değer hep dize). */
 const kosulProps = (kosullar: Kosul[]): YonlendirmeProps["kosullar"] =>
     kosullar.map((c) => ({
@@ -204,7 +247,18 @@ const BLOK_TURU = Object.fromEntries(
 /** Puck'ta yalnız ekranın yuvasına konan bileşenler. */
 export const BLOK_BILESENLERI: string[] = Object.values(BLOK_BILESENI);
 
-function bloktanPuck(b: EkranBlogu, id: string) {
+/** T3c: soru ve maddeler dışındaki bloklar koşullu değer taşır. */
+function bloktanPuck(b: EkranBlogu, id: string): HuniVerisi["content"][number] {
+    const oge = bloktanPuckYalin(b, id);
+    if (b.tur === "soru" || b.tur === "maddeler") return oge;
+    // Yayma tür ↔ props eşini kaybeder; eklenen alan Puck'ta isteğe bağlı.
+    return {
+        ...oge,
+        props: { ...oge.props, degerler: degerProps(b.degerler) },
+    } as unknown as HuniVerisi["content"][number];
+}
+
+function bloktanPuckYalin(b: EkranBlogu, id: string) {
     switch (b.tur) {
         case "baslik":
         case "metin":
@@ -319,6 +373,16 @@ function yanitAlanlari(p: SoruBloguProps) {
  * bırakılırsa) türüyle olduğu gibi gider — çekirdek reddeder, kaybolmaz.
  */
 export function puckBloktan(oge: {
+    type: string;
+    props: Record<string, unknown>;
+}): EkranBlogu {
+    return {
+        ...puckBloktanYalin(oge),
+        ...degerleri(oge.props["degerler"] as DegerProps[] | undefined),
+    } as EkranBlogu;
+}
+
+function puckBloktanYalin(oge: {
     type: string;
     props: Record<string, unknown>;
 }): EkranBlogu {
@@ -459,6 +523,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 kosullar: kosulProps(k.kosullar),
                                 hedef: k.hedef,
                             })),
+                            degerler: degerProps(adim.degerler),
                             gosterBaglac: adim.goster?.baglac ?? "hepsi",
                             gosterKosullar: kosulProps(
                                 adim.goster?.kosullar ?? [],
@@ -533,6 +598,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                             bloklar: (p.bloklar ?? []).map(puckBloktan),
                             ...(p.dugme ? { dugme: p.dugme } : {}),
                             ...yonlendirmesi(p.yonlendirme),
+                            ...degerleri(p.degerler),
                             ...(p.gosterKosullar?.length
                                 ? {
                                       goster: kosulGrubu(

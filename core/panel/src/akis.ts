@@ -95,6 +95,7 @@ type Hedefli = {
     secenekler?: { hedef?: string }[];
     yonlendirme?: { hedef: string; kosullar: { ozellik: string }[] }[];
     gosterKosullar?: { ozellik: string }[];
+    degerler?: { kosullar: { ozellik: string }[] }[];
 };
 
 /** T1: kökte adım olmayan (bloğun yuvadan taşmış hâli) öğenin kimliği yok. */
@@ -148,6 +149,15 @@ export function hedefleriYenidenAdlandir(
         // T3b: gösterim koşulundaki cevap.<eski>.
         ...(p.gosterKosullar
             ? { gosterKosullar: p.gosterKosullar.map(cevabiTasi) }
+            : {}),
+        // T3c: koşullu değerlerdeki cevap.<eski> (ekranda ve blokta).
+        ...(p.degerler
+            ? {
+                  degerler: p.degerler.map((k) => ({
+                      ...k,
+                      kosullar: k.kosullar.map(cevabiTasi),
+                  })),
+              }
             : {}),
         ...(p.secenekler
             ? {

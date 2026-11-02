@@ -141,10 +141,10 @@
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
     - [x] T2a · 2026-11-02, `docs/decisions/t2-ozellik-deposu.md`: `ziyaret_ozellikleri` görünümü (ikinci yazım yok) + sözlük (`Ozellikler::SOZLUK`) + ziyaret/kişi okuma + `app:ozellikler`; gerçek veride 103 ziyaret / 441 özellik, hepsi sözlükte. Kırma 6/6. Açık: Ç88 cihaz, Ç89 ölçek, Ç90 serbest metin
     - [x] T2b · 2026-11-02, `t2-ozellik-deposu.md`: `huni-bilesenleri/ozellikler.ts` (oynatıcının olaylarından aynı özellikler) + ortak örnek dosyası, sunucu gerçek uçlardan, tarayıcı işlevden ölçülür; bulunan tuzak: en_US sıralaması → `COLLATE "C"` göçü. Kırma 6/6
-    - [ ] **T3** · koşul motoru (bildirimsel: koşul + VE/VEYA; sonraki ekran / atla / koşullu değer) — girdi T2 özellikleri
+    - [x] **T3** · koşul motoru (bildirimsel: koşul + VE/VEYA; sonraki ekran / atla / koşullu değer) — girdi T2 özellikleri
       - [x] T3a · 2026-11-03, `docs/decisions/t3-kosul-motoru.md`: ekranda `yonlendirme` kuralları (ilk tutan → seçenek → ekran → sıradaki); çekirdek sözlük/sıra/tür/seçenek denetimi, oynatıcı T2b özelliklerinden, Puck alanı + akış denetimi, AI yönergesi. Tarayıcıda ölçüldü. Kırma 11/11 (2'si testi düzeltti). Açık Ç91
       - [x] T3b · 2026-11-03, `t3-kosul-motoru.md`: ekranda `goster` (yalnız önceki cevaplar, ilk adımda yok); tutmazsa atlanır, geçmişe girmez; Puck alanı + akış denetimi. Tarayıcıda ölçüldü. Kırma 10/10
-      - [ ] T3c · koşullu değer
+      - [x] T3c · 2026-11-03, `t3-kosul-motoru.md`: ekran + blok `degerler` (kural başına tek alan, alan öğede var olmalı, değer alanın kuralıyla); oynatıcı çizimde, Puck alanı. Tarayıcıda ölçüldü. Kırma 9/9
   - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
     - [x] A5a · (`mcp-a5a.md`) kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost
     - [x] A5+ · (`ai-ekran-goruntusu.md`, Ç72 (1)) `ekran_goruntusu` aracı: başsız Chrome kabı (`ekran`), önizlemede `?adim=`, MCP görüntü içeriği; gerçek MCP HTTP ile ölçüldü. Kalan: Ç72 (2)–(4), Ç73, Ç74

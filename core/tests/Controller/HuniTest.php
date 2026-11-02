@@ -226,6 +226,45 @@ final class HuniTest extends WebTestCase
         return $t;
     }
 
+    /**
+     * T3c: koşullu değer — `ara` ekranının ve giriş ekranındaki metin bloğunun
+     * alanları kurala bağlanır.
+     *
+     * @param array<mixed> $ekranda
+     * @param array<mixed> $blokta
+     * @param array<mixed> $soruda
+     *
+     * @return array<mixed>
+     */
+    private static function degerli(array $ekranda, array $blokta = [], array $soruda = []): array
+    {
+        $t = self::tanim('X');
+        if ([] !== $blokta) {
+            $t['adimlar'][0]['bloklar'] = [['tur' => 'metin', 'metin' => 'Kısa', 'degerler' => $blokta]];
+        }
+        if ([] !== $soruda) {
+            $t['adimlar'][1]['bloklar'] = [['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']], 'degerler' => $soruda]];
+        }
+        array_splice($t['adimlar'], 2, 0, [self::ekran([['tur' => 'soru', 'secenekler' => [['id' => 'x', 'metin' => 'X'], ['id' => 'y', 'metin' => 'Y']]]], ['id' => 'ara', 'baslik' => 'Ara', 'dugme' => null, 'degerler' => [] === $ekranda ? null : $ekranda])]);
+
+        return $t;
+    }
+
+    public function testDegerlerGecerliYayindaSozlesmeyeUyar(): void
+    {
+        $t = self::degerli(
+            [['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'icerir', 'deger' => 'a']], 'alan' => 'baslik', 'deger' => 'A için']],
+            [['baglac' => 'herhangi', 'kosullar' => [['ozellik' => 'utm.source', 'islem' => 'esit', 'deger' => 'meta']], 'alan' => 'metin', 'deger' => 'Meta']],
+        );
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $t));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     public function testGosterGecerliYayindaSozlesmeyeUyar(): void
     {
         $t = self::gosterli(['baglac' => 'herhangi', 'kosullar' => [
@@ -520,6 +559,18 @@ final class HuniTest extends WebTestCase
         yield 'göster kendi cevabı' => ['goster koşul 1: cevap.ara bu adımda ya da önceki adımlarda sorulmuyor', $goster(['kosullar' => [['ozellik' => 'cevap.ara', 'islem' => 'var']]])];
         yield 'göster ilk adımda' => ['goster ilk adımda olmaz', $goster(['kosullar' => [['ozellik' => 'utm.source', 'islem' => 'var']]], 0)];
         yield 'göster koşul türü' => ['goster koşul 1: cevap.soru1 için islem icerir', $goster(['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'esit', 'deger' => 'a']]])];
+        // T3c: koşullu değer — yalnız var olan metin alanı, değer o alanın kuralıyla.
+        $kd = static fn (string $alan, mixed $deger, array $ek = []): array => array_merge(['kosullar' => [['ozellik' => 'utm.source', 'islem' => 'var']], 'alan' => $alan, 'deger' => $deger], $ek);
+        yield 'değer: ekranda olmayan alan' => ['adım 3 degerler 1: dugme bu öğede değiştirilemez', self::degerli([$kd('dugme', 'Git')])];
+        yield 'değer: bilinmeyen alan' => ['adım 3 degerler 1: renk bu öğede değiştirilemez', self::degerli([$kd('renk', 'x')])];
+        yield 'değer: uzun başlık' => ['adım 3 degerler 1 baslik: 1–200 karakter', self::degerli([$kd('baslik', str_repeat('a', 201))])];
+        yield 'değer: metin değil' => ['adım 3 degerler 1 baslik: 1–200 karakter', self::degerli([$kd('baslik', 5)])];
+        yield 'değer: fazla alan' => ['adım 3 degerler 1: alanlar tam olarak kosullar, alan, deger', self::degerli([$kd('baslik', 'x', ['hedef' => 'paywall'])])];
+        yield 'değer: kendi cevabı' => ['adım 3 degerler 1 koşul 1: cevap.ara bu adımda ya da önceki', self::degerli([$kd('baslik', 'x', ['kosullar' => [['ozellik' => 'cevap.ara', 'islem' => 'var']]])])];
+        yield 'değer: liste değil' => ['adım 3: degerler 1–20 kurallık liste', self::degerli(['x' => 1])];
+        yield 'blok değeri: olmayan alan' => ['adım 1 blok 1 degerler 1: gorsel bu öğede değiştirilemez', self::degerli([], [$kd('gorsel', str_repeat('a', 64))])];
+        yield 'blok değeri: uzun metin' => ['adım 1 blok 1 degerler 1 metin: 1–1000 karakter', self::degerli([], [$kd('metin', str_repeat('a', 1001))])];
+        yield 'blok değeri: soru bloğunda' => ['adım 2 blok 1: soru bloğunda degerler olmaz', self::degerli([], [], [$kd('metin', 'x')])];
         yield 'uzun değer' => ['koşul 1: deger 1–200 karakter', $kural(['ozellik' => 'utm.source', 'islem' => 'esit', 'deger' => str_repeat('a', 201)])];
         // T1b: soru bloğu.
         $iki = [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']];

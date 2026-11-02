@@ -1,6 +1,6 @@
 // T3a: koşul motoru — beklenenler elle (§3), yokluk anlamı açıkça ölçülür.
 import { describe, expect, it } from "vitest";
-import { grupTutar, kosulTutar, yonlendir } from "./kosul";
+import { degerleriUygula, grupTutar, kosulTutar, yonlendir } from "./kosul";
 
 const o = {
     "utm.source": "meta",
@@ -112,5 +112,51 @@ describe("T3b — koşul grubu", () => {
         expect(grupTutar({ baglac: "herhangi", kosullar: [tiktok] }, o)).toBe(
             false,
         );
+    });
+});
+
+// T3c: koşullu değer — alan başına ilk tutan kural; tutmazsa kendi değeri;
+// kurallar çıktıda kalmaz (bileşen bilmez).
+describe("T3c — koşullu değer", () => {
+    const meta = {
+        ozellik: "utm.source",
+        islem: "esit",
+        deger: "meta",
+    } as const;
+    const aile = {
+        ozellik: "cevap.kiminle",
+        islem: "icerir",
+        deger: "aile",
+    } as const;
+    const tiktok = {
+        ozellik: "utm.source",
+        islem: "esit",
+        deger: "tiktok",
+    } as const;
+    const ekran = {
+        baslik: "Genel",
+        dugme: "Devam",
+        degerler: [
+            { kosullar: [tiktok], alan: "baslik", deger: "TikTok" },
+            { kosullar: [meta], alan: "baslik", deger: "Meta" },
+            { kosullar: [aile], alan: "baslik", deger: "Aile" },
+            { kosullar: [aile], alan: "dugme", deger: "Aileyle devam" },
+        ],
+    };
+    it("alan başına ilk tutan kural", () => {
+        expect(degerleriUygula(ekran, o)).toEqual({
+            baslik: "Meta",
+            dugme: "Aileyle devam",
+        });
+    });
+    it("hiçbiri tutmazsa kendi değeri", () => {
+        expect(degerleriUygula(ekran, {})).toEqual({
+            baslik: "Genel",
+            dugme: "Devam",
+        });
+    });
+    it("kuralsız nesne aynen döner", () => {
+        const yalin: { metin: string; degerler?: [] } = { metin: "x" };
+        expect(degerleriUygula(yalin, o)).toBe(yalin);
     });
 });

@@ -25,6 +25,9 @@
                         "baslik"
                     ]
                 },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
                 "metin": {
                     "type": "string",
                     "minLength": 1,
@@ -106,6 +109,10 @@
                     "description": "T3b: koşullu gösterim — koşul tutmazsa ekran atlanır, sıradaki adıma geçilir. Cevap yalnız önceki adımlardan; ilk adımda olmaz.",
                     "$ref": "#/$defs/KosulGrubu"
                 },
+                "degerler": {
+                    "description": "T3c: koşullu değer — ekranın baslik, dugme, gorsel, gorselMetni alanı kurala bağlanır (öğede var olmalı).",
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
                 "ilerlemeGoster": {
                     "type": "boolean"
                 }
@@ -153,6 +160,9 @@
                     "enum": [
                         "gorsel"
                     ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
                 },
                 "gorsel": {
                     "$ref": "#/$defs/GorselKimligi"
@@ -333,6 +343,9 @@
                         "istatistik"
                     ]
                 },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
                 "deger": {
                     "type": "string",
                     "minLength": 1,
@@ -409,6 +422,48 @@
                 }
             }
         },
+        "KosulluDegerler": {
+            "description": "T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan kural kazanır, hiçbiri tutmazsa alanın kendi değeri. Gösterimde hesaplanır: cevap yalnız önceki adımlardan. Soru ve maddeler bloğunda yok.",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "kosullar",
+                    "alan",
+                    "deger"
+                ],
+                "properties": {
+                    "baglac": {
+                        "type": "string",
+                        "enum": [
+                            "hepsi",
+                            "herhangi"
+                        ]
+                    },
+                    "kosullar": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "items": {
+                            "$ref": "#/$defs/Kosul"
+                        }
+                    },
+                    "alan": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                    },
+                    "deger": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                    }
+                }
+            }
+        },
         "KutuBlogu": {
             "description": "Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz",
             "type": "object",
@@ -423,6 +478,9 @@
                     "enum": [
                         "kutu"
                     ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
                 },
                 "metin": {
                     "type": "string",
@@ -476,6 +534,9 @@
                     "enum": [
                         "metin"
                     ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
                 },
                 "metin": {
                     "type": "string",
@@ -666,6 +727,9 @@
                     "enum": [
                         "yorum"
                     ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
                 },
                 "metin": {
                     "type": "string",

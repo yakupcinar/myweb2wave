@@ -559,6 +559,8 @@ export interface components {
             yonlendirme?: components["schemas"]["Yonlendirme"][];
             /** @description T3b: koşullu gösterim — koşul tutmazsa ekran atlanır, sıradaki adıma geçilir. Cevap yalnız önceki adımlardan; ilk adımda olmaz. */
             goster?: components["schemas"]["KosulGrubu"];
+            /** @description T3c: koşullu değer — ekranın baslik, dugme, gorsel, gorselMetni alanı kurala bağlanır (öğede var olmalı). */
+            degerler?: components["schemas"]["KosulluDegerler"];
             ilerlemeGoster?: boolean;
         };
         Yonlendirme: {
@@ -570,6 +572,14 @@ export interface components {
             kosullar: components["schemas"]["Kosul"][];
             hedef: components["schemas"]["AdimHedefi"];
         };
+        /** @description T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan kural kazanır, hiçbiri tutmazsa alanın kendi değeri. Gösterimde hesaplanır: cevap yalnız önceki adımlardan. Soru ve maddeler bloğunda yok. */
+        KosulluDegerler: {
+            /** @enum {string} */
+            baglac?: "hepsi" | "herhangi";
+            kosullar: components["schemas"]["Kosul"][];
+            alan: string;
+            deger: string;
+        }[];
         KosulGrubu: {
             /**
              * @description hepsi (VE, varsayılan) · herhangi (VEYA)
@@ -591,17 +601,20 @@ export interface components {
         BaslikBlogu: {
             /** @enum {string} */
             tur: "baslik";
+            degerler?: components["schemas"]["KosulluDegerler"];
             metin: string;
         };
         /** @description Paragraf */
         MetinBlogu: {
             /** @enum {string} */
             tur: "metin";
+            degerler?: components["schemas"]["KosulluDegerler"];
             metin: string;
         };
         GorselBlogu: {
             /** @enum {string} */
             tur: "gorsel";
+            degerler?: components["schemas"]["KosulluDegerler"];
             gorsel: components["schemas"]["GorselKimligi"];
             gorselMetni?: components["schemas"]["GorselMetni"];
         };
@@ -615,6 +628,7 @@ export interface components {
         YorumBlogu: {
             /** @enum {string} */
             tur: "yorum";
+            degerler?: components["schemas"]["KosulluDegerler"];
             metin: string;
             yazar: string;
             unvan?: string;
@@ -624,6 +638,7 @@ export interface components {
         IstatistikBlogu: {
             /** @enum {string} */
             tur: "istatistik";
+            degerler?: components["schemas"]["KosulluDegerler"];
             deger: string;
             metin: string;
         };
@@ -631,6 +646,7 @@ export interface components {
         KutuBlogu: {
             /** @enum {string} */
             tur: "kutu";
+            degerler?: components["schemas"]["KosulluDegerler"];
             metin: string;
             simge?: string;
         };

@@ -47,3 +47,24 @@ export function yonlendir(
 ): string | undefined {
     return kurallar?.find((k) => grupTutar(k, o))?.hedef;
 }
+
+export type KosulluDeger = KosulGrubu & { alan: string; deger: string };
+
+/**
+ * T3c: koşullu değerleri uygular — alan başına ilk tutan kural; tutmazsa
+ * alanın kendi değeri. `degerler` çıktıda yok (bileşen kuralları bilmez).
+ */
+export function degerleriUygula<
+    T extends { degerler?: readonly KosulluDeger[] },
+>(nesne: T, o: Ozellikler): Omit<T, "degerler"> {
+    if (!nesne.degerler) return nesne;
+    const { degerler, ...kalan } = nesne;
+    const atanan = new Set<string>();
+    const sonuc: Record<string, unknown> = { ...kalan };
+    for (const k of degerler)
+        if (!atanan.has(k.alan) && grupTutar(k, o)) {
+            atanan.add(k.alan);
+            sonuc[k.alan] = k.deger;
+        }
+    return sonuc as Omit<T, "degerler">;
+}

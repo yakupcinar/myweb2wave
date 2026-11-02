@@ -81,3 +81,29 @@ Kullanıcı 2026-11-03: döngü, "a'dan j'ye hepsini sırayla yap". T3a'nın ko�
 ## Kontrol
 
 `bin/kontrol` yerelde 207 s, EXIT=0, `KONTROL: YEŞİL` — core 395 test / 3.045 doğrulama. İlk iki koşu kırmızıydı: biçim (huni-bilesenleri'nde `format` betiği yok, yalnız `format:check` — prettier doğrudan) ve PHPStan (test yardımcısı `mixed` üzerinde).
+
+# T3c — koşullu değer (2026-11-03)
+
+Platform planı (`web2wave-platform-yapisi.md` §4c): "her blok ve ekran özelliği kurala bağlanabilir — kural = koşullar + değer".
+
+## Karar
+
+- Ekranda ve blokta isteğe bağlı `degerler: [{baglac?, kosullar, alan, deger}]` (sözleşmede `KosulluDegerler`, 1–20 kural). **Kural başına tek alan** — Puck dizisi ile tanım bire bir (gidiş-dönüş aynı); alan başına ilk tutan kural, hiçbiri tutmazsa alanın kendi değeri.
+- **Alan öğede VAR olmalı** (yokken değer vermek görünmeyen alan açardı) ve dize olmalı: ekran `baslik, dugme, gorsel, gorselMetni`; blok için `BLOKLAR`'dan türetilir (uzunluk kuralı olan alanlar + `gorsel`, `simge`). Liste/sayı alanları (maddeler, puan) yok.
+- **Değer alanın kendi kuralıyla** denetlenir (uzunluk, görsel kimliği, tek emoji) — mevcut denetleyiciler.
+- **Soru bloğunda yok:** seçenek kimlikleri koşulların dayanağı; değiştirilebilir dize alanı da yok. Açık denetim yalnız ileti için: kaldırılınca da "değiştirilemez ()" reddi kalıyor (C4, §10).
+- Cevap yalnız önceki adımlardan (ortak `kosulGrubu`, sınır `$i - 1`); ilk adımda serbest (UTM vb. ilk ekranda da bilinir).
+- Oynatıcı çizimde uygular (`kisisel`, `degerleriUygula`); her adım değişimi yeniden çizer. Bileşenler `degerler`'i hiç görmez.
+- Puck: ekran ve altı blokta "Koşullu değerler" dizisi (koşullar + alan seçimi + yeni değer); yeniden adlandırmada `cevap.<eski>` taşınır. Blokların özellik listesi T3a'nın sabit listesi (yuvadaki bloğun ekranını Puck vermiyor) — yanlış cevap adı kayıtta çekirdekte reddedilir (Ç91).
+
+## Ölçüm
+
+`genel` taslağında `hazir` ekranının başlığı ve paragrafı `cevap.kiminle icerir is` ile. Chrome önizleme: "İş için" → hazir başlığı "Ekibin için hazırız", paragraf kuralın metni; geri → kiminle, "Ailemle" → hazir kendi metinleri (yeni cevap eskisini değiştirdi, kural tutmadı). Taslak geri yüklendi.
+
+## Kırma denemeleri (9/9 kırmızı)
+
+C1 alanın öğede var olması · C2 değer alanın kuralıyla · C3 bu ekranın cevabı serbest · C4 soru bloğunda değer (ileti farkıyla düştü, bkz. yukarı) · C5 son tutan kazanır · C6 oynatıcı uygulamıyor · C7 blok değerleri uygulanmıyor · C8 Puck blok değerleri tanıma yazılmıyor · C9 yeniden adlandırmada cevap taşınmıyor. Test yardımcısı (PHPStan için) değişince C1–C4 yeniden koşuldu: yine kırmızı.
+
+## Kontrol
+
+`bin/kontrol` 212 s, EXIT=0, `KONTROL: YEŞİL` — core 406 test / 3.109 doğrulama. Önceki koşu PHPStan'da kırmızıydı (test yardımcısı `mixed` üzerinde).

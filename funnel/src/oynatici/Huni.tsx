@@ -12,8 +12,16 @@ import {
   type ReactNode,
 } from "react";
 import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
-import { grupTutar, yonlendir } from "../../../huni-bilesenleri/kosul";
-import { ozellikler, type Olay } from "../../../huni-bilesenleri/ozellikler";
+import {
+  degerleriUygula,
+  grupTutar,
+  yonlendir,
+} from "../../../huni-bilesenleri/kosul";
+import {
+  ozellikler,
+  type Olay,
+  type Ozellikler,
+} from "../../../huni-bilesenleri/ozellikler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { fiyatMetni } from "../lib/fiyat";
@@ -50,6 +58,18 @@ type Secenek = components["schemas"]["SoruSecenegi"];
  * Cevap adımın kimliğiyle kaydedilir — ekranda en çok bir soru bloğu
  * (çekirdek denetler).
  */
+/** T3c: ekranın ve bloklarının koşullu değerleri uygulanmış hâli. */
+function kisisel(adim: TanimAdimi, o: Ozellikler): TanimAdimi {
+  if (adim.tur !== "ekran") return adim;
+  const ekran = degerleriUygula(adim, o);
+  return {
+    ...ekran,
+    bloklar: ekran.bloklar.map((b) =>
+      "degerler" in b ? degerleriUygula(b, o) : b,
+    ),
+  } as TanimAdimi;
+}
+
 function sorusu(adim: TanimAdimi): {
   id: string;
   secimTuru?: "tekli" | "coklu" | "metin" | undefined;
@@ -366,7 +386,9 @@ function Oynatici({
         </div>
       ) : null}
       <div ref={kutu} className="adimlar" data-gecis={gecis}>
-        {tanim.adimlar.map((adim, i) => {
+        {tanim.adimlar.map((ham, i) => {
+          // T3c: değerler çizimde (her adım değişimi yeniden çizer).
+          const adim = kisisel(ham, simdikiOzellikler());
           const soru = sorusu(adim);
           const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
           const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
