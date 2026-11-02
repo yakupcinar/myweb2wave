@@ -565,6 +565,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     duzen,
                     bloklar: Bloklar,
                     dugme,
+                    onizlemeKapali,
                 }) => (
                     <div style={kart}>
                         <Ekran
@@ -573,6 +574,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             gorselMetni={gorselMetni}
                             duzen={duzen}
                             dugme={dugme}
+                            kapali={onizlemeKapali ?? false}
                             medyaKoku=""
                             yuva={<Bloklar className="bloklar" />}
                         />

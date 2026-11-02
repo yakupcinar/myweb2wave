@@ -184,8 +184,9 @@ describe("önizleme = huni: ekran ve blokları", () => {
 });
 
 // T1b: soru bloklu ekran. Tek seçimde düğme yok → DOM aynı. Çoklu seçimde
-// huni ilk açılışta düğmeyi kapalı çizer (seçim yok), Puck yuvadaki soruyu
-// göremediği için açık çizer — fark yalnız bu öznitelik (Ç84).
+// huni ilk açılışta düğmeyi kapalı çizer (seçim yok); Puck'ın Render'ı yuvadaki
+// soruyu göremez, açık çizer — fark yalnız bu öznitelik. Düzenleyicide bekçi
+// (akis.ts ekranDugmeleri) önizlemeyi kapalı yapar (Ç84; tarayıcıda ölçüldü).
 describe("önizleme = huni: soru bloklu ekran", () => {
     const ciz = (adim: Tanim["adimlar"][number]): [string, string] => {
         const v = tanimdanPuck(

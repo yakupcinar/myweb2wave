@@ -1,6 +1,48 @@
 // Akış denetimleri (Ç55): düzenleyicide uyarı ve kolaylık; çekirdek yine
 // yalnız ileri hedefi doğrular, ulaşılamayan adımı reddetmez (A13: uyarı).
-import { BLOK_BILESENLERI, type HuniVerisi, type Tanim } from "./donustur";
+import {
+    BLOK_BILESENLERI,
+    type EkranProps,
+    type HuniVerisi,
+    type SoruBloguProps,
+    type Tanim,
+} from "./donustur";
+
+/**
+ * Ç87 + Ç84: ekran yuvadaki soru bloğuna göre düğmesini ayarlar. Tek seçimde
+ * düğme yok (seçenek geçirir; çekirdek düğmeyi reddeder); çoklu / serbest
+ * yanıtta düğme gerekir ve hunide ilk açılışta kapalı başlar — önizleme de.
+ * Puck yuvadaki blok değişince üst bileşenin resolveData'sını ÇAĞIRMIYOR
+ * (tarayıcıda ölçüldü) — bu yüzden bekçide, her veri değişiminde. Değişiklik
+ * yoksa null.
+ */
+export function ekranDugmeleri(veri: HuniVerisi): HuniVerisi | null {
+    let degisti = false;
+    const content = veri.content.map((o) => {
+        if (o.type !== "Ekran") return o;
+        const p = o.props as EkranProps;
+        const soru = (
+            (p.bloklar ?? []) as unknown as {
+                type: string;
+                props: Partial<SoruBloguProps>;
+            }[]
+        ).find((b) => b.type === "SoruBlogu")?.props;
+        const tur = soru ? (soru.secimTuru ?? "tekli") : null;
+        const dugme =
+            tur === "tekli" ? "" : tur && !p.dugme ? "Devam" : p.dugme;
+        const kapali =
+            tur === "coklu" ||
+            (tur === "metin" && soru?.yanitZorunlu === "zorunlu");
+        if (dugme === p.dugme && kapali === (p.onizlemeKapali ?? false))
+            return o;
+        degisti = true;
+        return {
+            ...o,
+            props: { ...p, dugme, onizlemeKapali: kapali },
+        } as typeof o;
+    });
+    return degisti ? { ...veri, content } : null;
+}
 
 /**
  * Baştan hiçbir yolla varılamayan adımların kimlikleri. Kural oynatıcıyla

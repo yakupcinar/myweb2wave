@@ -62,6 +62,8 @@ export type EkranProps = {
     dugme: string;
     hedef: string;
     ilerlemeGoster: boolean;
+    /** Ç84: yalnız önizleme — tanıma yazılmaz (resolveData yuvadan hesaplar). */
+    onizlemeKapali?: boolean;
 };
 /** Blok bileşenlerinin alanları; boş isteğe bağlı alan tanıma yazılmaz. */
 export type BaslikBloguProps = { metin: string };

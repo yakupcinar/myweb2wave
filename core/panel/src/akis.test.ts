@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     disaridakiBloklar,
+    ekranDugmeleri,
     hedefleriYenidenAdlandir,
     ulasilamayanlar,
 } from "./akis";
@@ -349,5 +350,85 @@ describe("hedefleri yeniden adlandırma", () => {
         // Eski ad başka bir blokta yaşıyorsa hedef ona işaret etmeye devam eder.
         const ikiAd = yeniden(yeniden(once, 2, "kapanis"), 0, "son");
         expect(hedefleriYenidenAdlandir(once, ikiAd)).toBeNull();
+    });
+});
+
+// Ç87 + Ç84: tekli soruda düğme yok; çoklu / serbest yanıtta düğme gerekir ve
+// önizlemede hunideki gibi ilk açılışta kapalı. Beklenenler elle (§3).
+describe("ekran düğmesi yuvadaki soruya uyar (Ç84, Ç87)", () => {
+    const veri = (
+        bloklar: { type: string; props: Record<string, unknown> }[],
+        dugme: string,
+        onizlemeKapali?: boolean,
+    ): HuniVerisi =>
+        ({
+            root: { props: {} },
+            content: [
+                {
+                    type: "Ekran",
+                    props: {
+                        id: "Ekran-1",
+                        kimlik: "e",
+                        bloklar,
+                        dugme,
+                        ...(onizlemeKapali === undefined
+                            ? {}
+                            : { onizlemeKapali }),
+                    },
+                },
+            ],
+        }) as unknown as HuniVerisi;
+    const soru = (ek: Record<string, unknown>) => ({
+        type: "SoruBlogu",
+        props: { id: "SoruBlogu-1", secimTuru: "tekli", ...ek },
+    });
+    const props = (v: HuniVerisi | null) =>
+        v?.content[0]?.props as unknown as Record<string, unknown>;
+
+    it("tek seçimli soru eklenince düğme boşalır, önizleme açık", () => {
+        const p = props(ekranDugmeleri(veri([soru({})], "Devam")));
+        expect(p["dugme"]).toBe("");
+        expect(p["onizlemeKapali"]).toBe(false);
+    });
+    it("çoklu seçimde düğme yoksa Devam gelir, önizlemede kapalı; yazılmış düğme korunur", () => {
+        const p = props(
+            ekranDugmeleri(veri([soru({ secimTuru: "coklu" })], "")),
+        );
+        expect(p["dugme"]).toBe("Devam");
+        expect(p["onizlemeKapali"]).toBe(true);
+        expect(
+            props(
+                ekranDugmeleri(veri([soru({ secimTuru: "coklu" })], "Gönder")),
+            )["dugme"],
+        ).toBe("Gönder");
+    });
+    it("serbest yanıt: zorunluysa önizlemede kapalı, isteğe bağlıysa açık", () => {
+        const zorunlu = soru({ secimTuru: "metin", yanitZorunlu: "zorunlu" });
+        expect(
+            props(ekranDugmeleri(veri([zorunlu], "Devam")))["onizlemeKapali"],
+        ).toBe(true);
+        expect(
+            ekranDugmeleri(
+                veri(
+                    [
+                        soru({
+                            secimTuru: "metin",
+                            yanitZorunlu: "istege_bagli",
+                        }),
+                    ],
+                    "Devam",
+                    false,
+                ),
+            ),
+        ).toBeNull();
+    });
+    it("değişiklik yoksa null (bekçi döngüye girmez); sorusuz ekrana dokunulmaz", () => {
+        expect(
+            ekranDugmeleri(
+                veri([{ type: "MetinBlogu", props: { id: "m" } }], ""),
+            ),
+        ).toBeNull();
+        const once = ekranDugmeleri(veri([soru({ secimTuru: "coklu" })], ""));
+        expect(ekranDugmeleri(once!)).toBeNull();
     });
 });

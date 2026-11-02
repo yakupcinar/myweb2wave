@@ -31,6 +31,7 @@ import {
 import { AiSohbeti } from "./AiSohbeti";
 import {
     disaridakiBloklar,
+    ekranDugmeleri,
     hedefleriYenidenAdlandir,
     ulasilamayanlar,
 } from "./akis";
@@ -390,7 +391,10 @@ function AkisBekcisi() {
     const dispatch = usePuck((s) => s.dispatch);
     const onceki = useRef(veri);
     useEffect(() => {
-        const duzelmis = hedefleriYenidenAdlandir(onceki.current, veri);
+        const adlandirilmis = hedefleriYenidenAdlandir(onceki.current, veri);
+        // Ç84/Ç87: ekran düğmesi yuvadaki soruya uyar.
+        const dugmeli = ekranDugmeleri(adlandirilmis ?? veri);
+        const duzelmis = dugmeli ?? adlandirilmis;
         onceki.current = duzelmis ?? veri;
         // Puck dispatch tipi yapılandırma türünü taşımıyor (0.23).
         if (duzelmis)

@@ -90,3 +90,15 @@ Testler taşındı, kural kaybı yok: soru adımı kuralları (seçenek sayısı
 Kırma 5/5 kırmızı: E1 tanıtım türü yeniden kabul · E2 yeni huni taslağı eski türle (ilk koşuda YEŞİL — test yoktu; `testBosTaslakMetinleriDoldurulunca` eklendi) · E3 adım menüsünde fazladan tür · E4 akış ekran hedefini bilmez · E5 önizleme Render'sız.
 
 Yan iş: PHPStan iç içe dizi yazımını tipleyemedi → test yardımcısı `blok(array $blokEk, array $ekranEk)` tüm değişikliği argümanla alır (null siler); eski `+` birleşimi testteki değeri ezmiyordu (`array_merge`).
+
+CI (bağımlılıklar kilit dosyasından sıfırdan, adım 3): koşu 41441509062, SHA 3cd8d4e, `KONTROL: YEŞİL` (core 364 test, göç adımı dahil).
+
+## Ç84 + Ç87 — ekran düğmesi yuvadaki soruya uyar (2026-11-02)
+
+Tek seçimli soru bloğunda düğme kendiliğinden boşalır (çekirdek reddederdi); çoklu / serbest yanıtta düğme yoksa "Devam" gelir ve önizlemede hunideki gibi ilk açılışta kapalı çizilir (zorunlu serbest yanıt da).
+
+- **İlk deneme tutmadı (tarayıcıda ölçüldü):** Ekran'ın `resolveData`'sı yalnız ekran eklenince/yüklenince koşuyor — yuvadaki soru bloğu değişince Puck üst bileşenin `resolveData`'sını ÇAĞIRMIYOR (soru çokluya çevrildi, düğme gelmedi). Birim testi yeşildi; davranış yanlıştı.
+- **Çözüm:** mantık saf işlev `akis.ts ekranDugmeleri` — düzenleyicinin bekçisi (`AkisBekcisi`, hedef yeniden adlandırmayla aynı yol) her veri değişiminde uygular; değişiklik yoksa null (döngü yok). Önizleme için düzenleyiciye özgü `onizlemeKapali` alanı (tanıma yazılmaz).
+- Tarayıcı (`keepchat/fitness`, kaydedilmedi): yüklenince "Yayındakiyle aynı" (sahte değişiklik yok) · soru çokluya → düğme "Devam", kapalı · tekliye dönünce düğme yok · geri al üç kez → başlangıç, "Yayındakiyle aynı" (geri al takılmıyor).
+- Kırma 4/4 kırmızı (F1 tekli düğme kalır · F2 çoklu düğme gelmez · F3 kapalı hesaplanmaz · F4 değişmeyende de yazar). Puck render'ının `kapali`'yı geçirmesi testsiz — tarayıcıda ölçüldü (düğme `disabled`).
+- Puck `Render` testi (onizleme.test) bekçisiz çizdiği için hâlâ farkı belgeliyor; düzenleyici artık hunide olduğu gibi.
