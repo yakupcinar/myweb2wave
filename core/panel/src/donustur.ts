@@ -87,6 +87,10 @@ export type YuklemeProps = {
 export type EkranProps = {
     kimlik: string;
     baslik: string;
+    /** T1c: kapak; boş = yok, "ust" tanıma yazılmaz. */
+    gorsel: string;
+    gorselMetni: string;
+    duzen: "ust" | "kahraman" | "tamEkran";
     bloklar: Slot;
     dugme: string;
     hedef: string;
@@ -472,6 +476,9 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             id,
                             kimlik: adim.id,
                             baslik: adim.baslik,
+                            gorsel: adim.gorsel ?? "",
+                            gorselMetni: adim.gorselMetni ?? "",
+                            duzen: adim.duzen ?? "ust",
                             bloklar: adim.bloklar.map((b, j) =>
                                 bloktanPuck(b, `blok-${i}-${j}`),
                             ),
@@ -593,16 +600,23 @@ export function puckTanim(veri: HuniVerisi): Tanim {
             case "Ekran": {
                 const p = oge.props as EkranProps;
                 return hedefli(
-                    {
-                        id: p.kimlik,
-                        tur: "ekran" as const,
-                        baslik: p.baslik,
-                        bloklar: (p.bloklar ?? []).map(puckBloktan),
-                        ...(p.dugme ? { dugme: p.dugme } : {}),
-                        ...(p.ilerlemeGoster === false
-                            ? { ilerlemeGoster: false }
-                            : {}),
-                    } satisfies EkranAdimi,
+                    gorselli(
+                        {
+                            id: p.kimlik,
+                            tur: "ekran" as const,
+                            baslik: p.baslik,
+                            ...(p.duzen && p.duzen !== "ust"
+                                ? { duzen: p.duzen }
+                                : {}),
+                            bloklar: (p.bloklar ?? []).map(puckBloktan),
+                            ...(p.dugme ? { dugme: p.dugme } : {}),
+                            ...(p.ilerlemeGoster === false
+                                ? { ilerlemeGoster: false }
+                                : {}),
+                        } satisfies EkranAdimi,
+                        p.gorsel ?? "",
+                        p.gorselMetni ?? "",
+                    ),
                     p.hedef ?? "",
                 );
             }

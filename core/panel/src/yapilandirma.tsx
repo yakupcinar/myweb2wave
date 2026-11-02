@@ -632,6 +632,18 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 resolveData: eklenince,
                 fields: {
                     kimlik: kimlikAlani,
+                    // T1c: kapak — tanıtımın görseli ve düzeni.
+                    gorsel: gorselAlani(ortam, "Kapak görseli (isteğe bağlı)"),
+                    gorselMetni: gorselMetniAlani,
+                    duzen: {
+                        type: "radio",
+                        label: "Kapak düzeni (tam ekranda yalnız metin blokları)",
+                        options: [
+                            { label: "Üstte", value: "ust" },
+                            { label: "Büyük", value: "kahraman" },
+                            { label: "Tam ekran", value: "tamEkran" },
+                        ],
+                    },
                     baslik: { type: "text", label: "Başlık" },
                     bloklar: { type: "slot", allow: BLOK_BILESENLERI },
                     dugme: {
@@ -651,6 +663,9 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 defaultProps: {
                     kimlik: "ekran",
                     baslik: "Yeni ekran",
+                    gorsel: "",
+                    gorselMetni: "",
+                    duzen: "ust",
                     bloklar: [
                         {
                             type: "MetinBlogu",
@@ -661,10 +676,20 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     ilerlemeGoster: true,
                     hedef: "",
                 },
-                render: ({ baslik, bloklar: Bloklar, dugme }) => (
+                render: ({
+                    baslik,
+                    gorsel,
+                    gorselMetni,
+                    duzen,
+                    bloklar: Bloklar,
+                    dugme,
+                }) => (
                     <div style={kart}>
                         <Ekran
                             baslik={baslik}
+                            gorsel={gorsel}
+                            gorselMetni={gorselMetni}
+                            duzen={duzen}
                             dugme={dugme}
                             medyaKoku=""
                             yuva={<Bloklar className="bloklar" />}

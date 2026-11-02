@@ -57,6 +57,26 @@
                     "minLength": 1,
                     "maxLength": 200
                 },
+                "gorsel": {
+                    "description": "T1c: kapak — başlığın üstünde (isteğe bağlı)",
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/GorselKimligi"
+                        }
+                    ]
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                },
+                "duzen": {
+                    "description": "Kapağın yeri (yoksa ust): kahraman ekranın üst yarısı · tamEkran bütün ekran, metin beyaz — tam ekranda yalnız baslik, metin, maddeler, istatistik blokları. kahraman ve tamEkran görsel ister",
+                    "type": "string",
+                    "enum": [
+                        "ust",
+                        "kahraman",
+                        "tamEkran"
+                    ]
+                },
                 "bloklar": {
                     "type": "array",
                     "minItems": 1,

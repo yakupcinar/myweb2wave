@@ -39,3 +39,19 @@ Kullanıcının Chrome'u, `keepchat/ai-ornek` düzenleyicisi; hiçbir şey KAYDE
 - Soru bloğu yanlışlıkla kök bölgeye bırakıldı → "Ekran bloğu bir Ekran adımının içine konmalı: SoruBlogu" uyarısı göründü ✅; sürükleyip yuvaya taşıyınca uyarı kalktı, yuvada [MetinBlogu, SoruBlogu] ✅.
 - Soru bloğunun seçenek hedef listesi: "Sıradaki adım" + ekrandan SONRAKİ 8 adım (ekranın kendisi ve öncekiler yok) ✅.
 - Görülen: varsayılan ekranın düğmesi "Devam" — tek seçimli soru bloğu eklenince düğme alanını boşaltmak gerekiyor, yoksa kayıtta çekirdek "dugme olmaz" der (Ç87).
+
+## Adım 1 — ekran kapağı (taşıma için tanıtımla eşitlik, 2026-11-02)
+
+Kullanıcı kararı (Ç86): "eski türler önemli değil, eski quiz kaybolabilir" → ekran tek içerik türü olacak. Önce ekran tanıtımın yapabildiğini yapmalı: `gorsel` (+ `gorselMetni`) başlığın ÜSTÜNDE ve `duzen` ust / kahraman / tamEkran — tanıtımla aynı alan adları ve aynı CSS (`img.kapak`, `section[data-duzen]`), taşıma alanı alana kopyalar.
+
+**Yeni kural:** tam ekranda yalnız `baslik`, `metin`, `maddeler`, `istatistik` blokları — metin beyaz ve karartmanın üstünde; yüzeyli bloklar (kutu, yorum kartı, seçenek, görsel) beyaz metni açık zeminde bırakırdı. Blok paragrafları tam ekranda beyaz (%90).
+
+Kırma 5/5 kırmızı (iki deneme ilk koşuda geçersizdi: biri çıktıyı değiştirmeyen yama, biri tanıtımı da tutan yama → düzeltildi):
+
+| # | Bozulan | Sonuç |
+|---|---|---|
+| C1 | ekran kapağı tanınmaz | 🔴 testEkranKapagi |
+| C2 | tam ekran blok sınırı yok | 🔴 2 test |
+| C3 | ekran kapağı çizilmez | 🔴 bileşen |
+| C4 | tam ekranda blok metni beyaz değil | 🔴 CSS |
+| C5 | Puck kapak düzenini yazmaz | 🔴 donustur |

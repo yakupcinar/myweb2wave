@@ -127,6 +127,10 @@ describe("önizleme = huni: ekran ve blokları", () => {
         id: "neden",
         tur: "ekran",
         baslik: "Neden <b>?",
+        // T1c: kapak da iki yoldan aynı.
+        gorsel: G2,
+        gorselMetni: "Kapak",
+        duzen: "kahraman",
         bloklar: [
             { tur: "gorsel", gorsel: G1, gorselMetni: "Ekran" },
             { tur: "baslik", metin: "Ara" },

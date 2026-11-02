@@ -422,6 +422,43 @@ describe("T1 — ekran adımı (blok kataloğu)", () => {
     });
 });
 
+describe("T1c — ekran kapağı", () => {
+    const ciz = (duzen?: "ust" | "kahraman" | "tamEkran"): string =>
+        renderToStaticMarkup(
+            <Adim
+                adim={{
+                    tur: "ekran",
+                    baslik: "Merhaba",
+                    gorsel: G,
+                    gorselMetni: "Kapak",
+                    ...(duzen ? { duzen } : {}),
+                    bloklar: [{ tur: "metin", metin: "Kısa" }],
+                    dugme: "Başla",
+                }}
+                medyaKoku={KOK}
+            />,
+        ).replace(/<link[^>]*\/>/g, "");
+    it("kapak başlığın üstünde, tanıtımın kapak sınıfıyla; ust'ta işaret yok", () => {
+        expect(ciz()).toMatch(
+            /^<section class="ekran"><img class="kapak" src="[^"]+" alt="Kapak" decoding="async"\/><h1 tabindex="-1">Merhaba<\/h1>/,
+        );
+        expect(ciz("ust")).not.toContain("data-duzen");
+    });
+    it("kahraman ve tamEkran bölümde işaret (tanıtımın CSS'i)", () => {
+        expect(ciz("kahraman")).toContain(
+            '<section class="ekran" data-duzen="kahraman">',
+        );
+        expect(ciz("tamEkran")).toContain(
+            '<section class="ekran" data-duzen="tamEkran">',
+        );
+    });
+    it("CSS: tam ekranda blok metinleri de beyaz", () => {
+        expect(css).toMatch(
+            /section\[data-duzen="tamEkran"\] \.bloklar[^{]*\{[^}]*color: rgb\(255 255 255/,
+        );
+    });
+});
+
 describe("T1b — ekranda soru bloğu", () => {
     const ekran = (
         secimTuru: "tekli" | "coklu" | "metin",

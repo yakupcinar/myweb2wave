@@ -499,6 +499,9 @@ export function Blok({
  */
 export function Ekran({
     baslik,
+    gorsel,
+    gorselMetni,
+    duzen = "ust",
     bloklar = [],
     dugme,
     medyaKoku,
@@ -508,6 +511,10 @@ export function Ekran({
     kapali = false,
 }: {
     baslik: string;
+    /** T1c: kapak ve yeri — tanıtımla aynı öğe ve sınıf (huni.css G5). */
+    gorsel?: string | undefined;
+    gorselMetni?: string | undefined;
+    duzen?: "ust" | "kahraman" | "tamEkran" | undefined;
     bloklar?: EkranBlogu[] | undefined;
     /** T1b: tek seçimli soru bloğunda yok — seçenek geçirir. */
     dugme?: string | undefined;
@@ -518,7 +525,18 @@ export function Ekran({
     kapali?: boolean;
 } & Tiklama): ReactNode {
     return (
-        <section className="ekran">
+        <section
+            className="ekran"
+            data-duzen={duzen === "ust" ? undefined : duzen}
+        >
+            {gorsel ? (
+                <Gorsel
+                    id={gorsel}
+                    medyaKoku={medyaKoku}
+                    sinif="kapak"
+                    alt={gorselMetni}
+                />
+            ) : null}
             <h1 tabIndex={-1}>{baslik}</h1>
             {yuva ?? (
                 <div className="bloklar">
@@ -624,6 +642,9 @@ export type TanimAdimi =
     | {
           tur: "ekran";
           baslik: string;
+          gorsel?: string;
+          gorselMetni?: string;
+          duzen?: "ust" | "kahraman" | "tamEkran";
           bloklar: EkranBlogu[];
           dugme?: string;
       }
@@ -733,6 +754,9 @@ export function Adim({
             return (
                 <Ekran
                     baslik={adim.baslik}
+                    gorsel={adim.gorsel}
+                    gorselMetni={adim.gorselMetni}
+                    duzen={adim.duzen}
                     bloklar={adim.bloklar}
                     dugme={adim.dugme}
                     medyaKoku={medyaKoku}

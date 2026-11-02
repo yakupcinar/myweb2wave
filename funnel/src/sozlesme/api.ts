@@ -590,6 +590,14 @@ export interface components {
             /** @enum {string} */
             tur: "ekran";
             baslik: string;
+            /** @description T1c: kapak — başlığın üstünde (isteğe bağlı) */
+            gorsel?: components["schemas"]["GorselKimligi"];
+            gorselMetni?: components["schemas"]["GorselMetni"];
+            /**
+             * @description Kapağın yeri (yoksa ust): kahraman ekranın üst yarısı · tamEkran bütün ekran, metin beyaz — tam ekranda yalnız baslik, metin, maddeler, istatistik blokları. kahraman ve tamEkran görsel ister
+             * @enum {string}
+             */
+            duzen?: "ust" | "kahraman" | "tamEkran";
             bloklar: components["schemas"]["EkranBlogu"][];
             /** @description Zorunlu — yalnız tek seçimli soru bloğu olan ekranda yok (seçenek seçilince geçer; hedef de seçenekte) */
             dugme?: string;

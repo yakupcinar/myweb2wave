@@ -35,6 +35,9 @@ final class Tanim
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
         .'yorum bloğu da yorum adımı gibidir: gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
 
+    /** T1c: tam ekran kapaklı ekranda izinli bloklar (yüzeysiz, metin). */
+    public const TAM_EKRAN_BLOKLARI = ['baslik', 'metin', 'maddeler', 'istatistik'];
+
     /** T1: ekran adımındaki blok sayısı. */
     public const AZAMI_BLOK = 12;
 
@@ -154,12 +157,13 @@ final class Tanim
                 $beklenen[] = 'devamDugmesi';
                 self::metin($adim['devamDugmesi'], 'dugme', "{$yer} devamDugmesi", $h);
             }
-            // E2.3: tanıtım adımında isteğe bağlı görsel.
-            if ('tanitim' === $tur && \array_key_exists('gorsel', $adim)) {
+            // E2.3: tanıtım adımında isteğe bağlı görsel; T1c: ekranın kapağı da.
+            $kapakli = \in_array($tur, ['tanitim', 'ekran'], true);
+            if ($kapakli && \array_key_exists('gorsel', $adim)) {
                 $beklenen[] = 'gorsel';
                 self::gorsel($adim['gorsel'], $yer, $h);
             }
-            if ('tanitim' === $tur && \array_key_exists('gorselMetni', $adim)) {
+            if ($kapakli && \array_key_exists('gorselMetni', $adim)) {
                 $beklenen[] = 'gorselMetni';
                 self::gorselMetni($adim, $yer, $h);
             }
@@ -180,7 +184,7 @@ final class Tanim
                 }
             }
             // G5: görselin yeri; kahraman/tamEkran görselsiz anlamsız.
-            if ('tanitim' === $tur && \array_key_exists('duzen', $adim)) {
+            if ($kapakli && \array_key_exists('duzen', $adim)) {
                 $beklenen[] = 'duzen';
                 if (!\in_array($adim['duzen'], self::DUZENLER, true)) {
                     $h[] = "{$yer}: duzen: ".implode(', ', self::DUZENLER).' olmalı';
@@ -227,7 +231,7 @@ final class Tanim
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
             if ('ekran' === $tur) {
-                self::bloklar($adim['bloklar'], $sira, $i, $yer, $h);
+                self::bloklar($adim['bloklar'], $sira, $i, $yer, $h, 'tamEkran' === ($adim['duzen'] ?? null));
             }
             if ('soru' === $tur && \array_key_exists('secenekler', $adim)) {
                 self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
@@ -346,7 +350,7 @@ final class Tanim
      * @param array<string, int> $sira
      * @param list<string>       $h
      */
-    private static function bloklar(mixed $bloklar, array $sira, int $i, string $yer, array &$h): void
+    private static function bloklar(mixed $bloklar, array $sira, int $i, string $yer, array &$h, bool $tamEkran = false): void
     {
         if (!\is_array($bloklar) || !array_is_list($bloklar) || [] === $bloklar || \count($bloklar) > self::AZAMI_BLOK) {
             $h[] = "{$yer}: bloklar 1–".self::AZAMI_BLOK.' öğeli liste olmalı';
@@ -360,6 +364,11 @@ final class Tanim
             if (!\is_array($b) || !\is_string($tur) || !isset(self::BLOKLAR[$tur])) {
                 $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu ya da soru olmalı";
                 continue;
+            }
+            // T1c: tam ekranda metin beyaz, karartmanın üstünde — yüzeyli blok
+            // (kutu, yorum kartı, seçenek, görsel) beyaz metni açık zeminde bırakırdı.
+            if ($tamEkran && !\in_array($tur, self::TAM_EKRAN_BLOKLARI, true)) {
+                $h[] = "{$by}: tam ekranda yalnız ".implode(', ', self::TAM_EKRAN_BLOKLARI).' blokları olabilir';
             }
             // T1b: cevap ekranın kimliğiyle kaydedilir — ekranda tek soru.
             if ('soru' === $tur && ++$sorular > 1) {

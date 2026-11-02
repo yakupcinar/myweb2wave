@@ -171,6 +171,18 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
+    /** T1c: ekranın kapağı — tanıtımın görseli ve üç düzeni (taşıma için). */
+    public function testEkranKapagiGecerli(): void
+    {
+        $g = str_repeat('c', 64);
+        foreach (['ust', 'kahraman', 'tamEkran'] as $duzen) {
+            $t = self::tanim('X');
+            array_splice($t['adimlar'], 1, 0, [self::ekran([['tur' => 'metin', 'metin' => 'x'], ['tur' => 'maddeler', 'maddeler' => ['a']], ['tur' => 'istatistik', 'deger' => '1', 'metin' => 'y'], ['tur' => 'baslik', 'metin' => 'z']], ['gorsel' => $g, 'gorselMetni' => 'Kapak', 'duzen' => $duzen])]);
+            self::assertSame([], Tanim::hatalar($t, ['monthly']), $duzen);
+            self::assertContains($g, Tanim::gorseller($t));
+        }
+    }
+
     /**
      * T1b: ekranda soru bloğu — tek seçimde düğme yok (seçenek geçirir, hedefi
      * seçenekte), çoklu/serbest yanıtta ekranın düğmesi gönderir.
@@ -376,6 +388,14 @@ final class HuniTest extends WebTestCase
         yield 'blok kutu simgesi harf' => ['blok 2: simge tek emoji olmalı', $ekr([$b, ['tur' => 'kutu', 'metin' => 'x', 'simge' => 'A']])];
         yield 'blok kutu uzun' => ['blok 2 metin: 1–500', $ekr([$b, ['tur' => 'kutu', 'metin' => str_repeat('a', 501)]])];
         yield 'blok yerinde kimlik' => ['adım 2 blok 1', $ekr([['tur' => 'baslik', 'metin' => 'x', 'id' => 'b1']])];
+        // T1c: ekran kapağı.
+        $kapak = ['gorsel' => str_repeat('c', 64)];
+        yield 'ekran kapak kimliği' => ['adım 2: görsel kimliği geçersiz', $ekr([$b], ['gorsel' => 'a.png'])];
+        yield 'ekran kapaksız alt metin' => ['adım 2: gorselMetni yalnız gorsel ile', $ekr([$b], ['gorselMetni' => 'x'])];
+        yield 'ekran kapaksız kahraman' => ['adım 2: duzen kahraman görsel ister', $ekr([$b], ['duzen' => 'kahraman'])];
+        yield 'ekran düzen bilinmeyen' => ['adım 2: duzen: ust, kahraman, tamEkran', $ekr([$b], $kapak + ['duzen' => 'yan'])];
+        yield 'tam ekranda kutu' => ['blok 2: tam ekranda yalnız baslik, metin, maddeler, istatistik', $ekr([$b, ['tur' => 'kutu', 'metin' => 'x']], $kapak + ['duzen' => 'tamEkran'])];
+        yield 'tam ekranda soru' => ['blok 1: tam ekranda yalnız', $ekr([['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]]], $kapak + ['duzen' => 'tamEkran', 'dugme' => null])];
         // T1b: soru bloğu.
         $iki = [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']];
         $tekli = ['tur' => 'soru', 'secenekler' => $iki];
