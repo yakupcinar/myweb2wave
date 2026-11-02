@@ -25,7 +25,7 @@ const erken = `window.huniTanimi=(${tanimIstegi.toString()})(${JSON.stringify(ap
   </head>
   <body class="huni">
     <main>
-      <Huni client:only="react" app={app}>
+      <Huni client:only="preact" app={app}>
         <p id="durum" slot="fallback">
           Yükleniyor…
         </p>

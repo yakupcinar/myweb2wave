@@ -112,7 +112,7 @@
   - [x] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock — `docs/decisions/webhook-butunluk-past-due.md`
   - [x] L18 · 2026-11-02, `l18-baglanti-dependabot.md`: `funnel-baglanti` kontrol adımı (eski Ç23 hatasını yakaladı) · `.github/dependabot.yml` (cooldown 14 gün, şemaya karşı geçerli); Dependabot `main` dalına birleşince çalışır (Ç80)
   - [x] L19 · 2026-11-02, `l19-gecisler.md`: ileri sağdan / geri soldan, yumuşak ilerleme dolgusu (yerel progress erişilebilirlik için kaldı); hareket azaltma gerçek tarayıcıda ölçüldü (hiç animasyon yok). Kırma 6/6
-  - [ ] L20 · Ç50 Preact denemesi (ölç; iyiyse geç)
+  - [x] L20 · 2026-11-02, `l20-preact.md`: huni Preact (compat) — JS 77,4 → 19,7 KB, görüntü farkı 0, testler Preact'le 73/73; bütçe 30 KB (Ç81 onay)
 - [ ] **Huni mobil görünüm** (kullanıcı 2026-10-27: "huniyi sevmedim, örnek repolara bak"; yön: mobil uygulama gibi). `docs/decisions/huni-mobil-gorunum.md`
   - [x] 1 · görünüm: seçenek kartları + işaret, alta yapışık düğme, plan kartı — 2026-10-27
   - [x] 2 · tek seçimde otomatik ilerleme — zaten vardı

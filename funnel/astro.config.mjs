@@ -1,14 +1,14 @@
 // Huni sayfaları derlemede üretilir ve CDN'den sunulur (pre-setup B2):
 // sunucusu yok, kullanıcıya özel içerik yok. Oynatıcı tek React adacığı
 // (B4/H2), yalnız tarayıcıda çizilir (client:only).
-import react from "@astrojs/react";
+import preact from "@astrojs/preact";
 import { defineConfig } from "astro/config";
 import onyukleme from "./src/onyukleme.ts";
 
 export default defineConfig({
   output: "static",
   // onyukleme: ada modülleri ilk turda iner (Ç52 (1), src/onyukleme.ts).
-  integrations: [react(), onyukleme()],
+  integrations: [preact({ compat: true }), onyukleme()],
   vite: {
     // Ortak bileşenler kök dizinin dışında (B4/H1); geliştirme sunucusu
     // izinsiz dosyayı 403 ile reddeder. Derlemede kısıt yok.

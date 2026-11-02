@@ -285,6 +285,7 @@ tanımlanamadı); rakiplerin React'i animasyon/durum için seçtiği (çıkarım
 **Bedeli:** huni JS'i ~12 KB → React ile büyür (bütçe ölçülerek konur);
 yeni ortak paket, iki tüketici (huni + düzenleyici) ve Docker bağlaması.
 Geçiş planı: `PLAN.md` §1 (H0–H6).
+**Güncelleme (L20, 2026-11-02):** hunide çalışma zamanı **Preact (compat)** — bileşenler React API'siyle yazılır, panelde React, hunide Preact'e eşlenir (tek kaynak korunur); JS 77,4 → 19,7 KB, bütçe 30 KB (`l20-preact.md`, onay Ç81).
 
 **B5 · Panel ayrı React uygulaması; Symfony panel için JSON veri servisi**
 (2026-10-27, kullanıcı: "yapılarını nasıl kurmuşlar, basite kaçmayalım,

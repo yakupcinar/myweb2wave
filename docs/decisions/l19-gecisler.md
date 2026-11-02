@@ -12,3 +12,4 @@
 - Kırma 6/6: K1 geri de `ileri` · K2 ileri işaret yazmaz · K3 dolgu hep %100 · K4 ileri animasyonu yok · K5 dolgu geçişi yok · K6 yerel progress kaldırılır (erişilebilirlik).
 - **Gerçek tarayıcı (ekran kabı, CDP medya öykünmesi — Ç54 (1) artık ölçülebiliyor):** normalde ileri `["geçiş:width","huni-adim-ileri"]`, geri `["geçiş:width","huni-adim-geri"]`; **hareket azaltmada `[]`** (hiç animasyon yok), yön işareti yine doğru.
 - `bin/kontrol` yeşil (313 çekirdek testi; huni 58, bileşen 59; JS bütçesi geçti).
+- CI: koşu 41404957770, SHA e139eef, `KONTROL: YEŞİL`.
