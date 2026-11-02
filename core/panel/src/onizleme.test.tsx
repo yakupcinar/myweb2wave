@@ -161,6 +161,53 @@ describe("önizleme = huni: ekran ve blokları", () => {
     });
 });
 
+// T1b: soru bloklu ekran. Tek seçimde düğme yok → DOM aynı. Çoklu seçimde
+// huni ilk açılışta düğmeyi kapalı çizer (seçim yok), Puck yuvadaki soruyu
+// göremediği için açık çizer — fark yalnız bu öznitelik (Ç84).
+describe("önizleme = huni: soru bloklu ekran", () => {
+    const ciz = (adim: Tanim["adimlar"][number]): [string, string] => {
+        const v = tanimdanPuck(
+            { ...tanim, adimlar: [adim, tanim.adimlar.at(-1)!] },
+            VARSAYILAN,
+        );
+        const puck = html(
+            <Render
+                config={{ ...yap, root: {} }}
+                data={{ root: { props: {} }, content: [v.content[0]!] }}
+            />,
+        ).replace(/^<div><div style="[^"]*">([\s\S]*)<\/div><\/div>$/, "$1");
+        return [puck, html(<Adim adim={adim} medyaKoku="" />)];
+    };
+    const secenekler = [
+        { id: "aile", metin: "Ailemle", simge: "👪" },
+        { id: "is", metin: "İş", gorsel: G2, gorselMetni: "İş" },
+    ];
+    it("tek seçim: aynı DOM, düğme yok", () => {
+        const [puck, huni] = ciz({
+            id: "tek",
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+                { tur: "metin", metin: "Seç" },
+                { tur: "soru", duzen: "izgara", secenekler },
+            ],
+        });
+        expect(puck).toBe(huni);
+        expect(huni).not.toContain('class="eylem"');
+    });
+    it("çoklu seçim: fark yalnız düğmenin ilk kapalı hâli", () => {
+        const [puck, huni] = ciz({
+            id: "cok",
+            tur: "ekran",
+            baslik: "Neler?",
+            bloklar: [{ tur: "soru", secimTuru: "coklu", secenekler }],
+            dugme: "Gönder",
+        });
+        expect(huni).toContain(' disabled="">Gönder');
+        expect(puck).toBe(huni.replace(' disabled=""', ""));
+    });
+});
+
 describe("önizleme = huni: tema", () => {
     // Huni sayfası tema varken temaDegiskenleri'ni köke yazar (Huni.tsx);
     // Puck kökü aynı değişkenleri dış kutuya yazmalı.

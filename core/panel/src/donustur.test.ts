@@ -452,6 +452,72 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri)).toStrictEqual(ekranli);
     });
 
+    it("T1b: soru bloğu (tekli/çoklu/serbest) gidiş-dönüş aynı; düğmesiz ekran düğmesiz kalır", () => {
+        const sorulu: Tanim = {
+            ...temel,
+            adimlar: [
+                {
+                    id: "tek",
+                    tur: "ekran",
+                    baslik: "Kiminle?",
+                    bloklar: [
+                        { tur: "metin", metin: "Seç" },
+                        {
+                            tur: "soru",
+                            duzen: "izgara",
+                            secenekler: [
+                                {
+                                    id: "aile",
+                                    metin: "Ailemle",
+                                    simge: "👪",
+                                    hedef: "paywall",
+                                },
+                                {
+                                    id: "is",
+                                    metin: "İş",
+                                    gorsel: G1,
+                                    gorselMetni: "İş",
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    id: "cok",
+                    tur: "ekran",
+                    baslik: "Neler?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secimTuru: "coklu",
+                            secenekler: [
+                                { id: "a", metin: "A" },
+                                { id: "b", metin: "B" },
+                            ],
+                        },
+                    ],
+                    dugme: "Gönder",
+                    hedef: "paywall",
+                },
+                {
+                    id: "yazi",
+                    tur: "ekran",
+                    baslik: "Ne düşünüyorsun?",
+                    bloklar: [
+                        { tur: "soru", secimTuru: "metin", yanitZorunlu: true },
+                    ],
+                    dugme: "Gönder",
+                },
+                ...temel.adimlar.slice(-1),
+            ],
+        };
+        const veri = tanimdanPuck(sorulu, VARSAYILAN);
+        const ilk = (veri.content[0]!.props as { bloklar: { type: string }[] })
+            .bloklar;
+        expect(ilk.map((b) => b.type)).toEqual(["MetinBlogu", "SoruBlogu"]);
+        expect(puckTanim(veri)).toStrictEqual(sorulu);
+    });
+
     it("T1: ekran dışına bırakılan blok tanımda türüyle kalır (çekirdek reddeder, sessizce düşmez)", () => {
         const veri = tanimdanPuck(temel, VARSAYILAN);
         veri.content.splice(1, 0, {

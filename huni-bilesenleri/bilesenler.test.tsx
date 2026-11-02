@@ -417,6 +417,64 @@ describe("T1 — ekran adımı (blok kataloğu)", () => {
     });
 });
 
+describe("T1b — ekranda soru bloğu", () => {
+    const ekran = (
+        secimTuru: "tekli" | "coklu" | "metin",
+        ek: Partial<{ secili: number[]; cevapMetni: string }> = {},
+    ): string =>
+        renderToStaticMarkup(
+            <Adim
+                adim={{
+                    tur: "ekran",
+                    baslik: "Kiminle?",
+                    bloklar: [
+                        { tur: "metin", metin: "Bir tane seç." },
+                        secimTuru === "metin"
+                            ? { tur: "soru", secimTuru, yanitZorunlu: true }
+                            : {
+                                  tur: "soru",
+                                  secimTuru,
+                                  duzen: "izgara",
+                                  secenekler: [
+                                      { metin: "Ailemle", simge: "👪" },
+                                      { metin: "İş" },
+                                  ],
+                              },
+                    ],
+                    ...(secimTuru === "tekli" ? {} : { dugme: "Gönder" }),
+                }}
+                medyaKoku={KOK}
+                {...ek}
+            />,
+        );
+    it("tekli: seçenekler blokların arasında, soru adımıyla aynı öğe; düğme yok", () => {
+        const html = ekran("tekli");
+        expect(html).toContain(
+            '<p>Bir tane seç.</p><div class="secenekler" data-tur="tekli" data-duzen="izgara"><button type="button">',
+        );
+        expect(html).toContain(
+            '<span class="simge" aria-hidden="true">👪</span><span>Ailemle</span>',
+        );
+        expect(html).not.toContain('class="eylem"');
+    });
+    it("çoklu: seçim yokken düğme kapalı, seçilince açık ve seçili işaretli", () => {
+        expect(ekran("coklu")).toContain(
+            '<button type="button" class="ana" disabled="">Gönder</button>',
+        );
+        const secili = ekran("coklu", { secili: [1] });
+        expect(secili).toContain('class="ana">Gönder</button>');
+        expect(secili).not.toContain("disabled");
+        expect(secili).toContain('aria-pressed="true"><span>İş</span>');
+    });
+    it("serbest yanıt zorunluysa boşken kapalı; yazınca açık", () => {
+        expect(ekran("metin")).toContain('required=""');
+        expect(ekran("metin")).toContain('disabled="">Gönder');
+        expect(ekran("metin", { cevapMetni: "Merhaba" })).not.toContain(
+            "disabled",
+        );
+    });
+});
+
 describe("Mobil görünüm 3 — seçenek simgesi", () => {
     const html = renderToStaticMarkup(
         <Soru

@@ -931,6 +931,116 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     expect(history.state).toEqual({ adim: 3 });
   });
 
+  it("T1b: ekrandaki tek seçimli soru cevabı ekranın kimliğiyle bildirir, seçeneğin hedefine atlar", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        adimlar: [
+          {
+            id: "kiminle",
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+              { tur: "kutu", metin: "Cevabın gizli kalır." },
+              {
+                tur: "soru",
+                secenekler: [
+                  { id: "aile", metin: "Ailemle", hedef: "paywall" },
+                  { id: "is", metin: "İş" },
+                ],
+              },
+            ],
+          },
+          {
+            id: "atlanan",
+            tur: "tanitim",
+            baslik: "Atlanan",
+            metin: "",
+            dugme: "Devam",
+          },
+          {
+            id: "paywall",
+            tur: "paywall",
+            baslik: "Pro",
+            metin: "",
+            dugme: "Abone ol",
+            plan: "monthly",
+          },
+        ],
+      }),
+    };
+    kur();
+    await screen.findByText("Kiminle?");
+    expect(document.querySelector("[data-sira='0'] button.ana")).toBeNull();
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunenBaslik()).toBe("Pro");
+    await waitFor(() =>
+      expect(ilerlemeler()).toContainEqual({
+        sira: 0,
+        adim: "kiminle",
+        cevap: "aile",
+      }),
+    );
+  });
+
+  it("T1b: ekrandaki çoklu soru düğmeyle gönderilir, ekranın hedefine geçer", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        adimlar: [
+          {
+            id: "ilgi",
+            tur: "ekran",
+            baslik: "Neler ilgini çeker?",
+            bloklar: [
+              {
+                tur: "soru",
+                secimTuru: "coklu",
+                secenekler: [
+                  { id: "yedek", metin: "Yedekleme" },
+                  { id: "arama", metin: "Arama" },
+                ],
+              },
+            ],
+            dugme: "Gönder",
+            hedef: "paywall",
+          },
+          {
+            id: "atlanan",
+            tur: "tanitim",
+            baslik: "Atlanan",
+            metin: "",
+            dugme: "Devam",
+          },
+          {
+            id: "paywall",
+            tur: "paywall",
+            baslik: "Pro",
+            metin: "",
+            dugme: "Abone ol",
+            plan: "monthly",
+          },
+        ],
+      }),
+    };
+    kur();
+    await screen.findByText("Neler ilgini çeker?");
+    const gonder = screen.getByText("Gönder") as HTMLButtonElement;
+    expect(gonder.disabled).toBe(true);
+    fireEvent.click(screen.getByText("Arama"));
+    fireEvent.click(screen.getByText("Yedekleme"));
+    expect(gonder.disabled).toBe(false);
+    fireEvent.click(gonder);
+    expect(gorunenBaslik()).toBe("Pro");
+    await waitFor(() =>
+      expect(ilerlemeler()).toContainEqual({
+        sira: 0,
+        adim: "ilgi",
+        cevaplar: ["arama", "yedek"],
+      }),
+    );
+  });
+
   it("öteki dal kendi adımından sonra sıradakine geçer", async () => {
     tanim = dallar();
     kur();

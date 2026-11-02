@@ -201,8 +201,9 @@ final class PanelAiTest extends WebTestCase
         // T1: blok kataloğu istemde; istatistik yalnız verilen gerçek sayıyla.
         self::assertStringContainsString(Tanim::EKRAN_YONERGESI, self::metin(self::yol($ilk, 'text')));
         self::assertStringContainsString('istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı', Tanim::EKRAN_YONERGESI);
+        // Katalog maddesi "ad (açıklama)" biçiminde — yalın ad metnin başka yerinde de geçer (kırma B17).
         foreach (array_keys(Tanim::BLOKLAR) as $blok) {
-            self::assertStringContainsString($blok, Tanim::EKRAN_YONERGESI);
+            self::assertStringContainsString("{$blok} (", Tanim::EKRAN_YONERGESI);
         }
     }
 

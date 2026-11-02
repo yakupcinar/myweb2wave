@@ -106,6 +106,11 @@ export type YorumBloguProps = {
 };
 export type IstatistikBloguProps = { deger: string; metin: string };
 export type KutuBloguProps = { metin: string; simge: string };
+/** T1b: soru adımının yanıt alanları (metni ekran taşır). */
+export type SoruBloguProps = Pick<
+    SoruProps,
+    "secimTuru" | "duzen" | "yanitZorunlu" | "secenekler"
+>;
 export type KokProps = {
     sayfaBasligi: string;
     /** Ç61 (5): boş dize = logo yok. */
@@ -147,6 +152,7 @@ export type Bilesenler = {
     YorumBlogu: YorumBloguProps;
     IstatistikBlogu: IstatistikBloguProps;
     KutuBlogu: KutuBloguProps;
+    SoruBlogu: SoruBloguProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
 
@@ -166,6 +172,7 @@ export const BLOK_BILESENI = {
     yorum: "YorumBlogu",
     istatistik: "IstatistikBlogu",
     kutu: "KutuBlogu",
+    soru: "SoruBlogu",
 } as const satisfies Record<EkranBlogu["tur"], keyof Bilesenler>;
 const BLOK_TURU = Object.fromEntries(
     Object.entries(BLOK_BILESENI).map(([t, b]) => [b, t]),
@@ -216,7 +223,71 @@ function bloktanPuck(b: EkranBlogu, id: string) {
                 type: "KutuBlogu" as const,
                 props: { id, metin: b.metin, simge: b.simge ?? "" },
             };
+        case "soru":
+            return {
+                type: "SoruBlogu" as const,
+                props: {
+                    id,
+                    secimTuru: b.secimTuru ?? "tekli",
+                    duzen: b.duzen ?? "liste",
+                    yanitZorunlu: b.yanitZorunlu
+                        ? ("zorunlu" as const)
+                        : ("istege_bagli" as const),
+                    secenekler: (b.secenekler ?? []).map(secenektenPuck),
+                },
+            };
     }
+}
+
+const secenektenPuck = (
+    s: components["schemas"]["SoruSecenegi"],
+): SecenekProps => ({
+    kimlik: s.id,
+    metin: s.metin,
+    simge: s.simge ?? "",
+    gorsel: s.gorsel ?? "",
+    gorselMetni: s.gorselMetni ?? "",
+    hedef: s.hedef ?? "",
+});
+
+/**
+ * Soru adımı ve (T1b) soru bloğu: yanıt alanları tanıma — varsayılan
+ * (tekli, liste, isteğe bağlı) yazılmaz; serbest yanıtta seçenek, çoklu
+ * seçimde seçenek hedefi yok.
+ */
+function yanitAlanlari(p: SoruBloguProps) {
+    return {
+        ...(p.secimTuru === "coklu" ? { secimTuru: "coklu" as const } : {}),
+        ...(p.secimTuru === "metin"
+            ? {
+                  secimTuru: "metin" as const,
+                  ...(p.yanitZorunlu === "zorunlu"
+                      ? { yanitZorunlu: true }
+                      : {}),
+              }
+            : {}),
+        ...(p.secimTuru !== "metin" && p.duzen === "izgara"
+            ? { duzen: "izgara" as const }
+            : {}),
+        ...(p.secimTuru === "metin"
+            ? {}
+            : {
+                  secenekler: (p.secenekler ?? []).map((s) => {
+                      const secenek = gorselli(
+                          {
+                              id: s.kimlik,
+                              metin: s.metin,
+                              ...(s.simge ? { simge: s.simge } : {}),
+                          },
+                          s.gorsel ?? "",
+                          s.gorselMetni ?? "",
+                      );
+                      return p.secimTuru === "coklu"
+                          ? secenek
+                          : hedefli(secenek, s.hedef ?? "");
+                  }),
+              }),
+    };
 }
 
 /**
@@ -268,6 +339,11 @@ export function puckBloktan(oge: {
             const simge = String(p["simge"] ?? "");
             return { tur: "kutu", metin, ...(simge ? { simge } : {}) };
         }
+        case "soru":
+            return {
+                tur: "soru",
+                ...yanitAlanlari(p as unknown as SoruBloguProps),
+            };
         default:
             return { tur: oge.type } as unknown as EkranBlogu;
     }
@@ -356,14 +432,9 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 : "istege_bagli",
                             devamDugmesi: adim.devamDugmesi ?? "Devam",
                             duzen: adim.duzen ?? "liste",
-                            secenekler: (adim.secenekler ?? []).map((s) => ({
-                                kimlik: s.id,
-                                metin: s.metin,
-                                simge: s.simge ?? "",
-                                gorsel: s.gorsel ?? "",
-                                gorselMetni: s.gorselMetni ?? "",
-                                hedef: s.hedef ?? "",
-                            })),
+                            secenekler: (adim.secenekler ?? []).map(
+                                secenektenPuck,
+                            ),
                         },
                     };
                 case "yorum":
@@ -404,7 +475,8 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             bloklar: adim.bloklar.map((b, j) =>
                                 bloktanPuck(b, `blok-${i}-${j}`),
                             ),
-                            dugme: adim.dugme,
+                            // T1b: tek seçimli soru bloğunda düğme yok → "".
+                            dugme: adim.dugme ?? "",
                             hedef: adim.hedef ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
@@ -483,43 +555,10 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),
-                    ...(p.secimTuru === "coklu"
-                        ? { secimTuru: "coklu" as const }
-                        : {}),
-                    ...(p.secimTuru === "metin"
-                        ? {
-                              secimTuru: "metin" as const,
-                              ...(p.yanitZorunlu === "zorunlu"
-                                  ? { yanitZorunlu: true }
-                                  : {}),
-                          }
-                        : {}),
                     ...(p.devamDugmesi !== "Devam"
                         ? { devamDugmesi: p.devamDugmesi }
                         : {}),
-                    ...(p.secimTuru !== "metin" && p.duzen === "izgara"
-                        ? { duzen: "izgara" as const }
-                        : {}),
-                    ...(p.secimTuru === "metin"
-                        ? {}
-                        : {
-                              secenekler: (p.secenekler ?? []).map((s) => {
-                                  const secenek = gorselli(
-                                      {
-                                          id: s.kimlik,
-                                          metin: s.metin,
-                                          ...(s.simge
-                                              ? { simge: s.simge }
-                                              : {}),
-                                      },
-                                      s.gorsel ?? "",
-                                      s.gorselMetni ?? "",
-                                  );
-                                  return p.secimTuru === "coklu"
-                                      ? secenek
-                                      : hedefli(secenek, s.hedef ?? "");
-                              }),
-                          }),
+                    ...yanitAlanlari(p),
                 };
             }
             case "Yorum": {
@@ -559,7 +598,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                         tur: "ekran" as const,
                         baslik: p.baslik,
                         bloklar: (p.bloklar ?? []).map(puckBloktan),
-                        dugme: p.dugme,
+                        ...(p.dugme ? { dugme: p.dugme } : {}),
                         ...(p.ilerlemeGoster === false
                             ? { ilerlemeGoster: false }
                             : {}),

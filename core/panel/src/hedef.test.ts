@@ -54,3 +54,45 @@ it("hedef listesi: sıradaki + yalnız sonraki adımlar", () => {
         { label: "Sıradaki adım", value: "" },
     ]);
 });
+
+// T1b: soru bloğu kökte değil, ekranın yuvasında — liste ekranın sırasından.
+it("hedef listesi: ekrandaki soru bloğu için ekrandan sonraki adımlar", () => {
+    const ekranli = tanimdanPuck(
+        {
+            ...tanim,
+            adimlar: [
+                tanim.adimlar[0]!,
+                {
+                    id: "e",
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secenekler: [
+                                { id: "a", metin: "A" },
+                                { id: "b", metin: "B" },
+                            ],
+                        },
+                    ],
+                },
+                ...tanim.adimlar.slice(2),
+            ],
+        },
+        {
+            anaRenk: "#2563eb",
+            arkaPlan: "#ffffff",
+            metinRengi: "#111827",
+            yaziTipi: "sistem",
+            kose: 10,
+        },
+    );
+    const blok = (
+        ekranli.content[1]!.props as { bloklar: { props: { id: string } }[] }
+    ).bloklar[0]!.props.id;
+    expect(
+        hedefSecenekleri({ data: ekranli } as unknown as AppState, blok).map(
+            (o) => o.value,
+        ),
+    ).toEqual(["", "ara", "paywall"]);
+});

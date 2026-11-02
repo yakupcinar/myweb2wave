@@ -29,7 +29,8 @@ final class Tanim
      * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
      */
     public const EKRAN_YONERGESI = 'Tek türe sığmayan ekran için ekran adımı: baslik (sayfanın başlığı) + bloklar (1–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
-        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge). '
+        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin seçimde dugme gönderir). '
+        .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
         .'Neden bu ürün, nasıl çalışır, güvence gibi ekranları tanıtım yerine bloklarla kur; tüm huniyi tek tip adımla doldurma. '
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
         .'yorum bloğu da yorum adımı gibidir: gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
@@ -51,6 +52,8 @@ final class Tanim
         'yorum' => [['metin' => 'blokMetni', 'yazar' => 'yazar'], ['unvan' => 'unvan', 'puan' => null]],
         'istatistik' => [['deger' => 'deger', 'metin' => 'satir'], []],
         'kutu' => [['metin' => 'kutu'], ['simge' => null]],
+        // T1b: secenekler serbest yanıtta yok, seçmelide zorunlu (aşağıda).
+        'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null]],
     ];
 
     /** G5: tanıtım adımında görselin yeri. */
@@ -66,8 +69,9 @@ final class Tanim
         'yorum' => ['baslik', 'metin', 'yazar', 'unvan', 'dugme'],
         // Mobil görünüm 4: düğmesiz; maddeler ve süre isteğe bağlı.
         'yukleme' => ['baslik'],
-        // T1: başlık (h1) + bloklar; düğme ve (isteğe bağlı) hedef tanıtımdaki gibi.
-        'ekran' => ['baslik', 'dugme'],
+        // T1: başlık (h1) + bloklar; düğme ve hedef aşağıda (T1b: tek seçimli
+        // soru bloğunda düğme yok, seçenek geçirir).
+        'ekran' => ['baslik'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
@@ -200,6 +204,21 @@ final class Tanim
                     self::adres($adim[$alan], "{$yer} {$alan}", $h);
                 }
             }
+            // T1b: tek seçimli soru bloğunda seçenek geçirir — düğme ve ekran hedefi yok.
+            $tekSecimli = 'ekran' === $tur && self::tekSecimliSoru($adim['bloklar'] ?? null);
+            if ('ekran' === $tur && \array_key_exists('dugme', $adim)) {
+                $beklenen[] = 'dugme';
+                if ($tekSecimli) {
+                    $h[] = "{$yer}: tek seçimli soru bloğu olan ekranda dugme olmaz (seçenek seçilince geçer)";
+                } else {
+                    self::metin($adim['dugme'], 'dugme', "{$yer} dugme", $h);
+                }
+            } elseif ('ekran' === $tur && !$tekSecimli) {
+                $h[] = "{$yer}: dugme olmalı";
+            }
+            if ($tekSecimli && \array_key_exists('hedef', $adim)) {
+                $h[] = "{$yer}: tek seçimli soru bloğunda hedef seçeneklerde verilir";
+            }
             if (!self::anahtarlar($adim, $beklenen)) {
                 $h[] = "{$yer}: alanlar tam olarak ".implode(', ', $beklenen).' olmalı';
                 continue;
@@ -208,7 +227,7 @@ final class Tanim
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
             if ('ekran' === $tur) {
-                self::bloklar($adim['bloklar'], $yer, $h);
+                self::bloklar($adim['bloklar'], $sira, $i, $yer, $h);
             }
             if ('soru' === $tur && \array_key_exists('secenekler', $adim)) {
                 self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
@@ -265,6 +284,12 @@ final class Tanim
                 if (\is_array($b) && \is_string($b['gorsel'] ?? null)) {
                     $k[] = $b['gorsel'];
                 }
+                // T1b: soru bloğunun seçenek görselleri.
+                foreach (\is_array($b) && \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : [] as $s) {
+                    if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
+                        $k[] = $s['gorsel'];
+                    }
+                }
             }
             foreach (\is_array($adim) && \is_array($adim['secenekler'] ?? null) ? $adim['secenekler'] : [] as $s) {
                 if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
@@ -318,24 +343,37 @@ final class Tanim
      * T1: ekranın blokları — her blok katalogdaki bir tür, alanları tam olarak
      * o türün alanları. Sayfanın h1'i adımın baslik alanı; baslik bloğu ara başlık.
      *
-     * @param list<string> $h
+     * @param array<string, int> $sira
+     * @param list<string>       $h
      */
-    private static function bloklar(mixed $bloklar, string $yer, array &$h): void
+    private static function bloklar(mixed $bloklar, array $sira, int $i, string $yer, array &$h): void
     {
         if (!\is_array($bloklar) || !array_is_list($bloklar) || [] === $bloklar || \count($bloklar) > self::AZAMI_BLOK) {
             $h[] = "{$yer}: bloklar 1–".self::AZAMI_BLOK.' öğeli liste olmalı';
 
             return;
         }
+        $sorular = 0;
         foreach ($bloklar as $j => $b) {
             $by = "{$yer} blok ".($j + 1);
             $tur = \is_array($b) ? ($b['tur'] ?? null) : null;
             if (!\is_array($b) || !\is_string($tur) || !isset(self::BLOKLAR[$tur])) {
-                $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik ya da kutu olmalı";
+                $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu ya da soru olmalı";
                 continue;
             }
+            // T1b: cevap ekranın kimliğiyle kaydedilir — ekranda tek soru.
+            if ('soru' === $tur && ++$sorular > 1) {
+                $h[] = "{$yer}: ekranda en çok bir soru bloğu olabilir";
+            }
             [$zorunlu, $istege] = self::BLOKLAR[$tur];
+            $metinYaniti = 'soru' === $tur && 'metin' === ($b['secimTuru'] ?? 'tekli');
+            if ('soru' === $tur && !$metinYaniti) {
+                $zorunlu = ['secenekler' => null];
+            }
             $alanlar = $zorunlu + array_intersect_key($istege, $b);
+            if ($metinYaniti) {
+                unset($alanlar['secenekler']);
+            }
             if (!self::anahtarlar($b, ['tur', ...array_keys($alanlar)])) {
                 $h[] = "{$by}: alanlar tam olarak ".implode(', ', ['tur', ...array_keys($zorunlu)]).([] === $istege ? '' : ' ve (isteğe bağlı) '.implode(', ', array_keys($istege))).' olmalı';
                 continue;
@@ -348,6 +386,7 @@ final class Tanim
             match ($tur) {
                 'gorsel' => self::gorsel($b['gorsel'], $by, $h),
                 'maddeler' => self::blokMaddeleri($b['maddeler'], $by, $h),
+                'soru' => self::soruBlogu($b, $metinYaniti, $sira, $i, $by, $h),
                 default => null,
             };
             if (\array_key_exists('puan', $b) && (!\is_int($b['puan']) || $b['puan'] < 1 || $b['puan'] > 5)) {
@@ -357,6 +396,46 @@ final class Tanim
                 $h[] = "{$by}: simge tek emoji olmalı";
             }
         }
+    }
+
+    /**
+     * T1b: soru bloğu — soru adımının yanıt kuralları (metni ekranın başlığı ve
+     * blokları taşır).
+     *
+     * @param array<mixed>       $b
+     * @param array<string, int> $sira
+     * @param list<string>       $h
+     */
+    private static function soruBlogu(array $b, bool $metinYaniti, array $sira, int $i, string $yer, array &$h): void
+    {
+        if (\array_key_exists('secimTuru', $b) && !\in_array($b['secimTuru'], ['tekli', 'coklu', 'metin'], true)) {
+            $h[] = "{$yer}: secimTuru tekli, coklu ya da metin olmalı";
+        }
+        if (\array_key_exists('yanitZorunlu', $b)) {
+            if (!$metinYaniti) {
+                $h[] = "{$yer}: yanitZorunlu yalnız serbest yanıt türünde kullanılabilir";
+            } elseif (!\is_bool($b['yanitZorunlu'])) {
+                $h[] = "{$yer}: yanitZorunlu true ya da false olmalı";
+            }
+        }
+        if (\array_key_exists('duzen', $b)) {
+            self::soruDuzeni($b['duzen'], $metinYaniti, $yer, $h);
+        }
+        if (\array_key_exists('secenekler', $b)) {
+            self::secenekler($b['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($b['secimTuru'] ?? 'tekli'));
+        }
+    }
+
+    /** T1b: ekranda tek seçimli soru bloğu var mı (düğme yerine seçenek geçirir). */
+    public static function tekSecimliSoru(mixed $bloklar): bool
+    {
+        foreach (\is_array($bloklar) ? $bloklar : [] as $b) {
+            if (\is_array($b) && 'soru' === ($b['tur'] ?? null) && 'tekli' === ($b['secimTuru'] ?? 'tekli')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @param list<string> $h */

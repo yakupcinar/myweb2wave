@@ -550,15 +550,16 @@ export interface components {
             duzen?: "liste" | "izgara";
             yanitZorunlu?: boolean;
             devamDugmesi?: string;
-            secenekler?: {
-                id: components["schemas"]["HuniKimligi"];
-                metin: string;
-                /** @description Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı */
-                simge?: string;
-                gorsel?: components["schemas"]["GorselKimligi"];
-                gorselMetni?: components["schemas"]["GorselMetni"];
-                hedef?: components["schemas"]["AdimHedefi"];
-            }[];
+            secenekler?: components["schemas"]["SoruSecenegi"][];
+        };
+        SoruSecenegi: {
+            id: components["schemas"]["HuniKimligi"];
+            metin: string;
+            /** @description Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı */
+            simge?: string;
+            gorsel?: components["schemas"]["GorselKimligi"];
+            gorselMetni?: components["schemas"]["GorselMetni"];
+            hedef?: components["schemas"]["AdimHedefi"];
         };
         /** @description Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir */
         YorumAdimi: {
@@ -590,12 +591,13 @@ export interface components {
             tur: "ekran";
             baslik: string;
             bloklar: components["schemas"]["EkranBlogu"][];
-            dugme: string;
+            /** @description Zorunlu — yalnız tek seçimli soru bloğu olan ekranda yok (seçenek seçilince geçer; hedef de seçenekte) */
+            dugme?: string;
             hedef?: components["schemas"]["AdimHedefi"];
             ilerlemeGoster?: boolean;
         };
         /** @description T1 blok kataloğu; metinler düz metin */
-        EkranBlogu: components["schemas"]["BaslikBlogu"] | components["schemas"]["MetinBlogu"] | components["schemas"]["GorselBlogu"] | components["schemas"]["MaddelerBlogu"] | components["schemas"]["YorumBlogu"] | components["schemas"]["IstatistikBlogu"] | components["schemas"]["KutuBlogu"];
+        EkranBlogu: components["schemas"]["BaslikBlogu"] | components["schemas"]["MetinBlogu"] | components["schemas"]["GorselBlogu"] | components["schemas"]["MaddelerBlogu"] | components["schemas"]["YorumBlogu"] | components["schemas"]["IstatistikBlogu"] | components["schemas"]["KutuBlogu"] | components["schemas"]["SoruBlogu"];
         /** @description Ara başlık */
         BaslikBlogu: {
             /** @enum {string} */
@@ -642,6 +644,19 @@ export interface components {
             tur: "kutu";
             metin: string;
             simge?: string;
+        };
+        /** @description T1b: ekranda en çok bir tane; cevap ekranın kimliğiyle kaydedilir. Soru metni ekranın başlığı / blokları. tekli: seçenek seçilince geçer (ekranda dugme olmaz). coklu / metin: ekranın düğmesi gönderir. */
+        SoruBlogu: {
+            /** @enum {string} */
+            tur: "soru";
+            /** @enum {string} */
+            secimTuru?: "tekli" | "coklu" | "metin";
+            /** @enum {string} */
+            duzen?: "liste" | "izgara";
+            /** @description Yalnız metin */
+            yanitZorunlu?: boolean;
+            /** @description Seçmelide zorunlu (2–8), serbest yanıtta yok */
+            secenekler?: components["schemas"]["SoruSecenegi"][];
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
         AdimHedefi: components["schemas"]["HuniKimligi"];

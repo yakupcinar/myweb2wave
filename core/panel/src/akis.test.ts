@@ -91,6 +91,46 @@ describe("ulaşılamayan adım", () => {
         expect(ulasilamayanlar(tanim)).toEqual(["ara"]);
     });
 
+    it("T1b: ekrandaki tek seçimli soru seçenek hedeflerine dallanır", () => {
+        const ekran = (hedefler: (string | undefined)[]): Tanim => ({
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "giris",
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secenekler: hedefler.map((hedef, j) => ({
+                                id: `s${j}`,
+                                metin: "S",
+                                ...(hedef ? { hedef } : {}),
+                            })),
+                        },
+                    ],
+                },
+                {
+                    id: "ara",
+                    tur: "tanitim",
+                    baslik: "C",
+                    metin: "",
+                    dugme: "D",
+                },
+                {
+                    id: "son",
+                    tur: "tanitim",
+                    baslik: "E",
+                    metin: "",
+                    dugme: "F",
+                },
+                paywall,
+            ],
+        });
+        expect(ulasilamayanlar(ekran(["son", "son"]))).toEqual(["ara"]);
+        expect(ulasilamayanlar(ekran(["son", undefined]))).toEqual([]);
+    });
+
     it("bir seçenek sıradakine giderse dal adımı ulaşılabilir; hepsi atlarsa değil", () => {
         const soru = (hedefler: [string, string]): Tanim => ({
             sayfaBasligi: "x",
@@ -234,6 +274,45 @@ describe("hedefleri yeniden adlandırma", () => {
                 (s) => s.hedef,
             ),
         ).toEqual(["kapanis", ""]);
+    });
+
+    it("T1b: ekrandaki soru bloğunun seçenek hedefi de yeni kimliğe geçer", () => {
+        const ekranli = tanimdanPuck(
+            {
+                ...tanim,
+                adimlar: [
+                    {
+                        id: "e",
+                        tur: "ekran",
+                        baslik: "?",
+                        bloklar: [
+                            {
+                                tur: "soru",
+                                secenekler: [
+                                    { id: "a", metin: "A", hedef: "son" },
+                                    { id: "b", metin: "B" },
+                                ],
+                            },
+                        ],
+                    },
+                    ...tanim.adimlar.slice(2),
+                ],
+            },
+            VARSAYILAN,
+        );
+        const duzelmis = hedefleriYenidenAdlandir(
+            ekranli,
+            yeniden(ekranli, 1, "kapanis"),
+        );
+        const blok = (
+            duzelmis!.content[0]!.props as {
+                bloklar: { props: { secenekler: { hedef: string }[] } }[];
+            }
+        ).bloklar[0]!;
+        expect(blok.props.secenekler.map((s) => s.hedef)).toEqual([
+            "kapanis",
+            "",
+        ]);
     });
 
     it("kimlik değişmediyse ya da eski kimliği başka blok taşıyorsa dokunmaz", () => {

@@ -171,6 +171,32 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
+    /**
+     * T1b: ekranda soru bloğu — tek seçimde düğme yok (seçenek geçirir, hedefi
+     * seçenekte), çoklu/serbest yanıtta ekranın düğmesi gönderir.
+     */
+    public function testEkranSoruBloguGecerliYayindaSozlesmeyeUyar(): void
+    {
+        $g = str_repeat('d', 64);
+        $sec = [['id' => 'aile', 'metin' => 'Ailemle', 'simge' => '👪', 'hedef' => 'paywall'], ['id' => 'is', 'metin' => 'İş', 'gorsel' => $g]];
+        $tanim = self::tanim('X');
+        array_splice($tanim['adimlar'], 1, 0, [
+            self::ekran([['tur' => 'metin', 'metin' => 'Kimle?'], ['tur' => 'soru', 'secenekler' => $sec, 'duzen' => 'izgara'], ['tur' => 'kutu', 'metin' => 'Gizli kalır.']], ['id' => 'tek', 'dugme' => null]),
+            self::ekran([['tur' => 'soru', 'secimTuru' => 'coklu', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]]], ['id' => 'cok', 'hedef' => 'paywall']),
+            self::ekran([['tur' => 'soru', 'secimTuru' => 'metin', 'yanitZorunlu' => true]], ['id' => 'yazi']),
+        ]);
+        self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
+        // Seçenek görseli de bu uygulamaya yüklenmiş olmalı.
+        self::assertContains($g, Tanim::gorseller($tanim));
+        $this->medyaEkle($g);
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     /** Mobil görünüm 4: yükleme adımı geçerli, yayında sözleşmeye uyar. */
     public function testYuklemeAdimiGecerliYayindaSozlesmeyeUyar(): void
     {
@@ -329,11 +355,10 @@ final class HuniTest extends WebTestCase
         yield 'ekran bloksuz' => ['bloklar 1–12 öğeli liste', $ekr([])];
         yield 'ekran 13 blok' => ['bloklar 1–12 öğeli liste', $ekr(array_fill(0, 13, $b))];
         yield 'ekran bloklar liste değil' => ['bloklar 1–12 öğeli liste', $ekr(['a' => $b])];
-        yield 'ekran başlıksız' => ['alanlar tam olarak id, tur, baslik, dugme, bloklar', $ekr([$b], ['baslik' => null])];
+        yield 'ekran başlıksız' => ['alanlar tam olarak id, tur, baslik, bloklar', $ekr([$b], ['baslik' => null])];
         yield 'ekran başlığı boş' => ['adım 2 baslik: 1–200', $ekr([$b], ['baslik' => ' '])];
-        yield 'ekran düğmesiz' => ['alanlar tam olarak', $ekr([$b], ['dugme' => null])];
         yield 'ekran hedefi geriye' => ['hedef sonraki adımlardan', $ekr([$b], ['hedef' => 'giris'])];
-        yield 'blok türü bilinmeyen' => ['blok 2: tür baslik, metin, gorsel, maddeler, yorum, istatistik ya da kutu', $ekr([$b, ['tur' => 'html', 'metin' => 'x']])];
+        yield 'blok türü bilinmeyen' => ['blok 2: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu ya da soru', $ekr([$b, ['tur' => 'html', 'metin' => 'x']])];
         yield 'blok dizi değil' => ['blok 2: tür', $ekr([$b, 'metin'])];
         yield 'blok fazla alan' => ['blok 2: alanlar tam olarak', $ekr([$b, ['tur' => 'metin', 'metin' => 'x', 'renk' => 'kirmizi']])];
         yield 'blok eksik alan' => ['blok 2: alanlar tam olarak', $ekr([$b, ['tur' => 'istatistik', 'deger' => '%5']])];
@@ -351,6 +376,24 @@ final class HuniTest extends WebTestCase
         yield 'blok kutu simgesi harf' => ['blok 2: simge tek emoji olmalı', $ekr([$b, ['tur' => 'kutu', 'metin' => 'x', 'simge' => 'A']])];
         yield 'blok kutu uzun' => ['blok 2 metin: 1–500', $ekr([$b, ['tur' => 'kutu', 'metin' => str_repeat('a', 501)]])];
         yield 'blok yerinde kimlik' => ['adım 2 blok 1', $ekr([['tur' => 'baslik', 'metin' => 'x', 'id' => 'b1']])];
+        // T1b: soru bloğu.
+        $iki = [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']];
+        $tekli = ['tur' => 'soru', 'secenekler' => $iki];
+        yield 'iki soru bloğu' => ['en çok bir soru bloğu', $ekr([$tekli, $tekli], ['dugme' => null])];
+        yield 'tek seçimde düğme' => ['tek seçimli soru bloğu olan ekranda dugme olmaz', $ekr([$tekli])];
+        yield 'tek seçimde ekran hedefi' => ['hedef seçeneklerde', $ekr([$tekli], ['dugme' => null, 'hedef' => 'paywall'])];
+        yield 'çoklu seçimde düğme yok' => ['dugme olmalı', $ekr([$tekli + ['secimTuru' => 'coklu']], ['dugme' => null])];
+        yield 'sorusuz ekranda düğme yok' => ['dugme olmalı', $ekr([$b], ['dugme' => null])];
+        yield 'ekran düğmesi uzun' => ['adım 2 dugme: 1–60', $ekr([$b], ['dugme' => str_repeat('a', 61)])];
+        yield 'soru bloğu tek seçenek' => ['blok 1: 2–8 seçenek', $ekr([['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A']]]], ['dugme' => null])];
+        yield 'soru bloğu seçenek kimliği tekrar' => ['blok 1 seçenek 2: kimlik geçersiz ya da tekrar ediyor', $ekr([['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']]]], ['dugme' => null])];
+        yield 'soru bloğu hedefi geriye' => ['blok 1 seçenek 1: hedef sonraki adımlardan', $ekr([['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A', 'hedef' => 'giris'], ['id' => 'b', 'metin' => 'B']]]], ['dugme' => null])];
+        yield 'soru bloğu çoklu hedef' => ['çoklu seçimde seçenek hedefi', $ekr([['tur' => 'soru', 'secimTuru' => 'coklu', 'secenekler' => [['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'], ['id' => 'b', 'metin' => 'B']]]])];
+        yield 'soru bloğu serbest yanıtta seçenek' => ['blok 1: alanlar tam olarak', $ekr([['tur' => 'soru', 'secimTuru' => 'metin', 'secenekler' => $iki]])];
+        yield 'soru bloğu seçeneksiz' => ['blok 1: alanlar tam olarak', $ekr([['tur' => 'soru']], ['dugme' => null])];
+        yield 'soru bloğu tekli zorunlu' => ['yanitZorunlu yalnız serbest yanıt', $ekr([$tekli + ['yanitZorunlu' => true]], ['dugme' => null])];
+        yield 'soru bloğu serbest düzen' => ['duzen yalnız seçmeli soruda', $ekr([['tur' => 'soru', 'secimTuru' => 'metin', 'duzen' => 'izgara']])];
+        yield 'soru bloğu biçim' => ['blok 1: secimTuru tekli, coklu ya da metin', $ekr([$tekli + ['secimTuru' => 'iki']])];
         // Mobil görünüm 4: yükleme adımı.
         $yuk = static function (array $ek): array {
             $t = self::tanim('X');

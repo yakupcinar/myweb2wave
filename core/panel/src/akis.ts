@@ -5,7 +5,8 @@ import { BLOK_BILESENLERI, type HuniVerisi, type Tanim } from "./donustur";
 /**
  * Baştan hiçbir yolla varılamayan adımların kimlikleri. Kural oynatıcıyla
  * aynı (Huni.tsx `ileri`): hedef varsa ona, yoksa sıradakine; çoklu/metin
- * soru ve yorum hep sıradakine; paywall son.
+ * soru ve yorum hep sıradakine; paywall son. T1b: ekranda tek seçimli soru
+ * bloğu varsa seçenek hedefleri, yoksa ekranın hedefi.
  */
 export function ulasilamayanlar(tanim: Tanim): string[] {
     const { adimlar } = tanim;
@@ -18,7 +19,14 @@ export function ulasilamayanlar(tanim: Tanim): string[] {
         const adim = adimlar[i];
         if (!adim || gorulen.has(i)) continue;
         gorulen.add(i);
-        if (adim.tur === "tanitim" || adim.tur === "ekran")
+        const blokSorusu =
+            adim.tur === "ekran"
+                ? adim.bloklar.find((b) => b.tur === "soru")
+                : undefined;
+        if (blokSorusu && (blokSorusu.secimTuru ?? "tekli") === "tekli")
+            for (const s of blokSorusu.secenekler ?? [])
+                kuyruk.push(sira(s.hedef, i));
+        else if (adim.tur === "tanitim" || adim.tur === "ekran")
             kuyruk.push(sira(adim.hedef, i));
         else if (adim.tur === "soru" && !adim.secimTuru)
             for (const s of adim.secenekler ?? [])
@@ -69,18 +77,32 @@ export function hedefleriYenidenAdlandir(
         degisti = true;
         return yeni;
     };
+    const tasinmis = <P extends Hedefli>(p: P): P => ({
+        ...p,
+        ...("hedef" in p ? { hedef: tasi(p.hedef) } : {}),
+        ...(p.secenekler
+            ? {
+                  secenekler: p.secenekler.map((s) => ({
+                      ...s,
+                      hedef: tasi(s.hedef),
+                  })),
+              }
+            : {}),
+    });
     const content = sonra.content.map((o) => {
-        const p = o.props as typeof o.props & Hedefli;
+        const p = tasinmis(o.props as typeof o.props & Hedefli) as Hedefli & {
+            bloklar?: { props: Hedefli }[];
+        };
         return {
             ...o,
             props: {
                 ...p,
-                ...("hedef" in p ? { hedef: tasi(p.hedef) } : {}),
-                ...(p.secenekler
+                // T1b: ekranın yuvasındaki soru bloğu.
+                ...(p.bloklar
                     ? {
-                          secenekler: p.secenekler.map((s) => ({
-                              ...s,
-                              hedef: tasi(s.hedef),
+                          bloklar: p.bloklar.map((b) => ({
+                              ...b,
+                              props: tasinmis(b.props),
                           })),
                       }
                     : {}),

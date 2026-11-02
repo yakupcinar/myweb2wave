@@ -40,6 +40,32 @@ declare global {
 
 const KOK = import.meta.env.PUBLIC_CORE_URL;
 
+type TanimAdimi = Yayin["tanim"]["adimlar"][number];
+type Secenek = components["schemas"]["SoruSecenegi"];
+
+/**
+ * Adımın sorusu: soru adımı ya da (T1b) ekrandaki soru bloğu. Cevap adımın
+ * kimliğiyle kaydedilir — ekranda en çok bir soru bloğu (çekirdek denetler).
+ */
+function sorusu(adim: TanimAdimi): {
+  id: string;
+  secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+  secenekler?: Secenek[] | undefined;
+  yanitZorunlu?: boolean | undefined;
+} | null {
+  if (adim.tur === "soru") return adim;
+  if (adim.tur !== "ekran") return null;
+  for (const b of adim.bloklar)
+    if (b.tur === "soru")
+      return {
+        id: adim.id,
+        secimTuru: b.secimTuru,
+        secenekler: b.secenekler,
+        yanitZorunlu: b.yanitZorunlu,
+      };
+  return null;
+}
+
 export default function Huni({ app }: { app: App }): ReactNode {
   const [onizleme] = useState(() =>
     new URLSearchParams(window.location.search).has("onizleme"),
@@ -297,7 +323,7 @@ function Oynatici({
       ) : null}
       <div ref={kutu} className="adimlar" data-gecis={gecis}>
         {tanim.adimlar.map((adim, i) => {
-          const soru = adim.tur === "soru" ? adim : null;
+          const soru = sorusu(adim);
           const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
           const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
           const secili = soru
@@ -323,52 +349,54 @@ function Oynatici({
                   )
                 }
                 onSecim={(s) => {
-                  if (adim.tur !== "soru") return;
+                  if (!soru) return;
                   ilerlemeBildir(
                     ziyaretSozu,
                     mevcut,
-                    adim.id,
-                    adim.secenekler?.[s]?.id,
+                    soru.id,
+                    soru.secenekler?.[s]?.id,
                   );
-                  ileri(adim.secenekler?.[s]?.hedef);
+                  ileri(soru.secenekler?.[s]?.hedef);
                 }}
                 secili={secili}
                 cevapMetni={cevapMetni}
                 onMetinDegistir={(metin) => {
-                  if (adim.tur !== "soru" || adim.secimTuru !== "metin") return;
-                  setSerbestYanilar((once) => ({ ...once, [adim.id]: metin }));
+                  if (soru?.secimTuru !== "metin") return;
+                  setSerbestYanilar((once) => ({ ...once, [soru.id]: metin }));
                 }}
                 onSecenekDegistir={(s) => {
-                  if (adim.tur !== "soru") return;
-                  const id = adim.secenekler?.[s]?.id;
+                  if (!soru) return;
+                  const id = soru.secenekler?.[s]?.id;
                   if (!id) return;
                   setSecimler((once) => {
-                    const seciliCevaplar = once[adim.id] ?? [];
+                    const seciliCevaplar = once[soru.id] ?? [];
                     return {
                       ...once,
-                      [adim.id]: seciliCevaplar.includes(id)
+                      [soru.id]: seciliCevaplar.includes(id)
                         ? seciliCevaplar.filter((cevap) => cevap !== id)
                         : [...seciliCevaplar, id],
                     };
                   });
                 }}
                 onCokluDevam={() => {
-                  if (adim.tur !== "soru") return;
-                  if (adim.secimTuru === "metin") {
-                    if (adim.yanitZorunlu && !cevapMetni.trim()) return;
+                  if (!soru) return;
+                  // T1b: ekranın düğme hedefi (soru adımında yok).
+                  const hedef = adim.tur === "ekran" ? adim.hedef : undefined;
+                  if (soru.secimTuru === "metin") {
+                    if (soru.yanitZorunlu && !cevapMetni.trim()) return;
                     ilerlemeBildir(
                       ziyaretSozu,
                       mevcut,
-                      adim.id,
+                      soru.id,
                       undefined,
                       cevapMetni,
                     );
-                    ileri();
+                    ileri(hedef);
                     return;
                   }
                   if (!cevaplar.length) return;
-                  ilerlemeBildir(ziyaretSozu, mevcut, adim.id, cevaplar);
-                  ileri();
+                  ilerlemeBildir(ziyaretSozu, mevcut, soru.id, cevaplar);
+                  ileri(hedef);
                 }}
                 odeme={{
                   kapali: (onizleme && !ekranCekimi) || odeme.suruyor,

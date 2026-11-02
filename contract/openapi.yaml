@@ -866,20 +866,21 @@ components:
         devamDugmesi: { type: string }
         secenekler:
           type: array
-          items:
-            type: object
-            additionalProperties: false
-            required: [id, metin]
-            properties:
-              id: { $ref: "#/components/schemas/HuniKimligi" }
-              metin: { type: string }
-              simge:
-                description: "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı"
-                type: string
-                maxLength: 32
-              gorsel: { $ref: "#/components/schemas/GorselKimligi" }
-              gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
-              hedef: { $ref: "#/components/schemas/AdimHedefi" }
+          items: { $ref: "#/components/schemas/SoruSecenegi" }
+    SoruSecenegi:
+      type: object
+      additionalProperties: false
+      required: [id, metin]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        metin: { type: string }
+        simge:
+          description: "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı"
+          type: string
+          maxLength: 32
+        gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+        gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
+        hedef: { $ref: "#/components/schemas/AdimHedefi" }
     YorumAdimi:
       description: Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir
       type: object
@@ -915,7 +916,7 @@ components:
         yukarıdan aşağı (baslik bloğu ara başlıktır), altta tek ana düğme.
       type: object
       additionalProperties: false
-      required: [id, tur, baslik, bloklar, dugme]
+      required: [id, tur, baslik, bloklar]
       properties:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [ekran] }
@@ -925,7 +926,11 @@ components:
           minItems: 1
           maxItems: 12
           items: { $ref: "#/components/schemas/EkranBlogu" }
-        dugme: { type: string, minLength: 1, maxLength: 60 }
+        dugme:
+          description: "Zorunlu — yalnız tek seçimli soru bloğu olan ekranda yok (seçenek seçilince geçer; hedef de seçenekte)"
+          type: string
+          minLength: 1
+          maxLength: 60
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
         ilerlemeGoster: { type: boolean }
     EkranBlogu:
@@ -938,6 +943,7 @@ components:
         - $ref: "#/components/schemas/YorumBlogu"
         - $ref: "#/components/schemas/IstatistikBlogu"
         - $ref: "#/components/schemas/KutuBlogu"
+        - $ref: "#/components/schemas/SoruBlogu"
     BaslikBlogu:
       description: Ara başlık
       type: object
@@ -1003,6 +1009,23 @@ components:
         tur: { type: string, enum: [kutu] }
         metin: { type: string, minLength: 1, maxLength: 500 }
         simge: { type: string, maxLength: 32 }
+    SoruBlogu:
+      description: >-
+        T1b: ekranda en çok bir tane; cevap ekranın kimliğiyle kaydedilir.
+        Soru metni ekranın başlığı / blokları. tekli: seçenek seçilince geçer
+        (ekranda dugme olmaz). coklu / metin: ekranın düğmesi gönderir.
+      type: object
+      additionalProperties: false
+      required: [tur]
+      properties:
+        tur: { type: string, enum: [soru] }
+        secimTuru: { type: string, enum: [tekli, coklu, metin] }
+        duzen: { type: string, enum: [liste, izgara] }
+        yanitZorunlu: { type: boolean, description: "Yalnız metin" }
+        secenekler:
+          description: "Seçmelide zorunlu (2–8), serbest yanıtta yok"
+          type: array
+          items: { $ref: "#/components/schemas/SoruSecenegi" }
     AdimHedefi:
       description: >-
         H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma

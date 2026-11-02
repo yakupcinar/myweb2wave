@@ -90,6 +90,97 @@ export function Tanitim({
     );
 }
 
+/** Seçenek kimliği çağıranda; bileşen sırayla konuşur. */
+export type YanitEtkilesimi = {
+    secili?: number[] | undefined;
+    cevapMetni?: string | undefined;
+    /** Seçeneğin sırası; kimliği çağıran bilir. */
+    onSecim?: ((sira: number) => void) | undefined;
+    onSecenekDegistir?: ((sira: number) => void) | undefined;
+    onMetinDegistir?: ((metin: string) => void) | undefined;
+};
+type SoruSecenegi = { metin: string; simge?: string | undefined } & Omit<
+    GorselAlani,
+    "medyaKoku"
+>;
+
+/** Soru adımı ve T1b soru bloğu: seçenekler ya da serbest yanıt alanı. */
+function Yanit({
+    secenekler = [],
+    secimTuru = "tekli",
+    yanitZorunlu = false,
+    cevapMetni = "",
+    secili = [],
+    duzen = "liste",
+    medyaKoku,
+    onSecim,
+    onSecenekDegistir,
+    onMetinDegistir,
+}: {
+    secenekler?: SoruSecenegi[] | undefined;
+    secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+    yanitZorunlu?: boolean | undefined;
+    duzen?: "liste" | "izgara" | undefined;
+    medyaKoku: string;
+} & YanitEtkilesimi): ReactNode {
+    return secimTuru === "metin" ? (
+        <label className="serbest-yanit">
+            Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
+            <textarea
+                aria-label="Yanıtınız"
+                required={yanitZorunlu}
+                maxLength={500}
+                rows={4}
+                value={cevapMetni}
+                readOnly={!onMetinDegistir}
+                onChange={(e) => onMetinDegistir?.(e.currentTarget.value)}
+            />
+        </label>
+    ) : (
+        <div
+            className="secenekler"
+            data-tur={secimTuru}
+            data-duzen={duzen === "liste" ? undefined : duzen}
+        >
+            {secenekler.map((s, i) => (
+                <button
+                    key={i}
+                    type="button"
+                    aria-pressed={
+                        secimTuru === "coklu" ? secili.includes(i) : undefined
+                    }
+                    onClick={
+                        secimTuru === "coklu"
+                            ? onSecenekDegistir
+                                ? () => onSecenekDegistir(i)
+                                : undefined
+                            : onSecim
+                              ? () => onSecim(i)
+                              : undefined
+                    }
+                >
+                    {s.gorsel ? (
+                        <Gorsel
+                            id={s.gorsel}
+                            medyaKoku={medyaKoku}
+                            sinif="secenek-gorseli"
+                            alt={s.gorselMetni}
+                        />
+                    ) : null}
+                    {s.simge ? (
+                        // Süs: anlam metinde, ekran okuyucu okumaz.
+                        <span className="simge" aria-hidden="true">
+                            {s.simge}
+                        </span>
+                    ) : null}
+                    <span>{s.metin}</span>
+                    <span className="isaret" aria-hidden="true" />
+                </button>
+            ))}
+        </div>
+    );
+}
+
 export function Soru({
     soru,
     aciklama = "",
@@ -132,66 +223,18 @@ export function Soru({
         <section>
             <h1 tabIndex={-1}>{soru}</h1>
             {aciklama ? <p className="yardim-metni">{aciklama}</p> : null}
-            {secimTuru === "metin" ? (
-                <label className="serbest-yanit">
-                    Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
-                    <textarea
-                        aria-label="Yanıtınız"
-                        required={yanitZorunlu}
-                        maxLength={500}
-                        rows={4}
-                        value={cevapMetni}
-                        readOnly={!onMetinDegistir}
-                        onChange={(e) =>
-                            onMetinDegistir?.(e.currentTarget.value)
-                        }
-                    />
-                </label>
-            ) : (
-                <div
-                    className="secenekler"
-                    data-tur={secimTuru}
-                    data-duzen={duzen === "liste" ? undefined : duzen}
-                >
-                    {secenekler.map((s, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            aria-pressed={
-                                secimTuru === "coklu"
-                                    ? secili.includes(i)
-                                    : undefined
-                            }
-                            onClick={
-                                secimTuru === "coklu"
-                                    ? onSecenekDegistir
-                                        ? () => onSecenekDegistir(i)
-                                        : undefined
-                                    : onSecim
-                                      ? () => onSecim(i)
-                                      : undefined
-                            }
-                        >
-                            {s.gorsel ? (
-                                <Gorsel
-                                    id={s.gorsel}
-                                    medyaKoku={medyaKoku}
-                                    sinif="secenek-gorseli"
-                                    alt={s.gorselMetni}
-                                />
-                            ) : null}
-                            {s.simge ? (
-                                // Süs: anlam metinde, ekran okuyucu okumaz.
-                                <span className="simge" aria-hidden="true">
-                                    {s.simge}
-                                </span>
-                            ) : null}
-                            <span>{s.metin}</span>
-                            <span className="isaret" aria-hidden="true" />
-                        </button>
-                    ))}
-                </div>
-            )}
+            <Yanit
+                secenekler={secenekler}
+                secimTuru={secimTuru}
+                yanitZorunlu={yanitZorunlu}
+                cevapMetni={cevapMetni}
+                secili={secili}
+                duzen={duzen}
+                medyaKoku={medyaKoku}
+                onSecim={onSecim}
+                onSecenekDegistir={onSecenekDegistir}
+                onMetinDegistir={onMetinDegistir}
+            />
             {secimTuru === "coklu" || secimTuru === "metin" ? (
                 <Eylem>
                     <button
@@ -353,17 +396,38 @@ export type EkranBlogu =
           puan?: number | undefined;
       }
     | { tur: "istatistik"; deger: string; metin: string }
-    | { tur: "kutu"; metin: string; simge?: string | undefined };
+    | { tur: "kutu"; metin: string; simge?: string | undefined }
+    | {
+          tur: "soru";
+          secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+          duzen?: "liste" | "izgara" | undefined;
+          yanitZorunlu?: boolean | undefined;
+          secenekler?: SoruSecenegi[] | undefined;
+      };
 
 /** Puck her bloğu ayrı bileşen olarak çizer; huni ekranın içinde. */
 export function Blok({
     blok,
     medyaKoku,
+    yanit = {},
 }: {
     blok: EkranBlogu;
     medyaKoku: string;
+    /** T1b: soru bloğunun durumu ve olayları (oynatıcıdan; Puck geçmez). */
+    yanit?: YanitEtkilesimi | undefined;
 }): ReactNode {
     switch (blok.tur) {
+        case "soru":
+            return (
+                <Yanit
+                    secenekler={blok.secenekler}
+                    secimTuru={blok.secimTuru}
+                    yanitZorunlu={blok.yanitZorunlu}
+                    duzen={blok.duzen}
+                    medyaKoku={medyaKoku}
+                    {...yanit}
+                />
+            );
         case "baslik":
             // Ara başlık: sayfanın h1'i ekranın kendi başlığı.
             return <h2>{blok.metin}</h2>;
@@ -440,12 +504,18 @@ export function Ekran({
     medyaKoku,
     onDugme,
     yuva,
+    yanit,
+    kapali = false,
 }: {
     baslik: string;
     bloklar?: EkranBlogu[] | undefined;
-    dugme: string;
+    /** T1b: tek seçimli soru bloğunda yok — seçenek geçirir. */
+    dugme?: string | undefined;
     medyaKoku: string;
     yuva?: ReactNode;
+    yanit?: YanitEtkilesimi | undefined;
+    /** T1b: çoklu seçimde seçim yokken / zorunlu yanıt boşken. */
+    kapali?: boolean;
 } & Tiklama): ReactNode {
     return (
         <section className="ekran">
@@ -453,15 +523,27 @@ export function Ekran({
             {yuva ?? (
                 <div className="bloklar">
                     {bloklar.map((b, i) => (
-                        <Blok key={i} blok={b} medyaKoku={medyaKoku} />
+                        <Blok
+                            key={i}
+                            blok={b}
+                            medyaKoku={medyaKoku}
+                            yanit={yanit}
+                        />
                     ))}
                 </div>
             )}
-            <Eylem>
-                <button type="button" className="ana" onClick={onDugme}>
-                    {dugme}
-                </button>
-            </Eylem>
+            {dugme ? (
+                <Eylem>
+                    <button
+                        type="button"
+                        className="ana"
+                        disabled={kapali}
+                        onClick={onDugme}
+                    >
+                        {dugme}
+                    </button>
+                </Eylem>
+            ) : null}
         </section>
     );
 }
@@ -539,7 +621,12 @@ export type TanimAdimi =
           maddeler?: string[];
           sure?: number;
       }
-    | { tur: "ekran"; baslik: string; bloklar: EkranBlogu[]; dugme: string }
+    | {
+          tur: "ekran";
+          baslik: string;
+          bloklar: EkranBlogu[];
+          dugme?: string;
+      }
     | {
           tur: "paywall";
           baslik: string;
@@ -639,16 +726,37 @@ export function Adim({
                     sure={adim.sure}
                 />
             );
-        case "ekran":
+        case "ekran": {
+            // T1b: çoklu/serbest yanıtlı soru bloğunda düğme gönderir.
+            const soru = adim.bloklar.find((b) => b.tur === "soru");
+            const tur = soru ? (soru.secimTuru ?? "tekli") : null;
             return (
                 <Ekran
                     baslik={adim.baslik}
                     bloklar={adim.bloklar}
                     dugme={adim.dugme}
                     medyaKoku={medyaKoku}
-                    onDugme={onIleri}
+                    yanit={{
+                        secili,
+                        cevapMetni,
+                        onSecim,
+                        onSecenekDegistir,
+                        onMetinDegistir,
+                    }}
+                    kapali={
+                        (tur === "coklu" && !secili?.length) ||
+                        (tur === "metin" &&
+                            !!soru?.yanitZorunlu &&
+                            !cevapMetni?.trim())
+                    }
+                    onDugme={
+                        tur === "coklu" || tur === "metin"
+                            ? onCokluDevam
+                            : onIleri
+                    }
                 />
             );
+        }
         case "yorum":
             return (
                 <Yorum

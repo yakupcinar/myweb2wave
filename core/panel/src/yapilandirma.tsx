@@ -202,7 +202,14 @@ export function hedefSecenekleri(
     bilesen: string,
 ): SelectField["options"] {
     const icerik = appState.data.content;
-    const sira = icerik.findIndex((o) => o.props["id"] === bilesen);
+    // T1b: soru bloğu kökte değil, ekranın yuvasında — sıra ekranınki.
+    const icinde = (o: (typeof icerik)[number]): boolean =>
+        o.props["id"] === bilesen ||
+        (Array.isArray(o.props["bloklar"]) &&
+            (o.props["bloklar"] as { props: { id: string } }[]).some(
+                (b) => b.props.id === bilesen,
+            ));
+    const sira = icerik.findIndex(icinde);
     return [
         SIRADAKI,
         // T1: kökte kalmış blok adım değil, hedef olamaz.
@@ -627,7 +634,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     kimlik: kimlikAlani,
                     baslik: { type: "text", label: "Başlık" },
                     bloklar: { type: "slot", allow: BLOK_BILESENLERI },
-                    dugme: { type: "text", label: "Düğme" },
+                    dugme: {
+                        type: "text",
+                        label: "Düğme (tek seçimli soru bloğunda boş — seçenek geçirir)",
+                    },
                     ilerlemeGoster: ilerlemeAlani,
                     hedef: tanitimHedefAlani,
                 },
@@ -660,6 +670,67 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             yuva={<Bloklar className="bloklar" />}
                         />
                     </div>
+                ),
+            },
+            // T1b: soru adımının yanıt alanları; soru metni ekranın başlığı.
+            SoruBlogu: {
+                label: "Soru (ekranda bir tane)",
+                fields: {
+                    secimTuru: soru.fields!.secimTuru,
+                    yanitZorunlu: soru.fields!.yanitZorunlu,
+                    duzen: soru.fields!.duzen,
+                    secenekler: soru.fields!.secenekler,
+                } as NonNullable<
+                    Config<
+                        Bilesenler,
+                        KokProps
+                    >["components"]["SoruBlogu"]["fields"]
+                >,
+                resolveFields: (veri, { fields, appState }) => {
+                    const secenekler = fields.secenekler;
+                    if (secenekler.type !== "array") return fields;
+                    const metin = veri.props.secimTuru === "metin";
+                    return {
+                        ...fields,
+                        yanitZorunlu: {
+                            ...fields.yanitZorunlu,
+                            visible: metin,
+                        },
+                        duzen: { ...fields.duzen, visible: !metin },
+                        secenekler: {
+                            ...secenekler,
+                            visible: !metin,
+                            arrayFields: {
+                                ...secenekler.arrayFields,
+                                hedef: {
+                                    ...yanitHedefAlani,
+                                    options: hedefSecenekleri(
+                                        appState,
+                                        veri.props.id,
+                                    ),
+                                    visible: veri.props.secimTuru === "tekli",
+                                },
+                            },
+                        },
+                    };
+                },
+                defaultProps: {
+                    secimTuru: "tekli",
+                    yanitZorunlu: "istege_bagli",
+                    duzen: "liste",
+                    secenekler: varsayilanSoru("soru", "tekli").secenekler,
+                },
+                render: ({ secimTuru, duzen, yanitZorunlu, secenekler }) => (
+                    <Blok
+                        blok={{
+                            tur: "soru",
+                            secimTuru,
+                            duzen,
+                            yanitZorunlu: yanitZorunlu === "zorunlu",
+                            secenekler: secenekler ?? [],
+                        }}
+                        medyaKoku=""
+                    />
                 ),
             },
             BaslikBlogu: {

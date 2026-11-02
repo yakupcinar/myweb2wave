@@ -136,7 +136,8 @@
   - [ ] **SIRADAKİ (B6, kullanıcı 2026-10-27): A5 öne alındı** — dışarıya açık MCP sunucusu (URL); önce araştırma (aktarım, kimlik, herkese açık adres), sonra kurulum. Anahtar gerekmez (kullanıcının Claude aboneliği).
   - [ ] **T1** · temel 1: ekran = blok listesi + blok kataloğu (Ç68 ile; P3 düzenleyici SPA'ya burada) — AI'ın üretebildiği kendiliğinden büyür
     - [x] T1a · 2026-11-02, `docs/decisions/t1a-blok-katalogu.md`: `ekran` adımı = başlık + 7 bloklu katalog (ara başlık, paragraf, görsel, maddeler, puanlı yorum, istatistik, not kutusu) + düğme/hedef; sözleşme → Tanim → bileşenler → oynatıcı → Puck yuvası → AI istemleri (uydurma sayı yasağı). Gerçek ekranda ölçüldü. Kırma 17/17. Onay: Ç82; kalan: Ç83
-    - [ ] T1b · soru bloğu (ekranda cevap/olay/dallanma) + eski türlerin bloklara taşınması (Ç83)
+    - [x] T1b · 2026-11-02, `docs/decisions/t1b-soru-blogu.md`: ekranda `soru` bloğu (tekli seçenek geçirir, düğmesiz; çoklu/serbest ekranın düğmesiyle), cevap ekranın kimliğiyle (sunucu değişmedi), ortak `Yanit`/`SoruSecenegi`, Puck yuvası + iç içe hedefler. Gerçek ekranda ölçüldü. Kırma 17/17. Onay: Ç85; Ç84
+    - [ ] T1c · eski türlerin bloklara taşınması (Ç83 (1), kullanıcı kararı) · Puck'ın tarayıcıda ölçümü (Ç83 (4), Ç84)
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
   - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
     - [x] A5a · (`mcp-a5a.md`) kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost

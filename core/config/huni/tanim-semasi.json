@@ -40,8 +40,7 @@
                 "id",
                 "tur",
                 "baslik",
-                "bloklar",
-                "dugme"
+                "bloklar"
             ],
             "properties": {
                 "id": {
@@ -67,6 +66,7 @@
                     }
                 },
                 "dugme": {
+                    "description": "Zorunlu — yalnız tek seçimli soru bloğu olan ekranda yok (seçenek seçilince geçer; hedef de seçenekte)",
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 60
@@ -102,6 +102,9 @@
                 },
                 {
                     "$ref": "#/$defs/KutuBlogu"
+                },
+                {
+                    "$ref": "#/$defs/SoruBlogu"
                 }
             ]
         },
@@ -508,35 +511,80 @@
                 "secenekler": {
                     "type": "array",
                     "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                            "id",
-                            "metin"
-                        ],
-                        "properties": {
-                            "id": {
-                                "$ref": "#/$defs/HuniKimligi"
-                            },
-                            "metin": {
-                                "type": "string"
-                            },
-                            "simge": {
-                                "description": "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı",
-                                "type": "string",
-                                "maxLength": 32
-                            },
-                            "gorsel": {
-                                "$ref": "#/$defs/GorselKimligi"
-                            },
-                            "gorselMetni": {
-                                "$ref": "#/$defs/GorselMetni"
-                            },
-                            "hedef": {
-                                "$ref": "#/$defs/AdimHedefi"
-                            }
-                        }
+                        "$ref": "#/$defs/SoruSecenegi"
                     }
+                }
+            }
+        },
+        "SoruBlogu": {
+            "description": "T1b: ekranda en çok bir tane; cevap ekranın kimliğiyle kaydedilir. Soru metni ekranın başlığı / blokları. tekli: seçenek seçilince geçer (ekranda dugme olmaz). coklu / metin: ekranın düğmesi gönderir.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "soru"
+                    ]
+                },
+                "secimTuru": {
+                    "type": "string",
+                    "enum": [
+                        "tekli",
+                        "coklu",
+                        "metin"
+                    ]
+                },
+                "duzen": {
+                    "type": "string",
+                    "enum": [
+                        "liste",
+                        "izgara"
+                    ]
+                },
+                "yanitZorunlu": {
+                    "type": "boolean",
+                    "description": "Yalnız metin"
+                },
+                "secenekler": {
+                    "description": "Seçmelide zorunlu (2–8), serbest yanıtta yok",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/SoruSecenegi"
+                    }
+                }
+            }
+        },
+        "SoruSecenegi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "metin"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "metin": {
+                    "type": "string"
+                },
+                "simge": {
+                    "description": "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı",
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
                 }
             }
         },
