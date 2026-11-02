@@ -65,6 +65,8 @@ export function ulasilamayanlar(tanim: Tanim): string[] {
         if (adim.tur === "ekran")
             for (const k of adim.yonlendirme ?? [])
                 kuyruk.push(sira(k.hedef, i));
+        // T3b: koşulu tutmazsa ekran atlanır → sıradaki adım da yol.
+        if (adim.tur === "ekran" && adim.goster) kuyruk.push(i + 1);
         const blokSorusu =
             adim.tur === "ekran"
                 ? adim.bloklar.find((b) => b.tur === "soru")
@@ -92,6 +94,7 @@ type Hedefli = {
     hedef?: string;
     secenekler?: { hedef?: string }[];
     yonlendirme?: { hedef: string; kosullar: { ozellik: string }[] }[];
+    gosterKosullar?: { ozellik: string }[];
 };
 
 /** T1: kökte adım olmayan (bloğun yuvadan taşmış hâli) öğenin kimliği yok. */
@@ -123,6 +126,12 @@ export function hedefleriYenidenAdlandir(
         degisti = true;
         return yeni;
     };
+    const cevabiTasi = <C extends { ozellik: string }>(c: C): C => {
+        const yeni = c.ozellik.startsWith("cevap.")
+            ? tasi(c.ozellik.slice(6))
+            : undefined;
+        return yeni ? { ...c, ozellik: `cevap.${yeni}` } : c;
+    };
     const tasinmis = <P extends Hedefli>(p: P): P => ({
         ...p,
         ...("hedef" in p ? { hedef: tasi(p.hedef) } : {}),
@@ -132,14 +141,13 @@ export function hedefleriYenidenAdlandir(
                   yonlendirme: p.yonlendirme.map((k) => ({
                       ...k,
                       hedef: tasi(k.hedef) ?? k.hedef,
-                      kosullar: k.kosullar.map((c) => {
-                          const yeni = c.ozellik.startsWith("cevap.")
-                              ? tasi(c.ozellik.slice(6))
-                              : undefined;
-                          return yeni ? { ...c, ozellik: `cevap.${yeni}` } : c;
-                      }),
+                      kosullar: k.kosullar.map(cevabiTasi),
                   })),
               }
+            : {}),
+        // T3b: gösterim koşulundaki cevap.<eski>.
+        ...(p.gosterKosullar
+            ? { gosterKosullar: p.gosterKosullar.map(cevabiTasi) }
             : {}),
         ...(p.secenekler
             ? {

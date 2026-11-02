@@ -893,6 +893,11 @@ components:
           minItems: 1
           maxItems: 10
           items: { $ref: "#/components/schemas/Yonlendirme" }
+        goster:
+          description: >-
+            T3b: koşullu gösterim — koşul tutmazsa ekran atlanır, sıradaki
+            adıma geçilir. Cevap yalnız önceki adımlardan; ilk adımda olmaz.
+          $ref: "#/components/schemas/KosulGrubu"
         ilerlemeGoster: { type: boolean }
     Yonlendirme:
       type: object
@@ -909,6 +914,20 @@ components:
           maxItems: 5
           items: { $ref: "#/components/schemas/Kosul" }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    KosulGrubu:
+      type: object
+      additionalProperties: false
+      required: [kosullar]
+      properties:
+        baglac:
+          description: "hepsi (VE, varsayılan) · herhangi (VEYA)"
+          type: string
+          enum: [hepsi, herhangi]
+        kosullar:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: "#/components/schemas/Kosul" }
     Kosul:
       description: >-
         T2 özellik sözlüğünden bir ad (huni, huni.surum, utm.*, izin.reklam,

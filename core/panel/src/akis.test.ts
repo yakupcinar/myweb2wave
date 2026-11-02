@@ -535,3 +535,83 @@ describe("T3a: yönlendirme kuralları", () => {
         ).toBe("cevap.kiminle");
     });
 });
+
+// T3b: koşulu tutmayan ekran atlanır → ondan sonraki adım da yol; kimlik
+// değişince gösterim koşulundaki cevap.<eski> taşınır.
+describe("T3b: gösterim koşulu", () => {
+    const ekran = (id: string, ek: object = {}): Tanim["adimlar"][number] => ({
+        id,
+        tur: "ekran",
+        baslik: id,
+        bloklar: [],
+        dugme: "D",
+        ...ek,
+    });
+    const goster = {
+        kosullar: [{ ozellik: "utm.source", islem: "var" as const }],
+    };
+    const tanim = (kosullu: boolean): Tanim => ({
+        sayfaBasligi: "x",
+        adimlar: [
+            ekran("a", { hedef: "g" }),
+            ekran("b"),
+            ekran("g", { hedef: "son", ...(kosullu ? { goster } : {}) }),
+            ekran("c"),
+            ekran("son"),
+            paywall,
+        ],
+    });
+    it("atlanabilen ekrandan sonraki adım ulaşılabilir", () => {
+        expect(ulasilamayanlar(tanim(false))).toEqual(["b", "c"]);
+        expect(ulasilamayanlar(tanim(true))).toEqual(["b"]);
+    });
+    it("kimlik değişince gösterim koşulundaki cevap adı taşınır", () => {
+        const t: Tanim = {
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "s",
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secenekler: [
+                                { id: "a", metin: "A" },
+                                { id: "b", metin: "B" },
+                            ],
+                        },
+                    ],
+                },
+                ekran("son", {
+                    goster: {
+                        kosullar: [
+                            { ozellik: "cevap.s", islem: "icerir", deger: "a" },
+                        ],
+                    },
+                }),
+                paywall,
+            ],
+        };
+        const once = tanimdanPuck(t, VARSAYILAN);
+        const sonra: HuniVerisi = {
+            ...once,
+            content: once.content.map((o, j) =>
+                j === 0
+                    ? ({
+                          ...o,
+                          props: { ...o.props, kimlik: "kiminle" },
+                      } as typeof o)
+                    : o,
+            ),
+        };
+        const yeni = hedefleriYenidenAdlandir(once, sonra);
+        expect(
+            (
+                yeni!.content[1]!.props as {
+                    gosterKosullar: { ozellik: string }[];
+                }
+            ).gosterKosullar[0]!.ozellik,
+        ).toBe("cevap.kiminle");
+    });
+});

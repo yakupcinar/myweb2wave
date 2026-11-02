@@ -43,3 +43,41 @@ Her deneme betikle: eşleşme sayısı 1 değilse KOŞULMADI (§8), sonra dosya 
 ## Açık
 
 Ç91: düzenleyicinin özellik listesi sözlüğün elle kopyası (eşlik testi yok) · Puck kural alanları tarayıcıda denenmedi.
+
+# T3b — koşullu gösterim: ekranı göster / atla (2026-11-03)
+
+Kullanıcı 2026-11-03: döngü, "a'dan j'ye hepsini sırayla yap". T3a'nın koşul biçimi aynen; yeni olan yalnız ne zaman hesaplandığı.
+
+## Karar
+
+- Ekranda isteğe bağlı `goster: {baglac?, kosullar}` (sözleşmede `KosulGrubu`; `Yonlendirme` = grup + hedef). Tutmazsa ekran atlanır, sıradaki adıma geçilir; ardışık atlananlar da (döngü). Paywall son adım ve alanı yok → döngü hep biter.
+- **Cevap yalnız ÖNCEKİ adımlardan** (gösterim ekran çizilmeden hesaplanır): çekirdekte `kosul(..., $i - 1)`, Puck'ta özellik listesi bu ekranı içermez.
+- **İlk adımda yok:** hep gösterilir; ilk sıra + geri tuşu (`replaceState`) mantığı değişmedi.
+- **Geçmiş:** atlanan ekran `pushState`'e girmez — geri tuşu gösterilen son ekrana döner.
+- Ortak değerlendirici `grupTutar` (kosul.ts); `yonlendir` onu kullanır.
+- Puck: düz iki alan `gosterBaglac` + `gosterKosullar` (boş liste = alan tanıma yazılmaz). Akış denetimi: koşullu ekrandan sonraki adım da yol; yeniden adlandırmada koşuldaki `cevap.<eski>` taşınır.
+- AI yönergesine bir cümle.
+
+## Ölçüm
+
+- Yerel `genel` taslağında `oncelik` ekranına `cevap.kiminle icerir aile` (çekirdek kabul etti). Chrome, önizleme, `huni-dev` yeniden başlatıldıktan sonra: "İş için" → cihaz → **hazir** (oncelik atlandı); geri → cihaz, geri → kiminle (atlanan geçmişte yok); "Ailemle" → cihaz → **oncelik**. Sonra taslak yedekten geri yüklendi (goster kaldı mı: hayır).
+- Puck alanı tarayıcıda denenmedi: panel girişi kullanıcının kendi hesabı (Ç91).
+
+## Kırma denemeleri (10/10 kırmızı; 1'i deneme kusuru → düzeltildi)
+
+| # | Bozulan | Sonuç |
+|---|---|---|
+| B1 | ilk adımda goster serbest | 🔴 (göster ilk adımda) |
+| B2 | bu ekranın cevabı serbest | 🔴 (göster kendi cevabı) |
+| B3 | goster bağlacı denetimsiz | 🔴 |
+| B4 | grup herhangi = hepsi | 🔴 2 test |
+| B5 | oynatıcı atlamıyor | 🔴 |
+| B6 | yalnız bir ekran atlanır | 🔴 (ardışık iki ekran) |
+| B7 | akış: atlanan ekranın ardı yol değil | 🔴 |
+| B8 | gösterim koşulunda cevap taşınmıyor | 🔴 |
+| B9 | boş gösterim tanıma yazılır | 🔴 18 test |
+| B10 | AI yönergesinde goster yok | ilk deneme 🟢 — yama yalnız cümlenin başını silmişti, testin aradığı metin duruyordu (§8); cümle tamamen silinince 🔴 |
+
+## Kontrol
+
+`bin/kontrol` yerelde 207 s, EXIT=0, `KONTROL: YEŞİL` — core 395 test / 3.045 doğrulama. İlk iki koşu kırmızıydı: biçim (huni-bilesenleri'nde `format` betiği yok, yalnız `format:check` — prettier doğrudan) ve PHPStan (test yardımcısı `mixed` üzerinde).

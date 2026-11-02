@@ -480,6 +480,37 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri)).toStrictEqual(sorulu);
     });
 
+    it("T3b: gösterim koşulu gidiş-dönüş aynı; koşulsuzken alan yazılmaz", () => {
+        const kosullu: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((a, i) =>
+                i === 2 && a.tur === "ekran"
+                    ? {
+                          ...a,
+                          goster: {
+                              baglac: "herhangi",
+                              kosullar: [
+                                  {
+                                      ozellik: "cevap.kiminle",
+                                      islem: "icermez",
+                                      deger: "aile",
+                                  },
+                                  { ozellik: "utm.source", islem: "var" },
+                              ],
+                          },
+                      }
+                    : a,
+            ),
+        };
+        expect(kosullu.adimlar[2]!.tur).toBe("ekran");
+        const veri = tanimdanPuck(kosullu, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(kosullu);
+        (
+            veri.content[2]!.props as { gosterKosullar: unknown[] }
+        ).gosterKosullar = [];
+        expect("goster" in puckTanim(veri).adimlar[2]!).toBe(false);
+    });
+
     it("T3a: yönlendirme kuralları gidiş-dönüş aynı; varsayılan bağlaç ve boş değer yazılmaz, sürüm sayı", () => {
         const kurallar: Tanim = {
             ...temel,

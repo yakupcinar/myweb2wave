@@ -1024,6 +1024,92 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     expect(gorunenBaslik()).toBe("Aile");
   });
 
+  // T3b: koşulu tutmayan ekran atlanır (ardışık iki ekran da), geçmişe
+  // girmez — geri tuşu gösterilen son adıma döner.
+  const gosterli = (): Yanit => {
+    const aile = {
+      kosullar: [
+        { ozellik: "cevap.kiminle", islem: "icerir" as const, deger: "aile" },
+      ],
+    };
+    return {
+      durum: 200,
+      govde: yayin({
+        adimlar: [
+          {
+            id: "kiminle",
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+              {
+                tur: "soru",
+                secenekler: [
+                  { id: "aile", metin: "Ailemle" },
+                  { id: "is", metin: "İş" },
+                ],
+              },
+            ],
+          },
+          {
+            id: "aile-1",
+            tur: "ekran",
+            baslik: "Aile 1",
+            bloklar: [],
+            dugme: "Devam",
+            goster: aile,
+          },
+          {
+            id: "aile-2",
+            tur: "ekran",
+            baslik: "Aile 2",
+            bloklar: [],
+            dugme: "Devam",
+            goster: aile,
+          },
+          {
+            id: "son",
+            tur: "ekran",
+            baslik: "Son",
+            bloklar: [],
+            dugme: "Devam",
+          },
+          {
+            id: "paywall",
+            tur: "paywall",
+            baslik: "Pro",
+            metin: "",
+            dugme: "Abone ol",
+            plan: "monthly",
+          },
+        ],
+      }),
+    };
+  };
+
+  it("T3b: koşul tutmayan ardışık ekranlar atlanır, geçmişe tek adım yazılır", async () => {
+    tanim = gosterli();
+    kur("");
+    await screen.findByText("Kiminle?");
+    await waitFor(() => expect(history.state).toEqual({ adim: 0 }));
+    const once = history.length;
+    fireEvent.click(screen.getByText("İş"));
+    expect(gorunenBaslik()).toBe("Son");
+    expect(history.length - once).toBe(1);
+    expect((history.state as { adim: number }).adim).toBe(3);
+  });
+
+  it("T3b: koşul tutunca ekran gösterilir", async () => {
+    tanim = gosterli();
+    kur("");
+    await screen.findByText("Kiminle?");
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunenBaslik()).toBe("Aile 1");
+    fireEvent.click(
+      document.querySelector<HTMLElement>("[data-sira]:not([hidden]) button")!,
+    );
+    expect(gorunenBaslik()).toBe("Aile 2");
+  });
+
   it("T3a: tutan kural seçeneğin kendi hedefinden önce gelir", async () => {
     const t = yonlendirmeli();
     const adim = (t.govde as Yayin).tanim.adimlar[0];

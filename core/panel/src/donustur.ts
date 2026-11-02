@@ -16,6 +16,7 @@ type EkranAdimi = components["schemas"]["EkranAdimi"];
 type EkranBlogu = components["schemas"]["EkranBlogu"];
 type Kosul = components["schemas"]["Kosul"];
 type Yonlendirme = components["schemas"]["Yonlendirme"];
+type KosulGrubu = components["schemas"]["KosulGrubu"];
 type YaziTipi = Tema["yaziTipi"];
 
 export type SecenekProps = {
@@ -68,6 +69,9 @@ export type EkranProps = {
     onizlemeKapali?: boolean;
     /** T3a: koşullu yönlendirme; boş liste tanıma yazılmaz. */
     yonlendirme: YonlendirmeProps[];
+    /** T3b: gösterim koşulu; koşul yoksa ekran hep gösterilir (alan yazılmaz). */
+    gosterBaglac: "hepsi" | "herhangi";
+    gosterKosullar: YonlendirmeProps["kosullar"];
 };
 /** Puck metin alanı: değer hep dize (huni.surum kayıtta sayıya çevrilir). */
 export type YonlendirmeProps = {
@@ -147,23 +151,41 @@ function yonlendirmesi(kurallar: YonlendirmeProps[] | undefined): {
     if (!kurallar?.length) return {};
     return {
         yonlendirme: kurallar.map((k) => ({
-            ...(k.baglac === "herhangi" ? { baglac: "herhangi" as const } : {}),
-            kosullar: (k.kosullar ?? []).map((c) => ({
-                ozellik: c.ozellik,
-                islem: c.islem,
-                ...(c.islem === "var" || c.islem === "yok"
-                    ? {}
-                    : {
-                          deger:
-                              c.ozellik === "huni.surum"
-                                  ? Number(c.deger)
-                                  : c.deger,
-                      }),
-            })),
+            ...kosulGrubu(k.baglac, k.kosullar),
             hedef: k.hedef,
         })),
     };
 }
+
+/** T3a/T3b: Puck koşulları → tanım grubu (yönlendirme ve gösterim ortak). */
+function kosulGrubu(
+    baglac: YonlendirmeProps["baglac"] | undefined,
+    kosullar: YonlendirmeProps["kosullar"] | undefined,
+): KosulGrubu {
+    return {
+        ...(baglac === "herhangi" ? { baglac: "herhangi" as const } : {}),
+        kosullar: (kosullar ?? []).map((c) => ({
+            ozellik: c.ozellik,
+            islem: c.islem,
+            ...(c.islem === "var" || c.islem === "yok"
+                ? {}
+                : {
+                      deger:
+                          c.ozellik === "huni.surum"
+                              ? Number(c.deger)
+                              : c.deger,
+                  }),
+        })),
+    };
+}
+
+/** Tanım koşulları → Puck metin alanları (değer hep dize). */
+const kosulProps = (kosullar: Kosul[]): YonlendirmeProps["kosullar"] =>
+    kosullar.map((c) => ({
+        ozellik: c.ozellik,
+        islem: c.islem,
+        deger: c.deger === undefined ? "" : String(c.deger),
+    }));
 
 /** T1: blok türü (tanım) ↔ Puck bileşeni. */
 export const BLOK_BILESENI = {
@@ -434,16 +456,13 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             hedef: adim.hedef ?? "",
                             yonlendirme: (adim.yonlendirme ?? []).map((k) => ({
                                 baglac: k.baglac ?? "hepsi",
-                                kosullar: k.kosullar.map((c) => ({
-                                    ozellik: c.ozellik,
-                                    islem: c.islem,
-                                    deger:
-                                        c.deger === undefined
-                                            ? ""
-                                            : String(c.deger),
-                                })),
+                                kosullar: kosulProps(k.kosullar),
                                 hedef: k.hedef,
                             })),
+                            gosterBaglac: adim.goster?.baglac ?? "hepsi",
+                            gosterKosullar: kosulProps(
+                                adim.goster?.kosullar ?? [],
+                            ),
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
@@ -514,6 +533,14 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                             bloklar: (p.bloklar ?? []).map(puckBloktan),
                             ...(p.dugme ? { dugme: p.dugme } : {}),
                             ...yonlendirmesi(p.yonlendirme),
+                            ...(p.gosterKosullar?.length
+                                ? {
+                                      goster: kosulGrubu(
+                                          p.gosterBaglac,
+                                          p.gosterKosullar,
+                                      ),
+                                  }
+                                : {}),
                             ...(p.ilerlemeGoster === false
                                 ? { ilerlemeGoster: false }
                                 : {}),

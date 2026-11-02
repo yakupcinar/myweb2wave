@@ -1,6 +1,6 @@
 // T3a: koşul motoru — beklenenler elle (§3), yokluk anlamı açıkça ölçülür.
 import { describe, expect, it } from "vitest";
-import { kosulTutar, yonlendir } from "./kosul";
+import { grupTutar, kosulTutar, yonlendir } from "./kosul";
 
 const o = {
     "utm.source": "meta",
@@ -86,5 +86,31 @@ describe("T3a — kurallar", () => {
             undefined,
         );
         expect(yonlendir(undefined, o)).toBe(undefined);
+    });
+});
+
+// T3b: gösterim koşulu aynı grup kuralı (VE varsayılan, herhangi = VEYA).
+describe("T3b — koşul grubu", () => {
+    const aile = {
+        ozellik: "cevap.kiminle",
+        islem: "icerir",
+        deger: "aile",
+    } as const;
+    const tiktok = {
+        ozellik: "utm.source",
+        islem: "esit",
+        deger: "tiktok",
+    } as const;
+    it("hepsi: biri tutmazsa tutmaz", () => {
+        expect(grupTutar({ kosullar: [aile] }, o)).toBe(true);
+        expect(grupTutar({ kosullar: [aile, tiktok] }, o)).toBe(false);
+    });
+    it("herhangi: biri yeter", () => {
+        expect(
+            grupTutar({ baglac: "herhangi", kosullar: [aile, tiktok] }, o),
+        ).toBe(true);
+        expect(grupTutar({ baglac: "herhangi", kosullar: [tiktok] }, o)).toBe(
+            false,
+        );
     });
 });

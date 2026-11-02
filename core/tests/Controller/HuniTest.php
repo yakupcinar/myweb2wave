@@ -210,6 +210,37 @@ final class HuniTest extends WebTestCase
         return $t;
     }
 
+    /**
+     * T3b: koşullu gösterim — `ara` ekranı yalnız koşul tutunca gösterilir.
+     *
+     * @param array<mixed> $goster
+     *
+     * @return array<mixed>
+     */
+    private static function gosterli(array $goster, int $adim = 2): array
+    {
+        $t = self::tanim('X');
+        array_splice($t['adimlar'], 2, 0, [self::ekran([['tur' => 'soru', 'secenekler' => [['id' => 'x', 'metin' => 'X'], ['id' => 'y', 'metin' => 'Y']]]], ['id' => 'ara', 'baslik' => 'Ara', 'dugme' => null])]);
+        $t['adimlar'][$adim]['goster'] = $goster;
+
+        return $t;
+    }
+
+    public function testGosterGecerliYayindaSozlesmeyeUyar(): void
+    {
+        $t = self::gosterli(['baglac' => 'herhangi', 'kosullar' => [
+            ['ozellik' => 'cevap.soru1', 'islem' => 'icerir', 'deger' => 'a'],
+            ['ozellik' => 'utm.source', 'islem' => 'esit', 'deger' => 'meta'],
+        ]]);
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $t));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     public function testYonlendirmeGecerliYayindaSozlesmeyeUyar(): void
     {
         $t = self::yonlendirmeli([
@@ -481,6 +512,14 @@ final class HuniTest extends WebTestCase
         yield 'değersiz eşit' => ['koşul 1: deger gerekli', $kural(['ozellik' => 'utm.source', 'islem' => 'esit'])];
         yield 'var ile değer' => ['koşul 1: var ve yok değer almaz', $kural(['ozellik' => 'utm.source', 'islem' => 'var', 'deger' => 'x'])];
         yield 'sürüm metin' => ['koşul 1: huni.surum değeri tam sayı olmalı', $kural(['ozellik' => 'huni.surum', 'islem' => 'esit', 'deger' => '2'])];
+        // T3b: koşullu gösterim (yalnız önceki adımların cevabı; ilk adımda yok).
+        $goster = static fn (array $g, int $adim = 2): array => self::gosterli($g, $adim);
+        yield 'göster koşulsuz' => ['goster: kosullar 1–5', $goster(['kosullar' => []])];
+        yield 'göster fazla alan' => ['goster: alanlar tam olarak kosullar ve (isteğe bağlı) baglac', $goster(['kosullar' => [['ozellik' => 'utm.source', 'islem' => 'var']], 'hedef' => 'paywall'])];
+        yield 'göster bağlacı' => ['goster: baglac hepsi ya da herhangi', $goster(['baglac' => 'ya', 'kosullar' => [['ozellik' => 'utm.source', 'islem' => 'var']]])];
+        yield 'göster kendi cevabı' => ['goster koşul 1: cevap.ara bu adımda ya da önceki adımlarda sorulmuyor', $goster(['kosullar' => [['ozellik' => 'cevap.ara', 'islem' => 'var']]])];
+        yield 'göster ilk adımda' => ['goster ilk adımda olmaz', $goster(['kosullar' => [['ozellik' => 'utm.source', 'islem' => 'var']]], 0)];
+        yield 'göster koşul türü' => ['goster koşul 1: cevap.soru1 için islem icerir', $goster(['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'esit', 'deger' => 'a']]])];
         yield 'uzun değer' => ['koşul 1: deger 1–200 karakter', $kural(['ozellik' => 'utm.source', 'islem' => 'esit', 'deger' => str_repeat('a', 201)])];
         // T1b: soru bloğu.
         $iki = [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']];

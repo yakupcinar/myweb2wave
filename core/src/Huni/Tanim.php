@@ -34,6 +34,7 @@ final class Tanim
         .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin seçimde dugme gönderir). '
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
         .'Koşullu yönlendirme (isteğe bağlı, ekranda): yonlendirme: [{"kosullar": [{"ozellik": "cevap.<bu ya da önceki ekran>", "islem": "icerir", "deger": "<seçenek kimliği>"}], "hedef": "<sonraki adım>"}] — ilk tutan kural kazanır; özellikler utm.source/medium/campaign/content/term, izin.reklam, huni, huni.surum, adim.son, cevap.<adım>; seçmeli cevapta icerir/icermez, diğerlerinde esit/esit_degil, her biri için var/yok; birden çok koşulda "baglac": "herhangi" VEYA yapar. Yalnız kişiselleştirme gerçekten gerekiyorsa kullan (ör. farklı kitleye farklı ekran). '
+        .'Koşullu gösterim (isteğe bağlı, ilk ekran dışında): goster: {"kosullar": [...], "baglac"?} — aynı koşul biçimi, cevap yalnız ÖNCEKİ ekranlardan; tutmazsa ekran atlanır, sıradaki adıma geçilir. '
         .'Karşılama, neden bu ürün, nasıl çalışır, güvence gibi ekranları farklı blok dizilişleriyle kur; tüm huniyi aynı dizilişle doldurma. '
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
         .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
@@ -218,6 +219,11 @@ final class Tanim
             if ('ekran' === $tur && \array_key_exists('yonlendirme', $adim)) {
                 $beklenen[] = 'yonlendirme';
                 self::yonlendirme($adim['yonlendirme'], $sira, $sorular, $i, $yer, $h);
+            }
+            // T3b: koşullu gösterim — tutmazsa ekran atlanır (sıradakine geçilir).
+            if ('ekran' === $tur && \array_key_exists('goster', $adim)) {
+                $beklenen[] = 'goster';
+                self::goster($adim['goster'], $sira, $sorular, $i, $yer, $h);
             }
             if ($tekSecimli && \array_key_exists('hedef', $adim)) {
                 $h[] = "{$yer}: tek seçimli soru bloğunda hedef seçeneklerde verilir";
@@ -476,6 +482,41 @@ final class Tanim
             foreach ($kosullar as $j => $kosul) {
                 self::kosul($kosul, $sira, $sorular, $i, "{$ky} koşul ".($j + 1), $h);
             }
+        }
+    }
+
+    /**
+     * T3b: gösterim koşulu ekran çizilmeden önce hesaplanır — cevap yalnız
+     * ÖNCEKİ adımlardan; ilk adımda yok (hep gösterilir, geri tuşu sade kalır).
+     *
+     * @param array<string, int>                       $sira
+     * @param array<string, array{bool, list<string>}> $sorular
+     * @param list<string>                             $h
+     */
+    private static function goster(mixed $goster, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        if (0 === $i) {
+            $h[] = "{$yer}: goster ilk adımda olmaz";
+
+            return;
+        }
+        $istege = \is_array($goster) && \array_key_exists('baglac', $goster) ? ['baglac'] : [];
+        if (!\is_array($goster) || !self::anahtarlar($goster, ['kosullar', ...$istege])) {
+            $h[] = "{$yer} goster: alanlar tam olarak kosullar ve (isteğe bağlı) baglac olmalı";
+
+            return;
+        }
+        if ([] !== $istege && !\in_array($goster['baglac'], ['hepsi', 'herhangi'], true)) {
+            $h[] = "{$yer} goster: baglac hepsi ya da herhangi olmalı";
+        }
+        $kosullar = $goster['kosullar'];
+        if (!\is_array($kosullar) || !array_is_list($kosullar) || [] === $kosullar || \count($kosullar) > 5) {
+            $h[] = "{$yer} goster: kosullar 1–5 öğeli liste olmalı";
+
+            return;
+        }
+        foreach ($kosullar as $j => $kosul) {
+            self::kosul($kosul, $sira, $sorular, $i - 1, "{$yer} goster koşul ".($j + 1), $h);
         }
     }
 

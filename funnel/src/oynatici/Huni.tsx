@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
-import { yonlendir } from "../../../huni-bilesenleri/kosul";
+import { grupTutar, yonlendir } from "../../../huni-bilesenleri/kosul";
 import { ozellikler, type Olay } from "../../../huni-bilesenleri/ozellikler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
@@ -155,20 +155,19 @@ function Oynatici({
     });
     ilerlemeBildir(ziyaretSozu, sira, adim, cevap, cevapMetni);
   }
+  const simdikiOzellikler = () =>
+    ozellikler({
+      huni: yayin.huni,
+      surum: yayin.surum ?? undefined,
+      adres: window.location.search,
+      izin,
+      olaylar: olaylar.current,
+    });
   /** T3a: ekrandan çıkış — ilk tutan kural, yoksa verilen (seçenek/ekran) hedef. */
   function cik(adim: TanimAdimi, hedef?: string): void {
     const kural =
       adim.tur === "ekran"
-        ? yonlendir(
-            adim.yonlendirme,
-            ozellikler({
-              huni: yayin.huni,
-              surum: yayin.surum ?? undefined,
-              adres: window.location.search,
-              izin,
-              olaylar: olaylar.current,
-            }),
-          )
+        ? yonlendir(adim.yonlendirme, simdikiOzellikler())
         : undefined;
     ileri(kural ?? hedef);
   }
@@ -234,10 +233,18 @@ function Oynatici({
 
   /** H5: hedef varsa o adıma (çekirdek yalnız ileriyi kabul eder), yoksa sıradakine. */
   function ileri(hedef?: string): void {
-    const sira = hedef
+    let sira = hedef
       ? tanim.adimlar.findIndex((a) => a.id === hedef)
       : mevcut + 1;
     if (sira <= mevcut || sira >= tanim.adimlar.length) return;
+    // T3b: koşulu tutmayan ekran atlanır; paywall (son adım) koşulsuz.
+    const o = simdikiOzellikler();
+    for (
+      let a = tanim.adimlar[sira];
+      a?.tur === "ekran" && a.goster && !grupTutar(a.goster, o);
+      a = tanim.adimlar[sira]
+    )
+      sira++;
     history.pushState({ adim: sira }, "");
     setGecis("ileri");
     setMevcut(sira);

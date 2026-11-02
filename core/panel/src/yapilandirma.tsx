@@ -244,13 +244,15 @@ const SABIT_OZELLIKLER = [
 export function ozellikSecenekleri(
     appState: AppState,
     bilesen: string,
+    /** T3b: gösterim koşulu ekran çizilmeden hesaplanır — bu ekranın cevabı yok. */
+    buEkranDahil = true,
 ): SelectField["options"] {
     const icerik = appState.data.content;
     const sira = icerik.findIndex((o) => o.props["id"] === bilesen);
     return [
         ...SABIT_OZELLIKLER.map(([value, label]) => ({ label, value })),
         ...icerik
-            .slice(0, sira + 1)
+            .slice(0, buEkranDahil ? sira + 1 : sira)
             .filter(
                 (o) =>
                     Array.isArray(o.props["bloklar"]) &&
@@ -327,6 +329,16 @@ const yonlendirmeAlani = {
         },
         hedef: { ...hedefAlani, label: "Gidilecek adım" },
     },
+};
+
+// T3b: gösterim koşulu — yönlendirmenin koşul alanları; boş liste = hep gösterilir.
+const gosterBaglacAlani = {
+    ...yonlendirmeAlani.arrayFields.baglac,
+    label: "Gösterim koşulları",
+};
+const gosterAlani = {
+    ...yonlendirmeAlani.arrayFields.kosullar,
+    label: "Gösterim koşulu (tutmazsa ekran atlanır; boş = hep gösterilir)",
 };
 
 /**
@@ -644,6 +656,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     ilerlemeGoster: ilerlemeAlani,
                     hedef: tanitimHedefAlani,
                     yonlendirme: yonlendirmeAlani,
+                    gosterBaglac: gosterBaglacAlani,
+                    gosterKosullar: gosterAlani,
                 },
                 resolveFields: (veri, { fields, appState }) => {
                     const hedefler = hedefSecenekleri(appState, veri.props.id);
@@ -678,11 +692,27 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                 },
                             },
                         },
+                        gosterKosullar: {
+                            ...gosterAlani,
+                            arrayFields: {
+                                ...gosterAlani.arrayFields,
+                                ozellik: {
+                                    ...gosterAlani.arrayFields.ozellik,
+                                    options: ozellikSecenekleri(
+                                        appState,
+                                        veri.props.id,
+                                        false,
+                                    ),
+                                },
+                            },
+                        },
                     };
                 },
                 defaultProps: {
                     kimlik: "ekran",
                     yonlendirme: [],
+                    gosterBaglac: "hepsi",
+                    gosterKosullar: [],
                     baslik: "Yeni ekran",
                     gorsel: "",
                     gorselMetni: "",

@@ -9,11 +9,11 @@ export type Kosul = {
     islem: "esit" | "esit_degil" | "icerir" | "icermez" | "var" | "yok";
     deger?: string | number;
 };
-export type Yonlendirme = {
+export type KosulGrubu = {
     baglac?: "hepsi" | "herhangi";
     kosullar: readonly Kosul[];
-    hedef: string;
 };
+export type Yonlendirme = KosulGrubu & { hedef: string };
 
 export function kosulTutar(k: Kosul, o: Ozellikler): boolean {
     const v = o[k.ozellik];
@@ -33,14 +33,17 @@ export function kosulTutar(k: Kosul, o: Ozellikler): boolean {
     }
 }
 
+/** T3b: grup — hepsi (varsayılan) VE, herhangi VEYA. */
+export function grupTutar(g: KosulGrubu, o: Ozellikler): boolean {
+    return g.baglac === "herhangi"
+        ? g.kosullar.some((c) => kosulTutar(c, o))
+        : g.kosullar.every((c) => kosulTutar(c, o));
+}
+
 /** İlk tutan kuralın hedefi; hiçbiri tutmazsa (ya da kural yoksa) tanımsız. */
 export function yonlendir(
     kurallar: readonly Yonlendirme[] | undefined,
     o: Ozellikler,
 ): string | undefined {
-    return kurallar?.find((k) =>
-        k.baglac === "herhangi"
-            ? k.kosullar.some((c) => kosulTutar(c, o))
-            : k.kosullar.every((c) => kosulTutar(c, o)),
-    )?.hedef;
+    return kurallar?.find((k) => grupTutar(k, o))?.hedef;
 }

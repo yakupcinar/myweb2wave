@@ -204,6 +204,8 @@ final class PanelAiTest extends WebTestCase
         // Katalog maddesi "ad (açıklama)" biçiminde — yalın ad metnin başka yerinde de geçer (kırma B17).
         // T3a: koşullu yönlendirme yönergede.
         self::assertStringContainsString('yonlendirme: [{"kosullar"', Tanim::EKRAN_YONERGESI);
+        // T3b: koşullu gösterim yönergede.
+        self::assertStringContainsString('goster: {"kosullar"', Tanim::EKRAN_YONERGESI);
         foreach (array_keys(Tanim::BLOKLAR) as $blok) {
             self::assertStringContainsString("{$blok} (", Tanim::EKRAN_YONERGESI);
         }

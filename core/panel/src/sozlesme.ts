@@ -557,6 +557,8 @@ export interface components {
             hedef?: components["schemas"]["AdimHedefi"];
             /** @description T3a: koşullu yönlendirme — ekrandan çıkarken ilk tutan kuralın hedefine gidilir; hiçbiri tutmazsa seçeneğin hedefi, sonra ekranın hedefi, sonra sıradaki adım. */
             yonlendirme?: components["schemas"]["Yonlendirme"][];
+            /** @description T3b: koşullu gösterim — koşul tutmazsa ekran atlanır, sıradaki adıma geçilir. Cevap yalnız önceki adımlardan; ilk adımda olmaz. */
+            goster?: components["schemas"]["KosulGrubu"];
             ilerlemeGoster?: boolean;
         };
         Yonlendirme: {
@@ -567,6 +569,14 @@ export interface components {
             baglac?: "hepsi" | "herhangi";
             kosullar: components["schemas"]["Kosul"][];
             hedef: components["schemas"]["AdimHedefi"];
+        };
+        KosulGrubu: {
+            /**
+             * @description hepsi (VE, varsayılan) · herhangi (VEYA)
+             * @enum {string}
+             */
+            baglac?: "hepsi" | "herhangi";
+            kosullar: components["schemas"]["Kosul"][];
         };
         /** @description T2 özellik sözlüğünden bir ad (huni, huni.surum, utm.*, izin.reklam, cevap.<adım>, adim.son; ödeme/abonelik hunide bilinmez). Seçmeli cevap listedir: icerir / icermez (değer seçenek kimliği). Tek değerler: esit / esit_degil. Her özellik: var / yok (değersiz). */
         Kosul: {
