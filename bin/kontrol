@@ -92,6 +92,9 @@ adim funnel-derle funnel 'npm run -s build'
 # Ç52 (1): ada modülleri önden yükleniyor mu (entegrasyon koştu mu).
 adim funnel-onyukleme funnel 'grep -q "rel=\"modulepreload\"" dist/keepchat/index.html'
 adim funnel-butce funnel 'b=$(cat dist/_astro/*.js | gzip -9 | wc -c); echo "JS gzip $b B"; [ "$b" -le 92160 ]'
+# Ç23: derleme çıktısındaki her iç bağlantı bir dosyaya çözülmeli (taşınan
+# iptal sayfası "/"a — 404 — bağlanıyordu, hiçbir denetim yakalamadı).
+adim funnel-baglanti funnel 'node scripts/baglanti-denetimi.ts'
 
 # Atlanan test PASS görünür (tuzak §8) — sayıyı ayrıca yaz.
 # Renk kodu satır başında: önce ayıkla, SONRA ara (yoksa satır sessizce kaybolur).
