@@ -139,6 +139,8 @@
     - [x] T1b · 2026-11-02, `docs/decisions/t1b-soru-blogu.md`: ekranda `soru` bloğu (tekli seçenek geçirir, düğmesiz; çoklu/serbest ekranın düğmesiyle), cevap ekranın kimliğiyle (sunucu değişmedi), ortak `Yanit`/`SoruSecenegi`, Puck yuvası + iç içe hedefler. Gerçek ekranda ölçüldü. Kırma 17/17. Onay: Ç85; Ç84
     - [x] T1c · 2026-11-02, `t1c-tasima-olcumu.md`: Puck tarayıcıda ölçüldü (düzenleyicide blok stili kusuru düzeltildi) · kullanıcı kararı Ç86 → ekran kapağı (tanıtımla eşitlik), taşıma göçü (27 taslak + 73 sürüm adımı, 19 tanım geçerli), tanıtım/soru/yorum türleri kaldırıldı — içerik adımı yalnız ekran. Kırma 5+5+5+1. Ç84 + Ç87 kapandı (düzenleyici bekçisi; resolveData yuva değişiminde koşmuyor — tarayıcıda ölçüldü)
   - [ ] **T2–T4** · kullanıcı özellik deposu → koşul motoru → olay deposu
+    - [x] T2a · 2026-11-02, `docs/decisions/t2-ozellik-deposu.md`: `ziyaret_ozellikleri` görünümü (ikinci yazım yok) + sözlük (`Ozellikler::SOZLUK`) + ziyaret/kişi okuma + `app:ozellikler`; gerçek veride 103 ziyaret / 441 özellik, hepsi sözlükte. Kırma 6/6. Açık: Ç88 cihaz, Ç89 ölçek, Ç90 serbest metin
+    - [ ] T2b · oynatıcıda aynı adlar (koşul motoru tarayıcıda değerlendirir — T3'ün girdisi) + sunucu/oynatıcı ad eşliği testi
   - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
     - [x] A5a · (`mcp-a5a.md`) kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost
     - [x] A5+ · (`ai-ekran-goruntusu.md`, Ç72 (1)) `ekran_goruntusu` aracı: başsız Chrome kabı (`ekran`), önizlemede `?adim=`, MCP görüntü içeriği; gerçek MCP HTTP ile ölçüldü. Kalan: Ç72 (2)–(4), Ç73, Ç74
