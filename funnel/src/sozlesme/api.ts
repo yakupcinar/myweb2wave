@@ -490,6 +490,11 @@ export interface components {
              */
             yogunluk?: "sik" | "normal" | "ferah";
             /**
+             * @description G4: ana düğme (yoksa dolu): dolu · cerceve (saydam, ana renk çizgi ve yazı — ana renk düğmenin altındaki yüzeyde 4,5:1 okunmalı) · hap (tam yuvarlak)
+             * @enum {string}
+             */
+            dugmeBicimi?: "dolu" | "cerceve" | "hap";
+            /**
              * @description G7: başlık ve açıklama hizası (yoksa sol)
              * @enum {string}
              */
@@ -538,6 +543,11 @@ export interface components {
             ilerlemeGoster?: boolean;
             /** @enum {string} */
             secimTuru?: "tekli" | "coklu" | "metin";
+            /**
+             * @description G4: seçeneklerin dizilişi (yoksa liste): liste · izgara (iki sütun; kısa seçenekler ve görselli seçenekler için). Serbest yanıtta kullanılmaz
+             * @enum {string}
+             */
+            duzen?: "liste" | "izgara";
             yanitZorunlu?: boolean;
             devamDugmesi?: string;
             secenekler?: {

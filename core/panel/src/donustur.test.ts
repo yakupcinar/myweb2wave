@@ -336,6 +336,20 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect("duzen" in puckTanim(veri).adimlar[0]!).toBe(false);
     });
 
+    it("G4: düğme biçimi ve soru düzeni gidiş-dönüş; varsayılan yazılmaz", () => {
+        const g4: Tanim = {
+            ...temel,
+            tema: { ...VARSAYILAN, dugmeBicimi: "hap" },
+            adimlar: temel.adimlar.map((a) =>
+                a.tur === "soru" ? { ...a, duzen: "izgara" as const } : a,
+            ),
+        };
+        const veri = tanimdanPuck(g4, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(g4);
+        veri.root.props!.dugmeBicimi = "dolu";
+        expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);

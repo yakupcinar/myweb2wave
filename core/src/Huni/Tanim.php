@@ -25,6 +25,9 @@ final class Tanim
     /** G5: tanıtım adımında görselin yeri. */
     public const DUZENLER = ['ust', 'kahraman', 'tamEkran'];
 
+    /** G4: soru adımında seçeneklerin dizilişi. */
+    public const SORU_DUZENLERI = ['liste', 'izgara'];
+
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
     private const TURLER = [
         'tanitim' => ['baslik', 'metin', 'dugme'],
@@ -120,6 +123,11 @@ final class Tanim
             if ('tanitim' === $tur && \array_key_exists('gorselMetni', $adim)) {
                 $beklenen[] = 'gorselMetni';
                 self::gorselMetni($adim, $yer, $h);
+            }
+            // G4: seçeneklerin dizilişi — serbest yanıtta seçenek yok.
+            if ('soru' === $tur && \array_key_exists('duzen', $adim)) {
+                $beklenen[] = 'duzen';
+                self::soruDuzeni($adim['duzen'], $metinYaniti, $yer, $h);
             }
             // G5: görselin yeri; kahraman/tamEkran görselsiz anlamsız.
             if ('tanitim' === $tur && \array_key_exists('duzen', $adim)) {
@@ -236,6 +244,16 @@ final class Tanim
             return;
         }
         self::metin($nesne['gorselMetni'], 'gorselMetni', "{$yer} gorselMetni", $h);
+    }
+
+    /** @param list<string> $h */
+    private static function soruDuzeni(mixed $duzen, bool $metinYaniti, string $yer, array &$h): void
+    {
+        if ($metinYaniti) {
+            $h[] = "{$yer}: duzen yalnız seçmeli soruda kullanılabilir";
+        } elseif (!\in_array($duzen, self::SORU_DUZENLERI, true)) {
+            $h[] = "{$yer}: duzen: ".implode(', ', self::SORU_DUZENLERI).' olmalı';
+        }
     }
 
     /** @param list<string> $h */

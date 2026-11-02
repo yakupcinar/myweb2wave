@@ -27,11 +27,12 @@ final class Tema
     /** WCAG AA, normal metin. */
     public const ASGARI_KONTRAST = 4.5;
 
-    /** G7: yerleşim ön ayarları (serbest piksel değil); yoksa ilk değerin anlamı (normal / sol). */
+    /** G7 yerleşim, G4 düğme ön ayarları (serbest piksel değil); yoksa normal / sol / dolu. */
     public const ON_AYARLAR = [
         'baslikBoyu' => ['kucuk', 'normal', 'buyuk'],
         'yogunluk' => ['sik', 'normal', 'ferah'],
         'hizalama' => ['sol', 'orta'],
+        'dugmeBicimi' => ['dolu', 'cerceve', 'hap'],
     ];
 
     /** G3: görsel zeminde karartma katmanının üst sınırı (%100 görseli tamamen örterdi). */
@@ -39,7 +40,7 @@ final class Tema
 
     /** Ç71: AI'a yön veren örnekler (kopya değil) — her biri yayından geçer (TemaTest). */
     public const AI_ORNEKLERI = [
-        'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah'],
+        'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah', 'dugmeBicimi' => 'hap'],
         'teknoloji / üretkenlik' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b']],
         'finans / ciddi' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff'],
         'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta'],
@@ -67,6 +68,8 @@ final class Tema
             .'Görünümü en çok zemin değiştirir: arkaPlan\'ı ürüne göre seç; isteğe bağlı zemin alanı düz rengin yerine geçiş {"tur":"gecis","ikinciRenk":"#rrggbb"} (metin alt renkte de okunmalı) ya da görsel {"tur":"gorsel","gorsel":"<görsel kimliği>","karartma":0–'.self::AZAMI_KARARTMA.'} (yalnız bu uygulamaya yüklenmiş görsel; karartma yetersizse hata en az değeri söyler). '
             // G7
             .'İsteğe bağlı yerleşim ön ayarları (yoksa normal/sol): baslikBoyu '.implode('|', self::ON_AYARLAR['baslikBoyu']).', yogunluk '.implode('|', self::ON_AYARLAR['yogunluk']).', hizalama '.implode('|', self::ON_AYARLAR['hizalama']).' — büyük başlık, ferah boşluk ve ortalı metin renk değiştirmeden huninin karakterini belirgin değiştirir; ürüne göre seç (ör. sakin ürün ferah, enerjik ürün büyük + orta, yoğun içerik sik). '
+            // G4
+            .'İsteğe bağlı dugmeBicimi '.implode('|', self::ON_AYARLAR['dugmeBicimi']).' (cerceve: ana renk düğmenin altındaki yüzeyde okunmalı); kısa ya da görselli seçenekli soruda adımın duzen: izgara (iki sütun) alanı. '
             // G5 (adım alanı, tema değil)
             .'Tanıtım adımında görsel varsa duzen: kahraman (görsel ekranın üst yarısı) ya da tamEkran (görsel bütün adım, metin altta beyaz) boş ekranı doldurur; görselsiz yalnız ust. '
             // G6
@@ -120,9 +123,35 @@ final class Tema
             if ([] === $h && \array_key_exists('zemin', $tema)) {
                 $h = self::zeminHatalari($tema['zemin'], $tema['metinRengi'], $tema['arkaPlan'], !\is_string($kart));
             }
+            if ([] === $h && 'cerceve' === ($tema['dugmeBicimi'] ?? null) && \is_string($tema['anaRenk'])) {
+                $h = self::cerceveHatalari($tema['anaRenk'], $tema['arkaPlan'], \is_string($kart) ? $kart : null, $tema['zemin'] ?? null);
+            }
         }
 
         return $h;
+    }
+
+    /**
+     * G4: çerçeveli düğmede yazı ve çizgi ana renk, düğme saydam — ana renk
+     * düğmenin altındaki yüzeyde okunmalı: kart, yoksa zeminin altı (geçişte
+     * ikinci renk, görselde en kötü siyah/beyaz karışım), yoksa arka plan.
+     *
+     * @return list<string>
+     */
+    private static function cerceveHatalari(string $ana, string $arka, ?string $kart, mixed $zemin): array
+    {
+        $tur = \is_array($zemin) ? ($zemin['tur'] ?? null) : null;
+        $yuzeyler = match (true) {
+            null !== $kart => [$kart],
+            'gecis' === $tur && \is_string($zemin['ikinciRenk'] ?? null) => [$zemin['ikinciRenk']],
+            'gorsel' === $tur && \is_int($zemin['karartma'] ?? null) => [self::karistir($arka, '#000000', $zemin['karartma']), self::karistir($arka, '#ffffff', $zemin['karartma'])],
+            default => [$arka],
+        };
+        $oran = min(array_map(static fn (string $y): float => self::kontrast($ana, $y), $yuzeyler));
+
+        return $oran < self::ASGARI_KONTRAST
+            ? [\sprintf('tema: çerçeveli düğmede ana renk okunmuyor (kontrast %.2f:1, en az %.1f:1) — dolu ya da hap seç veya ana rengi koyulaştır', $oran, self::ASGARI_KONTRAST)]
+            : [];
     }
 
     /**

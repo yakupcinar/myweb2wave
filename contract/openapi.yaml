@@ -793,6 +793,10 @@ components:
           description: "G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah"
           type: string
           enum: [sik, normal, ferah]
+        dugmeBicimi:
+          description: "G4: ana düğme (yoksa dolu): dolu · cerceve (saydam, ana renk çizgi ve yazı — ana renk düğmenin altındaki yüzeyde 4,5:1 okunmalı) · hap (tam yuvarlak)"
+          type: string
+          enum: [dolu, cerceve, hap]
         hizalama:
           description: "G7: başlık ve açıklama hizası (yoksa sol)"
           type: string
@@ -852,6 +856,10 @@ components:
         aciklama: { type: string, maxLength: 500 }
         ilerlemeGoster: { type: boolean }
         secimTuru: { type: string, enum: [tekli, coklu, metin] }
+        duzen:
+          description: "G4: seçeneklerin dizilişi (yoksa liste): liste · izgara (iki sütun; kısa seçenekler ve görselli seçenekler için). Serbest yanıtta kullanılmaz"
+          type: string
+          enum: [liste, izgara]
         yanitZorunlu: { type: boolean }
         devamDugmesi: { type: string }
         secenekler:

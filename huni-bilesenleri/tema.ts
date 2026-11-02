@@ -24,6 +24,8 @@ export type Tema = {
     baslikBoyu?: "kucuk" | "normal" | "buyuk";
     yogunluk?: "sik" | "normal" | "ferah";
     hizalama?: "sol" | "orta";
+    /** G4: ana düğme biçimi; yoksa dolu. */
+    dugmeBicimi?: "dolu" | "cerceve" | "hap";
 };
 
 /** G7: ön ayar → CSS değeri (gorunum-g7.md). "normal"/"sol" = huni.css yedeği. */
@@ -103,6 +105,15 @@ export function temaDegiskenleri(
             : {}),
         ...(tema.yogunluk ? { "--ara": ARA[tema.yogunluk] } : {}),
         ...(tema.hizalama ? { "--hiza": HIZA[tema.hizalama] } : {}),
+        ...(tema.dugmeBicimi === "cerceve"
+            ? {
+                  "--dugme-arka": "transparent",
+                  "--dugme-yazi": tema.anaRenk,
+                  "--dugme-golge": "none",
+                  "--dugme-cizgi": "2px",
+              }
+            : {}),
+        ...(tema.dugmeBicimi === "hap" ? { "--dugme-kose": "999px" } : {}),
     };
 }
 

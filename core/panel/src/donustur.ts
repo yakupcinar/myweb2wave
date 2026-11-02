@@ -8,9 +8,8 @@ import type { components } from "./sozlesme";
 export type Tanim = components["schemas"]["HuniTanimi"];
 export type Tema = components["schemas"]["HuniTemasi"];
 type Zemin = NonNullable<Tema["zemin"]>;
-type OnAyar<K extends "baslikBoyu" | "yogunluk" | "hizalama"> = NonNullable<
-    Tema[K]
->;
+type OnAyar<K extends "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi"> =
+    NonNullable<Tema[K]>;
 type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
 type YaziTipi = Tema["yaziTipi"];
@@ -43,6 +42,8 @@ export type SoruProps = {
     secimTuru: "tekli" | "coklu" | "metin";
     yanitZorunlu: "istege_bagli" | "zorunlu";
     devamDugmesi: string;
+    /** G4: "liste" tanıma yazılmaz; serbest yanıtta yok sayılır. */
+    duzen: "liste" | "izgara";
     ilerlemeGoster: boolean;
 };
 export type PaywallProps = {
@@ -89,6 +90,8 @@ export type KokProps = {
     baslikBoyu: OnAyar<"baslikBoyu">;
     yogunluk: OnAyar<"yogunluk">;
     hizalama: OnAyar<"hizalama">;
+    /** G4: "dolu" tanıma yazılmaz. */
+    dugmeBicimi: OnAyar<"dugmeBicimi">;
 };
 export type Bilesenler = {
     Tanitim: TanitimProps;
@@ -152,6 +155,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                 baslikBoyu: tema.baslikBoyu ?? "normal",
                 yogunluk: tema.yogunluk ?? "normal",
                 hizalama: tema.hizalama ?? "sol",
+                dugmeBicimi: tema.dugmeBicimi ?? "dolu",
             },
         },
         content: tanim.adimlar.map((adim: Adim, i: number) => {
@@ -188,6 +192,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 ? "zorunlu"
                                 : "istege_bagli",
                             devamDugmesi: adim.devamDugmesi ?? "Devam",
+                            duzen: adim.duzen ?? "liste",
                             secenekler: (adim.secenekler ?? []).map((s) => ({
                                 kimlik: s.id,
                                 metin: s.metin,
@@ -299,6 +304,9 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     ...(p.devamDugmesi !== "Devam"
                         ? { devamDugmesi: p.devamDugmesi }
                         : {}),
+                    ...(p.secimTuru !== "metin" && p.duzen === "izgara"
+                        ? { duzen: "izgara" as const }
+                        : {}),
                     ...(p.secimTuru === "metin"
                         ? {}
                         : {
@@ -383,11 +391,14 @@ export function kokZemini(
 
 /** G7: kök alanlarından yerleşim ön ayarları; varsayılan değer yazılmaz. */
 export function kokOnAyarlari(
-    k: Pick<KokProps, "baslikBoyu" | "yogunluk" | "hizalama">,
-): Pick<Tema, "baslikBoyu" | "yogunluk" | "hizalama"> {
+    k: Pick<KokProps, "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi">,
+): Pick<Tema, "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi"> {
     return {
         ...(k.baslikBoyu !== "normal" ? { baslikBoyu: k.baslikBoyu } : {}),
         ...(k.yogunluk !== "normal" ? { yogunluk: k.yogunluk } : {}),
         ...(k.hizalama !== "sol" ? { hizalama: k.hizalama } : {}),
+        ...(k.dugmeBicimi && k.dugmeBicimi !== "dolu"
+            ? { dugmeBicimi: k.dugmeBicimi }
+            : {}),
     };
 }

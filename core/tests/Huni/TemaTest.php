@@ -38,7 +38,7 @@ final class TemaTest extends TestCase
 
         $y = Tema::aiYonergesi();
         // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
-        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi', 'baslikBoyu', 'yogunluk', 'hizalama', 'tamEkran'] as $parca) {
+        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi', 'baslikBoyu', 'yogunluk', 'hizalama', 'tamEkran', 'dugmeBicimi', 'izgara'] as $parca) {
             self::assertStringContainsString($parca, $y);
         }
         foreach (Tema::AI_ORNEKLERI as $tema) {
@@ -124,6 +124,21 @@ final class TemaTest extends TestCase
         self::assertSame([], Tema::hatalar(['baslikBoyu' => 'kucuk', 'yogunluk' => 'sik', 'hizalama' => 'sol'] + Tema::VARSAYILAN));
     }
 
+    /**
+     * G4: çerçeveli düğmede yazı ana renk — düğmenin altındaki yüzeyde
+     * (kart, geçişin alt rengi ya da arka plan) okunmalı. Oranlar bağımsız
+     * (§3): #2563eb/#fff 5,17 · #22d3ee/#fff 1,81 · #db2777/#fce7f3 3,91.
+     */
+    public function testCerceveDugmeAnaRenkYuzeydeOkunmali(): void
+    {
+        self::assertSame([], Tema::hatalar(['dugmeBicimi' => 'cerceve'] + Tema::VARSAYILAN));
+        self::assertSame([], Tema::hatalar(['dugmeBicimi' => 'hap', 'anaRenk' => '#22d3ee'] + Tema::VARSAYILAN), 'hap/dolu düğmede yazı rengi ayrıca seçilir');
+        self::assertStringContainsString('çerçeveli düğmede ana renk okunmuyor (kontrast 1.81:1', implode('', Tema::hatalar(['dugmeBicimi' => 'cerceve', 'anaRenk' => '#22d3ee'] + Tema::VARSAYILAN)));
+        $gecis = ['dugmeBicimi' => 'cerceve', 'anaRenk' => '#db2777', 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3']] + Tema::VARSAYILAN;
+        self::assertStringContainsString('(kontrast 3.91:1', implode('', Tema::hatalar($gecis)), 'düğme geçişin alt renginde');
+        self::assertSame([], Tema::hatalar(['dugmeBicimi' => 'cerceve', 'anaRenk' => '#22d3ee', 'arkaPlan' => '#ffffff', 'kartRengi' => '#0b1120', 'metinRengi' => '#e2e8f0'] + Tema::VARSAYILAN), 'kartta: kart rengi 10,42');
+    }
+
     #[DataProvider('bozuklar')]
     public function testBicimKurallari(string $beklenen, mixed $tema): void
     {
@@ -137,6 +152,7 @@ final class TemaTest extends TestCase
         yield 'büyük harf hex' => ['#rrggbb', ['anaRenk' => '#2563EB'] + $v];
         yield 'başlık boyu bilinmeyen' => ['tema baslikBoyu: kucuk, normal, buyuk', ['baslikBoyu' => '40px'] + $v];
         yield 'yoğunluk bilinmeyen' => ['tema yogunluk: sik, normal, ferah', ['yogunluk' => 'genis'] + $v];
+        yield 'düğme biçimi bilinmeyen' => ['tema dugmeBicimi: dolu, cerceve, hap', ['dugmeBicimi' => 'golge'] + $v];
         yield 'hizalama bilinmeyen' => ['tema hizalama: sol, orta', ['hizalama' => 'sag'] + $v];
         yield 'kart rengi büyük harf' => ['tema kartRengi: #rrggbb', ['kartRengi' => '#FFFFFF'] + $v];
         yield 'zemin bilinmeyen tür' => ['tema zemin: tur gecis ya da gorsel', ['zemin' => ['tur' => 'video']] + $v];

@@ -19,5 +19,6 @@ Kullanıcı: "planda ne yazıyorsa ona göre devam et" + "loop'a al, benden kara
 - Testler: `HuniTest` (geçerli düzenler, görselsiz `ust`; 4 hata durumu) · `bilesenler.test.tsx` (`ust`/yoksa işaret yok, işaretler, `Adim` düzeni aktarır, CSS kuralları + bekçi) · `donustur.test.ts` (gidiş-dönüş, `ust` yazılmaz).
 - Kırma 8/8 kırmızı: K1 alan denetimine takılır · K2 görselsiz kahraman geçer · K3 bilinmeyen değer geçer · **K4 `ust` de işaret yazar — ilk denemede tutmadı: test aynı bileşenin iki çıktısını kıyaslıyordu (§3) → "işaret hiç yok" diye bağımsız yazıldı, K4b kırmızı** · K5 işaret hiç yok · K6 düğme boşluğu bekçisi · K7 Puck düzeni okumaz · **K8 `Adim` düzeni aktarmaz — ilk denemede tutmadı: test yoktu → `Adim` testi eklendi, K8b kırmızı**.
 - Gerçek sistem (KeepChat taslağı yedeklendi → **aynen geri yüklendi**, tanım + imza eşit): tam ekran (beyaz görsel, ölçüm yukarıda), kahraman (koyu dokulu görsel) çekildi.
+- CI: koşu 41395389264, SHA 09a2db7, `KONTROL: YEŞİL`, 294 test.
 - `bin/kontrol` yeşil (294 çekirdek testi). Bir ara tip hatası: `Adim`'in yerel tanım tipi `duzen`'i bilmiyordu, `exactOptionalPropertyTypes` `undefined` istedi.
 - **Ölçülmedi:** Puck'ta alanın görsel kontrolü; gerçek iPhone'da `dvh` ve yapışık düğmenin tam ekran içinde davranışı.

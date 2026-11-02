@@ -174,6 +174,16 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar(self::ile(0, 'duzen', 'ust'), ['monthly']));
     }
 
+    /** G4: seçmeli soruda seçenek dizilişi. */
+    public function testSoruDuzeniGecerli(): void
+    {
+        self::assertSame([], Tanim::hatalar(self::ile(1, 'duzen', 'izgara'), ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::ile(1, 'duzen', 'liste'), ['monthly']));
+        $coklu = self::ile(1, 'duzen', 'izgara');
+        $coklu['adimlar'][1]['secimTuru'] = 'coklu';
+        self::assertSame([], Tanim::hatalar($coklu, ['monthly']));
+    }
+
     public function testLogoGecerliYayindaDonerSozlesmeyeUyar(): void
     {
         $logo = str_repeat('a1', 32);
@@ -279,7 +289,13 @@ final class HuniTest extends WebTestCase
         yield 'düzen bilinmeyen' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'yan')];
         yield 'görselsiz kahraman' => ['duzen kahraman görsel ister', self::ile(0, 'duzen', 'kahraman')];
         yield 'görselsiz tam ekran' => ['duzen tamEkran görsel ister', self::ile(0, 'duzen', 'tamEkran')];
-        yield 'soruda düzen' => ['adım 2: alanlar tam olarak', self::ile(1, 'duzen', 'ust')];
+        yield 'soruda tanıtım düzeni' => ['duzen: liste, izgara', self::ile(1, 'duzen', 'ust')];
+        // G4: soru düzeni yalnız seçmeli soruda.
+        $serbest = ['id' => 'serbest', 'tur' => 'soru', 'soru' => 'Ne?', 'secimTuru' => 'metin', 'duzen' => 'izgara'];
+        $t2 = self::tanim('X');
+        $t2['adimlar'][1] = $serbest;
+        yield 'serbest yanıtta düzen' => ['duzen yalnız seçmeli soruda', $t2];
+        yield 'tanıtımda soru düzeni' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'izgara')];
         // Ç61 (5): isteğe bağlı logo — görsel kimliği.
         yield 'logo geçersiz' => ['logo: görsel kimliği geçersiz', $t + ['logo' => 'logo.png']];
         yield 'logo boş' => ['logo: görsel kimliği geçersiz', $t + ['logo' => '']];

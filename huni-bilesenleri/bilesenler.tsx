@@ -99,6 +99,7 @@ export function Soru({
     cevapMetni = "",
     secili = [],
     devamDugmesi = "Devam",
+    duzen = "liste",
     medyaKoku,
     onSecim,
     onSecenekDegistir,
@@ -114,6 +115,8 @@ export function Soru({
     cevapMetni?: string | undefined;
     secili?: number[] | undefined;
     devamDugmesi?: string | undefined;
+    /** G4: seçeneklerin dizilişi; liste (varsayılan) için işaret yok. */
+    duzen?: "liste" | "izgara" | undefined;
     medyaKoku: string;
     /** Seçeneğin sırası; kimliği çağıran bilir. */
     onSecim?: ((sira: number) => void) | undefined;
@@ -141,7 +144,11 @@ export function Soru({
                     />
                 </label>
             ) : (
-                <div className="secenekler" data-tur={secimTuru}>
+                <div
+                    className="secenekler"
+                    data-tur={secimTuru}
+                    data-duzen={duzen === "liste" ? undefined : duzen}
+                >
                     {secenekler.map((s, i) => (
                         <button
                             key={i}
@@ -331,6 +338,7 @@ export type TanimAdimi =
           secimTuru?: "tekli" | "coklu" | "metin";
           yanitZorunlu?: boolean;
           devamDugmesi?: string;
+          duzen?: "liste" | "izgara";
           secenekler?: {
               metin: string;
               gorsel?: string;
@@ -414,6 +422,7 @@ export function Adim({
                     yanitZorunlu={adim.yanitZorunlu}
                     cevapMetni={cevapMetni}
                     devamDugmesi={adim.devamDugmesi}
+                    duzen={adim.duzen}
                     secili={secili}
                     medyaKoku={medyaKoku}
                     onSecim={onSecim}

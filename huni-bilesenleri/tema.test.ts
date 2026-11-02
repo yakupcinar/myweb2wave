@@ -207,6 +207,27 @@ describe("fontlar (G2)", () => {
     });
 });
 
+describe("tema — düğme biçimi (G4)", () => {
+    it("çerçeve: saydam, ana renk yazı ve çizgi, gölgesiz; hap: tam yuvarlak", () => {
+        const c = temaDegiskenleri({
+            ...VARSAYILAN_TEMA,
+            dugmeBicimi: "cerceve",
+        });
+        expect([
+            c["--dugme-arka"],
+            c["--dugme-yazi"],
+            c["--dugme-golge"],
+        ]).toEqual(["transparent", "#2563eb", "none"]);
+        const h = temaDegiskenleri({ ...VARSAYILAN_TEMA, dugmeBicimi: "hap" });
+        expect(h["--dugme-kose"]).toBe("999px");
+        expect(
+            Object.keys(
+                temaDegiskenleri({ ...VARSAYILAN_TEMA, dugmeBicimi: "dolu" }),
+            ).filter((k) => k.startsWith("--dugme")),
+        ).toEqual([]);
+    });
+});
+
 describe("tema — düğme yazısı", () => {
     // Bağımsız: koyu mavi üzerinde beyaz, sarı üzerinde siyah okunur
     // (parlaklık 0,19 ve 0,93) — formülden değil renkten (tuzak §3).

@@ -266,6 +266,15 @@ function soruBileseni(
                 ],
             },
             devamDugmesi: { type: "text", label: "Devam düğmesi" },
+            // G4: kısa ya da görselli seçenekler için iki sütun.
+            duzen: {
+                type: "radio",
+                label: "Seçenek dizilişi",
+                options: [
+                    { label: "Liste", value: "liste" },
+                    { label: "Izgara (2 sütun)", value: "izgara" },
+                ],
+            },
             secenekler: {
                 type: "array",
                 label: "Seçenekler",
@@ -310,6 +319,10 @@ function soruBileseni(
                         String(veri.props.secimTuru),
                     ),
                 },
+                duzen: {
+                    ...fields.duzen,
+                    visible: veri.props.secimTuru !== "metin",
+                },
                 secenekler: {
                     ...secenekler,
                     visible: veri.props.secimTuru !== "metin",
@@ -325,6 +338,7 @@ function soruBileseni(
             secimTuru: "tekli",
             yanitZorunlu: "istege_bagli",
             devamDugmesi: "Devam",
+            duzen: "liste",
             secenekler: [
                 {
                     kimlik: "secenek-1",
@@ -349,6 +363,7 @@ function soruBileseni(
             secimTuru,
             yanitZorunlu,
             devamDugmesi,
+            duzen,
         }) => (
             <div style={kart}>
                 <Soru
@@ -358,6 +373,7 @@ function soruBileseni(
                     secimTuru={secimTuru}
                     yanitZorunlu={yanitZorunlu === "zorunlu"}
                     devamDugmesi={devamDugmesi}
+                    duzen={duzen}
                     medyaKoku=""
                 />
             </div>
@@ -376,6 +392,7 @@ const varsayilanSoru = (
     secimTuru,
     yanitZorunlu: "istege_bagli",
     devamDugmesi: "Devam",
+    duzen: "liste",
     secenekler: [
         {
             kimlik: "secenek-1",
@@ -479,6 +496,15 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         { label: "Orta", value: "orta" },
                     ],
                 },
+                dugmeBicimi: {
+                    type: "radio",
+                    label: "Düğme biçimi",
+                    options: [
+                        { label: "Dolu", value: "dolu" },
+                        { label: "Çerçeve", value: "cerceve" },
+                        { label: "Hap", value: "hap" },
+                    ],
+                },
             },
             render: ({
                 children,
@@ -498,6 +524,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 baslikBoyu,
                 yogunluk,
                 hizalama,
+                dugmeBicimi,
             }) => {
                 const tema = ozelTema === "evet";
                 // Dış kutu huni sayfasındaki <body>'nin yerine: arka plan
@@ -516,6 +543,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                       baslikBoyu,
                                       yogunluk,
                                       hizalama,
+                                      dugmeBicimi,
                                   }),
                                   ...kokZemini({
                                       zeminTuru,

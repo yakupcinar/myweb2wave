@@ -198,6 +198,57 @@ describe("D2 — görsel adresi kimlikten", () => {
     });
 });
 
+describe("G4 — seçenek dizilişi ve düğme biçimi", () => {
+    const sor = (duzen?: "liste" | "izgara"): string =>
+        renderToStaticMarkup(
+            <Soru
+                soru="Kiminle?"
+                secenekler={[{ metin: "Ailemle" }, { metin: "İş" }]}
+                duzen={duzen}
+                medyaKoku={KOK}
+            />,
+        );
+    it("liste ya da yoksa işaret yok; izgara seçenek kutusunda", () => {
+        expect(sor()).not.toContain("data-duzen");
+        expect(sor("liste")).not.toContain("data-duzen");
+        expect(sor("izgara")).toContain(
+            '<div class="secenekler" data-tur="tekli" data-duzen="izgara">',
+        );
+    });
+    it("oynatıcının Adim'i soru düzenini aktarır", () => {
+        const html = renderToStaticMarkup(
+            <Adim
+                adim={{
+                    tur: "soru",
+                    soru: "Kiminle?",
+                    secenekler: [{ metin: "A" }, { metin: "B" }],
+                    duzen: "izgara",
+                }}
+                medyaKoku={KOK}
+            />,
+        );
+        expect(html).toContain('data-duzen="izgara"');
+    });
+    it("CSS: ızgara iki sütun; ana düğme biçim değişkenlerinden; tam ekranda dolu", () => {
+        expect(css).toMatch(
+            /\.secenekler\[data-duzen="izgara"\] \{[^}]*grid-template-columns: 1fr 1fr/,
+        );
+        expect(css).toMatch(
+            /\.huni button\.ana \{[^}]*background: var\(--dugme-arka, var\(--ana\)\)/,
+        );
+        expect(css).toMatch(
+            /\.huni button\.ana \{[^}]*color: var\(--dugme-yazi, var\(--ana-yazi\)\)/,
+        );
+        // Dolu düğmenin kenarı eskisi gibi 1px (G4 yalnız çerçevede 2px).
+        expect(css).toMatch(
+            /\.huni button\.ana \{[^}]*border-width: var\(--dugme-cizgi, 1px\)/,
+        );
+        expect(css).toMatch(
+            /section\[data-duzen="tamEkran"\] button\.ana \{[^}]*background: var\(--ana\)/,
+        );
+    });
+});
+
 describe("G5 — tanıtım düzeni", () => {
     const ciz = (duzen?: "ust" | "kahraman" | "tamEkran"): string =>
         renderToStaticMarkup(
