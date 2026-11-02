@@ -15,3 +15,4 @@ Plan: "Ç50 Preact denemesi (ölç; iyiyse geç)". Döngü kararı (kullanıcı 
 - Reddedilen: bileşenleri Preact API'sine çevirmek (panel/Puck React — iki dil, B4'ün tek kaynağı bozulur) · React'te kalıp bölmek (`lazy`) — ilk adım yine React çalışma zamanını ister.
 - **Ölçülmedi:** yavaş mobil ağda ilk anlamlı boyama (Ç50 (1) hâlâ açık; Lighthouse/ağ kısıtı yok) · gerçek iPhone/Android'de Preact.
 - `bin/kontrol` yeşil (313 çekirdek testi; huni 73 Preact'le; `JS gzip 19708 B`).
+- CI (bağımlılıklar kilit dosyasından sıfırdan): koşu 41406585890, SHA 5fe7a44, `KONTROL: YEŞİL`, `funnel-test` ve `funnel-butce` geçti, 313 çekirdek testi.
