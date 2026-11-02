@@ -11,6 +11,8 @@ import {
 } from "@puckeditor/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
+    Blok,
+    Ekran,
     Logo,
     Paywall,
     Soru,
@@ -24,7 +26,7 @@ import {
     temaDegiskenleri,
     VARSAYILAN_TEMA,
 } from "../../../huni-bilesenleri/tema";
-import { kokOnAyarlari, kokZemini } from "./donustur";
+import { BLOK_BILESENLERI, kokOnAyarlari, kokZemini } from "./donustur";
 import type { Bilesenler, KokProps, SecenekProps, SoruProps } from "./donustur";
 
 export type Ortam = {
@@ -203,10 +205,14 @@ export function hedefSecenekleri(
     const sira = icerik.findIndex((o) => o.props["id"] === bilesen);
     return [
         SIRADAKI,
-        ...icerik.slice(sira + 1).map((o) => ({
-            label: `${String(o.props["kimlik"])} (${o.type})`,
-            value: String(o.props["kimlik"]),
-        })),
+        // T1: kökte kalmış blok adım değil, hedef olamaz.
+        ...icerik
+            .slice(sira + 1)
+            .flatMap((o) => ("kimlik" in o.props ? [o] : []))
+            .map((o) => ({
+                label: `${String(o.props["kimlik"])} (${o.type})`,
+                value: String(o.props["kimlik"]),
+            })),
     ];
 }
 
@@ -591,7 +597,206 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 );
             },
         },
+        // T1: bloklar ayrı kategoride; yalnız Ekran'ın yuvasına bırakılır
+        // (yuva allow). Kök bölge kısıtlanamıyor — dışarıda kalan blok
+        // için düzenleyici uyarır (akis.ts), çekirdek reddeder.
+        categories: {
+            adimlar: {
+                title: "Adımlar",
+                components: [
+                    "Tanitim",
+                    "Ekran",
+                    "TekSecim",
+                    "CokluSecim",
+                    "SerbestYanit",
+                    "Yorum",
+                    "Yukleme",
+                    "Paywall",
+                ],
+            },
+            bloklar: {
+                title: "Ekran blokları (Ekran adımının içine)",
+                components: BLOK_BILESENLERI as (keyof Bilesenler)[],
+            },
+        },
         components: {
+            Ekran: {
+                label: "Ekran (bloklardan)",
+                resolveData: eklenince,
+                fields: {
+                    kimlik: kimlikAlani,
+                    baslik: { type: "text", label: "Başlık" },
+                    bloklar: { type: "slot", allow: BLOK_BILESENLERI },
+                    dugme: { type: "text", label: "Düğme" },
+                    ilerlemeGoster: ilerlemeAlani,
+                    hedef: tanitimHedefAlani,
+                },
+                resolveFields: (veri, { fields, appState }) => ({
+                    ...fields,
+                    hedef: {
+                        ...tanitimHedefAlani,
+                        options: hedefSecenekleri(appState, veri.props.id),
+                    },
+                }),
+                defaultProps: {
+                    kimlik: "ekran",
+                    baslik: "Yeni ekran",
+                    bloklar: [
+                        {
+                            type: "MetinBlogu",
+                            props: { metin: "Metni buraya yaz." },
+                        },
+                    ],
+                    dugme: "Devam",
+                    ilerlemeGoster: true,
+                    hedef: "",
+                },
+                render: ({ baslik, bloklar: Bloklar, dugme }) => (
+                    <div style={kart}>
+                        <Ekran
+                            baslik={baslik}
+                            dugme={dugme}
+                            medyaKoku=""
+                            yuva={<Bloklar className="bloklar" />}
+                        />
+                    </div>
+                ),
+            },
+            BaslikBlogu: {
+                label: "Ara başlık",
+                fields: { metin: { type: "text", label: "Başlık" } },
+                defaultProps: { metin: "Ara başlık" },
+                render: ({ metin }) => (
+                    <Blok blok={{ tur: "baslik", metin }} medyaKoku="" />
+                ),
+            },
+            MetinBlogu: {
+                label: "Paragraf",
+                fields: { metin: { type: "textarea", label: "Metin" } },
+                defaultProps: { metin: "Metni buraya yaz." },
+                render: ({ metin }) => (
+                    <Blok blok={{ tur: "metin", metin }} medyaKoku="" />
+                ),
+            },
+            GorselBlogu: {
+                label: "Görsel",
+                fields: {
+                    gorsel: gorselAlani(ortam, "Görsel"),
+                    gorselMetni: gorselMetniAlani,
+                },
+                defaultProps: { gorsel: "", gorselMetni: "" },
+                // Görsel seçilmeden kayıt çekirdekte reddedilir; yer tutucu yalnız burada.
+                render: ({ gorsel, gorselMetni }) =>
+                    gorsel ? (
+                        <Blok
+                            blok={{ tur: "gorsel", gorsel, gorselMetni }}
+                            medyaKoku=""
+                        />
+                    ) : (
+                        <p>Görsel seç (sağdaki alandan).</p>
+                    ),
+            },
+            MaddelerBlogu: {
+                label: "Madde listesi",
+                fields: {
+                    maddeler: {
+                        type: "array",
+                        label: "Maddeler (1–6)",
+                        max: 6,
+                        getItemSummary: (m: { metin: string }) =>
+                            m.metin || "madde",
+                        defaultItemProps: { metin: "" },
+                        arrayFields: {
+                            metin: { type: "text", label: "Madde" },
+                        },
+                    },
+                },
+                defaultProps: {
+                    maddeler: [{ metin: "Birinci fayda" }],
+                },
+                render: ({ maddeler }) => (
+                    <Blok
+                        blok={{
+                            tur: "maddeler",
+                            maddeler: (maddeler ?? [])
+                                .map((m) => m.metin)
+                                .filter(Boolean),
+                        }}
+                        medyaKoku=""
+                    />
+                ),
+            },
+            YorumBlogu: {
+                label: "Kısa yorum",
+                fields: {
+                    metin: { type: "textarea", label: "Yorum" },
+                    yazar: { type: "text", label: "Ad" },
+                    unvan: { type: "text", label: "Açıklama (isteğe bağlı)" },
+                    puan: {
+                        type: "select",
+                        label: "Puan",
+                        options: [
+                            { label: "Yok", value: 0 },
+                            ...[1, 2, 3, 4, 5].map((n) => ({
+                                label: "★".repeat(n),
+                                value: n,
+                            })),
+                        ],
+                    },
+                },
+                defaultProps: {
+                    metin: "Çok işime yaradı.",
+                    yazar: "Ayşe",
+                    unvan: "",
+                    puan: 5,
+                },
+                render: ({ metin, yazar, unvan, puan }) => (
+                    <Blok
+                        blok={{
+                            tur: "yorum",
+                            metin,
+                            yazar,
+                            unvan,
+                            puan: Number(puan) || undefined,
+                        }}
+                        medyaKoku=""
+                    />
+                ),
+            },
+            IstatistikBlogu: {
+                label: "İstatistik",
+                fields: {
+                    deger: {
+                        type: "text",
+                        label: "Değer (en çok 12 karakter)",
+                    },
+                    metin: { type: "text", label: "Açıklama" },
+                },
+                defaultProps: { deger: "%87", metin: "Gerçek bir ölçüm yaz" },
+                render: ({ deger, metin }) => (
+                    <Blok
+                        blok={{ tur: "istatistik", deger, metin }}
+                        medyaKoku=""
+                    />
+                ),
+            },
+            KutuBlogu: {
+                label: "Not kutusu",
+                fields: {
+                    metin: { type: "textarea", label: "Metin" },
+                    simge: {
+                        type: "text",
+                        label: "Simge (tek emoji, isteğe bağlı)",
+                    },
+                },
+                defaultProps: {
+                    metin: "İstediğin zaman iptal edebilirsin.",
+                    simge: "",
+                },
+                render: ({ metin, simge }) => (
+                    <Blok blok={{ tur: "kutu", metin, simge }} medyaKoku="" />
+                ),
+            },
             Tanitim: {
                 label: "Tanıtım",
                 resolveData: eklenince,

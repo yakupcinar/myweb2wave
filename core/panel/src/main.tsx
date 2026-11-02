@@ -29,7 +29,11 @@ import {
     type Tema,
 } from "./donustur";
 import { AiSohbeti } from "./AiSohbeti";
-import { hedefleriYenidenAdlandir, ulasilamayanlar } from "./akis";
+import {
+    disaridakiBloklar,
+    hedefleriYenidenAdlandir,
+    ulasilamayanlar,
+} from "./akis";
 import { OTURUM_DUSTU, oturumDustu } from "./oturum";
 import { dugmeler, type YayinDurumu } from "./ustCubuk";
 import { yapilandirma, type Ortam } from "./yapilandirma";
@@ -393,6 +397,15 @@ function AkisBekcisi() {
             dispatch({ type: "setData", data: duzelmis as unknown as Data });
     }, [veri, dispatch]);
     const kopuk = ulasilamayanlar(puckTanim(veri));
+    const disarida = disaridakiBloklar(veri);
+    // T1: dışarıdaki blok kaydı engeller (çekirdek reddeder) — önce o.
+    if (disarida.length)
+        return (
+            <span className="puck-not puck-not-uyari" role="status">
+                Ekran bloğu bir Ekran adımının içine konmalı:{" "}
+                {disarida.join(", ")}
+            </span>
+        );
     return kopuk.length ? (
         <span className="puck-not puck-not-uyari" role="status">
             Hiçbir yoldan ulaşılmayan adım: {kopuk.join(", ")}

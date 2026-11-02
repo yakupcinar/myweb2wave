@@ -875,6 +875,62 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     ]);
   });
 
+  it("T1: ekran adımı bloklarını çizer, düğmesi hedefe atlar, odak ekranın başlığında", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        adimlar: [
+          {
+            id: "giris",
+            tur: "tanitim",
+            baslik: "Merhaba",
+            metin: "",
+            dugme: "Başla",
+          },
+          {
+            id: "neden",
+            tur: "ekran",
+            baslik: "Neden KeepChat?",
+            bloklar: [
+              { tur: "istatistik", deger: "%87", metin: "düzenli kullanıyor" },
+              { tur: "baslik", metin: "Ara başlık" },
+              { tur: "maddeler", maddeler: ["Yedekleme"] },
+            ],
+            dugme: "İleri",
+            hedef: "paywall",
+          },
+          {
+            id: "atlanan",
+            tur: "tanitim",
+            baslik: "Atlanan",
+            metin: "",
+            dugme: "Devam",
+          },
+          {
+            id: "paywall",
+            tur: "paywall",
+            baslik: "Pro",
+            metin: "",
+            dugme: "Abone ol",
+            plan: "monthly",
+          },
+        ],
+      }),
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(gorunenBaslik()).toBe("Neden KeepChat?");
+    await waitFor(() =>
+      expect(document.activeElement?.textContent).toBe("Neden KeepChat?"),
+    );
+    screen.getByText("%87");
+    screen.getByText("Yedekleme");
+    fireEvent.click(screen.getByText("İleri"));
+    expect(gorunenBaslik()).toBe("Pro");
+    expect(history.state).toEqual({ adim: 3 });
+  });
+
   it("öteki dal kendi adımından sonra sıradakine geçer", async () => {
     tanim = dallar();
     kur();

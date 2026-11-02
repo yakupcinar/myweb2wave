@@ -1,6 +1,6 @@
 // Akış denetimleri (Ç55): düzenleyicide uyarı ve kolaylık; çekirdek yine
 // yalnız ileri hedefi doğrular, ulaşılamayan adımı reddetmez (A13: uyarı).
-import type { HuniVerisi, Tanim } from "./donustur";
+import { BLOK_BILESENLERI, type HuniVerisi, type Tanim } from "./donustur";
 
 /**
  * Baştan hiçbir yolla varılamayan adımların kimlikleri. Kural oynatıcıyla
@@ -18,7 +18,8 @@ export function ulasilamayanlar(tanim: Tanim): string[] {
         const adim = adimlar[i];
         if (!adim || gorulen.has(i)) continue;
         gorulen.add(i);
-        if (adim.tur === "tanitim") kuyruk.push(sira(adim.hedef, i));
+        if (adim.tur === "tanitim" || adim.tur === "ekran")
+            kuyruk.push(sira(adim.hedef, i));
         else if (adim.tur === "soru" && !adim.secimTuru)
             for (const s of adim.secenekler ?? [])
                 kuyruk.push(sira(s.hedef, i));
@@ -27,7 +28,21 @@ export function ulasilamayanlar(tanim: Tanim): string[] {
     return adimlar.filter((_, i) => !gorulen.has(i)).map((a) => a.id);
 }
 
+/**
+ * T1: Puck kök bölgesi bileşen kısıtlamıyor — ekranın yuvası dışına
+ * bırakılan blokların türleri (kayıtta çekirdek reddeder).
+ */
+export function disaridakiBloklar(veri: HuniVerisi): string[] {
+    return veri.content
+        .filter((o) => BLOK_BILESENLERI.includes(o.type))
+        .map((o) => o.type);
+}
+
 type Hedefli = { hedef?: string; secenekler?: { hedef?: string }[] };
+
+/** T1: kökte adım olmayan (bloğun yuvadan taşmış hâli) öğenin kimliği yok. */
+const kimligi = (o: { props: object }): string =>
+    String((o.props as { kimlik?: unknown }).kimlik);
 
 /**
  * Bir bloğun kimliği değişince (aynı Puck bloğu, eski ad artık hiçbir
@@ -38,14 +53,12 @@ export function hedefleriYenidenAdlandir(
     once: HuniVerisi,
     sonra: HuniVerisi,
 ): HuniVerisi | null {
-    const eskiAd = new Map(
-        once.content.map((o) => [o.props.id, String(o.props.kimlik)]),
-    );
-    const adlar = new Set(sonra.content.map((o) => String(o.props.kimlik)));
+    const eskiAd = new Map(once.content.map((o) => [o.props.id, kimligi(o)]));
+    const adlar = new Set(sonra.content.map(kimligi));
     const yeniAd = new Map<string, string>();
     for (const o of sonra.content) {
         const eski = eskiAd.get(o.props.id);
-        const yeni = String(o.props.kimlik);
+        const yeni = kimligi(o);
         if (eski && eski !== yeni && !adlar.has(eski)) yeniAd.set(eski, yeni);
     }
     if (!yeniAd.size) return null;

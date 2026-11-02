@@ -466,7 +466,7 @@ export interface components {
             tema?: components["schemas"]["HuniTemasi"];
             /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
             logo?: components["schemas"]["GorselKimligi"];
-            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["YuklemeAdimi"] | components["schemas"]["PaywallAdimi"])[];
+            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["YuklemeAdimi"] | components["schemas"]["EkranAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
         HuniTemasi: {
@@ -582,6 +582,66 @@ export interface components {
             /** @description saniye (yoksa 4) */
             sure?: number;
             ilerlemeGoster?: boolean;
+        };
+        /** @description T1: üstte başlık (sayfanın başlığı), altında katalogdaki bloklar yukarıdan aşağı (baslik bloğu ara başlıktır), altta tek ana düğme. */
+        EkranAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "ekran";
+            baslik: string;
+            bloklar: components["schemas"]["EkranBlogu"][];
+            dugme: string;
+            hedef?: components["schemas"]["AdimHedefi"];
+            ilerlemeGoster?: boolean;
+        };
+        /** @description T1 blok kataloğu; metinler düz metin */
+        EkranBlogu: components["schemas"]["BaslikBlogu"] | components["schemas"]["MetinBlogu"] | components["schemas"]["GorselBlogu"] | components["schemas"]["MaddelerBlogu"] | components["schemas"]["YorumBlogu"] | components["schemas"]["IstatistikBlogu"] | components["schemas"]["KutuBlogu"];
+        /** @description Ara başlık */
+        BaslikBlogu: {
+            /** @enum {string} */
+            tur: "baslik";
+            metin: string;
+        };
+        /** @description Paragraf */
+        MetinBlogu: {
+            /** @enum {string} */
+            tur: "metin";
+            metin: string;
+        };
+        GorselBlogu: {
+            /** @enum {string} */
+            tur: "gorsel";
+            gorsel: components["schemas"]["GorselKimligi"];
+            gorselMetni?: components["schemas"]["GorselMetni"];
+        };
+        /** @description İşaretli madde listesi (fayda, özellik) */
+        MaddelerBlogu: {
+            /** @enum {string} */
+            tur: "maddeler";
+            maddeler: string[];
+        };
+        /** @description Kısa müşteri yorumu; puan varsa yıldızla gösterilir */
+        YorumBlogu: {
+            /** @enum {string} */
+            tur: "yorum";
+            metin: string;
+            yazar: string;
+            unvan?: string;
+            puan?: number;
+        };
+        /** @description Büyük değer + açıklama ("%87" · "kullanıcı ilk hafta düzenli kullanıyor"). Değer gerçek olmalı — uydurma sayı yanıltıcı reklamdır */
+        IstatistikBlogu: {
+            /** @enum {string} */
+            tur: "istatistik";
+            deger: string;
+            metin: string;
+        };
+        /** @description Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz */
+        KutuBlogu: {
+            /** @enum {string} */
+            tur: "kutu";
+            metin: string;
+            simge?: string;
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
         AdimHedefi: components["schemas"]["HuniKimligi"];

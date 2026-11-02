@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hedefleriYenidenAdlandir, ulasilamayanlar } from "./akis";
+import {
+    disaridakiBloklar,
+    hedefleriYenidenAdlandir,
+    ulasilamayanlar,
+} from "./akis";
 import { tanimdanPuck, type HuniVerisi, type Tanim } from "./donustur";
 
 const VARSAYILAN = {
@@ -32,6 +36,38 @@ describe("ulaşılamayan adım", () => {
                     tur: "tanitim",
                     baslik: "A",
                     metin: "",
+                    dugme: "B",
+                    hedef: "son",
+                },
+                {
+                    id: "ara",
+                    tur: "tanitim",
+                    baslik: "C",
+                    metin: "",
+                    dugme: "D",
+                },
+                {
+                    id: "son",
+                    tur: "tanitim",
+                    baslik: "E",
+                    metin: "",
+                    dugme: "F",
+                },
+                paywall,
+            ],
+        };
+        expect(ulasilamayanlar(tanim)).toEqual(["ara"]);
+    });
+
+    it("T1: ekran hedefi de atlar (tanıtım gibi)", () => {
+        const tanim: Tanim = {
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "giris",
+                    tur: "ekran",
+                    baslik: "A",
+                    bloklar: [{ tur: "metin", metin: "m" }],
                     dugme: "B",
                     hedef: "son",
                 },
@@ -119,6 +155,33 @@ describe("ulaşılamayan adım", () => {
 });
 
 // Ç55 (2): adım kimliği değişince ona işaret eden hedefler de değişir.
+describe("T1: ekran dışında kalan blok", () => {
+    it("kökteki bloklar adlarıyla; ekranın içindekiler sayılmaz", () => {
+        const veri = tanimdanPuck(
+            {
+                sayfaBasligi: "x",
+                adimlar: [
+                    {
+                        id: "e",
+                        tur: "ekran",
+                        baslik: "A",
+                        bloklar: [{ tur: "metin", metin: "içeride" }],
+                        dugme: "B",
+                    },
+                    paywall,
+                ],
+            },
+            VARSAYILAN,
+        );
+        expect(disaridakiBloklar(veri)).toEqual([]);
+        veri.content.splice(1, 0, {
+            type: "KutuBlogu",
+            props: { id: "KutuBlogu-1", metin: "dışarıda", simge: "" },
+        });
+        expect(disaridakiBloklar(veri)).toEqual(["KutuBlogu"]);
+    });
+});
+
 describe("hedefleri yeniden adlandırma", () => {
     const tanim: Tanim = {
         sayfaBasligi: "x",

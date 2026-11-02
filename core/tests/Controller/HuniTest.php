@@ -142,6 +142,35 @@ final class HuniTest extends WebTestCase
         self::assertSame('https://ornek.com/gizlilik', $paywall['gizlilik'] ?? null);
     }
 
+    /** T1: ekran adımı = başlık + katalogdaki bloklardan liste; yedi blok türü, görseller medya denetimine girer. */
+    public function testEkranAdimiGecerliYayindaSozlesmeyeUyar(): void
+    {
+        $g = str_repeat('c', 64);
+        $tanim = self::tanim('X');
+        array_splice($tanim['adimlar'], 1, 0, [self::ekran([
+            ['tur' => 'gorsel', 'gorsel' => $g, 'gorselMetni' => 'Sohbet ekranı'],
+            ['tur' => 'baslik', 'metin' => 'Neden KeepChat?'],
+            ['tur' => 'metin', 'metin' => 'Sohbetlerin tek yerde.'],
+            ['tur' => 'maddeler', 'maddeler' => ['Yedekleme', 'Arama']],
+            ['tur' => 'istatistik', 'deger' => '%87', 'metin' => 'kullanıcı ilk hafta düzenli kullanıyor'],
+            ['tur' => 'yorum', 'metin' => 'Çok iyi.', 'yazar' => 'Ayşe', 'unvan' => 'Öğretmen', 'puan' => 5],
+            ['tur' => 'yorum', 'metin' => 'Kullanışlı.', 'yazar' => 'Can'],
+            ['tur' => 'kutu', 'metin' => 'İstediğin zaman iptal edebilirsin.', 'simge' => '🔒'],
+            ['tur' => 'kutu', 'metin' => 'Simgesiz not.'],
+            ['tur' => 'baslik', 'metin' => 'İkinci başlık'],
+        ], ['hedef' => 'paywall', 'ilerlemeGoster' => false])]);
+        self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
+        self::assertContains($g, Tanim::gorseller($tanim));
+        self::assertSame(['görsel cccccccc… bu uygulamada yok'], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->medyaEkle($g);
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     /** Mobil görünüm 4: yükleme adımı geçerli, yayında sözleşmeye uyar. */
     public function testYuklemeAdimiGecerliYayindaSozlesmeyeUyar(): void
     {
@@ -288,7 +317,40 @@ final class HuniTest extends WebTestCase
         $t = self::tanim('X');
         yield 'tekrar eden kimlik' => ['tekrar ediyor', self::ile(1, 'id', 'giris')];
         yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
-        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum, yukleme ya da paywall', self::ile(0, 'tur', 'html')];
+        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum, yukleme, ekran ya da paywall', self::ile(0, 'tur', 'html')];
+        // T1: ekran adımı ve blok kataloğu.
+        $ekr = static function (array $bloklar, array $ek = []): array {
+            $t = self::tanim('X');
+            array_splice($t['adimlar'], 1, 0, [self::ekran($bloklar, $ek)]);
+
+            return $t;
+        };
+        $b = ['tur' => 'baslik', 'metin' => 'Başlık'];
+        yield 'ekran bloksuz' => ['bloklar 1–12 öğeli liste', $ekr([])];
+        yield 'ekran 13 blok' => ['bloklar 1–12 öğeli liste', $ekr(array_fill(0, 13, $b))];
+        yield 'ekran bloklar liste değil' => ['bloklar 1–12 öğeli liste', $ekr(['a' => $b])];
+        yield 'ekran başlıksız' => ['alanlar tam olarak id, tur, baslik, dugme, bloklar', $ekr([$b], ['baslik' => null])];
+        yield 'ekran başlığı boş' => ['adım 2 baslik: 1–200', $ekr([$b], ['baslik' => ' '])];
+        yield 'ekran düğmesiz' => ['alanlar tam olarak', $ekr([$b], ['dugme' => null])];
+        yield 'ekran hedefi geriye' => ['hedef sonraki adımlardan', $ekr([$b], ['hedef' => 'giris'])];
+        yield 'blok türü bilinmeyen' => ['blok 2: tür baslik, metin, gorsel, maddeler, yorum, istatistik ya da kutu', $ekr([$b, ['tur' => 'html', 'metin' => 'x']])];
+        yield 'blok dizi değil' => ['blok 2: tür', $ekr([$b, 'metin'])];
+        yield 'blok fazla alan' => ['blok 2: alanlar tam olarak', $ekr([$b, ['tur' => 'metin', 'metin' => 'x', 'renk' => 'kirmizi']])];
+        yield 'blok eksik alan' => ['blok 2: alanlar tam olarak', $ekr([$b, ['tur' => 'istatistik', 'deger' => '%5']])];
+        yield 'blok başlık uzun' => ['blok 1 metin: 1–200 karakter', $ekr([['tur' => 'baslik', 'metin' => str_repeat('a', 201)]])];
+        yield 'blok metin boş' => ['blok 2 metin: 1–1000 karakter', $ekr([$b, ['tur' => 'metin', 'metin' => ' ']])];
+        yield 'blok görsel kimliği' => ['blok 2: görsel kimliği geçersiz', $ekr([$b, ['tur' => 'gorsel', 'gorsel' => 'a.png']])];
+        yield 'blok görsel metni boş' => ['blok 2 gorselMetni: 1–200', $ekr([$b, ['tur' => 'gorsel', 'gorsel' => str_repeat('c', 64), 'gorselMetni' => '']])];
+        yield 'blok madde yok' => ['blok 2: maddeler 1–6 öğeli liste', $ekr([$b, ['tur' => 'maddeler', 'maddeler' => []]])];
+        yield 'blok yedi madde' => ['blok 2: maddeler 1–6 öğeli liste', $ekr([$b, ['tur' => 'maddeler', 'maddeler' => array_fill(0, 7, 'a')]])];
+        yield 'blok madde uzun' => ['blok 2 madde 1: 1–120', $ekr([$b, ['tur' => 'maddeler', 'maddeler' => [str_repeat('a', 121)]]])];
+        yield 'blok istatistik değeri uzun' => ['blok 2 deger: 1–12 karakter', $ekr([$b, ['tur' => 'istatistik', 'deger' => str_repeat('9', 13), 'metin' => 'x']])];
+        yield 'blok puan 6' => ['blok 2: puan 1–5 tam sayı', $ekr([$b, ['tur' => 'yorum', 'metin' => 'x', 'yazar' => 'A', 'puan' => 6]])];
+        yield 'blok puan metin' => ['blok 2: puan 1–5 tam sayı', $ekr([$b, ['tur' => 'yorum', 'metin' => 'x', 'yazar' => 'A', 'puan' => '5']])];
+        yield 'blok yazar boş' => ['blok 2 yazar: 1–80', $ekr([$b, ['tur' => 'yorum', 'metin' => 'x', 'yazar' => '']])];
+        yield 'blok kutu simgesi harf' => ['blok 2: simge tek emoji olmalı', $ekr([$b, ['tur' => 'kutu', 'metin' => 'x', 'simge' => 'A']])];
+        yield 'blok kutu uzun' => ['blok 2 metin: 1–500', $ekr([$b, ['tur' => 'kutu', 'metin' => str_repeat('a', 501)]])];
+        yield 'blok yerinde kimlik' => ['adım 2 blok 1', $ekr([['tur' => 'baslik', 'metin' => 'x', 'id' => 'b1']])];
         // Mobil görünüm 4: yükleme adımı.
         $yuk = static function (array $ek): array {
             $t = self::tanim('X');
@@ -563,6 +625,19 @@ final class HuniTest extends WebTestCase
                 ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => 'Pro', 'metin' => '9,99 €', 'dugme' => 'Abone ol', 'plan' => 'monthly'],
             ],
         ];
+    }
+
+    /**
+     * T1: ekran adımı (giris'ten sonra konur).
+     *
+     * @param array<mixed> $bloklar
+     * @param array<mixed> $ek      null değer alanı siler
+     *
+     * @return array<mixed>
+     */
+    private static function ekran(array $bloklar, array $ek = []): array
+    {
+        return array_filter(array_merge(['id' => 'neden', 'tur' => 'ekran', 'baslik' => 'Neden?', 'bloklar' => $bloklar, 'dugme' => 'Devam'], $ek), static fn (mixed $d): bool => null !== $d);
     }
 
     /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */

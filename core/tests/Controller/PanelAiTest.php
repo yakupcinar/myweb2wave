@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Ai\AiAyarlari;
 use App\Huni\Huniler;
+use App\Huni\Tanim;
 use App\Huni\Tema;
 use App\Panel\YoneticiSaglayici;
 use App\Tests\Support\SahteClaude;
@@ -197,6 +198,12 @@ final class PanelAiTest extends WebTestCase
         self::assertStringContainsString('metinleri ve görünümü (tema)', $baglam);
         // Mobil görünüm 4: yeni adım türü istemde.
         self::assertStringContainsString('"planın hazırlanıyor" yükleme', self::metin(self::yol($ilk, 'text')));
+        // T1: blok kataloğu istemde; istatistik yalnız verilen gerçek sayıyla.
+        self::assertStringContainsString(Tanim::EKRAN_YONERGESI, self::metin(self::yol($ilk, 'text')));
+        self::assertStringContainsString('istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı', Tanim::EKRAN_YONERGESI);
+        foreach (array_keys(Tanim::BLOKLAR) as $blok) {
+            self::assertStringContainsString($blok, Tanim::EKRAN_YONERGESI);
+        }
     }
 
     public function testTurSiniriDonguyuKeser(): void

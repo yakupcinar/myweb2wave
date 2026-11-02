@@ -256,12 +256,9 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         const veri = tanimdanPuck(temel, VARSAYILAN);
         const idler = veri.content.map((o) => o.props.id);
         expect(new Set(idler).size).toBe(idler.length);
-        expect(veri.content.map((o) => o.props.kimlik)).toStrictEqual([
-            "karsilama",
-            "kiminle",
-            "yorum",
-            "paywall",
-        ]);
+        expect(
+            veri.content.map((o) => (o.props as { kimlik?: string }).kimlik),
+        ).toStrictEqual(["karsilama", "kiminle", "yorum", "paywall"]);
     });
 
     it("G3 zemin: geçiş ve görsel gidiş-dönüş aynı; 'yok' seçilince tanımdan çıkar", () => {
@@ -388,6 +385,84 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         const veri = tanimdanPuck(yuklemeli, VARSAYILAN);
         expect(veri.content.map((o) => o.type)).toContain("Yukleme");
         expect(puckTanim(veri)).toStrictEqual(yuklemeli);
+    });
+
+    it("T1: ekran adımı ve yedi blok türü gidiş-dönüş aynı; boş isteğe bağlı alan yazılmaz", () => {
+        const ekranli: Tanim = {
+            ...temel,
+            adimlar: [
+                temel.adimlar[0]!,
+                {
+                    id: "neden",
+                    tur: "ekran",
+                    baslik: "Neden KeepChat?",
+                    bloklar: [
+                        { tur: "gorsel", gorsel: G1, gorselMetni: "Ekran" },
+                        { tur: "gorsel", gorsel: G2 },
+                        { tur: "baslik", metin: "Ara" },
+                        { tur: "metin", metin: "Paragraf" },
+                        { tur: "maddeler", maddeler: ["Bir", "İki"] },
+                        {
+                            tur: "yorum",
+                            metin: "İyi",
+                            yazar: "Ayşe",
+                            unvan: "Öğretmen",
+                            puan: 4,
+                        },
+                        { tur: "yorum", metin: "Güzel", yazar: "Can" },
+                        { tur: "istatistik", deger: "%87", metin: "düzenli" },
+                        { tur: "kutu", metin: "Güvence", simge: "🔒" },
+                        { tur: "kutu", metin: "Not" },
+                    ],
+                    dugme: "İleri",
+                    hedef: "paywall",
+                    ilerlemeGoster: false,
+                },
+                {
+                    id: "yalin",
+                    tur: "ekran",
+                    baslik: "Yalın",
+                    bloklar: [{ tur: "metin", metin: "x" }],
+                    dugme: "Devam",
+                },
+                ...temel.adimlar.slice(1),
+            ],
+        };
+        const veri = tanimdanPuck(ekranli, VARSAYILAN);
+        const ekran = veri.content[1]!;
+        expect(ekran.type).toBe("Ekran");
+        // Bloklar yuvada ayrı Puck bileşenleri, kimlikleri benzersiz.
+        const bloklar = (ekran.props as { bloklar: unknown }).bloklar as {
+            type: string;
+            props: { id: string };
+        }[];
+        expect(bloklar.map((b) => b.type)).toEqual([
+            "GorselBlogu",
+            "GorselBlogu",
+            "BaslikBlogu",
+            "MetinBlogu",
+            "MaddelerBlogu",
+            "YorumBlogu",
+            "YorumBlogu",
+            "IstatistikBlogu",
+            "KutuBlogu",
+            "KutuBlogu",
+        ]);
+        expect(new Set(bloklar.map((b) => b.props.id)).size).toBe(10);
+        expect(puckTanim(veri)).toStrictEqual(ekranli);
+    });
+
+    it("T1: ekran dışına bırakılan blok tanımda türüyle kalır (çekirdek reddeder, sessizce düşmez)", () => {
+        const veri = tanimdanPuck(temel, VARSAYILAN);
+        veri.content.splice(1, 0, {
+            type: "MetinBlogu",
+            props: { id: "MetinBlogu-1", metin: "Kayıp" },
+        });
+        expect(puckTanim(veri).adimlar[1]).toEqual({
+            id: "MetinBlogu-1",
+            tur: "MetinBlogu",
+        });
+        expect(puckTanim(veri).adimlar).toHaveLength(5);
     });
 
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {

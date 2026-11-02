@@ -324,6 +324,113 @@ html:has(> body.huni) {
     font-size: 14px;
     color: var(--soluk);
 }
+/* T1: ekran blokları. Renkler temadan; ana renk yalnız süste (yıldız,
+   kutu çizgisi) — metin her yerde metin rengi (okunurluğu çekirdek ölçer).
+   Bloklar div.bloklar içinde (Puck yuvası da öyle): paragraf kuralı burada
+   yinelenir, "section > p" oraya ulaşmaz. */
+.huni .bloklar {
+    /* Başlığın 8 px alt boşluğu ilk bloğu başlığa yapıştırıyordu (ekranda görüldü). */
+    margin-top: calc(16px * var(--ara, 1));
+}
+.huni .bloklar > p {
+    margin: 0 0 calc(20px * var(--ara, 1));
+    text-align: var(--hiza, left);
+    color: var(--soluk);
+}
+.huni .ekran h2 {
+    margin: calc(20px * var(--ara, 1)) 0 8px;
+    font-size: calc(var(--baslik-boyu, 28px) * 0.72);
+    line-height: 1.25;
+    font-weight: var(--baslik-agirlik, 750);
+    text-align: var(--hiza, left);
+    overflow-wrap: anywhere;
+}
+.huni img.blok-gorseli {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: calc(var(--kose) * 1.5);
+    margin: 8px 0 calc(16px * var(--ara, 1));
+}
+.huni ul.maddeler {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 calc(20px * var(--ara, 1));
+    padding: 0;
+    list-style: none;
+}
+.huni ul.maddeler li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.huni ul.maddeler li::before {
+    content: "✓";
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ana) 14%, var(--arka));
+    color: var(--ana);
+    font-size: 13px;
+    font-weight: 800;
+}
+.huni .blok-yorum {
+    margin: 0 0 calc(16px * var(--ara, 1));
+    padding: 16px 20px;
+    background: var(--yuzey);
+    border-radius: calc(var(--kose) * 1.5);
+}
+.huni .blok-yorum blockquote {
+    margin: 0 0 10px;
+}
+.huni .blok-yorum blockquote p {
+    margin: 0;
+    font-size: 17px;
+}
+.huni .blok-yorum figcaption {
+    font-size: 14px;
+    color: var(--soluk);
+}
+.huni .yildizlar {
+    margin: 0 0 6px;
+    color: var(--ana);
+    font-size: 18px;
+    letter-spacing: 2px;
+}
+.huni .bloklar > p.istatistik {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 calc(16px * var(--ara, 1));
+    color: var(--metin);
+}
+.huni .istatistik strong {
+    flex: none;
+    font-size: 36px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.huni .bloklar > p.kutu {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0 0 calc(16px * var(--ara, 1));
+    padding: 14px 16px;
+    border-left: 4px solid var(--ana);
+    border-radius: calc(var(--kose) / 2);
+    background: var(--yuzey);
+    color: var(--metin);
+}
+.huni .kutu .simge {
+    flex: none;
+    font-size: 20px;
+    line-height: 1.2;
+}
 .huni .onizleme {
     background: #fde68a;
     color: #000;

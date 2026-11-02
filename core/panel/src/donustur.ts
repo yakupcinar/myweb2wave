@@ -2,7 +2,7 @@
 // Çekirdek yalnız tanımı bilir; Puck yalnız düzenleyicide. Çeviri KAYIPSIZ
 // olmalı: tanım → Puck → tanım aynısını vermeli (donustur.test.ts ölçer).
 // Puck her bileşene kendi `id`'sini verir; bizim adım kimliğimiz `kimlik`.
-import type { Data } from "@puckeditor/core";
+import type { Data, Slot } from "@puckeditor/core";
 import type { components } from "./sozlesme";
 
 export type Tanim = components["schemas"]["HuniTanimi"];
@@ -12,6 +12,8 @@ type OnAyar<K extends "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi"> =
     NonNullable<Tema[K]>;
 type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
+type EkranAdimi = components["schemas"]["EkranAdimi"];
+type EkranBlogu = components["schemas"]["EkranBlogu"];
 type YaziTipi = Tema["yaziTipi"];
 
 export type SecenekProps = {
@@ -78,6 +80,32 @@ export type YuklemeProps = {
     sure: number;
     ilerlemeGoster: boolean;
 };
+/**
+ * T1: ekran adımı; bloklar Puck yuvasında (slot) ayrı bileşenler. Puck
+ * veride yuvayı {type, props} listesi olarak taşır.
+ */
+export type EkranProps = {
+    kimlik: string;
+    baslik: string;
+    bloklar: Slot;
+    dugme: string;
+    hedef: string;
+    ilerlemeGoster: boolean;
+};
+/** Blok bileşenlerinin alanları; boş isteğe bağlı alan tanıma yazılmaz. */
+export type BaslikBloguProps = { metin: string };
+export type MetinBloguProps = { metin: string };
+export type GorselBloguProps = { gorsel: string; gorselMetni: string };
+export type MaddelerBloguProps = { maddeler: { metin: string }[] };
+/** 0 = puan yok. */
+export type YorumBloguProps = {
+    metin: string;
+    yazar: string;
+    unvan: string;
+    puan: number;
+};
+export type IstatistikBloguProps = { deger: string; metin: string };
+export type KutuBloguProps = { metin: string; simge: string };
 export type KokProps = {
     sayfaBasligi: string;
     /** Ç61 (5): boş dize = logo yok. */
@@ -110,7 +138,15 @@ export type Bilesenler = {
     SerbestYanit: SoruProps;
     Yorum: YorumProps;
     Yukleme: YuklemeProps;
+    Ekran: EkranProps;
     Paywall: PaywallProps;
+    BaslikBlogu: BaslikBloguProps;
+    MetinBlogu: MetinBloguProps;
+    GorselBlogu: GorselBloguProps;
+    MaddelerBlogu: MaddelerBloguProps;
+    YorumBlogu: YorumBloguProps;
+    IstatistikBlogu: IstatistikBloguProps;
+    KutuBlogu: KutuBloguProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
 
@@ -120,6 +156,122 @@ const SORU_TURU = {
     coklu: "CokluSecim",
     metin: "SerbestYanit",
 } as const;
+
+/** T1: blok türü (tanım) ↔ Puck bileşeni. */
+export const BLOK_BILESENI = {
+    baslik: "BaslikBlogu",
+    metin: "MetinBlogu",
+    gorsel: "GorselBlogu",
+    maddeler: "MaddelerBlogu",
+    yorum: "YorumBlogu",
+    istatistik: "IstatistikBlogu",
+    kutu: "KutuBlogu",
+} as const satisfies Record<EkranBlogu["tur"], keyof Bilesenler>;
+const BLOK_TURU = Object.fromEntries(
+    Object.entries(BLOK_BILESENI).map(([t, b]) => [b, t]),
+) as Record<string, EkranBlogu["tur"]>;
+/** Puck'ta yalnız ekranın yuvasına konan bileşenler. */
+export const BLOK_BILESENLERI: string[] = Object.values(BLOK_BILESENI);
+
+function bloktanPuck(b: EkranBlogu, id: string) {
+    switch (b.tur) {
+        case "baslik":
+        case "metin":
+            return {
+                type: BLOK_BILESENI[b.tur],
+                props: { id, metin: b.metin },
+            };
+        case "gorsel":
+            return {
+                type: "GorselBlogu" as const,
+                props: {
+                    id,
+                    gorsel: b.gorsel,
+                    gorselMetni: b.gorselMetni ?? "",
+                },
+            };
+        case "maddeler":
+            return {
+                type: "MaddelerBlogu" as const,
+                props: { id, maddeler: b.maddeler.map((metin) => ({ metin })) },
+            };
+        case "yorum":
+            return {
+                type: "YorumBlogu" as const,
+                props: {
+                    id,
+                    metin: b.metin,
+                    yazar: b.yazar,
+                    unvan: b.unvan ?? "",
+                    puan: b.puan ?? 0,
+                },
+            };
+        case "istatistik":
+            return {
+                type: "IstatistikBlogu" as const,
+                props: { id, deger: b.deger, metin: b.metin },
+            };
+        case "kutu":
+            return {
+                type: "KutuBlogu" as const,
+                props: { id, metin: b.metin, simge: b.simge ?? "" },
+            };
+    }
+}
+
+/**
+ * Puck bloğu → tanım bloğu. Katalog dışı bileşen (ekranın içine başka adım
+ * bırakılırsa) türüyle olduğu gibi gider — çekirdek reddeder, kaybolmaz.
+ */
+export function puckBloktan(oge: {
+    type: string;
+    props: Record<string, unknown>;
+}): EkranBlogu {
+    const p = oge.props;
+    const metin = String(p["metin"] ?? "");
+    switch (BLOK_TURU[oge.type]) {
+        case "baslik":
+            return { tur: "baslik", metin };
+        case "metin":
+            return { tur: "metin", metin };
+        case "gorsel":
+            return gorselli(
+                { tur: "gorsel" as const },
+                String(p["gorsel"] ?? ""),
+                String(p["gorselMetni"] ?? ""),
+            ) as EkranBlogu;
+        case "maddeler":
+            return {
+                tur: "maddeler",
+                maddeler: ((p["maddeler"] ?? []) as { metin: string }[])
+                    .map((m) => m.metin)
+                    .filter(Boolean),
+            };
+        case "yorum": {
+            const unvan = String(p["unvan"] ?? "");
+            const puan = Number(p["puan"] ?? 0);
+            return {
+                tur: "yorum",
+                metin,
+                yazar: String(p["yazar"] ?? ""),
+                ...(unvan ? { unvan } : {}),
+                ...(puan ? { puan } : {}),
+            };
+        }
+        case "istatistik":
+            return {
+                tur: "istatistik",
+                deger: String(p["deger"] ?? ""),
+                metin,
+            };
+        case "kutu": {
+            const simge = String(p["simge"] ?? "");
+            return { tur: "kutu", metin, ...(simge ? { simge } : {}) };
+        }
+        default:
+            return { tur: oge.type } as unknown as EkranBlogu;
+    }
+}
 
 /**
  * Boş dize = görsel yok (Puck alanı boş değer taşır; tanımda alan hiç olmaz).
@@ -239,6 +391,21 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 metin,
                             })),
                             sure: adim.sure ?? 4,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                        },
+                    };
+                case "ekran":
+                    return {
+                        type: "Ekran" as const,
+                        props: {
+                            id,
+                            kimlik: adim.id,
+                            baslik: adim.baslik,
+                            bloklar: adim.bloklar.map((b, j) =>
+                                bloktanPuck(b, `blok-${i}-${j}`),
+                            ),
+                            dugme: adim.dugme,
+                            hedef: adim.hedef ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
@@ -384,7 +551,23 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                         : {}),
                 };
             }
-            default: {
+            case "Ekran": {
+                const p = oge.props as EkranProps;
+                return hedefli(
+                    {
+                        id: p.kimlik,
+                        tur: "ekran" as const,
+                        baslik: p.baslik,
+                        bloklar: (p.bloklar ?? []).map(puckBloktan),
+                        dugme: p.dugme,
+                        ...(p.ilerlemeGoster === false
+                            ? { ilerlemeGoster: false }
+                            : {}),
+                    } satisfies EkranAdimi,
+                    p.hedef ?? "",
+                );
+            }
+            case "Paywall": {
                 const p = oge.props as PaywallProps;
                 return {
                     id: p.kimlik,
@@ -399,6 +582,13 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     ...yasal(p),
                 };
             }
+            default:
+                // T1: ekran dışına bırakılmış blok — düzenleyici uyarır
+                // (akis.ts), çekirdek türüyle reddeder; sessizce düşmez.
+                return {
+                    id: String(oge.props["id"]),
+                    tur: oge.type,
+                } as unknown as Adim;
         }
     });
     const tanim: Tanim = { sayfaBasligi: k?.sayfaBasligi ?? "", adimlar };

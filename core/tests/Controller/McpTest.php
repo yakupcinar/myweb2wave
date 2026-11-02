@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Huni\Huniler;
+use App\Huni\Tanim;
 use App\Huni\Tema;
 use App\Mcp\ApiAnahtarlari;
 use App\Tests\Support\SahteEkranCekici;
@@ -88,6 +89,8 @@ final class McpTest extends WebTestCase
         // Ç71: panel asistanıyla aynı tema yönergesi.
         self::assertStringContainsString(Tema::aiYonergesi(), self::metin(self::yol($ilk, 'result', 'instructions')));
         self::assertStringContainsString('"planın hazırlanıyor" yükleme', self::metin(self::yol($ilk, 'result', 'instructions')));
+        // T1: blok kataloğu ve uydurma sayı/yorum yasağı panel istemiyle aynı.
+        self::assertStringContainsString(Tanim::EKRAN_YONERGESI, self::metin(self::yol($ilk, 'result', 'instructions')));
         $this->rpc(['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $bearer);
         self::assertResponseStatusCodeSame(202);
 

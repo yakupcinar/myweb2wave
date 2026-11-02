@@ -27,6 +27,7 @@ use Anthropic\RequestOptions;
 use App\Huni\Arac\AracKapsami;
 use App\Huni\Arac\HuniAraclari;
 use App\Huni\Huniler;
+use App\Huni\Tanim;
 use App\Huni\Tema;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\HttpClient\Psr18Client;
@@ -232,7 +233,7 @@ final readonly class HuniAsistani
     {
         return <<<METIN
             Sen MyWeb2Wave panelinde huni düzenleyen asistansın. Uygulama: {$k->app}. Açık huni: {$k->huni}.
-            Huni, reklamdan gelen ziyaretçinin gördüğü adımlardır: tanıtım, soru (tekli, çoklu, serbest yanıt), müşteri yorumu, "planın hazırlanıyor" yükleme (düğmesiz, süre dolunca geçer; ödemeden hemen önce iyi durur) ve ödeme ekranı (paywall).
+            Huni, reklamdan gelen ziyaretçinin gördüğü adımlardır: tanıtım, soru (tekli, çoklu, serbest yanıt), müşteri yorumu, "planın hazırlanıyor" yükleme (düğmesiz, süre dolunca geçer; ödemeden hemen önce iyi durur), bloklardan ekran ve ödeme ekranı (paywall).
 
             Nasıl çalışırsın:
             - İsteği mevcut taslağa uygula ve TAM tanımı taslak_kaydet ile kaydet (imza: verilen ya da son kayıttan dönen). İstenmeyen adımlara ve metinlere dokunma.
@@ -246,6 +247,6 @@ final readonly class HuniAsistani
             - Gerçek olmayan müşteri yorumu uydurma: yorum adımı eklersen unvanına "Örnek — yayından önce gerçeğiyle değiştir" yaz.
             - Fiyat yazma: ödeme ekranı fiyatı Stripe'tan kendisi gösterir. Sağlık, gelir ya da kesin sonuç vaadi yazma.
             - Ziyaretçiye "sen" diye, sade Türkçe yaz.
-            METIN."\n\n".Tema::aiYonergesi();
+            METIN."\n".Tanim::EKRAN_YONERGESI."\n\n".Tema::aiYonergesi();
     }
 }

@@ -2,6 +2,7 @@
 // oynatıcısının çizdiği adım aynı DOM. İki ayrı yol karşılaştırılır — Puck
 // alanları → bileşen (yapilandirma.tsx) ve tanım → bileşen (Adim) — biri
 // diğerinden hesaplanmaz (tuzak §3).
+import { Render } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -116,6 +117,47 @@ describe("önizleme = huni: adım DOM'u", () => {
         expect(ayiriciyiAt(puck)).toBe(
             html(<Adim adim={tanim.adimlar[i]!} medyaKoku="" />),
         );
+    });
+});
+
+// T1: ekranın blokları Puck yuvasında — yuvayı Puck'ın kendi Render'ı açar
+// (bileşen render'ını elle çağırmak yuvayı taklit etmek olurdu).
+describe("önizleme = huni: ekran ve blokları", () => {
+    const ekran: Tanim["adimlar"][number] = {
+        id: "neden",
+        tur: "ekran",
+        baslik: "Neden <b>?",
+        bloklar: [
+            { tur: "gorsel", gorsel: G1, gorselMetni: "Ekran" },
+            { tur: "baslik", metin: "Ara" },
+            { tur: "metin", metin: "Paragraf" },
+            { tur: "maddeler", maddeler: ["Bir", "İki"] },
+            { tur: "yorum", metin: "İyi", yazar: "Ayşe", unvan: "Ö", puan: 3 },
+            { tur: "yorum", metin: "Güzel", yazar: "Can" },
+            { tur: "istatistik", deger: "%87", metin: "düzenli" },
+            { tur: "kutu", metin: "Güvence", simge: "🔒" },
+            { tur: "kutu", metin: "Not" },
+        ],
+        dugme: "İleri",
+    };
+    it("aynı DOM (yuva div.bloklar dahil)", () => {
+        const v = tanimdanPuck(
+            { ...tanim, adimlar: [ekran, tanim.adimlar.at(-1)!] },
+            VARSAYILAN,
+        );
+        const puck = html(
+            <Render
+                config={{ ...yap, root: {} }}
+                data={{ root: { props: {} }, content: [v.content[0]!] }}
+            />,
+        );
+        // Render'ın dış kutusu ve düzenleyici ayırıcısı.
+        const ic = puck.replace(
+            /^<div><div style="[^"]*">([\s\S]*)<\/div><\/div>$/,
+            "$1",
+        );
+        expect(ic).not.toBe(puck); // iki kutu gerçekten oradaydı
+        expect(ic).toBe(html(<Adim adim={ekran} medyaKoku="" />));
     });
 });
 

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
     Adim,
+    Ekran,
     Logo,
     Paywall,
     Soru,
@@ -294,6 +295,125 @@ describe("Mobil görünüm 4 — yükleme adımı", () => {
         expect(css).toMatch(
             /@media \(prefers-reduced-motion: no-preference\) \{[^@]*huni-dolum/,
         );
+    });
+});
+
+describe("T1 — ekran adımı (blok kataloğu)", () => {
+    const html = renderToStaticMarkup(
+        <Ekran
+            baslik="Neden KeepChat?"
+            bloklar={[
+                { tur: "gorsel", gorsel: G, gorselMetni: "Sohbet ekranı" },
+                { tur: "metin", metin: "Sohbetlerin tek yerde." },
+                { tur: "maddeler", maddeler: ["Yedekleme", "Arama"] },
+                {
+                    tur: "istatistik",
+                    deger: "%87",
+                    metin: "düzenli kullanıyor",
+                },
+                {
+                    tur: "yorum",
+                    metin: "Çok iyi.",
+                    yazar: "Ayşe",
+                    unvan: "Öğretmen",
+                    puan: 4,
+                },
+                { tur: "yorum", metin: "Kullanışlı.", yazar: "Can" },
+                { tur: "kutu", metin: "İstediğin zaman iptal.", simge: "🔒" },
+                { tur: "kutu", metin: "Simgesiz." },
+                { tur: "baslik", metin: "İkinci başlık" },
+            ]}
+            dugme="Devam"
+            medyaKoku={KOK}
+        />,
+    );
+    it("ekranın başlığı odaklanan tek h1; başlık bloğu ara başlık (h2)", () => {
+        expect(html.match(/<h1 tabindex="-1">/g)).toHaveLength(1);
+        expect(html).toContain('<h1 tabindex="-1">Neden KeepChat?</h1>');
+        expect(html).toContain("<h2>İkinci başlık</h2>");
+    });
+    it("bloklar sırayla, düz metin; görsel çekirdekten alt metniyle", () => {
+        // React sunucu çizimi görselin önüne preload bağlantısı koyar.
+        expect(html).toMatch(
+            /<section class="ekran"><h1 tabindex="-1">Neden KeepChat\?<\/h1><div class="bloklar"><img class="blok-gorseli" src="https:\/\/cekirdek\.ornek\/medya\/a{64}\.webp" alt="Sohbet ekranı"/,
+        );
+        expect(html).toContain("<p>Sohbetlerin tek yerde.</p>");
+        expect(html).toContain(
+            '<ul class="maddeler"><li>Yedekleme</li><li>Arama</li></ul>',
+        );
+        expect(html).toContain(
+            '<p class="istatistik"><strong>%87</strong> <span>düzenli kullanıyor</span></p>',
+        );
+    });
+    it("yorum: puan yıldızla ve sözle (ekran okuyucu), puansızda yıldız yok", () => {
+        expect(html).toContain(
+            '<p class="yildizlar" role="img" aria-label="5 üzerinden 4 puan">★★★★☆</p>',
+        );
+        expect(html.match(/class="yildizlar"/g)).toHaveLength(1);
+        expect(html).toContain(
+            "<blockquote><p>Çok iyi.</p></blockquote><figcaption><strong>Ayşe</strong> · Öğretmen</figcaption>",
+        );
+        expect(html).toContain("<figcaption><strong>Can</strong></figcaption>");
+    });
+    it("kutu: simge süs (ekran okuyucuya gizli), simgesizde öğe yok", () => {
+        expect(html).toContain(
+            '<p class="kutu"><span class="simge" aria-hidden="true">🔒</span><span>İstediğin zaman iptal.</span></p>',
+        );
+        expect(html).toContain('<p class="kutu"><span>Simgesiz.</span></p>');
+    });
+    it("altta tek ana düğme, oynatıcıda tıklanır", () => {
+        expect(html).toMatch(
+            /<h2>İkinci başlık<\/h2><\/div><div class="eylem"><button type="button" class="ana">Devam<\/button><\/div><\/section>$/,
+        );
+    });
+    it("oynatıcının Adim'i ekranı tanımdan çizer", () => {
+        const a = renderToStaticMarkup(
+            <Adim
+                adim={{
+                    tur: "ekran",
+                    baslik: "Selam",
+                    bloklar: [{ tur: "metin", metin: "Nasılsın?" }],
+                    dugme: "İleri",
+                }}
+                medyaKoku={KOK}
+            />,
+        );
+        expect(a).toContain(
+            '<h1 tabindex="-1">Selam</h1><div class="bloklar"><p>Nasılsın?</p></div>',
+        );
+        expect(a).toContain('class="ana">İleri</button>');
+    });
+    it("her blok sınıfı huni.css'te .huni altında boyanır", () => {
+        const siniflar = new Set(
+            Array.from(html.matchAll(/class="([^"]+)"/g)).flatMap((m) =>
+                (m[1] ?? "").split(" "),
+            ),
+        );
+        expect([...siniflar].sort()).toEqual([
+            "ana",
+            "blok-gorseli",
+            "blok-yorum",
+            "bloklar",
+            "ekran",
+            "eylem",
+            "istatistik",
+            "kutu",
+            "maddeler",
+            "simge",
+            "yildizlar",
+        ]);
+        // "ekran" ve "bloklar" yalnız kapsayıcı: kendileri boyanmaz, kuralları
+        // çocuklarını seçer.
+        expect(css).toMatch(/\.huni \.ekran [^{]*\{/);
+        expect(css).toMatch(/\.huni \.bloklar > p \{/);
+        // İlk blok başlığa yapışıyordu (ekran görüntüsünde görüldü).
+        expect(css).toMatch(/\.huni \.bloklar \{[^}]*margin-top/);
+        for (const s of [...siniflar].filter(
+            (s) => s !== "ekran" && s !== "bloklar",
+        ))
+            expect(css).toMatch(new RegExp(`\\.huni [^{,]*\\.${s}\\s*[{,]`));
+        // Kutudaki simge seçenek simgesinin kuralına yaslanmaz.
+        expect(css).toMatch(/\.huni \.kutu \.simge\s*\{/);
     });
 });
 

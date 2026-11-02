@@ -339,6 +339,133 @@ export function Yukleme({
     );
 }
 
+/** T1: blok kataloğu (sözleşme EkranBlogu); her blok düz metin. */
+export type EkranBlogu =
+    | { tur: "baslik"; metin: string }
+    | { tur: "metin"; metin: string }
+    | { tur: "gorsel"; gorsel: string; gorselMetni?: string | undefined }
+    | { tur: "maddeler"; maddeler: string[] }
+    | {
+          tur: "yorum";
+          metin: string;
+          yazar: string;
+          unvan?: string | undefined;
+          puan?: number | undefined;
+      }
+    | { tur: "istatistik"; deger: string; metin: string }
+    | { tur: "kutu"; metin: string; simge?: string | undefined };
+
+/** Puck her bloğu ayrı bileşen olarak çizer; huni ekranın içinde. */
+export function Blok({
+    blok,
+    medyaKoku,
+}: {
+    blok: EkranBlogu;
+    medyaKoku: string;
+}): ReactNode {
+    switch (blok.tur) {
+        case "baslik":
+            // Ara başlık: sayfanın h1'i ekranın kendi başlığı.
+            return <h2>{blok.metin}</h2>;
+        case "metin":
+            return <p>{blok.metin}</p>;
+        case "gorsel":
+            return (
+                <Gorsel
+                    id={blok.gorsel}
+                    medyaKoku={medyaKoku}
+                    sinif="blok-gorseli"
+                    alt={blok.gorselMetni}
+                />
+            );
+        case "maddeler":
+            return (
+                <ul className="maddeler">
+                    {blok.maddeler.map((m, i) => (
+                        <li key={i}>{m}</li>
+                    ))}
+                </ul>
+            );
+        case "yorum":
+            return (
+                <figure className="blok-yorum">
+                    {blok.puan ? (
+                        // Yıldızlar görsel; anlamı etiket söyler.
+                        <p
+                            className="yildizlar"
+                            role="img"
+                            aria-label={`5 üzerinden ${blok.puan} puan`}
+                        >
+                            {"★".repeat(blok.puan) + "☆".repeat(5 - blok.puan)}
+                        </p>
+                    ) : null}
+                    <blockquote>
+                        <p>{blok.metin}</p>
+                    </blockquote>
+                    <figcaption>
+                        <strong>{blok.yazar}</strong>
+                        {blok.unvan ? ` · ${blok.unvan}` : null}
+                    </figcaption>
+                </figure>
+            );
+        case "istatistik":
+            return (
+                <p className="istatistik">
+                    <strong>{blok.deger}</strong> <span>{blok.metin}</span>
+                </p>
+            );
+        case "kutu":
+            return (
+                <p className="kutu">
+                    {blok.simge ? (
+                        <span className="simge" aria-hidden="true">
+                            {blok.simge}
+                        </span>
+                    ) : null}
+                    <span>{blok.metin}</span>
+                </p>
+            );
+    }
+}
+
+/**
+ * T1: ekran = başlık + katalogdaki bloklar yukarıdan aşağı + altta tek ana
+ * düğme. yuva: Puck blokları kendi bölgesinde çizer — yuvası da
+ * div.bloklar (ölçüldü), iki yolda DOM aynı.
+ */
+export function Ekran({
+    baslik,
+    bloklar = [],
+    dugme,
+    medyaKoku,
+    onDugme,
+    yuva,
+}: {
+    baslik: string;
+    bloklar?: EkranBlogu[] | undefined;
+    dugme: string;
+    medyaKoku: string;
+    yuva?: ReactNode;
+} & Tiklama): ReactNode {
+    return (
+        <section className="ekran">
+            <h1 tabIndex={-1}>{baslik}</h1>
+            {yuva ?? (
+                <div className="bloklar">
+                    {bloklar.map((b, i) => (
+                        <Blok key={i} blok={b} medyaKoku={medyaKoku} />
+                    ))}
+                </div>
+            )}
+            <Eylem>
+                <button type="button" className="ana" onClick={onDugme}>
+                    {dugme}
+                </button>
+            </Eylem>
+        </section>
+    );
+}
+
 export function Yorum({
     baslik,
     metin,
@@ -412,6 +539,7 @@ export type TanimAdimi =
           maddeler?: string[];
           sure?: number;
       }
+    | { tur: "ekran"; baslik: string; bloklar: EkranBlogu[]; dugme: string }
     | {
           tur: "paywall";
           baslik: string;
@@ -509,6 +637,16 @@ export function Adim({
                     baslik={adim.baslik}
                     maddeler={adim.maddeler}
                     sure={adim.sure}
+                />
+            );
+        case "ekran":
+            return (
+                <Ekran
+                    baslik={adim.baslik}
+                    bloklar={adim.bloklar}
+                    dugme={adim.dugme}
+                    medyaKoku={medyaKoku}
+                    onDugme={onIleri}
                 />
             );
         case "yorum":

@@ -20,6 +20,37 @@ final class Tanim
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
         'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
         'fayda' => [1, 120], 'gorselMetni' => [1, 200], 'madde' => [1, 80],
+        // T1: blok metinleri.
+        'blokMetni' => [1, 1000], 'satir' => [1, 120], 'deger' => [1, 12], 'kutu' => [1, 500],
+    ];
+
+    /**
+     * T1: AI istemlerine (panel asistanı + MCP) ortak blok kataloğu yönergesi;
+     * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
+     */
+    public const EKRAN_YONERGESI = 'Tek türe sığmayan ekran için ekran adımı: baslik (sayfanın başlığı) + bloklar (1–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
+        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge). '
+        .'Neden bu ürün, nasıl çalışır, güvence gibi ekranları tanıtım yerine bloklarla kur; tüm huniyi tek tip adımla doldurma. '
+        .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
+        .'yorum bloğu da yorum adımı gibidir: gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
+
+    /** T1: ekran adımındaki blok sayısı. */
+    public const AZAMI_BLOK = 12;
+
+    /**
+     * T1 blok kataloğu: tür → [zorunlu alanlar, isteğe bağlı alanlar]; alan →
+     * UZUNLUK anahtarı, null = kendi denetimi (görsel, liste, puan, simge).
+     *
+     * @var array<string, array{array<string, ?string>, array<string, ?string>}>
+     */
+    public const BLOKLAR = [
+        'baslik' => [['metin' => 'baslik'], []],
+        'metin' => [['metin' => 'blokMetni'], []],
+        'gorsel' => [['gorsel' => null], ['gorselMetni' => 'gorselMetni']],
+        'maddeler' => [['maddeler' => null], []],
+        'yorum' => [['metin' => 'blokMetni', 'yazar' => 'yazar'], ['unvan' => 'unvan', 'puan' => null]],
+        'istatistik' => [['deger' => 'deger', 'metin' => 'satir'], []],
+        'kutu' => [['metin' => 'kutu'], ['simge' => null]],
     ];
 
     /** G5: tanıtım adımında görselin yeri. */
@@ -35,6 +66,8 @@ final class Tanim
         'yorum' => ['baslik', 'metin', 'yazar', 'unvan', 'dugme'],
         // Mobil görünüm 4: düğmesiz; maddeler ve süre isteğe bağlı.
         'yukleme' => ['baslik'],
+        // T1: başlık (h1) + bloklar; düğme ve (isteğe bağlı) hedef tanıtımdaki gibi.
+        'ekran' => ['baslik', 'dugme'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
@@ -73,7 +106,7 @@ final class Tanim
             $yer = 'adım '.($i + 1);
             $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
             if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
-                $h[] = "{$yer}: tür tanitim, soru, yorum, yukleme ya da paywall olmalı";
+                $h[] = "{$yer}: tür tanitim, soru, yorum, yukleme, ekran ya da paywall olmalı";
                 continue;
             }
             $id = $adim['id'] ?? null;
@@ -85,7 +118,7 @@ final class Tanim
                 $gorulen[$id] = true;
             }
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
-                'soru' => ('metin' === ($adim['secimTuru'] ?? 'tekli')) ? [] : ['secenekler'], 'paywall' => ['plan'], default => [],
+                'soru' => ('metin' === ($adim['secimTuru'] ?? 'tekli')) ? [] : ['secenekler'], 'paywall' => ['plan'], 'ekran' => ['bloklar'], default => [],
             }];
             if (\array_key_exists('ilerlemeGoster', $adim)) {
                 $beklenen[] = 'ilerlemeGoster';
@@ -152,7 +185,7 @@ final class Tanim
                 }
             }
             // H5: tanıtım düğmesi de atlayabilir — dallar ortak adımda birleşsin.
-            if ('tanitim' === $tur && \array_key_exists('hedef', $adim)) {
+            if (\in_array($tur, ['tanitim', 'ekran'], true) && \array_key_exists('hedef', $adim)) {
                 $beklenen[] = 'hedef';
                 self::hedef($adim['hedef'], $sira, $i, $yer, $h);
             }
@@ -173,6 +206,9 @@ final class Tanim
             }
             foreach (self::TURLER[$tur] as $alan) {
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
+            }
+            if ('ekran' === $tur) {
+                self::bloklar($adim['bloklar'], $yer, $h);
             }
             if ('soru' === $tur && \array_key_exists('secenekler', $adim)) {
                 self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
@@ -224,6 +260,12 @@ final class Tanim
             if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {
                 $k[] = $adim['gorsel'];
             }
+            // T1: görsel bloğu.
+            foreach (\is_array($adim) && \is_array($adim['bloklar'] ?? null) ? $adim['bloklar'] : [] as $b) {
+                if (\is_array($b) && \is_string($b['gorsel'] ?? null)) {
+                    $k[] = $b['gorsel'];
+                }
+            }
             foreach (\is_array($adim) && \is_array($adim['secenekler'] ?? null) ? $adim['secenekler'] : [] as $s) {
                 if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
                     $k[] = $s['gorsel'];
@@ -270,6 +312,70 @@ final class Tanim
         foreach ($maddeler as $j => $m) {
             self::metin($m, 'madde', "{$yer} madde ".($j + 1), $h);
         }
+    }
+
+    /**
+     * T1: ekranın blokları — her blok katalogdaki bir tür, alanları tam olarak
+     * o türün alanları. Sayfanın h1'i adımın baslik alanı; baslik bloğu ara başlık.
+     *
+     * @param list<string> $h
+     */
+    private static function bloklar(mixed $bloklar, string $yer, array &$h): void
+    {
+        if (!\is_array($bloklar) || !array_is_list($bloklar) || [] === $bloklar || \count($bloklar) > self::AZAMI_BLOK) {
+            $h[] = "{$yer}: bloklar 1–".self::AZAMI_BLOK.' öğeli liste olmalı';
+
+            return;
+        }
+        foreach ($bloklar as $j => $b) {
+            $by = "{$yer} blok ".($j + 1);
+            $tur = \is_array($b) ? ($b['tur'] ?? null) : null;
+            if (!\is_array($b) || !\is_string($tur) || !isset(self::BLOKLAR[$tur])) {
+                $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik ya da kutu olmalı";
+                continue;
+            }
+            [$zorunlu, $istege] = self::BLOKLAR[$tur];
+            $alanlar = $zorunlu + array_intersect_key($istege, $b);
+            if (!self::anahtarlar($b, ['tur', ...array_keys($alanlar)])) {
+                $h[] = "{$by}: alanlar tam olarak ".implode(', ', ['tur', ...array_keys($zorunlu)]).([] === $istege ? '' : ' ve (isteğe bağlı) '.implode(', ', array_keys($istege))).' olmalı';
+                continue;
+            }
+            foreach ($alanlar as $alan => $uzunluk) {
+                if (null !== $uzunluk) {
+                    self::metin($b[$alan], $uzunluk, "{$by} {$alan}", $h);
+                }
+            }
+            match ($tur) {
+                'gorsel' => self::gorsel($b['gorsel'], $by, $h),
+                'maddeler' => self::blokMaddeleri($b['maddeler'], $by, $h),
+                default => null,
+            };
+            if (\array_key_exists('puan', $b) && (!\is_int($b['puan']) || $b['puan'] < 1 || $b['puan'] > 5)) {
+                $h[] = "{$by}: puan 1–5 tam sayı olmalı";
+            }
+            if (\array_key_exists('simge', $b) && !self::emoji($b['simge'])) {
+                $h[] = "{$by}: simge tek emoji olmalı";
+            }
+        }
+    }
+
+    /** @param list<string> $h */
+    private static function blokMaddeleri(mixed $maddeler, string $yer, array &$h): void
+    {
+        if (!\is_array($maddeler) || !array_is_list($maddeler) || [] === $maddeler || \count($maddeler) > 6) {
+            $h[] = "{$yer}: maddeler 1–6 öğeli liste olmalı";
+
+            return;
+        }
+        foreach ($maddeler as $j => $m) {
+            self::metin($m, 'satir', "{$yer} madde ".($j + 1), $h);
+        }
+    }
+
+    /** Mobil görünüm 3: tek emoji (ZWJ aile, bayrak, ten tonu tek grafem). */
+    private static function emoji(mixed $simge): bool
+    {
+        return \is_string($simge) && \strlen($simge) <= 32 && 1 === grapheme_strlen($simge) && 1 === preg_match('/\p{Extended_Pictographic}|\p{Regional_Indicator}/u', $simge);
     }
 
     /** @param list<string> $h */
@@ -339,8 +445,7 @@ final class Tanim
             // Mobil görünüm 3: tek emoji (ZWJ aile, bayrak, ten tonu tek grafem);
             // görselle birlikte değil — ikisi aynı yeri doldurur.
             if (\array_key_exists('simge', $s)) {
-                $simge = $s['simge'];
-                if (!\is_string($simge) || \strlen($simge) > 32 || 1 !== grapheme_strlen($simge) || 1 !== preg_match('/\p{Extended_Pictographic}|\p{Regional_Indicator}/u', $simge)) {
+                if (!self::emoji($s['simge'])) {
                     $h[] = "{$sy}: simge tek emoji olmalı";
                 } elseif (\array_key_exists('gorsel', $s)) {
                     $h[] = "{$sy}: simge ve gorsel birlikte olmaz";

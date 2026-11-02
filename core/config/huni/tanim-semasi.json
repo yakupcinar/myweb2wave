@@ -10,6 +10,123 @@
                 }
             ]
         },
+        "BaslikBlogu": {
+            "description": "Ara başlık",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "baslik"
+                    ]
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                }
+            }
+        },
+        "EkranAdimi": {
+            "description": "T1: üstte başlık (sayfanın başlığı), altında katalogdaki bloklar yukarıdan aşağı (baslik bloğu ara başlıktır), altta tek ana düğme.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik",
+                "bloklar",
+                "dugme"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "ekran"
+                    ]
+                },
+                "baslik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                },
+                "bloklar": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 12,
+                    "items": {
+                        "$ref": "#/$defs/EkranBlogu"
+                    }
+                },
+                "dugme": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "EkranBlogu": {
+            "description": "T1 blok kataloğu; metinler düz metin",
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/BaslikBlogu"
+                },
+                {
+                    "$ref": "#/$defs/MetinBlogu"
+                },
+                {
+                    "$ref": "#/$defs/GorselBlogu"
+                },
+                {
+                    "$ref": "#/$defs/MaddelerBlogu"
+                },
+                {
+                    "$ref": "#/$defs/YorumBlogu"
+                },
+                {
+                    "$ref": "#/$defs/IstatistikBlogu"
+                },
+                {
+                    "$ref": "#/$defs/KutuBlogu"
+                }
+            ]
+        },
+        "GorselBlogu": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "gorsel"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gorsel"
+                    ]
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                }
+            }
+        },
         "GorselKimligi": {
             "description": "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)",
             "type": "string",
@@ -68,6 +185,9 @@
                             },
                             {
                                 "$ref": "#/$defs/YuklemeAdimi"
+                            },
+                            {
+                                "$ref": "#/$defs/EkranAdimi"
                             },
                             {
                                 "$ref": "#/$defs/PaywallAdimi"
@@ -168,6 +288,109 @@
                             "$ref": "#/$defs/ZeminGorseli"
                         }
                     ]
+                }
+            }
+        },
+        "IstatistikBlogu": {
+            "description": "Büyük değer + açıklama (\"%87\" · \"kullanıcı ilk hafta düzenli kullanıyor\"). Değer gerçek olmalı — uydurma sayı yanıltıcı reklamdır",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "deger",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "istatistik"
+                    ]
+                },
+                "deger": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 12
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                }
+            }
+        },
+        "KutuBlogu": {
+            "description": "Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "kutu"
+                    ]
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                },
+                "simge": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "MaddelerBlogu": {
+            "description": "İşaretli madde listesi (fayda, özellik)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "maddeler"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "maddeler"
+                    ]
+                },
+                "maddeler": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                    }
+                }
+            }
+        },
+        "MetinBlogu": {
+            "description": "Paragraf",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "metin"
+                    ]
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
                 }
             }
         },
@@ -422,6 +645,43 @@
                 },
                 "ilerlemeGoster": {
                     "type": "boolean"
+                }
+            }
+        },
+        "YorumBlogu": {
+            "description": "Kısa müşteri yorumu; puan varsa yıldızla gösterilir",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin",
+                "yazar"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "yorum"
+                    ]
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                },
+                "yazar": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                },
+                "unvan": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "puan": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
                 }
             }
         },

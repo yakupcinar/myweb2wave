@@ -771,6 +771,7 @@ components:
               - $ref: "#/components/schemas/SoruAdimi"
               - $ref: "#/components/schemas/YorumAdimi"
               - $ref: "#/components/schemas/YuklemeAdimi"
+              - $ref: "#/components/schemas/EkranAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
     HuniTemasi:
       description: "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)"
@@ -908,6 +909,100 @@ components:
           items: { type: string, minLength: 1, maxLength: 80 }
         sure: { type: integer, minimum: 2, maximum: 10, description: "saniye (yoksa 4)" }
         ilerlemeGoster: { type: boolean }
+    EkranAdimi:
+      description: >-
+        T1: üstte başlık (sayfanın başlığı), altında katalogdaki bloklar
+        yukarıdan aşağı (baslik bloğu ara başlıktır), altta tek ana düğme.
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik, bloklar, dugme]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [ekran] }
+        baslik: { type: string, minLength: 1, maxLength: 200 }
+        bloklar:
+          type: array
+          minItems: 1
+          maxItems: 12
+          items: { $ref: "#/components/schemas/EkranBlogu" }
+        dugme: { type: string, minLength: 1, maxLength: 60 }
+        hedef: { $ref: "#/components/schemas/AdimHedefi" }
+        ilerlemeGoster: { type: boolean }
+    EkranBlogu:
+      description: "T1 blok kataloğu; metinler düz metin"
+      oneOf:
+        - $ref: "#/components/schemas/BaslikBlogu"
+        - $ref: "#/components/schemas/MetinBlogu"
+        - $ref: "#/components/schemas/GorselBlogu"
+        - $ref: "#/components/schemas/MaddelerBlogu"
+        - $ref: "#/components/schemas/YorumBlogu"
+        - $ref: "#/components/schemas/IstatistikBlogu"
+        - $ref: "#/components/schemas/KutuBlogu"
+    BaslikBlogu:
+      description: Ara başlık
+      type: object
+      additionalProperties: false
+      required: [tur, metin]
+      properties:
+        tur: { type: string, enum: [baslik] }
+        metin: { type: string, minLength: 1, maxLength: 200 }
+    MetinBlogu:
+      description: Paragraf
+      type: object
+      additionalProperties: false
+      required: [tur, metin]
+      properties:
+        tur: { type: string, enum: [metin] }
+        metin: { type: string, minLength: 1, maxLength: 1000 }
+    GorselBlogu:
+      type: object
+      additionalProperties: false
+      required: [tur, gorsel]
+      properties:
+        tur: { type: string, enum: [gorsel] }
+        gorsel: { $ref: "#/components/schemas/GorselKimligi" }
+        gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
+    MaddelerBlogu:
+      description: İşaretli madde listesi (fayda, özellik)
+      type: object
+      additionalProperties: false
+      required: [tur, maddeler]
+      properties:
+        tur: { type: string, enum: [maddeler] }
+        maddeler:
+          type: array
+          minItems: 1
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+    YorumBlogu:
+      description: Kısa müşteri yorumu; puan varsa yıldızla gösterilir
+      type: object
+      additionalProperties: false
+      required: [tur, metin, yazar]
+      properties:
+        tur: { type: string, enum: [yorum] }
+        metin: { type: string, minLength: 1, maxLength: 1000 }
+        yazar: { type: string, minLength: 1, maxLength: 80 }
+        unvan: { type: string, maxLength: 100 }
+        puan: { type: integer, minimum: 1, maximum: 5 }
+    IstatistikBlogu:
+      description: "Büyük değer + açıklama (\"%87\" · \"kullanıcı ilk hafta düzenli kullanıyor\"). Değer gerçek olmalı — uydurma sayı yanıltıcı reklamdır"
+      type: object
+      additionalProperties: false
+      required: [tur, deger, metin]
+      properties:
+        tur: { type: string, enum: [istatistik] }
+        deger: { type: string, minLength: 1, maxLength: 12 }
+        metin: { type: string, minLength: 1, maxLength: 120 }
+    KutuBlogu:
+      description: "Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz"
+      type: object
+      additionalProperties: false
+      required: [tur, metin]
+      properties:
+        tur: { type: string, enum: [kutu] }
+        metin: { type: string, minLength: 1, maxLength: 500 }
+        simge: { type: string, maxLength: 32 }
     AdimHedefi:
       description: >-
         H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma

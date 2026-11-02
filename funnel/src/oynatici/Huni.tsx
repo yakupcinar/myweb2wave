@@ -316,7 +316,11 @@ function Oynatici({
                 adim={adim}
                 medyaKoku={KOK}
                 onIleri={() =>
-                  ileri(adim.tur === "tanitim" ? adim.hedef : undefined)
+                  ileri(
+                    adim.tur === "tanitim" || adim.tur === "ekran"
+                      ? adim.hedef
+                      : undefined,
+                  )
                 }
                 onSecim={(s) => {
                   if (adim.tur !== "soru") return;
