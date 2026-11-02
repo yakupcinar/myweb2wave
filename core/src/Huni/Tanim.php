@@ -28,7 +28,7 @@ final class Tanim
      * T1: AI istemlerine (panel asistanı + MCP) ortak blok kataloğu yönergesi;
      * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
      */
-    public const EKRAN_YONERGESI = 'Tek türe sığmayan ekran için ekran adımı: baslik (sayfanın başlığı) + bloklar (1–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
+    public const EKRAN_YONERGESI = 'Tek türe sığmayan ekran için ekran adımı: baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
         .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin seçimde dugme gönderir). '
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
         .'Neden bu ürün, nasıl çalışır, güvence gibi ekranları tanıtım yerine bloklarla kur; tüm huniyi tek tip adımla doldurma. '
@@ -352,8 +352,9 @@ final class Tanim
      */
     private static function bloklar(mixed $bloklar, array $sira, int $i, string $yer, array &$h, bool $tamEkran = false): void
     {
-        if (!\is_array($bloklar) || !array_is_list($bloklar) || [] === $bloklar || \count($bloklar) > self::AZAMI_BLOK) {
-            $h[] = "{$yer}: bloklar 1–".self::AZAMI_BLOK.' öğeli liste olmalı';
+        // T1c: bloksuz ekran geçerli (başlık + düğme).
+        if (!\is_array($bloklar) || !array_is_list($bloklar) || \count($bloklar) > self::AZAMI_BLOK) {
+            $h[] = "{$yer}: bloklar 0–".self::AZAMI_BLOK.' öğeli liste olmalı';
 
             return;
         }

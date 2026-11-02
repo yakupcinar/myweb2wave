@@ -55,3 +55,26 @@ Kırma 5/5 kırmızı (iki deneme ilk koşuda geçersizdi: biri çıktıyı değ
 | C3 | ekran kapağı çizilmez | 🔴 bileşen |
 | C4 | tam ekranda blok metni beyaz değil | 🔴 CSS |
 | C5 | Puck kapak düzenini yazmaz | 🔴 donustur |
+
+## Adım 2 — veritabanı göçü (2026-11-02)
+
+`Version20261102120000`: taslaklar (`huniler.taslak`) ve yayın sürümleri (`huni_surumleri.tanim`) dönüştürülür — sürümlerin değişmezliği kullanıcı kararıyla (Ç86) bu kez bilerek bozuldu; `down` geri dönüşü reddeder. Dönüştürücü göçün İÇİNDE (Tanim sonra değişse de göç aynı kalır).
+
+| Eski | Ekran |
+|---|---|
+| tanitim | baslik; gorsel/gorselMetni/duzen aynen; metin → paragraf bloğu (boşsa bloksuz); dugme, hedef, ilerlemeGoster |
+| soru | soru → baslik; aciklama → paragraf bloğu; soru bloğu (secimTuru, duzen, yanitZorunlu, secenekler + hedefleri); tek seçimde düğme yok, değilse devamDugmesi ?? "Devam" |
+| yorum | baslik; yorum bloğu (boş unvan yazılmaz; boş metinde bloksuz); dugme |
+| yukleme, paywall, ekran | aynen |
+
+Bu yüzden ekran artık **0–12 blok** alır (başlık + düğme: "Teşekkürler!"; boş metinli tanıtım böyle taşınır).
+
+Ölçüm (yerel geliştirme veritabanı; önce iki tablonun verisi yedeklendi, 33 524 bayt):
+- Öncesi taslak: soru 18, tanıtım 8, yorum 1, paywall 5 · sürümler: soru 46, tanıtım 26, yorum 1, paywall 14.
+- Sonrası taslak: ekran 27, paywall 5 · sürümler: ekran 73, paywall 14 (sayılar tutuyor).
+- 19 tanımın (5 taslak + 14 sürüm) hepsi `Tanim::hatalar` ile geçerli.
+- `genel` taslağının taşınmış "kiminle" adımı ekran görüntüsünde doğru çizildi (soru bloğu, düğmesiz).
+
+Kırma 5/5 kırmızı: D1 tek seçimli soruya düğme · D2 boş metin boş blok · D3 açıklama taşınmaz · D4 kapak taşınmaz · D5 bloksuz ekran geçersiz.
+
+Göç sınıfları testten çağrılabilsin diye `DoctrineMigrations\` geliştirme otomatik yüklemesine eklendi (`composer.json` autoload-dev).

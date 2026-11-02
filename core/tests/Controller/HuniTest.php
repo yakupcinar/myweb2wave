@@ -171,6 +171,14 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
+    /** T1c: bloksuz ekran (başlık + düğme, ör. "Teşekkürler!") geçerli — boş metinli tanıtım böyle taşınır. */
+    public function testBloksuzEkranGecerli(): void
+    {
+        $t = self::tanim('X');
+        array_splice($t['adimlar'], 1, 0, [self::ekran([])]);
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
     /** T1c: ekranın kapağı — tanıtımın görseli ve üç düzeni (taşıma için). */
     public function testEkranKapagiGecerli(): void
     {
@@ -364,9 +372,9 @@ final class HuniTest extends WebTestCase
             return $t;
         };
         $b = ['tur' => 'baslik', 'metin' => 'Başlık'];
-        yield 'ekran bloksuz' => ['bloklar 1–12 öğeli liste', $ekr([])];
-        yield 'ekran 13 blok' => ['bloklar 1–12 öğeli liste', $ekr(array_fill(0, 13, $b))];
-        yield 'ekran bloklar liste değil' => ['bloklar 1–12 öğeli liste', $ekr(['a' => $b])];
+        yield 'ekran 13 blok' => ['bloklar 0–12 öğeli liste', $ekr(array_fill(0, 13, $b))];
+        yield 'ekran bloklar liste değil' => ['bloklar 0–12 öğeli liste', $ekr(['a' => $b])];
+        yield 'ekran bloklar yok' => ['alanlar tam olarak', $ekr([], ['bloklar' => null])];
         yield 'ekran başlıksız' => ['alanlar tam olarak id, tur, baslik, bloklar', $ekr([$b], ['baslik' => null])];
         yield 'ekran başlığı boş' => ['adım 2 baslik: 1–200', $ekr([$b], ['baslik' => ' '])];
         yield 'ekran hedefi geriye' => ['hedef sonraki adımlardan', $ekr([$b], ['hedef' => 'giris'])];
