@@ -109,7 +109,11 @@ export function Soru({
     soru: string;
     aciklama?: string | undefined;
     secenekler?:
-        ({ metin: string } & Omit<GorselAlani, "medyaKoku">)[] | undefined;
+        | ({ metin: string; simge?: string | undefined } & Omit<
+              GorselAlani,
+              "medyaKoku"
+          >)[]
+        | undefined;
     secimTuru?: "tekli" | "coklu" | "metin" | undefined;
     yanitZorunlu?: boolean | undefined;
     cevapMetni?: string | undefined;
@@ -175,6 +179,12 @@ export function Soru({
                                     sinif="secenek-gorseli"
                                     alt={s.gorselMetni}
                                 />
+                            ) : null}
+                            {s.simge ? (
+                                // Süs: anlam metinde, ekran okuyucu okumaz.
+                                <span className="simge" aria-hidden="true">
+                                    {s.simge}
+                                </span>
                             ) : null}
                             <span>{s.metin}</span>
                             <span className="isaret" aria-hidden="true" />
@@ -341,6 +351,7 @@ export type TanimAdimi =
           duzen?: "liste" | "izgara";
           secenekler?: {
               metin: string;
+              simge?: string;
               gorsel?: string;
               gorselMetni?: string;
           }[];

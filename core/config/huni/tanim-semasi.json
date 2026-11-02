@@ -295,6 +295,11 @@
                             "metin": {
                                 "type": "string"
                             },
+                            "simge": {
+                                "description": "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı",
+                                "type": "string",
+                                "maxLength": 32
+                            },
                             "gorsel": {
                                 "$ref": "#/$defs/GorselKimligi"
                             },

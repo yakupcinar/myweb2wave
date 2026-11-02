@@ -871,6 +871,10 @@ components:
             properties:
               id: { $ref: "#/components/schemas/HuniKimligi" }
               metin: { type: string }
+              simge:
+                description: "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı"
+                type: string
+                maxLength: 32
               gorsel: { $ref: "#/components/schemas/GorselKimligi" }
               gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
               hedef: { $ref: "#/components/schemas/AdimHedefi" }

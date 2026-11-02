@@ -305,10 +305,20 @@ final class Tanim
         $gorulen = [];
         foreach ($secenekler as $j => $s) {
             $sy = "{$yer} seçenek ".($j + 1);
-            $istege = \is_array($s) ? array_values(array_intersect(['gorsel', 'gorselMetni', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
+            $istege = \is_array($s) ? array_values(array_intersect(['simge', 'gorsel', 'gorselMetni', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
             if (!\is_array($s) || !self::anahtarlar($s, ['id', 'metin', ...$istege])) {
-                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel, gorselMetni, hedef";
+                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) simge, gorsel, gorselMetni, hedef";
                 continue;
+            }
+            // Mobil görünüm 3: tek emoji (ZWJ aile, bayrak, ten tonu tek grafem);
+            // görselle birlikte değil — ikisi aynı yeri doldurur.
+            if (\array_key_exists('simge', $s)) {
+                $simge = $s['simge'];
+                if (!\is_string($simge) || \strlen($simge) > 32 || 1 !== grapheme_strlen($simge) || 1 !== preg_match('/\p{Extended_Pictographic}|\p{Regional_Indicator}/u', $simge)) {
+                    $h[] = "{$sy}: simge tek emoji olmalı";
+                } elseif (\array_key_exists('gorsel', $s)) {
+                    $h[] = "{$sy}: simge ve gorsel birlikte olmaz";
+                }
             }
             if (\array_key_exists('hedef', $s)) {
                 if ($coklu) {

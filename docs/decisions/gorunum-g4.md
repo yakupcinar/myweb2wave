@@ -16,5 +16,6 @@ Döngü (kullanıcı 2026-11-02: "benden karar bekleme"). G1 ölçümü: hap dü
 - Kırma 13/13 kırmızı: K1 alan denetimi · K2 serbest yanıtta ızgara geçer · K3 çerçeve kontrastı yok · K4 kart yüzeyi yok sayılır · K5 geçiş alt rengi yok sayılır · K6 çerçeve değişkeni yok · K7 CSS düğme arka planı sabit · K8 kenar 2px · K9 tam ekranda dolu değil · K10 listede işaret · K11 `Adim` aktarmaz · K12 Puck soru düzenini okumaz · K13 Puck düğme biçimini yazmaz.
 - PHPStan, `$metinYaniti` koşulunu PHPDoc'tan "hep yanlış" saydı (K2 çalıştığını kanıtlıyordu) → denetim yardımcıya taşındı (`soruDuzeni`), K2 yeniden koşuldu: kırmızı.
 - Gerçek sistem (KeepChat taslağı yedeklendi → **aynen geri yüklendi**): çerçeve + ızgara ve hap çekildi; `#22d3ee` çerçeve beyaz zeminde reddedildi (1,81:1).
+- CI: koşu 41396937051, SHA afa388b, `KONTROL: YEŞİL`, 299 test.
 - `bin/kontrol` yeşil (299 çekirdek testi).
 - **Ölçülmedi:** Puck'ta alanların görsel kontrolü; ızgarada çok uzun seçenek metni.

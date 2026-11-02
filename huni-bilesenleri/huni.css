@@ -246,7 +246,18 @@ html:has(> body.huni) {
     background: var(--yuzey);
     font-weight: 550;
 }
-.huni .secenekler button > span:not(.isaret) {
+/* Mobil görünüm 3: seçenek simgesi (tek emoji) metnin önünde, esnemez. */
+.huni .secenekler .simge {
+    flex: none;
+    /* En az genişlik: emoji desteği zayıf cihazda birleşik emoji (aile)
+       ayrı karakterlere bölünür — sabit genişlik metnin üstüne taşıyordu
+       (ölçüldü, mobil-gorunum-3-5.md). */
+    min-width: 28px;
+    font-size: 24px;
+    line-height: 1;
+    text-align: center;
+}
+.huni .secenekler button > span:not(.isaret):not(.simge) {
     flex: 1;
 }
 .huni .secenekler button:hover {

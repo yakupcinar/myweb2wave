@@ -17,6 +17,8 @@ type YaziTipi = Tema["yaziTipi"];
 export type SecenekProps = {
     kimlik: string;
     metin: string;
+    /** Mobil görünüm 3: boş = simge yok (tanıma yazılmaz). */
+    simge?: string;
     gorsel: string;
     /** Ç44: boş = dekoratif; görselsizse tanıma yazılmaz. */
     gorselMetni: string;
@@ -196,6 +198,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             secenekler: (adim.secenekler ?? []).map((s) => ({
                                 kimlik: s.id,
                                 metin: s.metin,
+                                simge: s.simge ?? "",
                                 gorsel: s.gorsel ?? "",
                                 gorselMetni: s.gorselMetni ?? "",
                                 hedef: s.hedef ?? "",
@@ -312,7 +315,13 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                         : {
                               secenekler: (p.secenekler ?? []).map((s) => {
                                   const secenek = gorselli(
-                                      { id: s.kimlik, metin: s.metin },
+                                      {
+                                          id: s.kimlik,
+                                          metin: s.metin,
+                                          ...(s.simge
+                                              ? { simge: s.simge }
+                                              : {}),
+                                      },
                                       s.gorsel ?? "",
                                       s.gorselMetni ?? "",
                                   );

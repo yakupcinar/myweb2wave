@@ -184,6 +184,19 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar($coklu, ['monthly']));
     }
 
+    /** Mobil görünüm 3: seçenek simgesi — tek grafem emoji (ZWJ aile, bayrak, ten tonu dahil). */
+    public function testSecenekSimgesiGecerli(): void
+    {
+        $t = self::ile(1, 'secenekler', [
+            ['id' => 'a', 'metin' => 'İş', 'simge' => '💼'],
+            ['id' => 'b', 'metin' => 'Aile', 'simge' => '👨‍👩‍👧'],
+            ['id' => 'c', 'metin' => 'Türkiye', 'simge' => '🇹🇷'],
+            ['id' => 'd', 'metin' => 'Beğen', 'simge' => '👍🏽'],
+            ['id' => 'e', 'metin' => 'Simgesiz'],
+        ]);
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
     public function testLogoGecerliYayindaDonerSozlesmeyeUyar(): void
     {
         $logo = str_repeat('a1', 32);
@@ -296,6 +309,13 @@ final class HuniTest extends WebTestCase
         $t2['adimlar'][1] = $serbest;
         yield 'serbest yanıtta düzen' => ['duzen yalnız seçmeli soruda', $t2];
         yield 'tanıtımda soru düzeni' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'izgara')];
+        // Mobil görünüm 3: simge tek emoji, görselle birlikte değil.
+        $simge = static fn (mixed $s, array $ek = []): array => self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'simge' => $s] + $ek, ['id' => 'b', 'metin' => 'B']]);
+        yield 'simge harf' => ['simge tek emoji olmalı', $simge('A')];
+        yield 'simge iki emoji' => ['simge tek emoji olmalı', $simge('😀😀')];
+        yield 'simge emoji + metin' => ['simge tek emoji olmalı', $simge('💼 iş')];
+        yield 'simge sayı' => ['simge tek emoji olmalı', $simge(5)];
+        yield 'simge ve görsel' => ['simge ve gorsel birlikte olmaz', $simge('💼', ['gorsel' => str_repeat('c', 64)])];
         // Ç61 (5): isteğe bağlı logo — görsel kimliği.
         yield 'logo geçersiz' => ['logo: görsel kimliği geçersiz', $t + ['logo' => 'logo.png']];
         yield 'logo boş' => ['logo: görsel kimliği geçersiz', $t + ['logo' => '']];

@@ -553,6 +553,8 @@ export interface components {
             secenekler?: {
                 id: components["schemas"]["HuniKimligi"];
                 metin: string;
+                /** @description Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı */
+                simge?: string;
                 gorsel?: components["schemas"]["GorselKimligi"];
                 gorselMetni?: components["schemas"]["GorselMetni"];
                 hedef?: components["schemas"]["AdimHedefi"];

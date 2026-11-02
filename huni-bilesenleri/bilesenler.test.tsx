@@ -249,6 +249,36 @@ describe("G4 — seçenek dizilişi ve düğme biçimi", () => {
     });
 });
 
+describe("Mobil görünüm 3 — seçenek simgesi", () => {
+    const html = renderToStaticMarkup(
+        <Soru
+            soru="Kiminle?"
+            secenekler={[{ metin: "İş", simge: "💼" }, { metin: "Diğer" }]}
+            medyaKoku={KOK}
+        />,
+    );
+    it("simge metnin önünde, ekran okuyucuya gizli; simgesizde öğe yok", () => {
+        expect(html).toContain(
+            '<span class="simge" aria-hidden="true">💼</span><span>İş</span>',
+        );
+        expect(html.match(/class="simge"/g)).toHaveLength(1);
+    });
+    it("CSS: simge büyük, en az genişlikte ve esnemez", () => {
+        expect(css).toMatch(/\.huni \.secenekler \.simge \{[^}]*font-size/);
+        // Metin esner, simge esnemez (esneyen simge metni sağa iterdi).
+        expect(css).toContain(
+            ".huni .secenekler button > span:not(.isaret):not(.simge) {",
+        );
+        // Sabit genişlik bölünen emojide metnin üstüne taşıyordu (ölçüldü).
+        expect(css).toMatch(
+            /\.huni \.secenekler \.simge \{[^}]*min-width: 28px/,
+        );
+        expect(css).not.toMatch(
+            /\.huni \.secenekler \.simge \{[^}]*[^-]width: 28px/,
+        );
+    });
+});
+
 describe("G5 — tanıtım düzeni", () => {
     const ciz = (duzen?: "ust" | "kahraman" | "tamEkran"): string =>
         renderToStaticMarkup(

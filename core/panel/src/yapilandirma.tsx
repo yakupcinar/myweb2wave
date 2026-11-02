@@ -283,12 +283,15 @@ function soruBileseni(
                 defaultItemProps: {
                     kimlik: "secenek",
                     metin: "",
+                    simge: "",
                     gorsel: "",
                     gorselMetni: "",
                     hedef: "",
                 },
                 arrayFields: {
                     metin: { type: "text", label: "Metin" },
+                    // Tek emoji; kayıtta çekirdek denetler (görselle birlikte olmaz).
+                    simge: { type: "text", label: "Simge (tek emoji)" },
                     kimlik: { type: "text", label: "Kimlik" },
                     gorsel: gorselAlani(ortam, "Görsel"),
                     gorselMetni: gorselMetniAlani,

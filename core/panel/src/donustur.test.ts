@@ -350,6 +350,25 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("seçenek simgesi gidiş-dönüş; boş simge yazılmaz", () => {
+        const simgeli: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((a) =>
+                a.tur === "soru" && a.secenekler
+                    ? {
+                          ...a,
+                          secenekler: a.secenekler.map((s, i) =>
+                              i === 0 ? { ...s, simge: "💼" } : s,
+                          ),
+                      }
+                    : a,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(simgeli, VARSAYILAN))).toStrictEqual(
+            simgeli,
+        );
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
