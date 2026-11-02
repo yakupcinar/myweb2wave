@@ -257,3 +257,15 @@ iki effect'i ayırt edemez — test hep yeşil. **Ölçüm (2026-10-27,
 hedef renk. **Doğrusu:** ilk çizimi etkileyen değişkeni boyamadan önce
 yaz (`useLayoutEffect` / sunucuda); görsel iddiayı gerçek tarayıcıda,
 birden çok çekimle ölç.
+
+## §41 — Veritabanı sıralaması ≠ JS sıralaması (aynı liste, farklı sıra)
+**Belirti:** aynı seçenek listesi sunucuda "a-1 a_1 a1", tarayıcıda "a-1 a1 a_1"; hata yok, iki taraf ayrı ayrı yeşil.
+**Sebep:** Postgres `ORDER BY` veritabanının sıralamasını (en_US.utf8: noktalama yok sayılır) kullanır; JS `sort()` kod birimi sırası.
+**Ölçüm (2026-11-02, `t2-ozellik-deposu.md`):** ortak örnekli eşlik testi (`OzellikEsligiTest`) ilk koşuda tam bu farkla kırmızı.
+**Doğrusu:** iki dilin karşılaştırdığı sırada `COLLATE "C"`; eşliği ortak örnek dosyasıyla iki tarafta ölç.
+
+## §42 — Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz
+**Belirti:** üst bileşen (ekran) yuvadaki bloğa göre alanını ayarlayacak — birim testi yeşil, düzenleyicide hiçbir şey olmuyor.
+**Sebep:** `resolveData` bileşenin KENDİ verisi değişince/eklenince/yüklenince çağrılır; yuvadaki çocuk değişimi üstü tetiklemez.
+**Ölçüm (2026-11-02, `t1c-tasima-olcumu.md`):** tarayıcıda soru bloğu çokluya çevrildi, ekranın düğmesi gelmedi.
+**Doğrusu:** çocuklara bakan kural düzenleyici bekçisinde (her veri değişiminde saf işlev + `setData`); davranışı tarayıcıda ölç.

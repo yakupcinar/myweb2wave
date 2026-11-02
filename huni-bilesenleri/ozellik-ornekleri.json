@@ -1,0 +1,69 @@
+{
+    "//": "T2b: sunucu (OzelliklerTest.php, ziyaret_ozellikleri görünümü) ve oynatıcı (ozellikler.test.ts) AYNI olaylardan AYNI özellikleri üretmeli. Olay = oynatıcının /ilerleme'ye gönderdiği gövde. Beklenenler elle yazıldı. Tarayıcı yalnız hunin kendi verisini bilir: odeme.* ve abonelik.* burada yok.",
+    "ornekler": [
+        {
+            "ad": "tam yol: utm, izin, tekli, çoklu (sıralama tuzağı), serbest yanıt, geri dönüş",
+            "huni": "genel",
+            "surum": 1,
+            "adres": "?utm_source=meta&utm_medium=paid&utm_campaign=yaz&fbclid=X1",
+            "izin": "evet",
+            "olaylar": [
+                { "sira": 0, "adim": "kiminle" },
+                { "sira": 0, "adim": "kiminle", "cevap": "aile" },
+                { "sira": 1, "adim": "ilgi" },
+                {
+                    "sira": 1,
+                    "adim": "ilgi",
+                    "cevaplar": ["a_1", "a2", "a-1", "a1"]
+                },
+                { "sira": 2, "adim": "not" },
+                { "sira": 2, "adim": "not", "cevapMetni": "Daha az bildirim" },
+                { "sira": 1, "adim": "ilgi", "cevaplar": ["a1", "a_1", "a-1"] }
+            ],
+            "beklenen": {
+                "adim.son": "not",
+                "cevap.ilgi": ["a-1", "a1", "a_1"],
+                "cevap.kiminle": ["aile"],
+                "cevap.not": "Daha az bildirim",
+                "huni": "genel",
+                "huni.surum": 1,
+                "izin.reklam": "evet",
+                "utm.campaign": "yaz",
+                "utm.medium": "paid",
+                "utm.source": "meta"
+            }
+        },
+        {
+            "ad": "cevap değişir ve silinir: tekli yeniden seçim, boş serbest yanıt, izin reddi",
+            "huni": "genel",
+            "surum": 1,
+            "adres": "",
+            "izin": "hayir",
+            "olaylar": [
+                { "sira": 0, "adim": "kiminle", "cevap": "is" },
+                { "sira": 0, "adim": "kiminle", "cevap": "aile" },
+                { "sira": 1, "adim": "not", "cevapMetni": "ilk" },
+                { "sira": 1, "adim": "not", "cevapMetni": "   " }
+            ],
+            "beklenen": {
+                "adim.son": "not",
+                "cevap.kiminle": ["aile"],
+                "huni": "genel",
+                "huni.surum": 1,
+                "izin.reklam": "hayir"
+            }
+        },
+        {
+            "ad": "henüz hiçbir şey: izin seçilmedi, adres yok",
+            "huni": "genel",
+            "surum": 1,
+            "adres": "",
+            "izin": null,
+            "olaylar": [],
+            "beklenen": {
+                "huni": "genel",
+                "huni.surum": 1
+            }
+        }
+    ]
+}

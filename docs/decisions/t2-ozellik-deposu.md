@@ -34,3 +34,15 @@ Görünüm denemeleri test veritabanını yeniden kurarak koşuldu; sonda yenide
 CI (bağımlılıklar kilit dosyasından sıfırdan): koşu 41445596923, SHA 8f02d92, `KONTROL: YEŞİL` (core 369 test, görünüm göçü dahil).
 
 Yan iş: PHPStan aynı çağrının sonucunu hatırlayıp ikinci okumayı "hep yanlış" saydı → okuma yöntemleri `@phpstan-impure` (canlı veri).
+
+# T2b — oynatıcıda aynı adlar (sunucu ↔ tarayıcı eşliği, 2026-11-02)
+
+Kullanıcı: "T2b ile devam et". Koşul motoru (T3) hunide tarayıcıda çalışacak; tarayıcı sunucuyla AYNI özellikleri üretmeli.
+
+- **Girdi = oynatıcının zaten gönderdiği olaylar** (`/ilerleme` gövdesi `{sira, adim, cevap|cevaplar|cevapMetni}`) + huni, sürüm, adres, izin. Saf işlev `huni-bilesenleri/ozellikler.ts` (ortak kitaplık; panel önizlemesi de kullanabilir). Sunucunun kuralları aynen: aynı sırada ilk adım kalır, yeni cevap eskisini değiştirir, boş liste / boş serbest yanıt siler, `adim.son` en ileri sıra.
+- **Eşlik ölçülür:** ortak örnek dosyası `huni-bilesenleri/ozellik-ornekleri.json` (tema-ornekleri.json deseni). `OzellikEsligiTest.php` olayları GERÇEK uçlardan (`POST /huni/ziyaretler`, `/ilerleme`) geçirip görünümü okur; `ozellikler.test.ts` aynı olayları işleve verir; ikisi de elle yazılmış beklenene eşit olmalı.
+- **Bulunan tuzak:** veritabanı sıralaması en_US — seçenek listesi "a-1 a_1 a1", JS "a-1 a1 a_1". Sunucu testi ilk koşuda tam bu yüzden kırmızıydı. Göç `Version20261102140000` görünümü `COLLATE "C"` ile değiştirir (eski göç aynı kalır; sorgusu `sorgu()` ile paylaşılır).
+- Tarayıcıda yalnız hunin kendi verisi: `odeme.*`, `abonelik.*` yok (ödeme sonrası sunucuda).
+- Oynatıcıya henüz bağlanmadı: tüketicisi T3 (kullanılmayan durum eklenmedi).
+
+Kırma 6/6 kırmızı: H1 sunucu en_US sıralaması · H2 oynatıcı sıralamaz · H3 boş serbest yanıt silinmez · H4 adim.son son olay · H5 seçilmemiş izin yazılır · H6 tekli cevap liste değil. Gerçek veritabanında göç sonrası 441 özellik aynı, örnek ziyaret değişmedi.
