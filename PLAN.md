@@ -110,7 +110,7 @@
   - [x] L15 · Ç34 ziyaret hız sınırı + sekmede ziyaret sürdürme (+ güvenilir vekil, H6b IP hatası) — `docs/decisions/ziyaret-hiz-siniri.md`
   - [x] L16 · Ç56-3 izin oranı raporu — `docs/decisions/izin-orani.md`
   - [x] L17 · Ç18 webhook bütünlük testi · Ç20 past_due test clock — `docs/decisions/webhook-butunluk-past-due.md`
-  - [ ] L18 · Ç23 ölü bağlantı denetimi · Ç14 Dependabot
+  - [x] L18 · 2026-11-02, `l18-baglanti-dependabot.md`: `funnel-baglanti` kontrol adımı (eski Ç23 hatasını yakaladı) · `.github/dependabot.yml` (cooldown 14 gün, şemaya karşı geçerli); Dependabot `main` dalına birleşince çalışır (Ç80)
   - [ ] L19 · Ç54 yöne göre geçiş + yumuşak ilerleme çubuğu
   - [ ] L20 · Ç50 Preact denemesi (ölç; iyiyse geç)
 - [ ] **Huni mobil görünüm** (kullanıcı 2026-10-27: "huniyi sevmedim, örnek repolara bak"; yön: mobil uygulama gibi). `docs/decisions/huni-mobil-gorunum.md`

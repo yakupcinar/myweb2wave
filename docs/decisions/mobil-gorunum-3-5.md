@@ -33,4 +33,5 @@ Kalan maddeler (`huni-mobil-gorunum.md`): 3 seçenek simgesi · 4 "planın hazı
 - Kırma 6/6: K1 oynatıcı kaydetmez · K2 uygulama köke yazmaz · **K3 ilk yama sözdizimini bozdu (derleme kırmızısı, sahte §8) → K3c hatayı yeniden fırlatarak: kırmızı** · K4 temasız kayıt silinmez · K5 iptal gövdesi `.huni` değil · K6 bağlantı ana düğme kuralı dışında. Not: K2–K4'ün ilk yamaları Prettier girintisi yüzünden tutmadı (KOŞULMADI), yeniden koşuldu.
 - Gerçek tarayıcı (ekran kabı, oturum belleğine tema yazılıp açıldı): iptal ve başarı sayfaları geçiş zemini, Nunito, büyük başlık, hap düğmeyle; tema yoksa varsayılan (`--ana` #db2777 / #2563eb).
 - `bin/kontrol` yeşil (313 çekirdek testi; huni 70, bileşen 59).
+- CI (madde 5): koşu 41403281807, SHA d716cb5, `KONTROL: YEŞİL`, 313 test.
 - **Ölçülmedi:** tema modül betiğiyle (sayfa ayrıştırıldıktan sonra) uygulanıyor — çok yavaş cihazda kısa varsayılan-renk parlaması olabilir (§40 benzeri); gerçek iPhone'da ölçülmedi (Ç79).
