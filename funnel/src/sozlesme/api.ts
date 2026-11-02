@@ -534,6 +534,14 @@ export interface components {
         PanelRaporu: {
             /** @enum {integer} */
             gun: 7 | 30 | 90;
+            /** @description P4 — aralığın her UTC günü (en eski önce), boş gün 0; olay deposundan (T4) */
+            gunluk: {
+                /** Format: date */
+                gun: string;
+                ziyaret: number;
+                odemeBaslatildi: number;
+                odemeTamamlandi: number;
+            }[];
             gunler: (7 | 30 | 90)[];
             /** @description Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar */
             azami: number;

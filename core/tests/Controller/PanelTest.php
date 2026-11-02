@@ -120,6 +120,34 @@ final class PanelTest extends WebTestCase
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
 
+    /**
+     * P4: günlük seri (UTC takvim günü) — aralığın her günü, boş gün 0; olay
+     * deposundan (T4). Beklenen günler PHP saatinden, sorgudan bağımsız (§3).
+     */
+    public function testGunlukSeriHerGunSifirlaDolu(): void
+    {
+        $bugun = $this->ziyaretEkle([], '0 seconds');
+        $dun = $this->ziyaretEkle([], '1 day');
+        $this->ziyaretEkle([], '1 day');
+        $this->ziyaretEkle([], '3 days');
+        $this->ziyaretEkle([], '10 days');
+        $this->db->executeStatement("INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, created_at, tamamlandi_at) VALUES ('cs_dun', :z, now() - interval '1 day', now())", ['z' => $dun]);
+        $this->db->executeStatement("INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, created_at) VALUES ('cs_bugun', :z, now())", ['z' => $bugun]);
+        $this->girisYapmis();
+
+        $gun = static fn (int $once): string => gmdate('Y-m-d', time() - $once * 86400);
+        $bos = static fn (int $once): array => ['gun' => $gun($once), 'ziyaret' => 0, 'odemeBaslatildi' => 0, 'odemeTamamlandi' => 0];
+        self::assertSame([
+            $bos(6), $bos(5), $bos(4),
+            ['gun' => $gun(3), 'ziyaret' => 1, 'odemeBaslatildi' => 0, 'odemeTamamlandi' => 0],
+            $bos(2),
+            ['gun' => $gun(1), 'ziyaret' => 2, 'odemeBaslatildi' => 1, 'odemeTamamlandi' => 0],
+            ['gun' => $gun(0), 'ziyaret' => 1, 'odemeBaslatildi' => 1, 'odemeTamamlandi' => 1],
+        ], $this->rapor('?gun=7')['gunluk']);
+        self::assertCount(30, $this->rapor()['gunluk']);
+        self::assertSame(1, $this->rapor('?gun=30')['gunluk'][19]['ziyaret'], '10 gün önceki 30 günde');
+    }
+
     /** Ç56 (3): izin oranı — yalnız sayı; seçmeyen = ne kabul ne ret. */
     public function testIzinSayilari(): void
     {
@@ -229,7 +257,8 @@ final class PanelTest extends WebTestCase
      *
      * @return array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>,
      *               satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>,
-     *               cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>}
+     *               cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>,
+     *               gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>}
      */
     private function rapor(string $sorgu = ''): array
     {
@@ -237,7 +266,7 @@ final class PanelTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $yanit = $this->client->getResponse();
         Sozlesme::yanitiDogrula('GET', '/panel/api/rapor', $yanit);
-        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>} $govde */
+        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>} $govde */
         $govde = json_decode((string) $yanit->getContent(), true);
 
         return $govde;

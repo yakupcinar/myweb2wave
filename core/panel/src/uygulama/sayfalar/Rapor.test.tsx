@@ -46,17 +46,37 @@ const RAPOR: PanelRaporu = {
     ],
     cevaplar: [{ app: "keepchat", soru: "kiminle", secenek: "aile", sayi: 2 }],
     metinCevaplari: [],
+    gunluk: [
+        {
+            gun: "2026-11-01",
+            ziyaret: 3,
+            odemeBaslatildi: 1,
+            odemeTamamlandi: 0,
+        },
+        {
+            gun: "2026-11-02",
+            ziyaret: 0,
+            odemeBaslatildi: 0,
+            odemeTamamlandi: 0,
+        },
+        {
+            gun: "2026-11-03",
+            ziyaret: 5,
+            odemeBaslatildi: 2,
+            odemeTamamlandi: 1,
+        },
+    ],
 };
 
 let istenen: string[] = [];
 
-function kur(adres = "/panel"): void {
+function kur(adres = "/panel", veri: PanelRaporu = RAPOR): void {
     istenen = [];
     vi.stubGlobal(
         "fetch",
         vi.fn(async (istek: Request) => {
             istenen.push(istek.url);
-            return new Response(JSON.stringify(RAPOR), {
+            return new Response(JSON.stringify(veri), {
                 headers: { "Content-Type": "application/json" },
             });
         }),
@@ -95,6 +115,53 @@ describe("Rapor", () => {
             "1 · 25,0 %",
             "1 · 25,0 %",
         ]);
+    });
+
+    it("P4: iki ayrı grafik, toplamlar, gösterge yalnız iki seride, tablo görünümü UTC günüyle", async () => {
+        kur();
+        const ziyaret = within(
+            await screen.findByRole("region", { name: "Günlük ziyaret" }),
+        );
+        const odeme = within(
+            screen.getByRole("region", { name: "Günlük ödeme" }),
+        );
+        expect(
+            ziyaret.getByText("3 gün (UTC) · toplam ziyaret 8"),
+        ).toBeTruthy();
+        expect(
+            odeme.getByText("3 gün (UTC) · toplam ödemeye geçti 3, ödedi 1"),
+        ).toBeTruthy();
+        expect(ziyaret.queryByRole("list", { name: "Gösterge" })).toBeNull();
+        expect(
+            within(odeme.getByRole("list", { name: "Gösterge" }))
+                .getAllByRole("listitem")
+                .map((l) => l.textContent),
+        ).toEqual(["Ödemeye geçti", "Ödedi"]);
+        const satir = (k: ReturnType<typeof within>, gun: string) =>
+            [
+                ...k
+                    .getByText("Tablo olarak göster")
+                    .closest("details")!
+                    .querySelectorAll(`tr[data-gun="${gun}"] td`),
+            ].map((td) => td.textContent);
+        expect(satir(odeme, "2026-11-03")).toEqual(["3 Kasım Sal", "2", "1"]);
+        expect(satir(ziyaret, "2026-11-02")).toEqual(["2 Kasım Pzt", "0"]);
+    });
+
+    it("P4: kayıtsız aralıkta grafik yerine boş durum", async () => {
+        kur("/panel", {
+            ...RAPOR,
+            gunluk: RAPOR.gunluk.map((g) => ({
+                ...g,
+                ziyaret: 0,
+                odemeBaslatildi: 0,
+                odemeTamamlandi: 0,
+            })),
+        });
+        const odeme = within(
+            await screen.findByRole("region", { name: "Günlük ödeme" }),
+        );
+        expect(odeme.getByText("Bu aralıkta kayıt yok.")).toBeTruthy();
     });
 
     it("anket adımı oranı ve şerit genişliği ilk adıma göre", async () => {

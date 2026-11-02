@@ -2,12 +2,17 @@
 // Veri /panel/api/rapor (sözleşme PanelRaporu); hesaplama yalnız gösterim
 // (toplam, yüzde, şerit) — sayımların kendisi çekirdekte.
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { yuzde, zaman } from "../bicim";
 import { SayfaBasi } from "../Duzen";
+
+// P4: grafik kitaplığı (Recharts) ayrı parça — Huniler/düzenleyici indirmez.
+const GunlukGrafikler = lazy(async () => ({
+    default: (await import("./GunlukGrafikler")).GunlukGrafikler,
+}));
 import { cn } from "../ui/cn";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
@@ -98,6 +103,16 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
                     deger={yuzde(toplam.odedi, toplam.ziyaret)}
                 />
             </section>
+
+            <Suspense
+                fallback={
+                    <p role="status" className="mb-5 text-soluk">
+                        Grafikler yükleniyor…
+                    </p>
+                }
+            >
+                <GunlukGrafikler gunluk={r.gunluk} />
+            </Suspense>
 
             <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-3">
                 <SayimKarti baslik="Reklamdan gelen" s={reklam} />

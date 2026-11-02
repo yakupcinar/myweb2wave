@@ -58,6 +58,7 @@ final class PanelController extends AbstractController
             'adimlar' => $rapor->adimlar($gun),
             'cevaplar' => $rapor->cevaplar($gun),
             'metinCevaplari' => $rapor->metinCevaplari($gun),
+            'gunluk' => $rapor->gunluk($gun),
         ]));
     }
 

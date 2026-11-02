@@ -85,6 +85,34 @@ final readonly class Rapor
     }
 
     /**
+     * P4: aralığın her UTC takvim günü (en eski önce) — ziyaret, ödeme
+     * başlatıldı/tamamlandı; boş gün 0. Olay deposundan (T4), aynı adlar.
+     *
+     * @return list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>
+     */
+    public function gunluk(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'gun' => \is_string($s['gun']) ? $s['gun'] : '',
+            'ziyaret' => self::sayi($s['ziyaret']),
+            'odemeBaslatildi' => self::sayi($s['baslatildi']),
+            'odemeTamamlandi' => self::sayi($s['tamamlandi']),
+        ], $this->db->fetchAllAssociative(
+            "WITH bugun AS (SELECT (now() AT TIME ZONE 'UTC')::date AS g)
+             SELECT to_char(d, 'YYYY-MM-DD') AS gun,
+                    count(o.ad) FILTER (WHERE o.ad = 'huni.ziyaret') AS ziyaret,
+                    count(o.ad) FILTER (WHERE o.ad = 'odeme.baslatildi') AS baslatildi,
+                    count(o.ad) FILTER (WHERE o.ad = 'odeme.tamamlandi') AS tamamlandi
+             FROM bugun, generate_series(bugun.g - (CAST(:gun AS int) - 1), bugun.g, interval '1 day') d
+             LEFT JOIN ziyaret_olaylari o
+               ON o.ad IN ('huni.ziyaret', 'odeme.baslatildi', 'odeme.tamamlandi')
+              AND o.zaman >= d AT TIME ZONE 'UTC' AND o.zaman < (d + interval '1 day') AT TIME ZONE 'UTC'
+             GROUP BY d ORDER BY d",
+            ['gun' => $gun],
+        ));
+    }
+
+    /**
      * Ç56 (3): reklam ölçümü izni — kabul / ret / seçmeyen (yalnız sayı).
      *
      * @return array{kabul: int, red: int, secmeyen: int}

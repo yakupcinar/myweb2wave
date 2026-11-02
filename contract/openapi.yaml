@@ -823,9 +823,21 @@ components:
     PanelRaporu:
       type: object
       additionalProperties: false
-      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari]
+      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari, gunluk]
       properties:
         gun: { type: integer, enum: [7, 30, 90] }
+        gunluk:
+          description: P4 — aralığın her UTC günü (en eski önce), boş gün 0; olay deposundan (T4)
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [gun, ziyaret, odemeBaslatildi, odemeTamamlandi]
+            properties:
+              gun: { type: string, format: date }
+              ziyaret: { type: integer, minimum: 0 }
+              odemeBaslatildi: { type: integer, minimum: 0 }
+              odemeTamamlandi: { type: integer, minimum: 0 }
         gunler:
           type: array
           items: { type: integer, enum: [7, 30, 90] }
