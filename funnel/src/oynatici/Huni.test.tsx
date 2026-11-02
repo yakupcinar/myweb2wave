@@ -533,6 +533,29 @@ describe("D7 — tema", () => {
       ).toContain(`url("${KOK}/medya/${G}.webp")`),
     );
   });
+  it("Mobil görünüm 5: tema sonuç sayfası için oturum belleğine kaydedilir", async () => {
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        tema: {
+          anaRenk: "#16a34a",
+          arkaPlan: "#0b1220",
+          metinRengi: "#f8fafc",
+          yaziTipi: "mono",
+          kose: 20,
+        },
+      }),
+    };
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(
+        JSON.parse(sessionStorage.getItem("huni-tema") ?? "{}"),
+      ).toMatchObject({
+        anaRenk: "#16a34a",
+      }),
+    );
+  });
   it("tema yoksa kökte değişken yazılmaz (huni.css varsayılanı)", async () => {
     kur();
     await yuklendi();

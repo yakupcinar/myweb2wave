@@ -23,3 +23,14 @@ Kalan maddeler (`huni-mobil-gorunum.md`): 3 seçenek simgesi · 4 "planın hazı
 - Kırma 10/10: K1 tür tanınmaz · K2 süre sınırı yok · K3 madde sınırı yok · K4 varsayılan süre · K5 `Adim` çizmez · K6 zamanlayıcı ilerlemez · K7 iptal yok (geri dönünce yine geçer) · K8 ekran çekiminde geçer · K9 dönüştürücü ödemeye eşler · K10 çubuk animasyonu yok.
 - Gerçek sistem (taslak yedeklendi → **aynen geri yüklendi**): ödemeden önce yükleme (3 sn, 3 madde); başsız Chrome'da ekran işareti olmadan **3,04 sn'de** ödeme adımına geçti; çekim (hareket azaltmalı) son hâli gösteriyor.
 - `bin/kontrol` yeşil (313 çekirdek testi).
+- CI (madde 4): koşu 41399603733, SHA 9b5c1b3, `KONTROL: YEŞİL`, 313 test.
+
+## 5 · Başarı / iptal sayfaları huni görünümünde
+- **Önce:** iki sayfa da stilsizdi (tarayıcı varsayılanı).
+- **Karar:** `body.huni > main > section`, `huni.css`; ana bağlantı huninin ana düğmesi gibi (`.huni a.ana`, `button.ana` kuralıyla ortak — G4 biçimi dahil). **Tema taşıma:** Stripe dönüş adresinde huni bilgisi yok → oynatıcı temayı **sekmenin oturum belleğine** yazar (`lib/sonuc-tema.ts`, `huni-tema`; temasız huni kaydı siler), sonuç sayfası okur ve köke uygular. Sunucu/adres değişmedi; bozuk kayıt ya da kapalı depolama (gizli sekme) → varsayılan görünüm, sayfa düşmez. İptal sayfasına kısa açıklama ("Ücret alınmadı…"). Başarı sayfasının mantığı (giriş bağlantısı, piksel, kimlik temizliği) değişmedi.
+- Reddedilen: dönüş adresine huni/tema parametresi (Stripe adresi sunucu yapılandırması, açık yönlendirme riski; adres değişmesin) · sunucudan son huninin teması (ziyaretçi ↔ huni eşlemesi gerekir; oturum belleği yeterli).
+- Testler: `sonuc-tema.test.ts` (kaydet → uygula, temasız siler, bozuk/kapalı depolama düşürmez; iki sayfanın kaynağı `.huni` + `huni.css` + `temaUygula`) · `Huni.test.tsx` (oynatıcı temayı kaydeder) · `bilesenler.test.tsx` (ana düğme seçici listesi).
+- Kırma 6/6: K1 oynatıcı kaydetmez · K2 uygulama köke yazmaz · **K3 ilk yama sözdizimini bozdu (derleme kırmızısı, sahte §8) → K3c hatayı yeniden fırlatarak: kırmızı** · K4 temasız kayıt silinmez · K5 iptal gövdesi `.huni` değil · K6 bağlantı ana düğme kuralı dışında. Not: K2–K4'ün ilk yamaları Prettier girintisi yüzünden tutmadı (KOŞULMADI), yeniden koşuldu.
+- Gerçek tarayıcı (ekran kabı, oturum belleğine tema yazılıp açıldı): iptal ve başarı sayfaları geçiş zemini, Nunito, büyük başlık, hap düğmeyle; tema yoksa varsayılan (`--ana` #db2777 / #2563eb).
+- `bin/kontrol` yeşil (313 çekirdek testi; huni 70, bileşen 59).
+- **Ölçülmedi:** tema modül betiğiyle (sayfa ayrıştırıldıktan sonra) uygulanıyor — çok yavaş cihazda kısa varsayılan-renk parlaması olabilir (§40 benzeri); gerçek iPhone'da ölçülmedi (Ç79).

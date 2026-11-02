@@ -242,14 +242,14 @@ describe("G4 — seçenek dizilişi ve düğme biçimi", () => {
             /\.secenekler\[data-duzen="izgara"\] \{[^}]*grid-template-columns: 1fr 1fr/,
         );
         expect(css).toMatch(
-            /\.huni button\.ana \{[^}]*background: var\(--dugme-arka, var\(--ana\)\)/,
+            /\.huni button\.ana,\s*\.huni a\.ana \{[^}]*background: var\(--dugme-arka, var\(--ana\)\)/,
         );
         expect(css).toMatch(
-            /\.huni button\.ana \{[^}]*color: var\(--dugme-yazi, var\(--ana-yazi\)\)/,
+            /\.huni button\.ana,\s*\.huni a\.ana \{[^}]*color: var\(--dugme-yazi, var\(--ana-yazi\)\)/,
         );
         // Dolu düğmenin kenarı eskisi gibi 1px (G4 yalnız çerçevede 2px).
         expect(css).toMatch(
-            /\.huni button\.ana \{[^}]*border-width: var\(--dugme-cizgi, 1px\)/,
+            /\.huni button\.ana,\s*\.huni a\.ana \{[^}]*border-width: var\(--dugme-cizgi, 1px\)/,
         );
         expect(css).toMatch(
             /section\[data-duzen="tamEkran"\] button\.ana \{[^}]*background: var\(--ana\)/,

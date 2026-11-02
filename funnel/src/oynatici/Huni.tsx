@@ -16,6 +16,7 @@ import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { fiyatMetni } from "../lib/fiyat";
 import { izinOku, izinYaz, type Izin } from "../lib/izin";
+import { temaKaydet } from "../lib/sonuc-tema";
 import {
   ilerlemeBildir,
   izinBildir,
@@ -125,6 +126,9 @@ function Oynatici({
   // görüntüsü ara renk görüyordu (ölçüm: gorunum-g3.md).
   useLayoutEffect(() => {
     document.title = tanim.sayfaBasligi;
+    // Mobil görünüm 5: sonuç sayfası aynı temayla çizilsin (önizlemede de
+    // zararsız — yalnız bu sekmenin oturum belleği).
+    temaKaydet(tanim.tema);
     if (!tanim.tema) return;
     const kok = document.documentElement.style;
     for (const [ad, deger] of Object.entries(temaDegiskenleri(tanim.tema, KOK)))

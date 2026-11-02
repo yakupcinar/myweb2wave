@@ -1,5 +1,7 @@
 ---
-// Kullanıcı Stripe ödeme sayfasından vazgeçince buraya döner.
+// Kullanıcı Stripe ödeme sayfasından vazgeçince buraya döner. Mobil görünüm
+// 5: huni görünümünde, huninin temasıyla (oturum belleğinden).
+import "../../../../huni-bilesenleri/huni.css";
 ---
 
 <html lang="tr">
@@ -8,12 +10,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ödeme tamamlanmadı</title>
   </head>
-  <body>
+  <body class="huni">
     <main>
-      <h1>Ödeme tamamlanmadı</h1>
-      <p>
-        <a href="/keepchat/">Plana geri dön</a>
-      </p>
+      <section>
+        <h1>Ödeme tamamlanmadı</h1>
+        <p>Ücret alınmadı. Planına istediğin zaman geri dönebilirsin.</p>
+        <div class="eylem">
+          <a class="ana" href="/keepchat/">
+            Plana geri dön
+          </a>
+        </div>
+      </section>
     </main>
+    <script>
+      import { temaUygula } from "../../lib/sonuc-tema";
+
+      temaUygula(import.meta.env.PUBLIC_CORE_URL);
+    </script>
   </body>
 </html>

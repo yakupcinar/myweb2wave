@@ -130,8 +130,10 @@ html:has(> body.huni) {
     outline: 3px solid color-mix(in srgb, var(--ana) 45%, transparent);
     outline-offset: 2px;
 }
-/* G4: biçim tema ön ayarından (tema.ts --dugme-*); yedekler dolu düğme. */
-.huni button.ana {
+/* G4: biçim tema ön ayarından (tema.ts --dugme-*); yedekler dolu düğme.
+   Mobil görünüm 5: sonuç sayfalarındaki ana bağlantı da aynı görünümde. */
+.huni button.ana,
+.huni a.ana {
     display: block;
     width: 100%;
     min-height: 56px;
@@ -146,6 +148,12 @@ html:has(> body.huni) {
         --dugme-golge,
         0 8px 20px -6px color-mix(in srgb, var(--ana) 55%, transparent)
     );
+}
+.huni a.ana {
+    box-sizing: border-box;
+    padding: 16px;
+    border-style: solid;
+    text-decoration: none;
 }
 .huni button:disabled {
     opacity: 0.55;

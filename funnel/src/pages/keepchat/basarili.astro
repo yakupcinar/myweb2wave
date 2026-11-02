@@ -3,7 +3,9 @@
 // durumu webhook'la çekirdeğe yazılır. Sayfa çekirdekten tek kullanımlık
 // giriş bağlantısı ister (Ç46); webhook sayfadan geç gelebilir → birkaç
 // kez yeniden dener. Bağlantı alınamazsa e-posta ve "Aboneliğimi bağla"
-// yolu kalır.
+// yolu kalır. Mobil görünüm 5: huni görünümünde, huninin temasıyla
+// (oturum belleğinden, lib/sonuc-tema.ts).
+import "../../../../huni-bilesenleri/huni.css";
 ---
 
 <html lang="tr">
@@ -12,30 +14,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Teşekkürler</title>
   </head>
-  <body>
+  <body class="huni">
     <main>
-      <h1>Teşekkürler!</h1>
-      <p id="durum">Aboneliğiniz başlatılıyor…</p>
-      <p id="giris" hidden>
-        <a id="giris-baglantisi" href="#">
-          KeepChat'i aç ve giriş yap
-        </a>
-      </p>
-      <p id="kurulum" hidden>
-        KeepChat telefonunuzda kurulu değilse önce App Store'dan kurun, sonra bu
-        sayfaya dönüp bağlantıya yeniden dokunun. Aynı bağlantıyı e-postanıza da
-        gönderdik; tek kullanımlıktır, 24 saat geçerlidir.
-      </p>
-      <p id="yedek" hidden>
-        Giriş bağlantısını e-postanıza gönderdik. Bulamazsanız KeepChat'te
-        Ayarlar → Abonelik → Aboneliğimi bağla'ya gidip ödemede yazdığınız
-        e-postayı girin.
-      </p>
+      <section>
+        <h1>Teşekkürler!</h1>
+        <p id="durum">Aboneliğiniz başlatılıyor…</p>
+        <p id="kurulum" hidden>
+          KeepChat telefonunuzda kurulu değilse önce App Store'dan kurun, sonra
+          bu sayfaya dönüp bağlantıya yeniden dokunun. Aynı bağlantıyı
+          e-postanıza da gönderdik; tek kullanımlıktır, 24 saat geçerlidir.
+        </p>
+        <p id="yedek" hidden>
+          Giriş bağlantısını e-postanıza gönderdik. Bulamazsanız KeepChat'te
+          Ayarlar → Abonelik → Aboneliğimi bağla'ya gidip ödemede yazdığınız
+          e-postayı girin.
+        </p>
+        <div class="eylem" id="giris" hidden>
+          <a id="giris-baglantisi" class="ana" href="#">
+            KeepChat'i aç ve giriş yap
+          </a>
+        </div>
+      </section>
     </main>
     <script>
       import { cekirdek } from "../../lib/cekirdek";
+      import { temaUygula } from "../../lib/sonuc-tema";
       import { izinOku } from "../../lib/izin";
       import { satinAlmaOlayiGonder } from "../../lib/reklam-pikselleri";
+
+      temaUygula(import.meta.env.PUBLIC_CORE_URL);
 
       const DENEME = 8;
       const ARALIK_MS = 1500;
