@@ -31,4 +31,6 @@ Veri beş tabloya dağınık: `huni_ziyaretleri` (huni, sürüm, UTM, izin), `hu
 
 Görünüm denemeleri test veritabanını yeniden kurarak koşuldu; sonda yeniden kuruldu ve yeşil.
 
+CI (bağımlılıklar kilit dosyasından sıfırdan): koşu 41445596923, SHA 8f02d92, `KONTROL: YEŞİL` (core 369 test, görünüm göçü dahil).
+
 Yan iş: PHPStan aynı çağrının sonucunu hatırlayıp ikinci okumayı "hep yanlış" saydı → okuma yöntemleri `@phpstan-impure` (canlı veri).
