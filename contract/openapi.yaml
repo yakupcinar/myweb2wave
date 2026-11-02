@@ -490,6 +490,148 @@ paths:
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Alan çok uzun ya da geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/huniler:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiHuniler
+      summary: P2 — uygulamanın hunileri ve yönlendirme kuralları (A8)
+      responses:
+        "200":
+          description: Huniler, kurallar, reklam adresi
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PanelHunileri" }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiHuniYeni
+      summary: Yeni huni (boş ya da bir hunin taslağından kopya); ilk huni varsayılan olur
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ad]
+              properties:
+                ad: { type: string, minLength: 1, maxLength: 64 }
+                kaynak: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "201":
+          description: Açıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [ad, duzenle]
+                properties:
+                  ad: { type: string }
+                  duzenle: { type: string, description: Düzenleyici sayfasının yolu }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz istek, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/huniler/{ad}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: ad, in: path, required: true, schema: { type: string } }
+    delete:
+      operationId: panelApiHuniKaldir
+      summary: Ç41 — ziyaretsiz huni silinir, ziyaretli arşivlenir; varsayılan kaldırılamaz
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Kaldırıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [sonuc]
+                properties:
+                  sonuc: { type: string, enum: [silindi, arsivlendi] }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz istek, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/huniler/{ad}/varsayilan:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: ad, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: panelApiHuniVarsayilan
+      summary: Varsayılan huni (hiçbir kural tutmazsa açılan)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Varsayılan oldu }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/kurallar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: panelApiKuralEkle
+      summary: Yönlendirme kuralı (adres parametresi = değer → huni), sona eklenir
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [parametre, deger, huni]
+              properties:
+                parametre: { type: string }
+                deger: { type: string, minLength: 1, maxLength: 200 }
+                huni: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "204": { description: Eklendi }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz istek, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/kurallar/{id}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    delete:
+      operationId: panelApiKuralSil
+      summary: Kuralı siler
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Silindi }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/kurallar/{id}/tasi:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: panelApiKuralTasi
+      summary: Kuralı bir sıra yukarı ya da aşağı taşır (ilk tutan kazanır)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [yon]
+              properties:
+                yon: { type: string, enum: [yukari, asagi] }
+      responses:
+        "204": { description: Taşındı }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz istek, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/anahtarlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -919,6 +1061,39 @@ components:
           maxItems: 5
           items: { $ref: "#/components/schemas/Kosul" }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
+    PanelHunileri:
+      type: object
+      additionalProperties: false
+      required: [adres, parametreler, huniler, kurallar]
+      properties:
+        adres: { type: string, description: Uygulamanın tek reklam adresi }
+        parametreler: { type: array, items: { type: string }, description: Kuralda kullanılabilen adres parametreleri }
+        huniler:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [ad, varsayilan, yayinda, farkli, ziyaretli, ac, duzenle]
+            properties:
+              ad: { type: string }
+              varsayilan: { type: boolean }
+              yayinda: { type: [integer, "null"], description: Son yayın sürümü; hiç yayınlanmadıysa null }
+              farkli: { type: boolean, description: Taslakta yayınlanmamış değişiklik var }
+              ziyaretli: { type: boolean, description: Ziyareti var — kaldırma arşivler (Ç41) }
+              ac: { type: string, description: "Ç70: süreli önizleme (yayınlanmışsa yayındaki sürüm), ziyaret sayılmaz" }
+              duzenle: { type: string }
+        kurallar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, sira, parametre, deger, huni]
+            properties:
+              id: { type: integer }
+              sira: { type: integer }
+              parametre: { type: string }
+              deger: { type: string }
+              huni: { type: string }
     KosulluDegerler:
       description: >-
         T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan

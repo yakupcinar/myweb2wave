@@ -27,7 +27,7 @@ Sol menü sırasıyla:
 |---|---|---|---|
 | `/panel/giris` | — | Yönetici girişi (kullanıcı adı + şifre) | Twig |
 | `/panel` | **Rapor** | Ziyaret, adım, ödeme, izin oranı | React |
-| `/panel/huniler` | **Huniler** | Uygulama başına huniler (Düzenle · Aç · Varsayılan yap · Sil/Arşivle), yeni huni, yönlendirme kuralları | Twig |
+| `/panel/huniler` | **Huniler** | Uygulama başına huniler (Düzenle · Aç · Varsayılan yap · Sil/Arşivle), yeni huni, yönlendirme kuralları | React (P2) |
 | `/panel/huniler/{app}/{ad}` | (Düzenle) | Sürükle-bırak düzenleyici: adımlar, tema/zemin/kart, Kaydet · Önizle · Yayınla · Sürümler, AI sohbeti | React + Puck |
 | `/panel/baglam` | **Ürün bağlamı** | Uygulama başına ürün, kategori, kitle, ton, yasaklar (AI bunu okur) | React |
 | `/panel/anahtarlar` | **API anahtarları** | MCP için kişisel anahtar oluştur / iptal et | React |
@@ -57,6 +57,6 @@ Sözleşme: `contract/openapi.yaml`.
 | Huni | `GET /huni/{app}` · `GET /huni/{app}/taslak` · `POST /huni/ziyaretler` · `POST /huni/ziyaretler/{ziyaret}/ilerleme` · `POST·DELETE /huni/ziyaretler/{ziyaret}/izin` · `POST /huni/giris-baglantisi` | huni sayfası (anahtarsız) |
 | Ödeme | `POST /checkout/sessions` · `POST /webhooks/stripe` | huni · Stripe |
 | Uygulama | `POST /apps/{app}/baglama/kod` · `POST /apps/{app}/baglama/dogrula` · `POST /apps/{app}/giris/kullan` · `GET /apps/{app}/kullanicilar/{kullanici}/hak` | mobil uygulama sunucusu (uygulama anahtarı) |
-| Panel API | `/panel/api/rapor` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/anahtarlar` · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` | panel (oturum + CSRF) |
+| Panel API | `/panel/api/rapor` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/anahtarlar` · `…/{app}/huniler` (+ `/{ad}`, `/{ad}/varsayilan`) · `…/{app}/kurallar` (+ `/{id}`, `/{id}/tasi`) · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` | panel (oturum + CSRF) |
 | Panel huni işlemleri | `/panel/huniler/{app}/…` (yeni, taslak, durum, yayinla, sürüm geri yükle, varsayılan, kaldır, kurallar) · `/panel/medya/{app}` | panel (oturum + CSRF) |
 | Diğer | `GET /medya/{id}.webp` · `GET /health` · `/mcp` | herkes · izleme · Claude |

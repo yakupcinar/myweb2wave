@@ -28,6 +28,7 @@ final class PanelController extends AbstractController
     #[Route('/panel', name: 'panel', methods: ['GET'])]
     #[Route('/panel/baglam', name: 'panel_baglam', methods: ['GET'])]
     #[Route('/panel/anahtarlar', name: 'panel_anahtarlar', methods: ['GET'])]
+    #[Route('/panel/huniler', name: 'panel_huniler', methods: ['GET'])]
     public function uygulama(Varliklar $varliklar): Response
     {
         $giris = $varliklar->giris('src/uygulama/main.tsx');

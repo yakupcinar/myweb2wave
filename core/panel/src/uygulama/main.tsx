@@ -1,6 +1,6 @@
 // Panel uygulaması (B5): Symfony /panel'de bu kabuğu verir; sayfaları
 // istemci yönlendirir, veriler /panel/api/* uçlarından (TanStack Query).
-// Geçiş P1–P5 (PLAN.md): Huniler ve düzenleyici sırayla buraya taşınır.
+// Geçiş P1–P5 (PLAN.md): Huniler P2'de geldi; düzenleyici P3'te.
 import "./stil.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
@@ -9,6 +9,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
 import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Baglam } from "./sayfalar/Baglam";
+import { Huniler } from "./sayfalar/Huniler";
 import { Rapor } from "./sayfalar/Rapor";
 
 export const yollar = [
@@ -17,6 +18,7 @@ export const yollar = [
         element: <Duzen />,
         children: [
             { index: true, element: <Rapor /> },
+            { path: "huniler", element: <Huniler /> },
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
         ],

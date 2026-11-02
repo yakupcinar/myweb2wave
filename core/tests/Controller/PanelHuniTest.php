@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Huni\Huniler;
 use App\Panel\YoneticiSaglayici;
+use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -40,44 +41,6 @@ final class PanelHuniTest extends WebTestCase
         self::assertEquals($this->huniler->bosTaslak('keepchat'), $this->huniler->taslak('keepchat', 'genel'));
     }
 
-    public function testListeYayinVeYayinlanmamisDegisikligiGosterir(): void
-    {
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir'));
-        $this->huniler->yayinla('keepchat', 'genel');
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('İki'));
-        $this->girisYap();
-
-        $this->client->request('GET', '/panel/huniler');
-
-        self::assertResponseStatusCodeSame(200);
-        self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'v1');
-        self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'varsayılan');
-        self::assertSelectorTextContains('[data-uygulama=keepchat] tr[data-huni=genel]', 'yayınlanmamış değişiklik');
-        self::assertSelectorTextSame('nav.yan a[aria-current=page]', 'Huniler');
-    }
-
-    public function testListedeAcYayindakiniYaDaTaslagiOlcumsuzAcar(): void
-    {
-        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir'));
-        $this->huniler->yayinla('keepchat', 'genel');
-        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'taslak', 'genel'));
-        $this->girisYap();
-
-        $liste = $this->client->request('GET', '/panel/huniler');
-
-        // Ç70: yayındaki de imzalı önizlemeyle açılır — kontrol ziyaret sayılmaz.
-        $yayin = $liste->filter('tr[data-huni=genel] a[data-ac]');
-        self::assertSame('Aç', trim($yayin->text()));
-        self::assertSame('_blank', $yayin->attr('target'));
-        $adres = (string) $yayin->attr('href');
-        self::assertStringStartsWith('https://huni.test/keepchat/?huni=genel&yayin=1&onizleme=', $adres);
-        self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'genel', substr($adres, (int) strrpos($adres, '=') + 1), time()));
-        $onizleme = (string) $liste->filter('tr[data-huni=taslak] a[data-ac]')->attr('href');
-        self::assertStringStartsWith('https://huni.test/keepchat/?huni=taslak&onizleme=', $onizleme);
-        self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'taslak', substr($onizleme, (int) strrpos($onizleme, '=') + 1), time()));
-        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
-    }
-
     public function testKaydetGecerliyiYazarGecersizdeHataDonerYazmaz(): void
     {
         $this->girisYap();
@@ -106,29 +69,89 @@ final class PanelHuniTest extends WebTestCase
         self::assertEquals($this->huniler->bosTaslak('keepchat'), $this->huniler->taslak('keepchat', 'genel'));
     }
 
-    public function testPaneldenYeniHuniKuralVeVarsayilan(): void
+    /** P2: liste JSON ucundan; panel sayfası React kabuğu. */
+    public function testListeYayinVeYayinlanmamisDegisikligiVerir(): void
+    {
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Bir'));
+        $this->huniler->yayinla('keepchat', 'genel');
+        $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('İki'));
+        self::assertSame([], $this->huniler->yeniHuni('keepchat', 'taslak', 'genel'));
+        $this->girisYap();
+
+        $this->client->request('GET', '/panel/huniler');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $this->client->getCrawler()->filter('#panel-uygulama'));
+
+        [$durum, $liste] = $this->api('GET', '/panel/api/uygulamalar/keepchat/huniler');
+        self::assertSame(200, $durum);
+        self::assertIsArray($liste);
+        Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/huniler', $this->client->getResponse());
+        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
+        self::assertSame('https://huni.test/keepchat/', $liste['adres']);
+        self::assertSame(Huniler::SECIM_PARAMETRELERI, $liste['parametreler']);
+        $huniler = $liste['huniler'];
+        self::assertIsArray($huniler);
+        self::assertSame(['genel', 'taslak'], array_column($huniler, 'ad'));
+        [$genel, $taslak] = $huniler;
+        self::assertIsArray($genel);
+        self::assertIsArray($taslak);
+        self::assertSame([true, 1, true, false, '/panel/huniler/keepchat/genel'], [$genel['varsayilan'], $genel['yayinda'], $genel['farkli'], $genel['ziyaretli'], $genel['duzenle']]);
+        self::assertSame([false, null], [$taslak['varsayilan'], $taslak['yayinda']]);
+        // Ç70: "Aç" süreli önizleme — yayındaki sürüm ya da taslak, ziyaret sayılmaz.
+        foreach ([[$genel, 'genel', '&yayin=1'], [$taslak, 'taslak', '']] as [$h, $ad, $ek]) {
+            $adres = \is_string($h['ac']) ? $h['ac'] : '';
+            self::assertStringStartsWith("https://huni.test/keepchat/?huni={$ad}{$ek}&onizleme=", $adres);
+            self::assertTrue($this->huniler->anahtarGecerli('keepchat', $ad, substr($adres, (int) strrpos($adres, '=') + 1), time()));
+        }
+    }
+
+    public function testApiYeniHuniKuralTasiVeVarsayilan(): void
     {
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel'));
         $this->girisYap();
+        $jeton = $this->kabukJetonu();
 
-        $liste = $this->client->request('GET', '/panel/huniler');
-        $this->client->submit($liste->filter('[data-uygulama=keepchat] [data-form=yeni-huni]')->form(['ad' => 'fitness', 'kaynak' => 'genel']));
-        self::assertResponseRedirects('/panel/huniler/keepchat/fitness');
+        [$durum, $yeni] = $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler', $jeton, ['ad' => 'fitness', 'kaynak' => 'genel']);
+        self::assertSame(201, $durum);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/huniler', $this->client->getResponse());
+        self::assertSame(['ad' => 'fitness', 'duzenle' => '/panel/huniler/keepchat/fitness'], $yeni);
         self::assertEquals(self::tanim('Genel'), $this->huniler->taslak('keepchat', 'fitness'));
 
-        $liste = $this->client->request('GET', '/panel/huniler');
-        $this->client->submit($liste->filter('[data-uygulama=keepchat] [data-form=kural]')->form(['parametre' => 'k', 'deger' => 'Fit', 'huni' => 'fitness']));
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('.bildirim.tamam', 'Kural eklendi');
-        self::assertSelectorTextContains('[data-bolum=kurallar]', 'k=fit');
+        self::assertSame(204, $this->api('POST', '/panel/api/uygulamalar/keepchat/kurallar', $jeton, ['parametre' => 'k', 'deger' => 'Fit', 'huni' => 'fitness'])[0]);
+        self::assertSame(204, $this->api('POST', '/panel/api/uygulamalar/keepchat/kurallar', $jeton, ['parametre' => 'k', 'deger' => 'iki', 'huni' => 'genel'])[0]);
+        self::assertSame([['k', 'fit'], ['k', 'iki']], array_map(static fn (array $k): array => [$k['parametre'], $k['deger']], $this->huniler->kurallar('keepchat')));
+        [$ilk, $ikinci] = $this->huniler->kurallar('keepchat');
+        self::assertSame(204, $this->api('POST', "/panel/api/uygulamalar/keepchat/kurallar/{$ikinci['id']}/tasi", $jeton, ['yon' => 'yukari'])[0]);
+        self::assertSame(['iki', 'fit'], array_column($this->huniler->kurallar('keepchat'), 'deger'));
+        self::assertSame(204, $this->api('DELETE', "/panel/api/uygulamalar/keepchat/kurallar/{$ilk['id']}", $jeton)[0]);
+        self::assertSame(['iki'], array_column($this->huniler->kurallar('keepchat'), 'deger'));
+        self::assertSame(404, $this->api('DELETE', "/panel/api/uygulamalar/keepchat/kurallar/{$ilk['id']}", $jeton)[0]);
 
-        $this->client->submit($this->client->getCrawler()->filter('tr[data-huni=fitness]')->selectButton('Varsayılan yap')->form());
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('tr[data-huni=fitness]', 'varsayılan');
+        self::assertSame(204, $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler/fitness/varsayilan', $jeton)[0]);
+        self::assertSame(['fitness'], array_column(array_filter($this->huniler->huniler('keepchat'), static fn (array $h): bool => $h['varsayilan']), 'ad'));
+        self::assertSame(404, $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler/olmayan/varsayilan', $jeton)[0]);
     }
 
-    /** Ç41: listede ziyaretsiz huniye "Sil", ziyaretliye "Arşivle"; varsayılanda yok. */
-    public function testListedenHuniSilinirYaDaArsivlenir(): void
+    public function testApiHatalari422VeBilinmeyenUygulama404(): void
+    {
+        $this->girisYap();
+        $jeton = $this->kabukJetonu();
+
+        [$durum, $govde] = $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler', $jeton, ['ad' => 'genel']);
+        self::assertSame(422, $durum);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/huniler', $this->client->getResponse());
+        self::assertIsArray($govde);
+        self::assertStringContainsString('zaten var', implode(' ', \is_array($govde['hatalar'] ?? null) ? array_map(static fn (mixed $h): string => \is_string($h) ? $h : '', $govde['hatalar']) : []));
+        self::assertSame(422, $this->api('POST', '/panel/api/uygulamalar/keepchat/kurallar', $jeton, ['parametre' => 'renk', 'deger' => 'x', 'huni' => 'genel'])[0]);
+        self::assertSame(422, $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler', $jeton, ['ad' => 5])[0]);
+        foreach (['/panel/api/uygulamalar/olmayan/huniler', '/panel/api/uygulamalar/olmayan/kurallar'] as $adres) {
+            self::assertSame(404, $this->api('POST', $adres, $jeton, ['ad' => 'x', 'parametre' => 'k', 'deger' => 'x', 'huni' => 'x'])[0]);
+        }
+        self::assertSame(404, $this->api('GET', '/panel/api/uygulamalar/olmayan/huniler')[0]);
+    }
+
+    /** Ç41: ziyaretsiz huni silinir, ziyaretli arşivlenir, varsayılan kaldırılamaz. */
+    public function testApiHuniSilinirYaDaArsivlenir(): void
     {
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel'));
         $this->huniler->yeniHuni('keepchat', 'bos', 'genel');
@@ -136,35 +159,37 @@ final class PanelHuniTest extends WebTestCase
         $this->huniler->yayinla('keepchat', 'eski');
         $this->db->executeStatement("INSERT INTO huni_ziyaretleri (app, huni, surum) VALUES ('keepchat', 'eski', 1)");
         $this->girisYap();
+        $jeton = $this->kabukJetonu();
 
-        $liste = $this->client->request('GET', '/panel/huniler');
-        self::assertCount(0, $liste->filter('tr[data-huni=genel] [data-form=kaldir]'));
-        self::assertSame('Sil', trim($liste->filter('tr[data-huni=bos] [data-form=kaldir] button')->text()));
-        self::assertSame('Arşivle', trim($liste->filter('tr[data-huni=eski] [data-form=kaldir] button')->text()));
-
-        $this->client->request('POST', '/panel/huniler/keepchat/bos/kaldir', ['_token' => 'yanlis']);
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('.bildirim.hata', 'jetonu geçersiz');
-        self::assertNotNull($this->huniler->taslak('keepchat', 'bos'));
-
-        $this->client->submit($this->client->getCrawler()->filter('tr[data-huni=bos] [data-form=kaldir]')->form());
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('.bildirim.tamam', "'bos' silindi");
-        $this->client->submit($this->client->getCrawler()->filter('tr[data-huni=eski] [data-form=kaldir]')->form());
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('.bildirim.tamam', "'eski' arşivlendi");
-        self::assertSame(['genel'], $this->client->getCrawler()->filter('tr[data-huni]')->each(static fn ($tr): string => (string) $tr->attr('data-huni')));
+        self::assertSame([200, ['sonuc' => 'silindi']], $this->api('DELETE', '/panel/api/uygulamalar/keepchat/huniler/bos', $jeton));
+        Sozlesme::yanitiDogrula('DELETE', '/panel/api/uygulamalar/{app}/huniler/{ad}', $this->client->getResponse());
+        self::assertSame([200, ['sonuc' => 'arsivlendi']], $this->api('DELETE', '/panel/api/uygulamalar/keepchat/huniler/eski', $jeton));
+        self::assertSame(422, $this->api('DELETE', '/panel/api/uygulamalar/keepchat/huniler/genel', $jeton)[0]);
+        self::assertSame(['genel'], array_column($this->huniler->huniler('keepchat'), 'ad'));
     }
 
-    public function testAyniAdlaIkinciHuniHataGosterir(): void
+    /** Her yazma ucu kabuğun jetonunu ister; eski form uçları yok. */
+    public function testApiYazmaCsrfIsterEskiFormlarYok(): void
     {
+        $this->huniler->yeniHuni('keepchat', 'bos', null);
         $this->girisYap();
 
-        $liste = $this->client->request('GET', '/panel/huniler');
-        $this->client->submit($liste->filter('[data-uygulama=keepchat] [data-form=yeni-huni]')->form(['ad' => 'genel']));
-        self::assertResponseRedirects('/panel/huniler');
-        $this->client->followRedirect();
-        self::assertSelectorTextContains('.bildirim.hata', 'zaten var');
+        foreach ([
+            ['POST', '/panel/api/uygulamalar/keepchat/huniler', ['ad' => 'yeni']],
+            ['DELETE', '/panel/api/uygulamalar/keepchat/huniler/bos', []],
+            ['POST', '/panel/api/uygulamalar/keepchat/huniler/bos/varsayilan', []],
+            ['POST', '/panel/api/uygulamalar/keepchat/kurallar', ['parametre' => 'k', 'deger' => 'x', 'huni' => 'bos']],
+        ] as [$yontem, $adres, $govde]) {
+            foreach (['', 'yanlis', $this->editorJetonu()] as $jeton) {
+                self::assertSame(403, $this->api($yontem, $adres, $jeton, $govde)[0], "{$yontem} {$adres}");
+            }
+        }
+        self::assertSame(['genel', 'bos'], array_column($this->huniler->huniler('keepchat'), 'ad'));
+        self::assertSame([], $this->huniler->kurallar('keepchat'));
+        foreach (['/panel/huniler/keepchat/yeni', '/panel/huniler/keepchat/kurallar', '/panel/huniler/keepchat/bos/kaldir', '/panel/huniler/keepchat/bos/varsayilan'] as $eski) {
+            $this->client->request('POST', $eski, ['_token' => 'x']);
+            self::assertContains($this->client->getResponse()->getStatusCode(), [404, 405], $eski);
+        }
     }
 
     public function testSurukleBirakSayfasiManifesttekiBetigiYukler(): void
@@ -336,6 +361,43 @@ final class PanelHuniTest extends WebTestCase
         $saglayici = static::getContainer()->get(YoneticiSaglayici::class);
         self::assertInstanceOf(YoneticiSaglayici::class, $saglayici);
         $this->client->loginUser($saglayici->loadUserByIdentifier('yonetici'), 'panel');
+    }
+
+    /** Panel kabuğunun jetonu (panel-api). */
+    private function kabukJetonu(): string
+    {
+        $this->client->request('GET', '/panel/huniler');
+
+        return (string) $this->client->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');
+    }
+
+    /** Düzenleyicinin jetonu (huni-keepchat) — panel API'sinde geçmemeli. */
+    private function editorJetonu(): string
+    {
+        return $this->jeton();
+    }
+
+    /**
+     * @param array<string, mixed> $govde
+     *
+     * @return array{int, array<string, mixed>|null}
+     */
+    private function api(string $yontem, string $adres, string $jeton = '', array $govde = []): array
+    {
+        $this->client->request($yontem, $adres, server: ['HTTP_X_CSRF_TOKEN' => $jeton, 'CONTENT_TYPE' => 'application/json'], content: [] === $govde ? null : (string) json_encode($govde));
+        $yanit = $this->client->getResponse();
+        $icerik = (string) $yanit->getContent();
+
+        $govde = '' === $icerik ? null : json_decode($icerik, true);
+        if (!\is_array($govde)) {
+            return [$yanit->getStatusCode(), null];
+        }
+        $sonuc = [];
+        foreach ($govde as $ad => $deger) {
+            $sonuc[(string) $ad] = $deger;
+        }
+
+        return [$yanit->getStatusCode(), $sonuc];
     }
 
     private function jeton(): string

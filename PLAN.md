@@ -156,7 +156,7 @@
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
   - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
   - [x] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
-  - [ ] P2 · Huniler: liste, yeni, varsayılan, sil/arşiv, kurallar — JSON uçlar + sayfa; Twig silinir · + "AI ile yeni huni" (A0 `yeni_huni`, kapsamsız sohbet ucu; A3'ten)
+  - [x] P2 · 2026-11-03, `docs/decisions/p2-huniler-sayfasi.md`: Huniler React sayfası + 6 JSON uç (sözleşme), Twig liste ve form uçları silindi; kabuk jetonu (düzenleyicininki geçmez). Kırma 9/9. Tarayıcı + "AI ile yeni huni": Ç93
   - [ ] P3 · Puck düzenleyici panelin sayfası (sayfa yenilemeden); `huni-surukle.html.twig` silinir
   - [ ] P4 · grafik: günlük ziyaret / ödeme serisi (Recharts)
   - [ ] P5 · Kullanıcılar (CRM): e-posta / UTM / kampanya araması, abonelik durumu (TanStack Table)

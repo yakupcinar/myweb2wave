@@ -1,6 +1,5 @@
 // Panel düzeni (B5): solda menü (dar ekranda üstte), sağda sayfa. Bulunulan
-// sayfa NavLink'le işaretlenir (aria-current). Huniler P2'ye kadar Twig
-// sayfası → düz bağlantı (tam sayfa yükleme).
+// sayfa NavLink'le işaretlenir (aria-current).
 import { ChartColumn, Filter, KeyRound, LogOut, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router";
@@ -32,10 +31,10 @@ export function Duzen(): ReactNode {
                     <ChartColumn aria-hidden="true" className="size-4.5" />
                     Rapor
                 </NavLink>
-                <a href="/panel/huniler" className={ogeSinifi}>
+                <NavLink to="/panel/huniler" className={ogeSinifi}>
                     <Filter aria-hidden="true" className="size-4.5" />
                     Huniler
-                </a>
+                </NavLink>
                 <NavLink to="/panel/baglam" className={ogeSinifi}>
                     <Sparkles aria-hidden="true" className="size-4.5" />
                     Ürün bağlamı
