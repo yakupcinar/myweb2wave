@@ -19,9 +19,9 @@ const TANIM: Tanim = {
     adimlar: [
         {
             id: "karsilama",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Merhaba",
-            metin: "Başla.",
+            bloklar: [{ tur: "metin", metin: "Başla." }],
             dugme: "Başla",
         },
         {

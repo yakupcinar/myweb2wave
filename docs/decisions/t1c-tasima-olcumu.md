@@ -78,3 +78,15 @@ Bu yüzden ekran artık **0–12 blok** alır (başlık + düğme: "Teşekkürle
 Kırma 5/5 kırmızı: D1 tek seçimli soruya düğme · D2 boş metin boş blok · D3 açıklama taşınmaz · D4 kapak taşınmaz · D5 bloksuz ekran geçersiz.
 
 Göç sınıfları testten çağrılabilsin diye `DoctrineMigrations\` geliştirme otomatik yüklemesine eklendi (`composer.json` autoload-dev).
+
+## Adım 3 — eski türler kaldırıldı (2026-11-02)
+
+Tanıtım, soru ve yorum adım türleri sözleşmeden (`TanitimAdimi`, `SoruAdimi`, `YorumAdimi`), çekirdekten (`Tanim::TURLER`, soru adımı kuralları), ortak bileşenlerden (`Tanitim`, `Soru`, `Yorum`; ölü CSS `.yorum-alinti`, `.yardim-metni`), oynatıcıdan, Puck'tan (`Tanitim`, `TekSecim`, `CokluSecim`, `SerbestYanit`, `Yorum` bileşenleri; menüde adım olarak yalnız Ekran, Yükleme, Ödeme) ve AI istemlerinden çıktı. Seçenek şeması (`SoruSecenegi`) ve yanıt alanı (`Yanit`) soru bloğunda yaşıyor. Yeni huni boş taslağı ekranla başlar.
+
+Testler taşındı, kural kaybı yok: soru adımı kuralları (seçenek sayısı/kimliği/hedefi/simgesi, düzen, yanıt biçimi, zorunluluk) soru bloğu üzerinden aynı testlerle; tanıtım düzeni ekran kapağıyla; yorum yorum bloğuyla; önizleme = huni testi artık her adımı Puck'ın `Render`'ıyla çizer (bileşen render'ını elle çağırmak yuvayı açamaz). Silinen testler yalnız artık olmayan şeyi ölçenler (soru açıklaması alanı, "hazır soru türleri" menüsü, kayıttan gelen soru türü → Puck bileşeni).
+
+Ölçüm (gerçek sistem): taşınmış `genel` hunisi düzenleyicide açıldı (5 ekran + ödeme, "Yayındakiyle aynı", uyarı yok); karşılama ve soru ekranları ekran görüntüsünde doğru.
+
+Kırma 5/5 kırmızı: E1 tanıtım türü yeniden kabul · E2 yeni huni taslağı eski türle (ilk koşuda YEŞİL — test yoktu; `testBosTaslakMetinleriDoldurulunca` eklendi) · E3 adım menüsünde fazladan tür · E4 akış ekran hedefini bilmez · E5 önizleme Render'sız.
+
+Yan iş: PHPStan iç içe dizi yazımını tipleyemedi → test yardımcısı `blok(array $blokEk, array $ekranEk)` tüm değişikliği argümanla alır (null siler); eski `+` birleşimi testteki değeri ezmiyordu (`array_merge`).

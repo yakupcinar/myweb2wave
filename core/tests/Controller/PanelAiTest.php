@@ -324,8 +324,8 @@ final class PanelAiTest extends WebTestCase
     private static function tanim(string $baslik, string $hedef = 'paywall'): array
     {
         return ['sayfaBasligi' => $baslik, 'adimlar' => [
-            ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => 'Merhaba', 'metin' => 'Başla.', 'dugme' => 'Başla'],
-            ['id' => 'soru', 'tur' => 'soru', 'soru' => 'Hangisi?', 'secenekler' => [['id' => 'a', 'metin' => 'A', 'hedef' => $hedef], ['id' => 'b', 'metin' => 'B']]],
+            ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => 'Merhaba', 'bloklar' => [['tur' => 'metin', 'metin' => 'Başla.']], 'dugme' => 'Başla'],
+            ['id' => 'soru', 'tur' => 'ekran', 'baslik' => 'Hangisi?', 'bloklar' => [['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A', 'hedef' => $hedef], ['id' => 'b', 'metin' => 'B']]]]],
             ['id' => 'paywall', 'tur' => 'paywall', 'plan' => 'monthly', 'baslik' => 'Plan', 'metin' => 'Abone ol.', 'dugme' => 'Abone ol'],
         ]];
     }

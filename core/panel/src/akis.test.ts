@@ -33,24 +33,24 @@ describe("ulaşılamayan adım", () => {
             adimlar: [
                 {
                     id: "giris",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "A",
-                    metin: "",
+                    bloklar: [],
                     dugme: "B",
                     hedef: "son",
                 },
                 {
                     id: "ara",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "C",
-                    metin: "",
+                    bloklar: [],
                     dugme: "D",
                 },
                 {
                     id: "son",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "E",
-                    metin: "",
+                    bloklar: [],
                     dugme: "F",
                 },
                 paywall,
@@ -73,16 +73,16 @@ describe("ulaşılamayan adım", () => {
                 },
                 {
                     id: "ara",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "C",
-                    metin: "",
+                    bloklar: [],
                     dugme: "D",
                 },
                 {
                     id: "son",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "E",
-                    metin: "",
+                    bloklar: [],
                     dugme: "F",
                 },
                 paywall,
@@ -112,16 +112,16 @@ describe("ulaşılamayan adım", () => {
                 },
                 {
                     id: "ara",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "C",
-                    metin: "",
+                    bloklar: [],
                     dugme: "D",
                 },
                 {
                     id: "son",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "E",
-                    metin: "",
+                    bloklar: [],
                     dugme: "F",
                 },
                 paywall,
@@ -137,26 +137,35 @@ describe("ulaşılamayan adım", () => {
             adimlar: [
                 {
                     id: "s",
-                    tur: "soru",
-                    soru: "?",
-                    secenekler: [
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
                         {
-                            id: "a",
-                            metin: "A",
-                            ...(hedefler[0] ? { hedef: hedefler[0] } : {}),
-                        },
-                        {
-                            id: "b",
-                            metin: "B",
-                            ...(hedefler[1] ? { hedef: hedefler[1] } : {}),
+                            tur: "soru",
+                            secenekler: [
+                                {
+                                    id: "a",
+                                    metin: "A",
+                                    ...(hedefler[0]
+                                        ? { hedef: hedefler[0] }
+                                        : {}),
+                                },
+                                {
+                                    id: "b",
+                                    metin: "B",
+                                    ...(hedefler[1]
+                                        ? { hedef: hedefler[1] }
+                                        : {}),
+                                },
+                            ],
                         },
                     ],
                 },
                 {
                     id: "dal",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "D",
-                    metin: "",
+                    bloklar: [],
                     dugme: "Ok",
                 },
                 paywall,
@@ -172,19 +181,30 @@ describe("ulaşılamayan adım", () => {
             adimlar: [
                 {
                     id: "c",
-                    tur: "soru",
-                    soru: "?",
-                    secimTuru: "coklu",
-                    secenekler: [{ id: "a", metin: "A" }],
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secimTuru: "coklu",
+                            secenekler: [{ id: "a", metin: "A" }],
+                        },
+                    ],
                 },
-                { id: "m", tur: "soru", soru: "?", secimTuru: "metin" },
+                {
+                    id: "m",
+                    tur: "ekran",
+                    baslik: "?",
+                    bloklar: [{ tur: "soru", secimTuru: "metin" }],
+                    dugme: "Devam",
+                },
                 {
                     id: "y",
-                    tur: "yorum",
+                    tur: "ekran",
                     baslik: "Y",
-                    metin: "",
-                    yazar: "",
-                    unvan: "",
+                    bloklar: [
+                        { tur: "yorum", metin: "", yazar: "", unvan: "" },
+                    ],
                     dugme: "Ok",
                 },
                 paywall,
@@ -228,22 +248,27 @@ describe("hedefleri yeniden adlandırma", () => {
         adimlar: [
             {
                 id: "giris",
-                tur: "tanitim",
+                tur: "ekran",
                 baslik: "A",
-                metin: "",
+                bloklar: [],
                 dugme: "B",
                 hedef: "son",
             },
             {
                 id: "s",
-                tur: "soru",
-                soru: "?",
-                secenekler: [
-                    { id: "a", metin: "A", hedef: "son" },
-                    { id: "b", metin: "B" },
+                tur: "ekran",
+                baslik: "?",
+                bloklar: [
+                    {
+                        tur: "soru",
+                        secenekler: [
+                            { id: "a", metin: "A", hedef: "son" },
+                            { id: "b", metin: "B" },
+                        ],
+                    },
                 ],
             },
-            { id: "son", tur: "tanitim", baslik: "E", metin: "", dugme: "F" },
+            { id: "son", tur: "ekran", baslik: "E", bloklar: [], dugme: "F" },
             paywall,
         ],
     };
@@ -261,7 +286,7 @@ describe("hedefleri yeniden adlandırma", () => {
         ),
     });
 
-    it("tanıtım ve seçenek hedefleri yeni kimliğe geçer", () => {
+    it("ekran düğmesi ve soru bloğu seçenek hedefleri yeni kimliğe geçer", () => {
         const sonra = yeniden(once, 2, "kapanis");
         const duzelmis = hedefleriYenidenAdlandir(once, sonra);
         expect(duzelmis).not.toBeNull();
@@ -269,11 +294,15 @@ describe("hedefleri yeniden adlandırma", () => {
             (o) => o.props as Record<string, unknown>,
         );
         expect(props[0]?.["hedef"]).toBe("kapanis");
-        expect(
-            (props[1]?.["secenekler"] as { hedef: string }[]).map(
-                (s) => s.hedef,
-            ),
-        ).toEqual(["kapanis", ""]);
+        const blok = (
+            props[1]?.["bloklar"] as {
+                props: { secenekler: { hedef: string }[] };
+            }[]
+        )[0]!;
+        expect(blok.props.secenekler.map((s) => s.hedef)).toEqual([
+            "kapanis",
+            "",
+        ]);
     });
 
     it("T1b: ekrandaki soru bloğunun seçenek hedefi de yeni kimliğe geçer", () => {

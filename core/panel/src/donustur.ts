@@ -26,30 +26,6 @@ export type SecenekProps = {
     gorselMetni: string;
     hedef: string;
 };
-export type TanitimProps = {
-    kimlik: string;
-    baslik: string;
-    metin: string;
-    dugme: string;
-    gorsel: string;
-    gorselMetni: string;
-    /** G5: "ust" tanıma yazılmaz. */
-    duzen: "ust" | "kahraman" | "tamEkran";
-    hedef: string;
-    ilerlemeGoster: boolean;
-};
-export type SoruProps = {
-    kimlik: string;
-    soru: string;
-    aciklama: string;
-    secenekler: SecenekProps[];
-    secimTuru: "tekli" | "coklu" | "metin";
-    yanitZorunlu: "istege_bagli" | "zorunlu";
-    devamDugmesi: string;
-    /** G4: "liste" tanıma yazılmaz; serbest yanıtta yok sayılır. */
-    duzen: "liste" | "izgara";
-    ilerlemeGoster: boolean;
-};
 export type PaywallProps = {
     kimlik: string;
     baslik: string;
@@ -62,15 +38,6 @@ export type PaywallProps = {
     sartlar: string;
     gizlilik: string;
     iptal: string;
-};
-export type YorumProps = {
-    kimlik: string;
-    baslik: string;
-    metin: string;
-    yazar: string;
-    unvan: string;
-    dugme: string;
-    ilerlemeGoster: boolean;
 };
 /** Mobil görünüm 4: Puck dizi alanı nesne ister — madde {metin}. Süre 4 tanıma yazılmaz. */
 export type YuklemeProps = {
@@ -110,11 +77,14 @@ export type YorumBloguProps = {
 };
 export type IstatistikBloguProps = { deger: string; metin: string };
 export type KutuBloguProps = { metin: string; simge: string };
-/** T1b: soru adımının yanıt alanları (metni ekran taşır). */
-export type SoruBloguProps = Pick<
-    SoruProps,
-    "secimTuru" | "duzen" | "yanitZorunlu" | "secenekler"
->;
+/** T1b: soru bloğunun yanıt alanları (soru metni ekranın başlığı). */
+export type SoruBloguProps = {
+    secenekler: SecenekProps[];
+    secimTuru: "tekli" | "coklu" | "metin";
+    yanitZorunlu: "istege_bagli" | "zorunlu";
+    /** G4: "liste" tanıma yazılmaz; serbest yanıtta yok sayılır. */
+    duzen: "liste" | "izgara";
+};
 export type KokProps = {
     sayfaBasligi: string;
     /** Ç61 (5): boş dize = logo yok. */
@@ -141,11 +111,6 @@ export type KokProps = {
     dugmeBicimi: OnAyar<"dugmeBicimi">;
 };
 export type Bilesenler = {
-    Tanitim: TanitimProps;
-    TekSecim: SoruProps;
-    CokluSecim: SoruProps;
-    SerbestYanit: SoruProps;
-    Yorum: YorumProps;
     Yukleme: YuklemeProps;
     Ekran: EkranProps;
     Paywall: PaywallProps;
@@ -159,13 +124,6 @@ export type Bilesenler = {
     SoruBlogu: SoruBloguProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
-
-/** Yanıt biçimi → Puck bloğu (Ç61): kayıt tek `soru` şeması, düzenleyicide üç tür. */
-const SORU_TURU = {
-    tekli: "TekSecim",
-    coklu: "CokluSecim",
-    metin: "SerbestYanit",
-} as const;
 
 /** T1: blok türü (tanım) ↔ Puck bileşeni. */
 export const BLOK_BILESENI = {
@@ -255,7 +213,7 @@ const secenektenPuck = (
 });
 
 /**
- * Soru adımı ve (T1b) soru bloğu: yanıt alanları tanıma — varsayılan
+ * Soru bloğu (T1b): yanıt alanları tanıma — varsayılan
  * (tekli, liste, isteğe bağlı) yazılmaz; serbest yanıtta seçenek, çoklu
  * seçimde seçenek hedefi yok.
  */
@@ -404,57 +362,6 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
         content: tanim.adimlar.map((adim: Adim, i: number) => {
             const id = `${adim.tur}-${i}-${adim.id}`;
             switch (adim.tur) {
-                case "tanitim":
-                    return {
-                        type: "Tanitim" as const,
-                        props: {
-                            id,
-                            kimlik: adim.id,
-                            baslik: adim.baslik,
-                            metin: adim.metin,
-                            dugme: adim.dugme,
-                            gorsel: adim.gorsel ?? "",
-                            gorselMetni: adim.gorselMetni ?? "",
-                            duzen: adim.duzen ?? "ust",
-                            hedef: adim.hedef ?? "",
-                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
-                        },
-                    };
-                case "soru":
-                    return {
-                        // Ç61: menüdeki hazır türle açılır (genel "Soru" yok).
-                        type: SORU_TURU[adim.secimTuru ?? "tekli"],
-                        props: {
-                            id,
-                            kimlik: adim.id,
-                            soru: adim.soru,
-                            aciklama: adim.aciklama ?? "",
-                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
-                            secimTuru: adim.secimTuru ?? "tekli",
-                            yanitZorunlu: adim.yanitZorunlu
-                                ? "zorunlu"
-                                : "istege_bagli",
-                            devamDugmesi: adim.devamDugmesi ?? "Devam",
-                            duzen: adim.duzen ?? "liste",
-                            secenekler: (adim.secenekler ?? []).map(
-                                secenektenPuck,
-                            ),
-                        },
-                    };
-                case "yorum":
-                    return {
-                        type: "Yorum" as const,
-                        props: {
-                            id,
-                            kimlik: adim.id,
-                            baslik: adim.baslik,
-                            metin: adim.metin,
-                            yazar: adim.yazar,
-                            unvan: adim.unvan,
-                            dugme: adim.dugme,
-                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
-                        },
-                    };
                 case "yukleme":
                     return {
                         type: "Yukleme" as const,
@@ -527,62 +434,6 @@ export function puckTanim(veri: HuniVerisi): Tanim {
     const k = veri.root.props;
     const adimlar = veri.content.map((oge): Adim => {
         switch (oge.type) {
-            case "Tanitim": {
-                const p = oge.props as TanitimProps;
-                return hedefli(
-                    gorselli(
-                        {
-                            id: p.kimlik,
-                            tur: "tanitim" as const,
-                            baslik: p.baslik,
-                            metin: p.metin,
-                            dugme: p.dugme,
-                            ...(p.duzen && p.duzen !== "ust"
-                                ? { duzen: p.duzen }
-                                : {}),
-                            ...(p.ilerlemeGoster === false
-                                ? { ilerlemeGoster: false }
-                                : {}),
-                        },
-                        p.gorsel,
-                        p.gorselMetni ?? "",
-                    ),
-                    p.hedef ?? "",
-                );
-            }
-            case "TekSecim":
-            case "CokluSecim":
-            case "SerbestYanit": {
-                const p = oge.props as SoruProps;
-                return {
-                    id: p.kimlik,
-                    tur: "soru",
-                    soru: p.soru,
-                    ...(p.aciklama ? { aciklama: p.aciklama } : {}),
-                    ...(p.ilerlemeGoster === false
-                        ? { ilerlemeGoster: false }
-                        : {}),
-                    ...(p.devamDugmesi !== "Devam"
-                        ? { devamDugmesi: p.devamDugmesi }
-                        : {}),
-                    ...yanitAlanlari(p),
-                };
-            }
-            case "Yorum": {
-                const p = oge.props as YorumProps;
-                return {
-                    id: p.kimlik,
-                    tur: "yorum",
-                    baslik: p.baslik,
-                    metin: p.metin,
-                    yazar: p.yazar,
-                    unvan: p.unvan,
-                    dugme: p.dugme,
-                    ...(p.ilerlemeGoster === false
-                        ? { ilerlemeGoster: false }
-                        : {}),
-                };
-            }
             case "Yukleme": {
                 const p = oge.props as YuklemeProps;
                 const maddeler = (p.maddeler ?? []).map((m) => m.metin);

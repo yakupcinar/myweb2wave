@@ -177,7 +177,7 @@ final class TemaTest extends TestCase
     public function testTanimTemaylaGecerliBozukTemaylaGecersiz(): void
     {
         $tanim = ['sayfaBasligi' => 'X', 'adimlar' => [
-            ['id' => 'a', 'tur' => 'tanitim', 'baslik' => 'A', 'metin' => '', 'dugme' => 'B'],
+            ['id' => 'a', 'tur' => 'ekran', 'baslik' => 'A', 'bloklar' => [], 'dugme' => 'B'],
             ['id' => 'p', 'tur' => 'paywall', 'baslik' => 'P', 'metin' => '', 'dugme' => 'Al', 'plan' => 'monthly'],
         ]];
 

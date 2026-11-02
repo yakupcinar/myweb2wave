@@ -231,14 +231,14 @@ final class HuniAraclariTest extends KernelTestCase
         return [
             'sayfaBasligi' => $baslik,
             'adimlar' => [
-                ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => 'Sana özel antrenman planı', 'metin' => '60 saniyede hedefini belirleyelim.', 'dugme' => 'Başla'],
-                ['id' => 'hedef', 'tur' => 'soru', 'soru' => 'Ana hedefin ne?', 'secenekler' => [
+                ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => 'Sana özel antrenman planı', 'bloklar' => [['tur' => 'metin', 'metin' => '60 saniyede hedefini belirleyelim.']], 'dugme' => 'Başla'],
+                ['id' => 'hedef', 'tur' => 'ekran', 'baslik' => 'Ana hedefin ne?', 'bloklar' => [['tur' => 'soru', 'secenekler' => [
                     ['id' => 'kilo', 'metin' => 'Kilo vermek', 'hedef' => $ilkHedef],
                     ['id' => 'kas', 'metin' => 'Kas yapmak', 'hedef' => 'kas-sorusu'],
-                ]],
-                ['id' => 'kilo-sorusu', 'tur' => 'soru', 'soru' => 'Kaç kilo vermek istiyorsun?', 'secenekler' => [['id' => 'az', 'metin' => '1-5 kg', 'hedef' => 'sure'], ['id' => 'cok', 'metin' => '5+ kg', 'hedef' => 'sure']]],
-                ['id' => 'kas-sorusu', 'tur' => 'soru', 'soru' => 'Haftada kaç gün antrenman?', 'secenekler' => [['id' => '2', 'metin' => '2 gün'], ['id' => '4', 'metin' => '4+ gün']]],
-                ['id' => 'sure', 'tur' => 'soru', 'soru' => 'Günde ne kadar vaktin var?', 'secimTuru' => 'coklu', 'secenekler' => [['id' => '15', 'metin' => '15 dk'], ['id' => '30', 'metin' => '30 dk']]],
+                ]]]],
+                ['id' => 'kilo-sorusu', 'tur' => 'ekran', 'baslik' => 'Kaç kilo vermek istiyorsun?', 'bloklar' => [['tur' => 'soru', 'secenekler' => [['id' => 'az', 'metin' => '1-5 kg', 'hedef' => 'sure'], ['id' => 'cok', 'metin' => '5+ kg', 'hedef' => 'sure']]]]],
+                ['id' => 'kas-sorusu', 'tur' => 'ekran', 'baslik' => 'Haftada kaç gün antrenman?', 'bloklar' => [['tur' => 'soru', 'secenekler' => [['id' => '2', 'metin' => '2 gün'], ['id' => '4', 'metin' => '4+ gün']]]]],
+                ['id' => 'sure', 'tur' => 'ekran', 'baslik' => 'Günde ne kadar vaktin var?', 'bloklar' => [['tur' => 'soru', 'secimTuru' => 'coklu', 'secenekler' => [['id' => '15', 'metin' => '15 dk'], ['id' => '30', 'metin' => '30 dk']]]], 'dugme' => 'Devam'],
                 ['id' => 'paywall', 'tur' => 'paywall', 'plan' => 'monthly', 'baslik' => 'Planın hazır', 'metin' => 'Tüm antrenmanlara eriş.', 'dugme' => 'Abone ol', 'faydalar' => ['Kişisel program', 'Video dersler']],
             ],
         ];

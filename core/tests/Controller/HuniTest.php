@@ -9,6 +9,7 @@ use App\Huni\Tanim;
 use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use DoctrineMigrations\Version20261020180000;
+use DoctrineMigrations\Version20261102120000;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -171,6 +172,26 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
+    /**
+     * T1c: yeni huninin boş taslağı yalnız güncel türleri kullanır — metinleri
+     * doldurulunca geçerli (eski tür düzenleyicide yanlış bileşenle açılırdı;
+     * kırma E2 ilk koşuda yeşildi, bu test yoktu).
+     */
+    public function testBosTaslakMetinleriDolduruluncaGecerli(): void
+    {
+        $t = $this->huniler->bosTaslak('keepchat');
+        $t['sayfaBasligi'] = 'Yeni';
+        $adimlar = $t['adimlar'];
+        self::assertIsArray($adimlar);
+        foreach ($adimlar as $i => $adim) {
+            self::assertIsArray($adim);
+            $adimlar[$i] = array_merge($adim, ['baslik' => 'Başlık']);
+        }
+        $t['adimlar'] = $adimlar;
+
+        self::assertSame([], Tanim::hatalar($t, ['monthly']));
+    }
+
     /** T1c: bloksuz ekran (başlık + düğme, ör. "Teşekkürler!") geçerli — boş metinli tanıtım böyle taşınır. */
     public function testBloksuzEkranGecerli(): void
     {
@@ -234,16 +255,16 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
-    /** Ç44: tanıtım kapağı ve seçenek görseli isteğe bağlı alt metin taşır. */
+    /** Ç44: ekran kapağı ve seçenek görseli isteğe bağlı alt metin taşır. */
     public function testGorselMetniGecerliYayindaDoner(): void
     {
         $g = str_repeat('c', 64);
         $tanim = self::ile(0, 'gorsel', $g);
         $tanim['adimlar'][0]['gorselMetni'] = 'Uygulamanın sohbet ekranı';
-        $tanim['adimlar'][1]['secenekler'] = [
+        $tanim['adimlar'][1]['bloklar'] = [['tur' => 'soru', 'secenekler' => [
             ['id' => 'a', 'metin' => 'A', 'gorsel' => $g, 'gorselMetni' => 'Aile fotoğrafı'],
             ['id' => 'b', 'metin' => 'B'],
-        ];
+        ]]];
         self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
         $this->medyaEkle($g);
         self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
@@ -266,26 +287,25 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar(self::ile(0, 'duzen', 'ust'), ['monthly']));
     }
 
-    /** G4: seçmeli soruda seçenek dizilişi. */
+    /** G4: seçmeli soruda seçenek dizilişi (soru bloğu). */
     public function testSoruDuzeniGecerli(): void
     {
-        self::assertSame([], Tanim::hatalar(self::ile(1, 'duzen', 'izgara'), ['monthly']));
-        self::assertSame([], Tanim::hatalar(self::ile(1, 'duzen', 'liste'), ['monthly']));
-        $coklu = self::ile(1, 'duzen', 'izgara');
-        $coklu['adimlar'][1]['secimTuru'] = 'coklu';
+        self::assertSame([], Tanim::hatalar(self::blok(['duzen' => 'izgara']), ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::blok(['duzen' => 'liste']), ['monthly']));
+        $coklu = self::blok(['duzen' => 'izgara', 'secimTuru' => 'coklu'], ['dugme' => 'Devam']);
         self::assertSame([], Tanim::hatalar($coklu, ['monthly']));
     }
 
     /** Mobil görünüm 3: seçenek simgesi — tek grafem emoji (ZWJ aile, bayrak, ten tonu dahil). */
     public function testSecenekSimgesiGecerli(): void
     {
-        $t = self::ile(1, 'secenekler', [
+        $t = self::blok(['secenekler' => [
             ['id' => 'a', 'metin' => 'İş', 'simge' => '💼'],
             ['id' => 'b', 'metin' => 'Aile', 'simge' => '👨‍👩‍👧'],
             ['id' => 'c', 'metin' => 'Türkiye', 'simge' => '🇹🇷'],
             ['id' => 'd', 'metin' => 'Beğen', 'simge' => '👍🏽'],
             ['id' => 'e', 'metin' => 'Simgesiz'],
-        ]);
+        ]]);
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
     }
 
@@ -363,7 +383,9 @@ final class HuniTest extends WebTestCase
         $t = self::tanim('X');
         yield 'tekrar eden kimlik' => ['tekrar ediyor', self::ile(1, 'id', 'giris')];
         yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
-        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum, yukleme, ekran ya da paywall', self::ile(0, 'tur', 'html')];
+        yield 'bilinmeyen tür' => ['tür ekran, yukleme ya da paywall', self::ile(0, 'tur', 'html')];
+        // T1c: eski içerik türleri ekrana taşındı (Ç86).
+        yield 'eski tanıtım türü' => ['adım 1: tür ekran, yukleme ya da paywall', self::ile(0, 'tur', 'tanitim')];
         // T1: ekran adımı ve blok kataloğu.
         $ekr = static function (array $bloklar, array $ek = []): array {
             $t = self::tanim('X');
@@ -438,43 +460,40 @@ final class HuniTest extends WebTestCase
         yield 'yükleme düğme' => ['adım 3', $yuk(['dugme' => 'Devam'])];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
-        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu ya da metin olmalı', self::ile(1, 'secimTuru', 'belirsiz')];
-        yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'dugme', null, sil: true)];
+        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu ya da metin olmalı', self::blok(['secimTuru' => 'belirsiz'])];
+        yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'baslik', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
         yield 'paywall sonda değil' => ['EN SONDA', ['sayfaBasligi' => 'X', 'adimlar' => array_reverse($t['adimlar'])]];
         yield 'paywall yok' => ['EN SONDA', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][0], $t['adimlar'][1]]]];
         yield 'bilinmeyen plan' => ['plan bu uygulamada yok', self::ile(2, 'plan', 'yillik')];
-        yield 'tek seçenek' => ['2–8 seçenek', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A']])];
-        yield 'tekrar eden seçenek' => ['geçersiz ya da tekrar ediyor', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']])];
+        yield 'tek seçenek' => ['2–8 seçenek', self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A']]])];
+        yield 'tekrar eden seçenek' => ['geçersiz ya da tekrar ediyor', self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']]])];
         yield 'tek adım' => ['2–50', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][2]]]];
         yield 'fazla üst alan' => ['yalnız sayfaBasligi, adimlar', $t + ['css' => 'x']];
         // H5: hedef yalnız ileri.
         $sec = static fn (mixed $hedef): array => [['id' => 'a', 'metin' => 'A', 'hedef' => $hedef], ['id' => 'b', 'metin' => 'B']];
-        yield 'seçenek hedefi geriye' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('giris'))];
-        yield 'seçenek hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('soru1'))];
-        yield 'seçenek hedefi yok' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec('yok'))];
-        yield 'seçenek hedefi dizge değil' => ['hedef sonraki adımlardan', self::ile(1, 'secenekler', $sec(2))];
+        yield 'seçenek hedefi geriye' => ['hedef sonraki adımlardan', self::blok(['secenekler' => $sec('giris')])];
+        yield 'seçenek hedefi kendisi' => ['hedef sonraki adımlardan', self::blok(['secenekler' => $sec('soru1')])];
+        yield 'seçenek hedefi yok' => ['hedef sonraki adımlardan', self::blok(['secenekler' => $sec('yok')])];
+        yield 'seçenek hedefi dizge değil' => ['hedef sonraki adımlardan', self::blok(['secenekler' => $sec(2)])];
         yield 'tanıtım hedefi kendisi' => ['hedef sonraki adımlardan', self::ile(0, 'hedef', 'giris')];
         // Ç44: görsel alt metni yalnız görselle, 1–200.
         yield 'görselsiz görsel metni' => ['gorselMetni yalnız gorsel ile', self::ile(0, 'gorselMetni', 'Ekran')];
         $uzun = self::ile(0, 'gorsel', str_repeat('c', 64));
         $uzun['adimlar'][0]['gorselMetni'] = str_repeat('a', 201);
         yield 'uzun görsel metni' => ['1–200 karakter', $uzun];
-        yield 'seçenekte görselsiz görsel metni' => ['gorselMetni yalnız gorsel ile', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'gorselMetni' => 'x'], ['id' => 'b', 'metin' => 'B']])];
+        yield 'seçenekte görselsiz görsel metni' => ['gorselMetni yalnız gorsel ile', self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A', 'gorselMetni' => 'x'], ['id' => 'b', 'metin' => 'B']]])];
         // G5: düzen yalnız tanıtımda, bilinen değer; kahraman/tamEkran görsel ister.
         yield 'düzen bilinmeyen' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'yan')];
         yield 'görselsiz kahraman' => ['duzen kahraman görsel ister', self::ile(0, 'duzen', 'kahraman')];
         yield 'görselsiz tam ekran' => ['duzen tamEkran görsel ister', self::ile(0, 'duzen', 'tamEkran')];
-        yield 'soruda tanıtım düzeni' => ['duzen: liste, izgara', self::ile(1, 'duzen', 'ust')];
+        yield 'soru bloğunda kapak düzeni' => ['duzen: liste, izgara', self::blok(['duzen' => 'ust'])];
         // G4: soru düzeni yalnız seçmeli soruda.
-        $serbest = ['id' => 'serbest', 'tur' => 'soru', 'soru' => 'Ne?', 'secimTuru' => 'metin', 'duzen' => 'izgara'];
-        $t2 = self::tanim('X');
-        $t2['adimlar'][1] = $serbest;
-        yield 'serbest yanıtta düzen' => ['duzen yalnız seçmeli soruda', $t2];
-        yield 'tanıtımda soru düzeni' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'izgara')];
+        yield 'serbest yanıtta düzen' => ['duzen yalnız seçmeli soruda', self::blok(['secimTuru' => 'metin', 'secenekler' => null, 'duzen' => 'izgara'], ['dugme' => 'Devam'])];
+        yield 'ekranda soru düzeni' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'izgara')];
         // Mobil görünüm 3: simge tek emoji, görselle birlikte değil.
-        $simge = static fn (mixed $s, array $ek = []): array => self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'simge' => $s] + $ek, ['id' => 'b', 'metin' => 'B']]);
+        $simge = static fn (mixed $s, array $ek = []): array => self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A', 'simge' => $s] + $ek, ['id' => 'b', 'metin' => 'B']]]);
         yield 'simge harf' => ['simge tek emoji olmalı', $simge('A')];
         yield 'simge iki emoji' => ['simge tek emoji olmalı', $simge('😀😀')];
         yield 'simge emoji + metin' => ['simge tek emoji olmalı', $simge('💼 iş')];
@@ -491,7 +510,7 @@ final class HuniTest extends WebTestCase
         yield 'javascript bağlantı' => ['https:// ile başlayan adres', self::ile(2, 'gizlilik', 'javascript:alert(1)')];
         yield 'boşluklu bağlantı' => ['https:// ile başlayan adres', self::ile(2, 'iptal', 'https://ornek.com/a b')];
         yield 'faydalar paywall dışında' => ['alanlar tam olarak', self::ile(0, 'faydalar', ['Hızlı'])];
-        yield 'seçenekte fazla alan' => ['yalnız id, metin', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'sonraki' => 'paywall'], ['id' => 'b', 'metin' => 'B']])];
+        yield 'seçenekte fazla alan' => ['yalnız id, metin', self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A', 'sonraki' => 'paywall'], ['id' => 'b', 'metin' => 'B']]])];
     }
 
     /** Ç61 (3): fayda listesi ve üç yasal bağlantı geçerli; hiçbiri zorunlu değil. */
@@ -508,10 +527,10 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar(self::ile(2, 'faydalar', array_fill(0, 6, str_repeat('a', 120))), ['monthly']));
     }
 
-    /** H5: seçenek ve tanıtım düğmesi ileriki bir adıma atlayabilir. */
+    /** H5: seçenek ve ekran düğmesi ileriki bir adıma atlayabilir. */
     public function testIleriHedefliDallanmaGecerli(): void
     {
-        $t = self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'], ['id' => 'b', 'metin' => 'B']]);
+        $t = self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'], ['id' => 'b', 'metin' => 'B']]]);
         $t['adimlar'][0]['hedef'] = 'paywall';
 
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
@@ -527,22 +546,16 @@ final class HuniTest extends WebTestCase
 
     public function testCokluSecimTanimiGecerliVeDevamDugmesiSinirli(): void
     {
-        $t = self::ile(1, 'secimTuru', 'coklu');
-        $t['adimlar'][1]['devamDugmesi'] = 'Seçtiklerimle devam et';
-
-        self::assertSame([], Tanim::hatalar($t, ['monthly']));
-        $t['adimlar'][1]['devamDugmesi'] = str_repeat('x', 61);
-        self::assertNotSame([], Tanim::hatalar($t, ['monthly']));
+        self::assertSame([], Tanim::hatalar(self::blok(['secimTuru' => 'coklu'], ['dugme' => 'Seçtiklerimle devam et']), ['monthly']));
+        self::assertNotSame([], Tanim::hatalar(self::blok(['secimTuru' => 'coklu'], ['dugme' => str_repeat('x', 61)]), ['monthly']));
     }
 
     public function testCokluSecimdeSecenekHedefiKullanilamaz(): void
     {
-        $t = self::tanim('Çoklu');
-        $t['adimlar'][1]['secimTuru'] = 'coklu';
-        $t['adimlar'][1]['secenekler'] = [
+        $t = self::blok(['secimTuru' => 'coklu', 'secenekler' => [
             ['id' => 'a', 'metin' => 'A', 'hedef' => 'paywall'],
             ['id' => 'b', 'metin' => 'B'],
-        ];
+        ]], ['dugme' => 'Devam']);
 
         self::assertStringContainsString(
             'çoklu seçimde seçenek hedefi kullanılamaz',
@@ -550,16 +563,15 @@ final class HuniTest extends WebTestCase
         );
     }
 
-    public function testYorumAdimiYayindaSaklanirVeAlaniSinirlanir(): void
+    /** T1c: yorum ekranın yorum bloğu; yayında aynen saklanır. */
+    public function testYorumBloguYayindaSaklanirVeAlaniSinirlanir(): void
     {
         $t = self::tanim('Yorum');
-        $t['adimlar'][1] = [
-            'id' => 'yorum', 'tur' => 'yorum', 'baslik' => 'Deneyim',
-            'metin' => 'Çok faydalı', 'yazar' => 'Ayşe', 'unvan' => 'Kullanıcı', 'dugme' => 'Devam',
-        ];
+        $t['adimlar'][1] = self::ekran([['tur' => 'yorum', 'metin' => 'Çok faydalı', 'yazar' => 'Ayşe', 'unvan' => 'Kullanıcı']], ['id' => 'yorum', 'baslik' => 'Deneyim']);
         self::assertSame([], Tanim::hatalar($t, ['monthly']));
-        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'yazar', str_repeat('a', 81)), ['monthly']));
-        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'fazla', 'alan'), ['monthly']));
+        $uzun = $t;
+        $uzun['adimlar'][1] = self::ekran([['tur' => 'yorum', 'metin' => 'Çok faydalı', 'yazar' => str_repeat('a', 81)]], ['id' => 'yorum', 'baslik' => 'Deneyim']);
+        self::assertNotSame([], Tanim::hatalar($uzun, ['monthly']));
 
         self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $t));
         $this->huniler->yayinla('keepchat', 'genel');
@@ -568,37 +580,22 @@ final class HuniTest extends WebTestCase
         self::assertEquals($t, $this->yanit()['tanim'] ?? null);
     }
 
-    public function testSoruAciklamasiIstegeBagliVeUzunluguSinirli(): void
-    {
-        self::assertSame([], Tanim::hatalar(self::tanim('Açıklamasız'), ['monthly']));
-        self::assertSame([], Tanim::hatalar(self::ile(1, 'aciklama', 'Kısa bir açıklama'), ['monthly']));
-        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', str_repeat('a', 501)), ['monthly']));
-        self::assertNotSame([], Tanim::hatalar(self::ile(1, 'aciklama', 123), ['monthly']));
-    }
-
     public function testSerbestYanittaSecenekYokVeZorunlulukBoolOlarakSecilebilir(): void
     {
-        $t = self::ile(1, 'secimTuru', 'metin');
-        unset($t['adimlar'][1]['secenekler']);
-        $t['adimlar'][1]['yanitZorunlu'] = false;
-        self::assertSame([], Tanim::hatalar($t, ['monthly']));
-
-        $t['adimlar'][1]['yanitZorunlu'] = 'evet';
-        self::assertStringContainsString('yanitZorunlu true ya da false', implode(' | ', Tanim::hatalar($t, ['monthly'])));
-
-        $t['adimlar'][1]['yanitZorunlu'] = false;
-        $t['adimlar'][1]['secenekler'] = [['id' => 'a', 'metin' => 'A']];
-        self::assertNotSame([], Tanim::hatalar($t, ['monthly']));
+        $serbest = static fn (array $ek): array => self::blok(array_merge(['secimTuru' => 'metin', 'secenekler' => null, 'yanitZorunlu' => false], $ek), ['dugme' => 'Devam']);
+        self::assertSame([], Tanim::hatalar($serbest([]), ['monthly']));
+        self::assertStringContainsString('yanitZorunlu true ya da false', implode(' | ', Tanim::hatalar($serbest(['yanitZorunlu' => 'evet']), ['monthly'])));
+        self::assertNotSame([], Tanim::hatalar($serbest(['secenekler' => [['id' => 'a', 'metin' => 'A']]]), ['monthly']));
     }
 
     public function testTohumdakiKeepchatHunisiGecerli(): void
     {
-        // Göç tohumu (v1) doğrulamadan geçmeli — yoksa ilk yayın hiç açılmazdı.
-        // Göçler otomatik yüklemede değil (DoctrineMigrations bundle'ın yolu).
-        require_once \dirname(__DIR__, 2).'/migrations/Version20261020180000.php';
+        // Göç tohumu (v1) + T1c taşıma göçü doğrulamadan geçmeli — yoksa ilk
+        // yayın hiç açılmazdı. Tohum eski türlerle yazılı; taşıma göçü çevirir.
         $tohum = (new \ReflectionMethod(Version20261020180000::class, 'keepchat'))->invoke(null);
+        self::assertIsArray($tohum);
 
-        self::assertSame([], Tanim::hatalar($tohum, ['monthly']));
+        self::assertSame([], Tanim::hatalar(Version20261102120000::ekrana($tohum), ['monthly']));
     }
 
     public function testOnizlemeAnahtariTaslagiGosterirSahtesiYaDaEskisiGostermez(): void
@@ -691,8 +688,8 @@ final class HuniTest extends WebTestCase
         return [
             'sayfaBasligi' => $baslik,
             'adimlar' => [
-                ['id' => 'giris', 'tur' => 'tanitim', 'baslik' => 'Merhaba', 'metin' => 'Kısa', 'dugme' => 'Başla'],
-                ['id' => 'soru1', 'tur' => 'soru', 'soru' => 'Ne?', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]],
+                ['id' => 'giris', 'tur' => 'ekran', 'baslik' => 'Merhaba', 'bloklar' => [['tur' => 'metin', 'metin' => 'Kısa']], 'dugme' => 'Başla'],
+                ['id' => 'soru1', 'tur' => 'ekran', 'baslik' => 'Ne?', 'bloklar' => [['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]]]],
                 ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => 'Pro', 'metin' => '9,99 €', 'dugme' => 'Abone ol', 'plan' => 'monthly'],
             ],
         ];
@@ -709,6 +706,24 @@ final class HuniTest extends WebTestCase
     private static function ekran(array $bloklar, array $ek = []): array
     {
         return array_filter(array_merge(['id' => 'neden', 'tur' => 'ekran', 'baslik' => 'Neden?', 'bloklar' => $bloklar, 'dugme' => 'Devam'], $ek), static fn (mixed $d): bool => null !== $d);
+    }
+
+    /**
+     * T1c: ikinci ekranın soru bloğu değişik (eski soru adımı testleri);
+     * null değer alanı siler. Seçenekler yoksa A/B.
+     *
+     * @param array<mixed>         $blokEk
+     * @param array<string, mixed> $ekranEk
+     *
+     * @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>}
+     */
+    private static function blok(array $blokEk, array $ekranEk = []): array
+    {
+        $t = self::tanim('X');
+        $blok = array_filter(array_merge(['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]], $blokEk), static fn (mixed $d): bool => null !== $d);
+        $t['adimlar'][1] = array_merge(['id' => 'soru1', 'tur' => 'ekran', 'baslik' => 'Ne?', 'bloklar' => [$blok]], $ekranEk);
+
+        return $t;
     }
 
     /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */

@@ -161,8 +161,8 @@ final class MedyaTest extends WebTestCase
         $huniler->yeniHuni('keepchat', 'genel', null);
 
         $tanim = static fn (string $g): array => ['sayfaBasligi' => 'X', 'adimlar' => [
-            ['id' => 'a', 'tur' => 'tanitim', 'baslik' => 'A', 'metin' => '', 'dugme' => 'B', 'gorsel' => $g],
-            ['id' => 's', 'tur' => 'soru', 'soru' => 'S', 'secenekler' => [['id' => 'x', 'metin' => 'X', 'gorsel' => $g], ['id' => 'y', 'metin' => 'Y']]],
+            ['id' => 'a', 'tur' => 'ekran', 'baslik' => 'A', 'bloklar' => [], 'dugme' => 'B', 'gorsel' => $g],
+            ['id' => 's', 'tur' => 'ekran', 'baslik' => 'S', 'bloklar' => [['tur' => 'soru', 'secenekler' => [['id' => 'x', 'metin' => 'X', 'gorsel' => $g], ['id' => 'y', 'metin' => 'Y']]]]],
             ['id' => 'p', 'tur' => 'paywall', 'baslik' => 'P', 'metin' => '', 'dugme' => 'Al', 'plan' => 'monthly'],
         ]];
 

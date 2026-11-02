@@ -145,7 +145,7 @@ final class HuniSecimTest extends WebTestCase
         return [
             'sayfaBasligi' => $baslik,
             'adimlar' => [
-                ['id' => 'giris', 'tur' => 'tanitim', 'baslik' => $baslik, 'metin' => '', 'dugme' => 'Başla'],
+                ['id' => 'giris', 'tur' => 'ekran', 'baslik' => $baslik, 'bloklar' => [], 'dugme' => 'Başla'],
                 ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => 'Pro', 'metin' => '9,99 €', 'dugme' => 'Abone ol', 'plan' => 'monthly'],
             ],
         ];

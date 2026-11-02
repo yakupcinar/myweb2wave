@@ -6,17 +6,22 @@ import { hedefSecenekleri } from "./yapilandirma";
 const tanim: Tanim = {
     sayfaBasligi: "X",
     adimlar: [
-        { id: "giris", tur: "tanitim", baslik: "A", metin: "", dugme: "B" },
+        { id: "giris", tur: "ekran", baslik: "A", bloklar: [], dugme: "B" },
         {
             id: "kiminle",
-            tur: "soru",
-            soru: "?",
-            secenekler: [
-                { id: "a", metin: "A" },
-                { id: "b", metin: "B" },
+            tur: "ekran",
+            baslik: "?",
+            bloklar: [
+                {
+                    tur: "soru",
+                    secenekler: [
+                        { id: "a", metin: "A" },
+                        { id: "b", metin: "B" },
+                    ],
+                },
             ],
         },
-        { id: "ara", tur: "tanitim", baslik: "C", metin: "", dugme: "D" },
+        { id: "ara", tur: "ekran", baslik: "C", bloklar: [], dugme: "D" },
         {
             id: "paywall",
             tur: "paywall",

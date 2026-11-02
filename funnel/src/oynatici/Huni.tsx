@@ -44,8 +44,9 @@ type TanimAdimi = Yayin["tanim"]["adimlar"][number];
 type Secenek = components["schemas"]["SoruSecenegi"];
 
 /**
- * Adımın sorusu: soru adımı ya da (T1b) ekrandaki soru bloğu. Cevap adımın
- * kimliğiyle kaydedilir — ekranda en çok bir soru bloğu (çekirdek denetler).
+ * Adımın sorusu: ekrandaki soru bloğu (T1b; T1c'den beri soru adımı yok).
+ * Cevap adımın kimliğiyle kaydedilir — ekranda en çok bir soru bloğu
+ * (çekirdek denetler).
  */
 function sorusu(adim: TanimAdimi): {
   id: string;
@@ -53,7 +54,6 @@ function sorusu(adim: TanimAdimi): {
   secenekler?: Secenek[] | undefined;
   yanitZorunlu?: boolean | undefined;
 } | null {
-  if (adim.tur === "soru") return adim;
   if (adim.tur !== "ekran") return null;
   for (const b of adim.bloklar)
     if (b.tur === "soru")
@@ -342,11 +342,7 @@ function Oynatici({
                 adim={adim}
                 medyaKoku={KOK}
                 onIleri={() =>
-                  ileri(
-                    adim.tur === "tanitim" || adim.tur === "ekran"
-                      ? adim.hedef
-                      : undefined,
-                  )
+                  ileri(adim.tur === "ekran" ? adim.hedef : undefined)
                 }
                 onSecim={(s) => {
                   if (!soru) return;
@@ -380,7 +376,6 @@ function Oynatici({
                 }}
                 onCokluDevam={() => {
                   if (!soru) return;
-                  // T1b: ekranın düğme hedefi (soru adımında yok).
                   const hedef = adim.tur === "ekran" ? adim.hedef : undefined;
                   if (soru.secimTuru === "metin") {
                     if (soru.yanitZorunlu && !cevapMetni.trim()) return;

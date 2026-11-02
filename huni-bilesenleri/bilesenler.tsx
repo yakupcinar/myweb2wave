@@ -1,4 +1,4 @@
-// Huni adımları (B4/H1) — Puck önizlemesi ve huni oynatıcısı (H2,
+// Huni adımları (B4/H1; T1c: içerik adımı ekran — tanıtım, soru, yorum yok) — Puck önizlemesi ve huni oynatıcısı (H2,
 // funnel/src/oynatici) aynı bileşenleri çizer; huni.css ikisini de boyar.
 // Etkileşim alanları (on…, kapali, hata) isteğe bağlı: Puck geçmez. Metinler yalnız JSX metni —
 // tanım HTML taşıyamaz (D1); ham HTML basan React özniteliği bin/kontrol'de
@@ -51,44 +51,6 @@ type GorselAlani = {
     medyaKoku: string;
 };
 type Tiklama = { onDugme?: (() => void) | undefined };
-
-export function Tanitim({
-    baslik,
-    metin,
-    dugme,
-    gorsel,
-    gorselMetni,
-    duzen = "ust",
-    medyaKoku,
-    onDugme,
-}: {
-    baslik: string;
-    metin: string;
-    dugme: string;
-    /** G5: görselin yeri; ust (varsayılan) için işaret yok — DOM eskisiyle aynı. */
-    duzen?: "ust" | "kahraman" | "tamEkran" | undefined;
-} & GorselAlani &
-    Tiklama): ReactNode {
-    return (
-        <section data-duzen={duzen === "ust" ? undefined : duzen}>
-            {gorsel ? (
-                <Gorsel
-                    id={gorsel}
-                    medyaKoku={medyaKoku}
-                    sinif="kapak"
-                    alt={gorselMetni}
-                />
-            ) : null}
-            <h1 tabIndex={-1}>{baslik}</h1>
-            <p>{metin}</p>
-            <Eylem>
-                <button type="button" className="ana" onClick={onDugme}>
-                    {dugme}
-                </button>
-            </Eylem>
-        </section>
-    );
-}
 
 /** Seçenek kimliği çağıranda; bileşen sırayla konuşur. */
 export type YanitEtkilesimi = {
@@ -178,81 +140,6 @@ function Yanit({
                 </button>
             ))}
         </div>
-    );
-}
-
-export function Soru({
-    soru,
-    aciklama = "",
-    secenekler = [],
-    secimTuru = "tekli",
-    yanitZorunlu = false,
-    cevapMetni = "",
-    secili = [],
-    devamDugmesi = "Devam",
-    duzen = "liste",
-    medyaKoku,
-    onSecim,
-    onSecenekDegistir,
-    onMetinDegistir,
-    onDevam,
-}: {
-    soru: string;
-    aciklama?: string | undefined;
-    secenekler?:
-        | ({ metin: string; simge?: string | undefined } & Omit<
-              GorselAlani,
-              "medyaKoku"
-          >)[]
-        | undefined;
-    secimTuru?: "tekli" | "coklu" | "metin" | undefined;
-    yanitZorunlu?: boolean | undefined;
-    cevapMetni?: string | undefined;
-    secili?: number[] | undefined;
-    devamDugmesi?: string | undefined;
-    /** G4: seçeneklerin dizilişi; liste (varsayılan) için işaret yok. */
-    duzen?: "liste" | "izgara" | undefined;
-    medyaKoku: string;
-    /** Seçeneğin sırası; kimliği çağıran bilir. */
-    onSecim?: ((sira: number) => void) | undefined;
-    onSecenekDegistir?: ((sira: number) => void) | undefined;
-    onMetinDegistir?: ((metin: string) => void) | undefined;
-    onDevam?: (() => void) | undefined;
-}): ReactNode {
-    return (
-        <section>
-            <h1 tabIndex={-1}>{soru}</h1>
-            {aciklama ? <p className="yardim-metni">{aciklama}</p> : null}
-            <Yanit
-                secenekler={secenekler}
-                secimTuru={secimTuru}
-                yanitZorunlu={yanitZorunlu}
-                cevapMetni={cevapMetni}
-                secili={secili}
-                duzen={duzen}
-                medyaKoku={medyaKoku}
-                onSecim={onSecim}
-                onSecenekDegistir={onSecenekDegistir}
-                onMetinDegistir={onMetinDegistir}
-            />
-            {secimTuru === "coklu" || secimTuru === "metin" ? (
-                <Eylem>
-                    <button
-                        type="button"
-                        className="ana"
-                        disabled={
-                            (secimTuru === "coklu" && secili.length === 0) ||
-                            (secimTuru === "metin" &&
-                                yanitZorunlu &&
-                                !cevapMetni.trim())
-                        }
-                        onClick={onDevam}
-                    >
-                        {devamDugmesi}
-                    </button>
-                </Eylem>
-            ) : null}
-        </section>
     );
 }
 
@@ -566,73 +453,8 @@ export function Ekran({
     );
 }
 
-export function Yorum({
-    baslik,
-    metin,
-    yazar,
-    unvan,
-    dugme,
-    onDugme,
-}: {
-    baslik: string;
-    metin: string;
-    yazar: string;
-    unvan: string;
-    dugme: string;
-} & Tiklama): ReactNode {
-    return (
-        <section>
-            <h1 tabIndex={-1}>{baslik}</h1>
-            <blockquote className="yorum-alinti">
-                <p>{metin}</p>
-                <footer>
-                    <strong>{yazar}</strong>
-                    {unvan ? ` · ${unvan}` : null}
-                </footer>
-            </blockquote>
-            <Eylem>
-                <button type="button" className="ana" onClick={onDugme}>
-                    {dugme}
-                </button>
-            </Eylem>
-        </section>
-    );
-}
-
 /** Tanımdaki adım (sözleşme HuniTanimi.adimlar[]); fazla alanlar (id, plan) yok sayılır. */
 export type TanimAdimi =
-    | {
-          tur: "tanitim";
-          baslik: string;
-          metin: string;
-          dugme: string;
-          gorsel?: string;
-          gorselMetni?: string;
-          duzen?: "ust" | "kahraman" | "tamEkran";
-      }
-    | {
-          tur: "soru";
-          soru: string;
-          aciklama?: string;
-          secimTuru?: "tekli" | "coklu" | "metin";
-          yanitZorunlu?: boolean;
-          devamDugmesi?: string;
-          duzen?: "liste" | "izgara";
-          secenekler?: {
-              metin: string;
-              simge?: string;
-              gorsel?: string;
-              gorselMetni?: string;
-          }[];
-      }
-    | {
-          tur: "yorum";
-          baslik: string;
-          metin: string;
-          yazar: string;
-          unvan: string;
-          dugme: string;
-      }
     | {
           tur: "yukleme";
           baslik: string;
@@ -694,38 +516,6 @@ export function Adim({
     };
 }): ReactNode {
     switch (adim.tur) {
-        case "tanitim":
-            return (
-                <Tanitim
-                    baslik={adim.baslik}
-                    metin={adim.metin}
-                    dugme={adim.dugme}
-                    gorsel={adim.gorsel}
-                    gorselMetni={adim.gorselMetni}
-                    duzen={adim.duzen}
-                    medyaKoku={medyaKoku}
-                    onDugme={onIleri}
-                />
-            );
-        case "soru":
-            return (
-                <Soru
-                    soru={adim.soru}
-                    aciklama={adim.aciklama}
-                    secenekler={adim.secenekler}
-                    secimTuru={adim.secimTuru}
-                    yanitZorunlu={adim.yanitZorunlu}
-                    cevapMetni={cevapMetni}
-                    devamDugmesi={adim.devamDugmesi}
-                    duzen={adim.duzen}
-                    secili={secili}
-                    medyaKoku={medyaKoku}
-                    onSecim={onSecim}
-                    onSecenekDegistir={onSecenekDegistir}
-                    onDevam={onCokluDevam}
-                    onMetinDegistir={onMetinDegistir}
-                />
-            );
         case "paywall":
             return (
                 <Paywall
@@ -781,16 +571,5 @@ export function Adim({
                 />
             );
         }
-        case "yorum":
-            return (
-                <Yorum
-                    baslik={adim.baslik}
-                    metin={adim.metin}
-                    yazar={adim.yazar}
-                    unvan={adim.unvan}
-                    dugme={adim.dugme}
-                    onDugme={onIleri}
-                />
-            );
     }
 }

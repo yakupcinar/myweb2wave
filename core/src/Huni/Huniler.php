@@ -387,7 +387,7 @@ final readonly class Huniler
         $plan = (string) (array_key_first($this->uygulamalar[$app] ?? []) ?? 'monthly');
 
         return ['sayfaBasligi' => '', 'adimlar' => [
-            ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => '', 'metin' => '', 'dugme' => 'Başla'],
+            ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => '', 'bloklar' => [], 'dugme' => 'Başla'],
             ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => '', 'metin' => '', 'dugme' => 'Abone ol', 'plan' => $plan],
         ]];
     }

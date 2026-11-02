@@ -5,38 +5,47 @@ import {
     Ekran,
     Logo,
     Paywall,
-    Soru,
-    Tanitim,
-    Yorum,
     Yukleme,
+    type EkranBlogu,
 } from "./bilesenler";
 import css from "./huni.css?raw";
 
 const G = "a".repeat(64);
 const KOK = "https://cekirdek.ornek";
 
-const tanitim = (gorsel?: string): string =>
+// T1c: içerik adımı ekran — eski tanıtım / soru / yorum aynı alanlarla ekrandan.
+const ekran = (
+    baslik: string,
+    bloklar: EkranBlogu[],
+    ek: { dugme?: string; gorsel?: string; gorselMetni?: string } = {},
+    medyaKoku = KOK,
+): string =>
     renderToStaticMarkup(
-        <Tanitim
-            baslik="Merhaba"
-            metin="Kısa"
-            dugme="Başla"
-            gorsel={gorsel}
-            medyaKoku={KOK}
+        <Ekran
+            baslik={baslik}
+            bloklar={bloklar}
+            dugme={ek.dugme}
+            gorsel={ek.gorsel}
+            gorselMetni={ek.gorselMetni}
+            medyaKoku={medyaKoku}
         />,
     );
+const tanitim = (gorsel?: string): string =>
+    ekran("Merhaba", [{ tur: "metin", metin: "Kısa" }], {
+        dugme: "Başla",
+        ...(gorsel === undefined ? {} : { gorsel }),
+    });
 const soru = (aciklama = ""): string =>
-    renderToStaticMarkup(
-        <Soru
-            soru="Kiminle?"
-            aciklama={aciklama}
-            secenekler={[
+    ekran("Kiminle?", [
+        ...(aciklama ? [{ tur: "metin" as const, metin: aciklama }] : []),
+        {
+            tur: "soru",
+            secenekler: [
                 { metin: "Ailemle", gorsel: G },
                 { metin: "İş", gorsel: "" },
-            ]}
-            medyaKoku={KOK}
-        />,
-    );
+            ],
+        },
+    ]);
 const paywall = (): string =>
     renderToStaticMarkup(
         <Paywall
@@ -51,45 +60,40 @@ const paywall = (): string =>
         />,
     );
 const serbestYanit = (yanitZorunlu = false): string =>
-    renderToStaticMarkup(
-        <Soru
-            soru="Hedefiniz nedir?"
-            secimTuru="metin"
-            yanitZorunlu={yanitZorunlu}
-            devamDugmesi="Devam et"
-            medyaKoku=""
-        />,
+    ekran(
+        "Hedefiniz nedir?",
+        [{ tur: "soru", secimTuru: "metin", yanitZorunlu }],
+        { dugme: "Devam et" },
+        "",
     );
 const yorum = (): string =>
-    renderToStaticMarkup(
-        <Yorum
-            baslik="Deneyim"
-            metin="Çok faydalı"
-            yazar="Ayşe"
-            unvan="Kullanıcı"
-            dugme="Devam"
-        />,
+    ekran(
+        "Deneyim",
+        [
+            {
+                tur: "yorum",
+                metin: "Çok faydalı",
+                yazar: "Ayşe",
+                unvan: "Kullanıcı",
+            },
+        ],
+        { dugme: "Devam" },
+        "",
     );
 
 describe("D1 — metin HTML olarak yorumlanmaz", () => {
     it("başlık, metin, seçenek ve düğmedeki etiket kaçışlanır", () => {
         const kotu = "<b>x</b><img src=x onerror=alert(1)>";
         const html = [
-            renderToStaticMarkup(
-                <Tanitim
-                    baslik={kotu}
-                    metin={kotu}
-                    dugme={kotu}
-                    medyaKoku=""
-                />,
-            ),
-            renderToStaticMarkup(
-                <Soru
-                    soru={kotu}
-                    aciklama={kotu}
-                    secenekler={[{ metin: kotu }]}
-                    medyaKoku=""
-                />,
+            ekran(kotu, [{ tur: "metin", metin: kotu }], { dugme: kotu }, ""),
+            ekran(
+                kotu,
+                [
+                    { tur: "metin", metin: kotu },
+                    { tur: "soru", secenekler: [{ metin: kotu }] },
+                ],
+                {},
+                "",
             ),
             renderToStaticMarkup(
                 <Paywall
@@ -99,14 +103,11 @@ describe("D1 — metin HTML olarak yorumlanmaz", () => {
                     faydalar={[kotu]}
                 />,
             ),
-            renderToStaticMarkup(
-                <Yorum
-                    baslik={kotu}
-                    metin={kotu}
-                    yazar={kotu}
-                    unvan={kotu}
-                    dugme={kotu}
-                />,
+            ekran(
+                kotu,
+                [{ tur: "yorum", metin: kotu, yazar: kotu, unvan: kotu }],
+                { dugme: kotu },
+                "",
             ),
         ].join("");
         expect(html).not.toContain("<b>");
@@ -158,26 +159,21 @@ describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
 describe("D2 — görsel adresi kimlikten", () => {
     it("alt metin verilirse img alt'ında, verilmezse boş (Ç44)", () => {
         expect(
-            renderToStaticMarkup(
-                <Tanitim
-                    baslik="B"
-                    metin=""
-                    dugme="D"
-                    gorsel={G}
-                    gorselMetni="Sohbet ekranı"
-                    medyaKoku=""
-                />,
-            ),
+            ekran("B", [], { gorsel: G, gorselMetni: "Sohbet ekranı" }, ""),
         ).toContain('alt="Sohbet ekranı"');
-        const html = renderToStaticMarkup(
-            <Soru
-                soru="?"
-                secenekler={[
-                    { metin: "A", gorsel: G, gorselMetni: "Aile" },
-                    { metin: "B", gorsel: G },
-                ]}
-                medyaKoku=""
-            />,
+        const html = ekran(
+            "?",
+            [
+                {
+                    tur: "soru",
+                    secenekler: [
+                        { metin: "A", gorsel: G, gorselMetni: "Aile" },
+                        { metin: "B", gorsel: G },
+                    ],
+                },
+            ],
+            {},
+            "",
         );
         expect(html).toContain('alt="Aile"');
         expect(html.match(/alt=""/g)).toHaveLength(1);
@@ -189,7 +185,7 @@ describe("D2 — görsel adresi kimlikten", () => {
             `<img class="logo" src="${KOK}/medya/${G}.webp" alt="" decoding="async"/>`,
         );
     });
-    it("tanıtım kapağı çekirdeğin medya adresinden, alt boş", () => {
+    it("ekran kapağı çekirdeğin medya adresinden, alt boş", () => {
         expect(tanitim(G)).toContain(
             `<img class="kapak" src="${KOK}/medya/${G}.webp" alt="" decoding="async"/>`,
         );
@@ -209,14 +205,13 @@ describe("D2 — görsel adresi kimlikten", () => {
 
 describe("G4 — seçenek dizilişi ve düğme biçimi", () => {
     const sor = (duzen?: "liste" | "izgara"): string =>
-        renderToStaticMarkup(
-            <Soru
-                soru="Kiminle?"
-                secenekler={[{ metin: "Ailemle" }, { metin: "İş" }]}
-                duzen={duzen}
-                medyaKoku={KOK}
-            />,
-        );
+        ekran("Kiminle?", [
+            {
+                tur: "soru",
+                secenekler: [{ metin: "Ailemle" }, { metin: "İş" }],
+                ...(duzen ? { duzen } : {}),
+            },
+        ]);
     it("liste ya da yoksa işaret yok; izgara seçenek kutusunda", () => {
         expect(sor()).not.toContain("data-duzen");
         expect(sor("liste")).not.toContain("data-duzen");
@@ -224,14 +219,19 @@ describe("G4 — seçenek dizilişi ve düğme biçimi", () => {
             '<div class="secenekler" data-tur="tekli" data-duzen="izgara">',
         );
     });
-    it("oynatıcının Adim'i soru düzenini aktarır", () => {
+    it("oynatıcının Adim'i soru bloğunun düzenini aktarır", () => {
         const html = renderToStaticMarkup(
             <Adim
                 adim={{
-                    tur: "soru",
-                    soru: "Kiminle?",
-                    secenekler: [{ metin: "A" }, { metin: "B" }],
-                    duzen: "izgara",
+                    tur: "ekran",
+                    baslik: "Kiminle?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secenekler: [{ metin: "A" }, { metin: "B" }],
+                            duzen: "izgara",
+                        },
+                    ],
                 }}
                 medyaKoku={KOK}
             />,
@@ -518,13 +518,12 @@ describe("T1b — ekranda soru bloğu", () => {
 });
 
 describe("Mobil görünüm 3 — seçenek simgesi", () => {
-    const html = renderToStaticMarkup(
-        <Soru
-            soru="Kiminle?"
-            secenekler={[{ metin: "İş", simge: "💼" }, { metin: "Diğer" }]}
-            medyaKoku={KOK}
-        />,
-    );
+    const html = ekran("Kiminle?", [
+        {
+            tur: "soru",
+            secenekler: [{ metin: "İş", simge: "💼" }, { metin: "Diğer" }],
+        },
+    ]);
     it("simge metnin önünde, ekran okuyucuya gizli; simgesizde öğe yok", () => {
         expect(html).toContain(
             '<span class="simge" aria-hidden="true">💼</span><span>İş</span>',
@@ -547,45 +546,7 @@ describe("Mobil görünüm 3 — seçenek simgesi", () => {
     });
 });
 
-describe("G5 — tanıtım düzeni", () => {
-    const ciz = (duzen?: "ust" | "kahraman" | "tamEkran"): string =>
-        renderToStaticMarkup(
-            <Tanitim
-                baslik="Merhaba"
-                metin="Kısa"
-                dugme="Başla"
-                gorsel={G}
-                duzen={duzen}
-                medyaKoku={KOK}
-            />,
-        );
-    // Bağımsız beklenti (§3): aynı bileşenin iki çıktısını kıyaslamak
-    // ikisi birden "ust" yazsa da eşit kalırdı (K4 ilk denemede tutmadı).
-    it("ust ya da yoksa işaret hiç yok (DOM eskisiyle aynı)", () => {
-        expect(ciz()).not.toContain("data-duzen");
-        expect(ciz("ust")).not.toContain("data-duzen");
-        expect(ciz()).toContain("<section><img");
-    });
-    it("oynatıcının Adim'i düzeni tanımdan aktarır", () => {
-        const html = renderToStaticMarkup(
-            <Adim
-                adim={{
-                    tur: "tanitim",
-                    baslik: "Merhaba",
-                    metin: "Kısa",
-                    dugme: "Başla",
-                    gorsel: G,
-                    duzen: "tamEkran",
-                }}
-                medyaKoku={KOK}
-            />,
-        );
-        expect(html).toContain('<section data-duzen="tamEkran">');
-    });
-    it("kahraman ve tamEkran bölümde işaret olarak", () => {
-        expect(ciz("kahraman")).toMatch(/<section data-duzen="kahraman">/);
-        expect(ciz("tamEkran")).toMatch(/<section data-duzen="tamEkran">/);
-    });
+describe("G5 — kapak düzeni (T1c: ekranda)", () => {
     it("CSS: kahraman görseli kırpar; tamEkran metni beyaz, karartma sabit", () => {
         expect(css).toMatch(
             /section\[data-duzen="kahraman"\] img\.kapak \{[^}]*object-fit: cover/,
@@ -621,15 +582,20 @@ describe("DOM huni sayfasıyla aynı", () => {
         );
     });
     it("yorum metnini kaynak adıyla alıntı olarak gösterir ve devam eder", () => {
-        expect(yorum()).toContain('<blockquote class="yorum-alinti">');
+        expect(yorum()).toContain(
+            '<figure class="blok-yorum"><blockquote><p>Çok faydalı</p></blockquote>',
+        );
         expect(yorum()).toContain("<strong>Ayşe</strong> · Kullanıcı");
         expect(yorum()).toContain('<button type="button" class="ana">Devam');
     });
     it("sorudaki ek açıklama varsa gösterir, boşsa ek satır üretmez", () => {
+        // T1c: açıklama ekranın paragraf bloğu.
         expect(soru("Birden fazla seçenek seçebilirsin.")).toContain(
-            '<p class="yardim-metni">Birden fazla seçenek seçebilirsin.</p>',
+            '<div class="bloklar"><p>Birden fazla seçenek seçebilirsin.</p><div class="secenekler"',
         );
-        expect(soru()).not.toContain("yardim-metni");
+        expect(soru()).toContain(
+            '<div class="bloklar"><div class="secenekler"',
+        );
     });
     it("serbest yanıt alanı 500 karakterle sınırlı, boşken isteğe bağlı gelir", () => {
         const html = serbestYanit();
@@ -693,6 +659,9 @@ describe("DOM huni sayfasıyla aynı", () => {
         );
         expect([...siniflar].sort()).toEqual([
             "ana",
+            "blok-yorum",
+            "bloklar",
+            "ekran",
             "eylem",
             "faydalar",
             "fiyat",
@@ -703,11 +672,12 @@ describe("DOM huni sayfasıyla aynı", () => {
             "secenek-gorseli",
             "secenekler",
             "serbest-yanit",
-            "yardim-metni",
             "yasal",
-            "yorum-alinti",
         ]);
-        for (const s of siniflar) {
+        // "ekran" ve "bloklar" kapsayıcı (T1 testi ayrıca ölçer).
+        for (const s of [...siniflar].filter(
+            (s) => s !== "ekran" && s !== "bloklar",
+        )) {
             // Sınıf seçicinin ÖZNESİ olmalı: ".huni .secenekler button" kuralı
             // .secenekler'in kendi düzenini (grid) boyamaz (kırma K10).
             expect(css).toMatch(new RegExp(`\\.huni [^{,]*\\.${s}\\s*[{,]`));
@@ -718,11 +688,19 @@ describe("DOM huni sayfasıyla aynı", () => {
 describe("çoklu seçim", () => {
     it("seçim durumunu erişilebilir aktarır ve hiç seçim yokken devamı kapatır", () => {
         const html = renderToStaticMarkup(
-            <Soru
-                soru="Neler önemli?"
-                secenekler={[{ metin: "Hız" }, { metin: "Fiyat" }]}
-                secimTuru="coklu"
-                devamDugmesi="Seçimleri gönder"
+            <Adim
+                adim={{
+                    tur: "ekran",
+                    baslik: "Neler önemli?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secimTuru: "coklu",
+                            secenekler: [{ metin: "Hız" }, { metin: "Fiyat" }],
+                        },
+                    ],
+                    dugme: "Seçimleri gönder",
+                }}
                 medyaKoku=""
             />,
         );

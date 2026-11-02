@@ -65,19 +65,24 @@ const yayin = (ek: Partial<Yayin["tanim"]> = {}): Yayin => ({
     adimlar: [
       {
         id: "karsilama",
-        tur: "tanitim",
+        tur: "ekran",
         baslik: "Merhaba",
-        metin: "Kısa",
+        bloklar: [{ tur: "metin", metin: "Kısa" }],
         dugme: "Başla",
         gorsel: G,
       },
       {
         id: "kiminle",
-        tur: "soru",
-        soru: "Kiminle?",
-        secenekler: [
-          { id: "aile", metin: "Ailemle" },
-          { id: "is", metin: "İş" },
+        tur: "ekran",
+        baslik: "Kiminle?",
+        bloklar: [
+          {
+            tur: "soru",
+            secenekler: [
+              { id: "aile", metin: "Ailemle" },
+              { id: "is", metin: "İş" },
+            ],
+          },
         ],
       },
       {
@@ -91,6 +96,21 @@ const yayin = (ek: Partial<Yayin["tanim"]> = {}): Yayin => ({
     ],
     ...ek,
   },
+});
+
+// T1c: soru adımı yok — "kiminle" ekranı farklı soru bloklarıyla.
+type TanimAdimi = Yayin["tanim"]["adimlar"][number];
+type Blok = Extract<TanimAdimi, { tur: "ekran" }>["bloklar"][number];
+const SECENEKLER = [
+  { id: "aile", metin: "Ailemle" },
+  { id: "is", metin: "İş" },
+];
+const kiminle = (bloklar: Blok[], dugme: string): TanimAdimi => ({
+  id: "kiminle",
+  tur: "ekran",
+  baslik: "Kiminle?",
+  bloklar,
+  dugme,
 });
 
 let odeme: Yanit | "ag-hatasi" = {
@@ -276,9 +296,9 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
         adimlar: [
           {
             id: "a",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "<b>kalın</b>",
-            metin: "<img src=x onerror=alert(1)>",
+            bloklar: [{ tur: "metin", metin: "<img src=x onerror=alert(1)>" }],
             dugme: "Başla",
           },
         ],
@@ -337,13 +357,17 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
         tanim: {
           ...temel.tanim,
           adimlar: temel.tanim.adimlar.map((adim) =>
-            adim.tur === "soru"
-              ? {
-                  ...adim,
-                  aciklama: "Birden fazla seçenek seçebilirsin.",
-                  secimTuru: "coklu",
-                  devamDugmesi: "Seçimleri gönder",
-                }
+            adim.id === "kiminle"
+              ? kiminle(
+                  [
+                    {
+                      tur: "metin",
+                      metin: "Birden fazla seçenek seçebilirsin.",
+                    },
+                    { tur: "soru", secimTuru: "coklu", secenekler: SECENEKLER },
+                  ],
+                  "Seçimleri gönder",
+                )
               : adim,
           ),
         },
@@ -388,14 +412,8 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
         tanim: {
           ...temel.tanim,
           adimlar: temel.tanim.adimlar.map((adim) =>
-            adim.tur === "soru"
-              ? {
-                  id: adim.id,
-                  tur: "soru",
-                  soru: adim.soru,
-                  secimTuru: "metin",
-                  devamDugmesi: "Devam et",
-                }
+            adim.id === "kiminle"
+              ? kiminle([{ tur: "soru", secimTuru: "metin" }], "Devam et")
               : adim,
           ),
         },
@@ -427,14 +445,11 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
         tanim: {
           ...temel.tanim,
           adimlar: temel.tanim.adimlar.map((adim) =>
-            adim.tur === "soru"
-              ? {
-                  id: adim.id,
-                  tur: "soru",
-                  soru: adim.soru,
-                  secimTuru: "metin",
-                  yanitZorunlu: true,
-                }
+            adim.id === "kiminle"
+              ? kiminle(
+                  [{ tur: "soru", secimTuru: "metin", yanitZorunlu: true }],
+                  "Devam",
+                )
               : adim,
           ),
         },
@@ -454,7 +469,7 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     expect((devam as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("yorum adımı alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {
+  it("yorum bloklu ekran alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {
     const temel = yayin();
     tanim = {
       durum: 200,
@@ -467,11 +482,16 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
             temel.tanim.adimlar[1]!,
             {
               id: "yorum",
-              tur: "yorum",
+              tur: "ekran",
               baslik: "Kullanıcı deneyimi",
-              metin: "Günlük işlerim artık daha kolay.",
-              yazar: "Ayşe",
-              unvan: "KeepChat kullanıcısı",
+              bloklar: [
+                {
+                  tur: "yorum",
+                  metin: "Günlük işlerim artık daha kolay.",
+                  yazar: "Ayşe",
+                  unvan: "KeepChat kullanıcısı",
+                },
+              ],
               dugme: "Devam et",
             },
             temel.tanim.adimlar[2]!,
@@ -806,33 +826,38 @@ describe("H5 — dallanma (yalnız ileri)", () => {
       adimlar: [
         {
           id: "giris",
-          tur: "tanitim",
+          tur: "ekran",
           baslik: "Merhaba",
-          metin: "",
+          bloklar: [],
           dugme: "Başla",
         },
         {
           id: "kiminle",
-          tur: "soru",
-          soru: "Kiminle?",
-          secenekler: [
-            { id: "aile", metin: "Ailemle", hedef: "aile-adimi" },
-            { id: "is", metin: "İş", hedef: "is-adimi" },
+          tur: "ekran",
+          baslik: "Kiminle?",
+          bloklar: [
+            {
+              tur: "soru",
+              secenekler: [
+                { id: "aile", metin: "Ailemle", hedef: "aile-adimi" },
+                { id: "is", metin: "İş", hedef: "is-adimi" },
+              ],
+            },
           ],
         },
         {
           id: "aile-adimi",
-          tur: "tanitim",
+          tur: "ekran",
           baslik: "Aile",
-          metin: "",
+          bloklar: [],
           dugme: "Devam",
           hedef: "paywall",
         },
         {
           id: "is-adimi",
-          tur: "tanitim",
+          tur: "ekran",
           baslik: "İş için",
-          metin: "",
+          bloklar: [],
           dugme: "Devam",
         },
         {
@@ -882,9 +907,9 @@ describe("H5 — dallanma (yalnız ileri)", () => {
         adimlar: [
           {
             id: "giris",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Merhaba",
-            metin: "",
+            bloklar: [],
             dugme: "Başla",
           },
           {
@@ -901,9 +926,9 @@ describe("H5 — dallanma (yalnız ileri)", () => {
           },
           {
             id: "atlanan",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Atlanan",
-            metin: "",
+            bloklar: [],
             dugme: "Devam",
           },
           {
@@ -953,9 +978,9 @@ describe("H5 — dallanma (yalnız ileri)", () => {
           },
           {
             id: "atlanan",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Atlanan",
-            metin: "",
+            bloklar: [],
             dugme: "Devam",
           },
           {
@@ -1007,9 +1032,9 @@ describe("H5 — dallanma (yalnız ileri)", () => {
           },
           {
             id: "atlanan",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Atlanan",
-            metin: "",
+            bloklar: [],
             dugme: "Devam",
           },
           {

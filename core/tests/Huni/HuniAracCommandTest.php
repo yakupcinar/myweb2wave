@@ -47,7 +47,7 @@ final class HuniAracCommandTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $this->calistir('huni_oku', ['huni' => 'fitness']));
         $imza = $this->cikti()['imza'];
         $tanim = ['sayfaBasligi' => 'FitPlan', 'adimlar' => [
-            ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => 'Merhaba', 'metin' => 'Başlayalım.', 'dugme' => 'Başla'],
+            ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => 'Merhaba', 'bloklar' => [['tur' => 'metin', 'metin' => 'Başlayalım.']], 'dugme' => 'Başla'],
             ['id' => 'paywall', 'tur' => 'paywall', 'plan' => 'monthly', 'baslik' => 'Plan', 'metin' => 'Abone ol.', 'dugme' => 'Abone ol'],
         ]];
 

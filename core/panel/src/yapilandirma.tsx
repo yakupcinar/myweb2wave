@@ -15,9 +15,6 @@ import {
     Ekran,
     Logo,
     Paywall,
-    Soru,
-    Tanitim,
-    Yorum,
     Yukleme,
 } from "../../../huni-bilesenleri/bilesenler";
 import "../../../huni-bilesenleri/huni.css";
@@ -27,7 +24,7 @@ import {
     VARSAYILAN_TEMA,
 } from "../../../huni-bilesenleri/tema";
 import { BLOK_BILESENLERI, kokOnAyarlari, kokZemini } from "./donustur";
-import type { Bilesenler, KokProps, SecenekProps, SoruProps } from "./donustur";
+import type { Bilesenler, KokProps, SecenekProps } from "./donustur";
 
 export type Ortam = {
     planlar: string[];
@@ -248,188 +245,82 @@ const eklenince = <P extends { id: string; kimlik: string }>(
           }
         : veri;
 
-function soruBileseni(
-    ortam: Ortam,
-): Config<Bilesenler, KokProps>["components"]["TekSecim"] {
+/** T1b/T1c: soru bloğunun yanıt alanları (soru metni ekranın başlığı). */
+function soruAlanlari(ortam: Ortam) {
     return {
-        label: "Soru",
-        resolveData: eklenince,
-        fields: {
-            kimlik: kimlikAlani,
-            soru: { type: "text", label: "Soru" },
-            aciklama: {
-                type: "textarea",
-                label: "Açıklama (isteğe bağlı)",
-            },
-            ilerlemeGoster: ilerlemeAlani,
-            secimTuru: {
-                type: "radio",
-                label: "Yanıt biçimi",
-                options: [
-                    { label: "Tek seçim", value: "tekli" },
-                    { label: "Çoklu seçim", value: "coklu" },
-                    { label: "Serbest yanıt", value: "metin" },
-                ],
-            },
-            yanitZorunlu: {
-                type: "radio",
-                label: "Serbest yanıt zorunluluğu",
-                options: [
-                    { label: "İsteğe bağlı", value: "istege_bagli" },
-                    { label: "Zorunlu", value: "zorunlu" },
-                ],
-            },
-            devamDugmesi: { type: "text", label: "Devam düğmesi" },
-            // G4: kısa ya da görselli seçenekler için iki sütun.
-            duzen: {
-                type: "radio",
-                label: "Seçenek dizilişi",
-                options: [
-                    { label: "Liste", value: "liste" },
-                    { label: "Izgara (2 sütun)", value: "izgara" },
-                ],
-            },
-            secenekler: {
-                type: "array",
-                label: "Seçenekler",
-                getItemSummary: (s: SecenekProps) =>
-                    s.metin || s.kimlik || "seçenek",
-                defaultItemProps: {
-                    kimlik: "secenek",
-                    metin: "",
-                    simge: "",
-                    gorsel: "",
-                    gorselMetni: "",
-                    hedef: "",
-                },
-                arrayFields: {
-                    metin: { type: "text", label: "Metin" },
-                    // Tek emoji; kayıtta çekirdek denetler (görselle birlikte olmaz).
-                    simge: { type: "text", label: "Simge (tek emoji)" },
-                    kimlik: { type: "text", label: "Kimlik" },
-                    gorsel: gorselAlani(ortam, "Görsel"),
-                    gorselMetni: gorselMetniAlani,
-                    hedef: yanitHedefAlani,
-                },
-            },
-        },
-        resolveFields: (veri, { fields, appState }) => {
-            const secenekler = fields.secenekler;
-            if (secenekler.type !== "array") return fields;
-            const arrayFields = {
-                ...secenekler.arrayFields,
-                hedef: {
-                    ...yanitHedefAlani,
-                    options: hedefSecenekleri(appState, veri.props.id),
-                    visible: veri.props.secimTuru !== "coklu",
-                },
-            };
-            return {
-                ...fields,
-                yanitZorunlu: {
-                    ...fields.yanitZorunlu,
-                    visible: veri.props.secimTuru === "metin",
-                },
-                devamDugmesi: {
-                    ...fields.devamDugmesi,
-                    visible: ["coklu", "metin"].includes(
-                        String(veri.props.secimTuru),
-                    ),
-                },
-                duzen: {
-                    ...fields.duzen,
-                    visible: veri.props.secimTuru !== "metin",
-                },
-                secenekler: {
-                    ...secenekler,
-                    visible: veri.props.secimTuru !== "metin",
-                    arrayFields,
-                },
-            };
-        },
-        defaultProps: {
-            kimlik: "soru",
-            soru: "Yeni soru",
-            aciklama: "",
-            ilerlemeGoster: true,
-            secimTuru: "tekli",
-            yanitZorunlu: "istege_bagli",
-            devamDugmesi: "Devam",
-            duzen: "liste",
-            secenekler: [
-                {
-                    kimlik: "secenek-1",
-                    metin: "Seçenek 1",
-                    gorsel: "",
-                    gorselMetni: "",
-                    hedef: "",
-                },
-                {
-                    kimlik: "secenek-2",
-                    metin: "Seçenek 2",
-                    gorsel: "",
-                    gorselMetni: "",
-                    hedef: "",
-                },
+        secimTuru: {
+            type: "radio",
+            label: "Yanıt biçimi",
+            options: [
+                { label: "Tek seçim", value: "tekli" },
+                { label: "Çoklu seçim", value: "coklu" },
+                { label: "Serbest yanıt", value: "metin" },
             ],
         },
-        render: ({
-            soru,
-            aciklama,
-            secenekler,
-            secimTuru,
-            yanitZorunlu,
-            devamDugmesi,
-            duzen,
-        }) => (
-            <div style={kart}>
-                <Soru
-                    soru={soru}
-                    aciklama={aciklama}
-                    secenekler={secenekler ?? []}
-                    secimTuru={secimTuru}
-                    yanitZorunlu={yanitZorunlu === "zorunlu"}
-                    devamDugmesi={devamDugmesi}
-                    duzen={duzen}
-                    medyaKoku=""
-                />
-            </div>
-        ),
-    };
+        yanitZorunlu: {
+            type: "radio",
+            label: "Serbest yanıt zorunluluğu",
+            options: [
+                { label: "İsteğe bağlı", value: "istege_bagli" },
+                { label: "Zorunlu", value: "zorunlu" },
+            ],
+        },
+        // G4: kısa ya da görselli seçenekler için iki sütun.
+        duzen: {
+            type: "radio",
+            label: "Seçenek dizilişi",
+            options: [
+                { label: "Liste", value: "liste" },
+                { label: "Izgara (2 sütun)", value: "izgara" },
+            ],
+        },
+        secenekler: {
+            type: "array",
+            label: "Seçenekler",
+            getItemSummary: (s: SecenekProps) =>
+                s.metin || s.kimlik || "seçenek",
+            defaultItemProps: {
+                kimlik: "secenek",
+                metin: "",
+                simge: "",
+                gorsel: "",
+                gorselMetni: "",
+                hedef: "",
+            },
+            arrayFields: {
+                metin: { type: "text", label: "Metin" },
+                // Tek emoji; kayıtta çekirdek denetler (görselle birlikte olmaz).
+                simge: { type: "text", label: "Simge (tek emoji)" },
+                kimlik: { type: "text", label: "Kimlik" },
+                gorsel: gorselAlani(ortam, "Görsel"),
+                gorselMetni: gorselMetniAlani,
+                hedef: yanitHedefAlani,
+            },
+        },
+    } satisfies NonNullable<
+        Config<Bilesenler, KokProps>["components"]["SoruBlogu"]["fields"]
+    >;
 }
 
-const varsayilanSoru = (
-    kimlik: string,
-    secimTuru: SoruProps["secimTuru"],
-): SoruProps => ({
-    kimlik,
-    soru: "Yeni soru",
-    aciklama: "",
-    ilerlemeGoster: true,
-    secimTuru,
-    yanitZorunlu: "istege_bagli",
-    devamDugmesi: "Devam",
-    duzen: "liste",
-    secenekler: [
-        {
-            kimlik: "secenek-1",
-            metin: "Seçenek 1",
-            gorsel: "",
-            gorselMetni: "",
-            hedef: "",
-        },
-        {
-            kimlik: "secenek-2",
-            metin: "Seçenek 2",
-            gorsel: "",
-            gorselMetni: "",
-            hedef: "",
-        },
-    ],
-});
+const VARSAYILAN_SECENEKLER: SecenekProps[] = [
+    {
+        kimlik: "secenek-1",
+        metin: "Seçenek 1",
+        gorsel: "",
+        gorselMetni: "",
+        hedef: "",
+    },
+    {
+        kimlik: "secenek-2",
+        metin: "Seçenek 2",
+        gorsel: "",
+        gorselMetni: "",
+        hedef: "",
+    },
+];
 
 export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
-    const soru = soruBileseni(ortam);
+    const soru = soruAlanlari(ortam);
     return {
         root: {
             fields: {
@@ -610,16 +501,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
         categories: {
             adimlar: {
                 title: "Adımlar",
-                components: [
-                    "Tanitim",
-                    "Ekran",
-                    "TekSecim",
-                    "CokluSecim",
-                    "SerbestYanit",
-                    "Yorum",
-                    "Yukleme",
-                    "Paywall",
-                ],
+                components: ["Ekran", "Yukleme", "Paywall"],
             },
             bloklar: {
                 title: "Ekran blokları (Ekran adımının içine)",
@@ -700,17 +582,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             // T1b: soru adımının yanıt alanları; soru metni ekranın başlığı.
             SoruBlogu: {
                 label: "Soru (ekranda bir tane)",
-                fields: {
-                    secimTuru: soru.fields!.secimTuru,
-                    yanitZorunlu: soru.fields!.yanitZorunlu,
-                    duzen: soru.fields!.duzen,
-                    secenekler: soru.fields!.secenekler,
-                } as NonNullable<
-                    Config<
-                        Bilesenler,
-                        KokProps
-                    >["components"]["SoruBlogu"]["fields"]
-                >,
+                fields: soru,
                 resolveFields: (veri, { fields, appState }) => {
                     const secenekler = fields.secenekler;
                     if (secenekler.type !== "array") return fields;
@@ -743,7 +615,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     secimTuru: "tekli",
                     yanitZorunlu: "istege_bagli",
                     duzen: "liste",
-                    secenekler: varsayilanSoru("soru", "tekli").secenekler,
+                    secenekler: VARSAYILAN_SECENEKLER,
                 },
                 render: ({ secimTuru, duzen, yanitZorunlu, secenekler }) => (
                     <Blok
@@ -893,83 +765,6 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     <Blok blok={{ tur: "kutu", metin, simge }} medyaKoku="" />
                 ),
             },
-            Tanitim: {
-                label: "Tanıtım",
-                resolveData: eklenince,
-                fields: {
-                    kimlik: kimlikAlani,
-                    baslik: { type: "text", label: "Başlık" },
-                    metin: { type: "textarea", label: "Metin" },
-                    dugme: { type: "text", label: "Düğme" },
-                    gorsel: gorselAlani(ortam, "Kapak görseli"),
-                    gorselMetni: gorselMetniAlani,
-                    // G5: kahraman/tamEkran görsel ister (kayıtta çekirdek denetler).
-                    duzen: {
-                        type: "radio",
-                        label: "Görsel düzeni",
-                        options: [
-                            { label: "Üstte", value: "ust" },
-                            { label: "Büyük", value: "kahraman" },
-                            { label: "Tam ekran", value: "tamEkran" },
-                        ],
-                    },
-                    ilerlemeGoster: ilerlemeAlani,
-                    hedef: tanitimHedefAlani,
-                },
-                resolveFields: (veri, { fields, appState }) => ({
-                    ...fields,
-                    hedef: {
-                        ...tanitimHedefAlani,
-                        options: hedefSecenekleri(appState, veri.props.id),
-                    },
-                }),
-                defaultProps: {
-                    kimlik: "tanitim",
-                    baslik: "Yeni tanıtım",
-                    metin: "",
-                    dugme: "Devam",
-                    gorsel: "",
-                    gorselMetni: "",
-                    duzen: "ust",
-                    ilerlemeGoster: true,
-                    hedef: "",
-                },
-                render: ({
-                    baslik,
-                    metin,
-                    dugme,
-                    gorsel,
-                    gorselMetni,
-                    duzen,
-                }) => (
-                    <div style={kart}>
-                        <Tanitim
-                            baslik={baslik}
-                            metin={metin}
-                            dugme={dugme}
-                            gorsel={gorsel}
-                            gorselMetni={gorselMetni}
-                            duzen={duzen}
-                            medyaKoku=""
-                        />
-                    </div>
-                ),
-            },
-            TekSecim: {
-                ...soru,
-                label: "Tek seçim sorusu",
-                defaultProps: varsayilanSoru("tek-secim-sorusu", "tekli"),
-            },
-            CokluSecim: {
-                ...soru,
-                label: "Çoklu seçim sorusu",
-                defaultProps: varsayilanSoru("coklu-secim-sorusu", "coklu"),
-            },
-            SerbestYanit: {
-                ...soru,
-                label: "Serbest yanıt sorusu",
-                defaultProps: varsayilanSoru("serbest-yanit-sorusu", "metin"),
-            },
             Paywall: {
                 label: "Ödeme (en sonda olmalı)",
                 fields: {
@@ -1042,39 +837,6 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             sartlar={sartlar || undefined}
                             gizlilik={gizlilik || undefined}
                             iptal={iptal || undefined}
-                        />
-                    </div>
-                ),
-            },
-            Yorum: {
-                label: "Müşteri yorumu",
-                resolveData: eklenince,
-                fields: {
-                    kimlik: kimlikAlani,
-                    baslik: { type: "text", label: "Başlık" },
-                    metin: { type: "textarea", label: "Yorum" },
-                    yazar: { type: "text", label: "Ad" },
-                    unvan: { type: "text", label: "Açıklama" },
-                    dugme: { type: "text", label: "Devam düğmesi" },
-                    ilerlemeGoster: ilerlemeAlani,
-                },
-                defaultProps: {
-                    kimlik: "yorum",
-                    baslik: "Kullanıcılarımız ne diyor?",
-                    metin: "Bu uygulama günlük rutinimi kolaylaştırdı.",
-                    yazar: "Ayşe",
-                    unvan: "KeepChat kullanıcısı",
-                    dugme: "Devam",
-                    ilerlemeGoster: true,
-                },
-                render: ({ baslik, metin, yazar, unvan, dugme }) => (
-                    <div style={kart}>
-                        <Yorum
-                            baslik={baslik}
-                            metin={metin}
-                            yazar={yazar}
-                            unvan={unvan}
-                            dugme={dugme}
                         />
                     </div>
                 ),

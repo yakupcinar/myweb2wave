@@ -767,9 +767,6 @@ components:
           maxItems: 50
           items:
             oneOf:
-              - $ref: "#/components/schemas/TanitimAdimi"
-              - $ref: "#/components/schemas/SoruAdimi"
-              - $ref: "#/components/schemas/YorumAdimi"
               - $ref: "#/components/schemas/YuklemeAdimi"
               - $ref: "#/components/schemas/EkranAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
@@ -829,44 +826,6 @@ components:
         tur: { type: string, enum: [gorsel] }
         gorsel: { $ref: "#/components/schemas/GorselKimligi" }
         karartma: { type: integer, minimum: 0, maximum: 95 }
-    TanitimAdimi:
-      type: object
-      additionalProperties: false
-      required: [id, tur, baslik, metin, dugme]
-      properties:
-        id: { $ref: "#/components/schemas/HuniKimligi" }
-        tur: { type: string, enum: [tanitim] }
-        gorsel: { $ref: "#/components/schemas/GorselKimligi" }
-        gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
-        duzen:
-          description: "G5: görselin yeri (yoksa ust). kahraman: görsel ekranın üst yarısını kaplar · tamEkran: görsel bütün adımı kaplar, metin altta beyaz, karartmanın üstünde. kahraman ve tamEkran görsel ister"
-          type: string
-          enum: [ust, kahraman, tamEkran]
-        baslik: { type: string }
-        metin: { type: string }
-        dugme: { type: string }
-        hedef: { $ref: "#/components/schemas/AdimHedefi" }
-        ilerlemeGoster: { type: boolean }
-    SoruAdimi:
-      type: object
-      additionalProperties: false
-      required: [id, tur, soru]
-      properties:
-        id: { $ref: "#/components/schemas/HuniKimligi" }
-        tur: { type: string, enum: [soru] }
-        soru: { type: string }
-        aciklama: { type: string, maxLength: 500 }
-        ilerlemeGoster: { type: boolean }
-        secimTuru: { type: string, enum: [tekli, coklu, metin] }
-        duzen:
-          description: "G4: seçeneklerin dizilişi (yoksa liste): liste · izgara (iki sütun; kısa seçenekler ve görselli seçenekler için). Serbest yanıtta kullanılmaz"
-          type: string
-          enum: [liste, izgara]
-        yanitZorunlu: { type: boolean }
-        devamDugmesi: { type: string }
-        secenekler:
-          type: array
-          items: { $ref: "#/components/schemas/SoruSecenegi" }
     SoruSecenegi:
       type: object
       additionalProperties: false
@@ -881,20 +840,6 @@ components:
         gorsel: { $ref: "#/components/schemas/GorselKimligi" }
         gorselMetni: { $ref: "#/components/schemas/GorselMetni" }
         hedef: { $ref: "#/components/schemas/AdimHedefi" }
-    YorumAdimi:
-      description: Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir
-      type: object
-      additionalProperties: false
-      required: [id, tur, baslik, metin, yazar, unvan, dugme]
-      properties:
-        id: { $ref: "#/components/schemas/HuniKimligi" }
-        tur: { type: string, enum: [yorum] }
-        baslik: { type: string, minLength: 1, maxLength: 200 }
-        metin: { type: string, maxLength: 1000 }
-        yazar: { type: string, minLength: 1, maxLength: 80 }
-        unvan: { type: string, maxLength: 100 }
-        dugme: { type: string, minLength: 1, maxLength: 60 }
-        ilerlemeGoster: { type: boolean }
     YuklemeAdimi:
       description: "Mobil görünüm 4: \"planın hazırlanıyor\" — düğmesiz; maddeler sırayla işaretlenir, süre dolunca sonraki adıma kendiliğinden geçer"
       type: object

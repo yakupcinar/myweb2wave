@@ -9,19 +9,34 @@ const ortam: Ortam = {
     jeton: "",
 };
 
+// T1c: soru adımı yok — soru, ekranın yuvasındaki soru bloğu.
 async function soruAlanlari(secimTuru: "tekli" | "coklu" | "metin") {
-    const soru = yapilandirma(ortam).components.TekSecim;
+    const soru = yapilandirma(ortam).components.SoruBlogu;
     const cozumle = soru.resolveFields;
     if (!cozumle) throw new Error("Soru alanlarının dinamik çözümleyicisi yok");
     const sonuc = await cozumle(
-        { props: { id: "soru-1", secimTuru } } as unknown as Parameters<
+        { props: { id: "SoruBlogu-1", secimTuru } } as unknown as Parameters<
             typeof cozumle
         >[0],
         {
             fields: soru.fields,
             appState: {
                 data: {
-                    content: [{ type: "TekSecim", props: { id: "soru-1" } }],
+                    content: [
+                        {
+                            type: "Ekran",
+                            props: {
+                                id: "Ekran-1",
+                                kimlik: "e",
+                                bloklar: [
+                                    {
+                                        type: "SoruBlogu",
+                                        props: { id: "SoruBlogu-1" },
+                                    },
+                                ],
+                            },
+                        },
+                    ],
                 },
             } as unknown as AppState,
         } as Parameters<typeof cozumle>[1],
@@ -31,106 +46,91 @@ async function soruAlanlari(secimTuru: "tekli" | "coklu" | "metin") {
     }
     return {
         hedef: sonuc.secenekler.arrayFields.hedef,
-        devam: sonuc.devamDugmesi,
         zorunlu: sonuc.yanitZorunlu,
+        duzen: sonuc.duzen,
         secenekler: sonuc.secenekler,
     };
 }
 
-describe("soru ayarlarının görünürlüğü", () => {
-    it("tekli soruda hedefleri, çoklu soruda devam yazısını gösterir", async () => {
+describe("soru bloğu ayarlarının görünürlüğü", () => {
+    it("tekli soruda hedefleri gösterir, çoklu soruda gizler; serbest yanıtta seçenek yok", async () => {
         const tekli = await soruAlanlari("tekli");
         const coklu = await soruAlanlari("coklu");
         expect(tekli.hedef?.visible).not.toBe(false);
-        expect(tekli.devam.visible).toBe(false);
+        expect(tekli.zorunlu.visible).toBe(false);
         expect(coklu.hedef?.visible).toBe(false);
-        expect(coklu.devam.visible).toBe(true);
         const metin = await soruAlanlari("metin");
-        expect(metin.devam.visible).toBe(true);
         expect(metin.zorunlu.visible).toBe(true);
         expect(metin.secenekler.visible).toBe(false);
-    });
-});
-
-describe("müşteri yorumu bileşeni", () => {
-    it("yorum alanlarını Puck düzenlemesine açar", () => {
-        const yorum = yapilandirma(ortam).components.Yorum;
-        expect(yorum.label).toBe("Müşteri yorumu");
-        expect(Object.keys(yorum.fields ?? {})).toEqual(
-            expect.arrayContaining([
-                "baslik",
-                "metin",
-                "yazar",
-                "unvan",
-                "dugme",
-            ]),
-        );
-    });
-});
-
-describe("soru içeriği", () => {
-    it("isteğe bağlı açıklama alanı düzenlenebilir", () => {
-        expect(
-            yapilandirma(ortam).components.TekSecim.fields?.aciklama?.label,
-        ).toBe("Açıklama (isteğe bağlı)");
+        expect(metin.duzen.visible).toBe(false);
     });
 
-    it("serbest yanıt panel seçeneği isteğe bağlı gelir", () => {
-        const soru = yapilandirma(ortam).components.TekSecim;
+    it("serbest yanıt seçeneği var ve isteğe bağlı gelir", () => {
+        const soru = yapilandirma(ortam).components.SoruBlogu;
         const secimTuru = soru.fields?.secimTuru;
         expect(
             secimTuru && "options" in secimTuru ? secimTuru.options : [],
         ).toContainEqual({ label: "Serbest yanıt", value: "metin" });
         expect(soru.defaultProps?.yanitZorunlu).toBe("istege_bagli");
     });
+});
 
-    it("menüde genel 'Soru' yok — yalnız üç hazır soru türü (Ç61)", () => {
-        const bilesenler = yapilandirma(ortam).components;
-        expect(bilesenler).not.toHaveProperty("Soru");
-        expect(
-            Object.values(bilesenler).filter((b) =>
-                String(b?.label).endsWith("sorusu"),
-            ),
-        ).toHaveLength(3);
+describe("adım menüsü (T1c)", () => {
+    it("adım olarak yalnız ekran, yükleme ve ödeme; eski türler yok", () => {
+        const yap = yapilandirma(ortam);
+        expect(yap.categories?.adimlar?.components).toEqual([
+            "Ekran",
+            "Yukleme",
+            "Paywall",
+        ]);
+        for (const eski of [
+            "Tanitim",
+            "TekSecim",
+            "CokluSecim",
+            "SerbestYanit",
+            "Yorum",
+        ])
+            expect(yap.components).not.toHaveProperty(eski);
     });
 
-    it("eklenen bloğun kimliği benzersiz, yüklenenin kimliği değişmez (Ç61)", async () => {
-        const tek = yapilandirma(ortam).components.TekSecim;
-        const coz = tek.resolveData;
+    it("yorum bloğu yorum alanlarını Puck düzenlemesine açar", () => {
+        const yorum = yapilandirma(ortam).components.YorumBlogu;
+        expect(Object.keys(yorum.fields ?? {})).toEqual(
+            expect.arrayContaining(["metin", "yazar", "unvan", "puan"]),
+        );
+    });
+
+    it("eklenen ekranın kimliği benzersiz, yüklenenin kimliği değişmez (Ç61)", async () => {
+        const ekran = yapilandirma(ortam).components.Ekran;
+        const coz = ekran.resolveData;
         if (!coz) throw new Error("ekleme çözümleyicisi yok");
         const ekle = async (id: string, trigger: string) =>
             (
                 await coz(
                     {
-                        props: { ...tek.defaultProps, id },
+                        props: { ...ekran.defaultProps, id },
                     } as unknown as Parameters<typeof coz>[0],
                     { trigger } as unknown as Parameters<typeof coz>[1],
                 )
             ).props?.kimlik;
         const a = await ekle(
-            "TekSecim-1f2e3d4c-aaaa-bbbb-cccc-0000000a1b2c",
+            "Ekran-1f2e3d4c-aaaa-bbbb-cccc-0000000a1b2c",
             "insert",
         );
         const b = await ekle(
-            "TekSecim-9e8d7c6b-aaaa-bbbb-cccc-0000000f9e8d",
+            "Ekran-9e8d7c6b-aaaa-bbbb-cccc-0000000f9e8d",
             "insert",
         );
-        expect(a).toBe("tek-secim-sorusu-1b2c");
+        expect(a).toBe("ekran-1b2c");
         expect(a).not.toBe(b);
         // Çekirdek kuralı (Tanim::KIMLIK) burada elle: küçük harf, rakam, - _ (1–64).
         expect(a).toMatch(/^[a-z0-9_-]{1,64}$/);
         expect(
-            await ekle("TekSecim-1f2e3d4c-aaaa-bbbb-cccc-0000000a1b2c", "load"),
-        ).toBe("tek-secim-sorusu");
+            await ekle("Ekran-1f2e3d4c-aaaa-bbbb-cccc-0000000a1b2c", "load"),
+        ).toBe("ekran");
     });
 
-    it.each([
-        "Tanitim",
-        "TekSecim",
-        "CokluSecim",
-        "SerbestYanit",
-        "Yorum",
-    ] as const)(
+    it.each(["Ekran", "Yukleme"] as const)(
         "%s eklenince kimliğe benzersiz ek gelir (Ç61)",
         async (tur) => {
             const bilesen = yapilandirma(ortam).components[tur];
@@ -150,14 +150,4 @@ describe("soru içeriği", () => {
             );
         },
     );
-
-    it("soru türleri blok ekleme menüsünde hazır seçenekler olarak görünür", () => {
-        const bilesenler = yapilandirma(ortam).components;
-        expect(bilesenler.TekSecim.label).toBe("Tek seçim sorusu");
-        expect(bilesenler.TekSecim.defaultProps?.secimTuru).toBe("tekli");
-        expect(bilesenler.CokluSecim.label).toBe("Çoklu seçim sorusu");
-        expect(bilesenler.CokluSecim.defaultProps?.secimTuru).toBe("coklu");
-        expect(bilesenler.SerbestYanit.label).toBe("Serbest yanıt sorusu");
-        expect(bilesenler.SerbestYanit.defaultProps?.secimTuru).toBe("metin");
-    });
 });

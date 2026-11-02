@@ -4,9 +4,9 @@ import { BLOK_BILESENLERI, type HuniVerisi, type Tanim } from "./donustur";
 
 /**
  * Baştan hiçbir yolla varılamayan adımların kimlikleri. Kural oynatıcıyla
- * aynı (Huni.tsx `ileri`): hedef varsa ona, yoksa sıradakine; çoklu/metin
- * soru ve yorum hep sıradakine; paywall son. T1b: ekranda tek seçimli soru
- * bloğu varsa seçenek hedefleri, yoksa ekranın hedefi.
+ * aynı (Huni.tsx `ileri`): ekranda tek seçimli soru bloğu varsa seçenek
+ * hedefleri, yoksa ekranın hedefi (yoksa sıradaki); yükleme sıradakine;
+ * paywall son.
  */
 export function ulasilamayanlar(tanim: Tanim): string[] {
     const { adimlar } = tanim;
@@ -26,11 +26,7 @@ export function ulasilamayanlar(tanim: Tanim): string[] {
         if (blokSorusu && (blokSorusu.secimTuru ?? "tekli") === "tekli")
             for (const s of blokSorusu.secenekler ?? [])
                 kuyruk.push(sira(s.hedef, i));
-        else if (adim.tur === "tanitim" || adim.tur === "ekran")
-            kuyruk.push(sira(adim.hedef, i));
-        else if (adim.tur === "soru" && !adim.secimTuru)
-            for (const s of adim.secenekler ?? [])
-                kuyruk.push(sira(s.hedef, i));
+        else if (adim.tur === "ekran") kuyruk.push(sira(adim.hedef, i));
         else if (adim.tur !== "paywall") kuyruk.push(i + 1);
     }
     return adimlar.filter((_, i) => !gorulen.has(i)).map((a) => a.id);

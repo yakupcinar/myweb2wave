@@ -243,7 +243,7 @@ final class McpTest extends WebTestCase
     private static function tanim(string $baslik): array
     {
         return ['sayfaBasligi' => $baslik, 'adimlar' => [
-            ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => 'Merhaba', 'metin' => 'Başla.', 'dugme' => 'Başla'],
+            ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => 'Merhaba', 'bloklar' => [['tur' => 'metin', 'metin' => 'Başla.']], 'dugme' => 'Başla'],
             ['id' => 'paywall', 'tur' => 'paywall', 'plan' => 'monthly', 'baslik' => 'Plan', 'metin' => 'Abone ol.', 'dugme' => 'Abone ol'],
         ]];
     }

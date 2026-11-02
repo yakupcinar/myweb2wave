@@ -45,7 +45,7 @@ final class FiyatTest extends WebTestCase
         self::assertSame([], $huniler->taslakKaydet('keepchat', 'genel', [
             'sayfaBasligi' => 'X',
             'adimlar' => [
-                ['id' => 'giris', 'tur' => 'tanitim', 'baslik' => 'Merhaba', 'metin' => 'Kısa', 'dugme' => 'Başla'],
+                ['id' => 'giris', 'tur' => 'ekran', 'baslik' => 'Merhaba', 'bloklar' => [['tur' => 'metin', 'metin' => 'Kısa']], 'dugme' => 'Başla'],
                 ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => 'Pro', 'metin' => 'Aylık plan', 'dugme' => 'Abone ol', 'plan' => 'monthly'],
             ],
         ]));

@@ -69,11 +69,11 @@ final class Tema
             // G7
             .'İsteğe bağlı yerleşim ön ayarları (yoksa normal/sol): baslikBoyu '.implode('|', self::ON_AYARLAR['baslikBoyu']).', yogunluk '.implode('|', self::ON_AYARLAR['yogunluk']).', hizalama '.implode('|', self::ON_AYARLAR['hizalama']).' — büyük başlık, ferah boşluk ve ortalı metin renk değiştirmeden huninin karakterini belirgin değiştirir; ürüne göre seç (ör. sakin ürün ferah, enerjik ürün büyük + orta, yoğun içerik sik). '
             // G4
-            .'İsteğe bağlı dugmeBicimi '.implode('|', self::ON_AYARLAR['dugmeBicimi']).' (cerceve: ana renk düğmenin altındaki yüzeyde okunmalı); kısa ya da görselli seçenekli soruda adımın duzen: izgara (iki sütun) alanı. '
+            .'İsteğe bağlı dugmeBicimi '.implode('|', self::ON_AYARLAR['dugmeBicimi']).' (cerceve: ana renk düğmenin altındaki yüzeyde okunmalı); kısa ya da görselli seçenekli soru bloğunda duzen: izgara (iki sütun). '
             // Mobil görünüm 3 (seçenek alanı)
             .'Seçeneğe simge alanıyla tek emoji koyabilirsin (metne değil; görselli seçenekte değil) — anlam yine metinde olmalı, ekran okuyucu simgeyi okumaz. '
             // G5 (adım alanı, tema değil)
-            .'Tanıtım adımında görsel varsa duzen: kahraman (görsel ekranın üst yarısı) ya da tamEkran (görsel bütün adım, metin altta beyaz) boş ekranı doldurur; görselsiz yalnız ust. '
+            .'Ekranın kapak görseli (gorsel) varsa duzen: kahraman (görsel ekranın üst yarısı) ya da tamEkran (görsel bütün ekran, metin altta beyaz; yalnız baslik, metin, maddeler, istatistik blokları) boş ekranı doldurur; görselsiz yalnız ust. '
             // G6
             .'İsteğe bağlı kartRengi ("#rrggbb"): içerik zeminin üstünde bu renkte kartta durur; o zaman metin kartın üstündedir — okunurluk metinRengi ↔ kartRengi ölçülür, zemin (arkaPlan/geçiş/görsel) yalnız çevrede kalır ve koyu olabilir. '
             .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler

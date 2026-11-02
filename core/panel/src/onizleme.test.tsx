@@ -31,44 +31,55 @@ const tanim: Tanim = {
         kose: 20,
     },
     adimlar: [
+        // T1c: içerik adımları ekran (eski tanıtım / soru / yorum karşılıkları).
         {
             id: "karsilama",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Merhaba <b>",
-            metin: "Kısa",
-            dugme: "Başla",
             gorsel: G1,
             gorselMetni: "Sohbet ekranı", // Ç44: iki yoldan aynı alt
+            bloklar: [{ tur: "metin", metin: "Kısa" }],
+            dugme: "Başla",
         },
         {
             id: "yalin",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Görselsiz",
-            metin: "",
+            bloklar: [],
             dugme: "Devam",
         },
         {
             id: "kiminle",
-            tur: "soru",
-            soru: "Kiminle?",
-            aciklama: "Birden fazla seçenek seçebilirsin.",
-            secenekler: [
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+                { tur: "metin", metin: "Birden fazla seçenek seçebilirsin." },
                 {
-                    id: "aile",
-                    metin: "Ailemle",
-                    gorsel: G2,
-                    gorselMetni: "Aile",
+                    tur: "soru",
+                    secenekler: [
+                        {
+                            id: "aile",
+                            metin: "Ailemle",
+                            gorsel: G2,
+                            gorselMetni: "Aile",
+                        },
+                        { id: "is", metin: "İş" },
+                    ],
                 },
-                { id: "is", metin: "İş" },
             ],
         },
         {
             id: "yorum",
-            tur: "yorum",
+            tur: "ekran",
             baslik: "Deneyim",
-            metin: "Çok faydalı",
-            yazar: "Ayşe",
-            unvan: "Kullanıcı",
+            bloklar: [
+                {
+                    tur: "yorum",
+                    metin: "Çok faydalı",
+                    yazar: "Ayşe",
+                    unvan: "Kullanıcı",
+                },
+            ],
             dugme: "Devam",
         },
         {
@@ -98,22 +109,29 @@ const veri = tanimdanPuck(tanim, VARSAYILAN);
 const html = (n: ReactNode): string =>
     renderToStaticMarkup(n).replace(/<link rel="preload"[^>]*\/>/g, "");
 
-/** Puck'ın render'ı, Puck'ın verdiği gibi (kendi alanlarıyla) çağrılır. */
+/**
+ * Puck'ın kendi Render'ı (T1c: ekranın blokları yuvada — bileşen render'ını
+ * elle çağırmak yuvayı açamaz). Kök yapılandırmasız: dış kutu yalın <div>.
+ */
 function puckCiz(i: number): string {
     const oge = veri.content[i];
     if (!oge) throw new Error(`adım ${i} yok`);
-    const render = yap.components[oge.type].render as (p: unknown) => ReactNode;
-    return html(render({ ...oge.props, puck: { isEditing: true } }));
+    return html(
+        <Render
+            config={{ ...yap, root: {} }}
+            data={{ root: { props: {} }, content: [oge] }}
+        />,
+    );
 }
 
-/** Düzenleyiciye özgü ayırıcı kutu: adımlar alt alta görünsün diye. */
+/** Render'ın dış kutusu + düzenleyiciye özgü ayırıcı (adımlar alt alta görünsün diye). */
 const ayiriciyiAt = (s: string): string =>
-    s.replace(/^<div style="[^"]*">([\s\S]*)<\/div>$/, "$1");
+    s.replace(/^<div><div style="[^"]*">([\s\S]*)<\/div><\/div>$/, "$1");
 
 describe("önizleme = huni: adım DOM'u", () => {
     it.each(tanim.adimlar.map((a, i) => [a.id, i] as const))("%s", (_id, i) => {
         const puck = puckCiz(i);
-        expect(puck).toMatch(/^<div style="/); // ayırıcı gerçekten orada
+        expect(puck).toMatch(/^<div><div style="/); // ayırıcı gerçekten orada
         expect(ayiriciyiAt(puck)).toBe(
             html(<Adim adim={tanim.adimlar[i]!} medyaKoku="" />),
         );

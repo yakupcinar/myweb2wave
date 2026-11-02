@@ -17,32 +17,43 @@ const VARSAYILAN: Tema = {
 const G1 = "a".repeat(64);
 const G2 = "b".repeat(64);
 
+// T1c: içerik adımı ekran (tanıtım, soru, yorum yok).
 const temel: Tanim = {
     sayfaBasligi: "KeepChat Pro",
     adimlar: [
         {
             id: "karsilama",
-            tur: "tanitim",
+            tur: "ekran",
             baslik: "Merhaba",
-            metin: "Kısa",
+            bloklar: [{ tur: "metin", metin: "Kısa" }],
             dugme: "Başla",
         },
         {
             id: "kiminle",
-            tur: "soru",
-            soru: "Kiminle?",
-            secenekler: [
-                { id: "aile", metin: "Ailemle" },
-                { id: "is", metin: "İş" },
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+                {
+                    tur: "soru",
+                    secenekler: [
+                        { id: "aile", metin: "Ailemle" },
+                        { id: "is", metin: "İş" },
+                    ],
+                },
             ],
         },
         {
             id: "yorum",
-            tur: "yorum",
+            tur: "ekran",
             baslik: "Deneyim",
-            metin: "Çok faydalı",
-            yazar: "Ayşe",
-            unvan: "Kullanıcı",
+            bloklar: [
+                {
+                    tur: "yorum",
+                    metin: "Çok faydalı",
+                    yazar: "Ayşe",
+                    unvan: "Kullanıcı",
+                },
+            ],
             dugme: "Devam",
         },
         {
@@ -55,6 +66,28 @@ const temel: Tanim = {
         },
     ],
 };
+/** İkinci ekranın soru bloğunu değiştirir (eski soru adımı testleri). */
+type Blok = Extract<
+    Tanim["adimlar"][number],
+    { tur: "ekran" }
+>["bloklar"][number];
+const soruyla = (
+    soru: Blok,
+    ek: { dugme?: string; onceki?: Blok[] } = {},
+): Tanim => ({
+    ...temel,
+    adimlar: temel.adimlar.map((a) =>
+        a.id === "kiminle"
+            ? {
+                  id: "kiminle",
+                  tur: "ekran" as const,
+                  baslik: "Kiminle?",
+                  bloklar: [...(ek.onceki ?? []), soru],
+                  ...(ek.dugme ? { dugme: ek.dugme } : {}),
+              }
+            : a,
+    ),
+});
 
 describe("tanım ↔ Puck (kayıpsız)", () => {
     it("temasız ve görselsiz tanım aynen döner — tema/görsel alanı UYDURULMAZ", () => {
@@ -74,79 +107,28 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
-    it("soru açıklaması korunur; boş editör alanı tanıma eklenmez", () => {
-        const aciklamali: Tanim = {
-            ...temel,
-            adimlar: temel.adimlar.map((adim) =>
-                adim.tur === "soru"
-                    ? {
-                          ...adim,
-                          aciklama: "Birden fazla seçenek seçebilirsin.",
-                      }
-                    : adim,
-            ),
-        };
-        expect(puckTanim(tanimdanPuck(aciklamali, VARSAYILAN))).toStrictEqual(
-            aciklamali,
+    it("çoklu seçimde seçenek dalları kayıtta kaldırılır", () => {
+        const secenekler = [
+            { id: "aile", metin: "Ailemle", hedef: "paywall" },
+            { id: "is", metin: "İş", hedef: "paywall" },
+        ];
+        const coklu = soruyla(
+            { tur: "soru", secimTuru: "coklu", secenekler },
+            { dugme: "Seçimleri gönder" },
         );
-        expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
-    });
-
-    it("çoklu seçim metniyle saklanır; seçenek dalları kaldırılır", () => {
-        const coklu: Tanim = {
-            ...temel,
-            adimlar: temel.adimlar.map((adim) =>
-                adim.tur === "soru"
-                    ? {
-                          ...adim,
-                          secimTuru: "coklu",
-                          devamDugmesi: "Seçimleri gönder",
-                          secenekler: (adim.secenekler ?? []).map(
-                              (secenek) => ({
-                                  ...secenek,
-                                  hedef: "paywall",
-                              }),
-                          ),
-                      }
-                    : adim,
+        expect(puckTanim(tanimdanPuck(coklu, VARSAYILAN))).toStrictEqual(
+            soruyla(
+                {
+                    tur: "soru",
+                    secimTuru: "coklu",
+                    secenekler: secenekler.map(({ id, metin }) => ({
+                        id,
+                        metin,
+                    })),
+                },
+                { dugme: "Seçimleri gönder" },
             ),
-        };
-        const veri = tanimdanPuck(coklu, VARSAYILAN);
-        expect(puckTanim(veri)).toStrictEqual({
-            ...coklu,
-            adimlar: coklu.adimlar.map((adim) =>
-                adim.tur === "soru"
-                    ? {
-                          ...adim,
-                          secenekler: (adim.secenekler ?? []).map(
-                              ({ id, metin }) => ({
-                                  id,
-                                  metin,
-                              }),
-                          ),
-                      }
-                    : adim,
-            ),
-        });
-    });
-
-    it("serbest yanıt türü seçenekleri kaldırır ve zorunluluğu kayıpsız taşır", () => {
-        const metin: Tanim = {
-            ...temel,
-            adimlar: temel.adimlar.map((adim) =>
-                adim.tur === "soru"
-                    ? {
-                          id: adim.id,
-                          tur: "soru",
-                          soru: adim.soru,
-                          secimTuru: "metin",
-                          yanitZorunlu: true,
-                          devamDugmesi: "Yanıtla",
-                      }
-                    : adim,
-            ),
-        };
-        expect(puckTanim(tanimdanPuck(metin, VARSAYILAN))).toStrictEqual(metin);
+        );
     });
 
     it("özel tema, görseller ve hedefler (H5) aynen döner", () => {
@@ -162,36 +144,37 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
             adimlar: [
                 {
                     id: "karsilama",
-                    tur: "tanitim",
+                    tur: "ekran",
                     baslik: "Merhaba",
-                    metin: "",
-                    dugme: "Başla",
                     gorsel: G1,
+                    bloklar: [],
+                    dugme: "Başla",
                     hedef: "kiminle",
                 },
                 {
                     id: "kiminle",
-                    tur: "soru",
-                    soru: "Kiminle?",
-                    aciklama: "Birden fazla seçenek seçebilirsin.",
-                    secenekler: [
+                    tur: "ekran",
+                    baslik: "Kiminle?",
+                    bloklar: [
                         {
-                            id: "aile",
-                            metin: "Ailemle",
-                            gorsel: G2,
-                            hedef: "paywall",
+                            tur: "metin",
+                            metin: "Birden fazla seçenek seçebilirsin.",
                         },
-                        { id: "is", metin: "İş" },
+                        {
+                            tur: "soru",
+                            secenekler: [
+                                {
+                                    id: "aile",
+                                    metin: "Ailemle",
+                                    gorsel: G2,
+                                    hedef: "paywall",
+                                },
+                                { id: "is", metin: "İş" },
+                            ],
+                        },
                     ],
                 },
-                {
-                    id: "paywall",
-                    tur: "paywall",
-                    baslik: "Pro",
-                    metin: "",
-                    dugme: "Abone ol",
-                    plan: "monthly",
-                },
+                temel.adimlar.at(-1)!,
             ],
         };
         expect(puckTanim(tanimdanPuck(zengin, VARSAYILAN))).toStrictEqual(
@@ -213,43 +196,6 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
             "yorum",
             "paywall",
         ]);
-    });
-
-    it("hazır soru blokları kayıtta tek soru tanımına dönüşür", () => {
-        const soru: Tanim = {
-            sayfaBasligi: "Anket",
-            adimlar: [
-                {
-                    id: "secim",
-                    tur: "soru",
-                    soru: "Kimlerle kullanacaksın?",
-                    secenekler: [
-                        { id: "aile", metin: "Ailemle" },
-                        { id: "arkadas", metin: "Arkadaşlarımla" },
-                    ],
-                },
-            ],
-        };
-        const puck = tanimdanPuck(soru, VARSAYILAN);
-        const temelBlok = puck.content[0]!;
-        for (const [tur, secimTuru] of [
-            ["TekSecim", "tekli"],
-            ["CokluSecim", "coklu"],
-            ["SerbestYanit", "metin"],
-        ] as const) {
-            const blok = {
-                ...temelBlok,
-                type: tur,
-                props: { ...temelBlok.props, secimTuru },
-            } as HuniVerisi["content"][number];
-            const kayitli = puckTanim({ ...puck, content: [blok] }).adimlar[0];
-            expect(kayitli).toMatchObject({ id: "secim", tur: "soru" });
-            if (secimTuru === "tekli") {
-                expect(kayitli).not.toHaveProperty("secimTuru");
-            } else {
-                expect(kayitli).toHaveProperty("secimTuru", secimTuru);
-            }
-        }
     });
 
     it("Puck bileşen kimlikleri benzersiz, adım kimliği ayrı alanda", () => {
@@ -318,11 +264,11 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
-    it("G5 tanıtım düzeni: gidiş-dönüş aynı; ust yazılmaz", () => {
+    it("G5 kapak düzeni (ekranda): gidiş-dönüş aynı; ust yazılmaz", () => {
         const duzenli: Tanim = {
             ...temel,
             adimlar: temel.adimlar.map((a, i) =>
-                i === 0 && a.tur === "tanitim"
+                i === 0 && a.tur === "ekran"
                     ? { ...a, gorsel: G1, duzen: "tamEkran" as const }
                     : a,
             ),
@@ -335,11 +281,15 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
 
     it("G4: düğme biçimi ve soru düzeni gidiş-dönüş; varsayılan yazılmaz", () => {
         const g4: Tanim = {
-            ...temel,
+            ...soruyla({
+                tur: "soru",
+                duzen: "izgara",
+                secenekler: [
+                    { id: "aile", metin: "Ailemle" },
+                    { id: "is", metin: "İş" },
+                ],
+            }),
             tema: { ...VARSAYILAN, dugmeBicimi: "hap" },
-            adimlar: temel.adimlar.map((a) =>
-                a.tur === "soru" ? { ...a, duzen: "izgara" as const } : a,
-            ),
         };
         const veri = tanimdanPuck(g4, VARSAYILAN);
         expect(puckTanim(veri)).toStrictEqual(g4);
@@ -348,19 +298,13 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
     });
 
     it("seçenek simgesi gidiş-dönüş; boş simge yazılmaz", () => {
-        const simgeli: Tanim = {
-            ...temel,
-            adimlar: temel.adimlar.map((a) =>
-                a.tur === "soru" && a.secenekler
-                    ? {
-                          ...a,
-                          secenekler: a.secenekler.map((s, i) =>
-                              i === 0 ? { ...s, simge: "💼" } : s,
-                          ),
-                      }
-                    : a,
-            ),
-        };
+        const simgeli = soruyla({
+            tur: "soru",
+            secenekler: [
+                { id: "aile", metin: "Ailemle", simge: "💼" },
+                { id: "is", metin: "İş" },
+            ],
+        });
         expect(puckTanim(tanimdanPuck(simgeli, VARSAYILAN))).toStrictEqual(
             simgeli,
         );
@@ -559,52 +503,12 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
     });
 });
 
-describe("kayıttan gelen soru hazır türle açılır (Ç61)", () => {
-    it("yanıt biçimi → TekSecim / CokluSecim / SerbestYanit, gidiş-dönüş aynı", () => {
-        const tanim = {
-            sayfaBasligi: "x",
-            adimlar: [
-                {
-                    id: "a",
-                    tur: "soru",
-                    soru: "A?",
-                    secenekler: [{ id: "x", metin: "X" }],
-                },
-                {
-                    id: "b",
-                    tur: "soru",
-                    soru: "B?",
-                    secimTuru: "coklu",
-                    secenekler: [{ id: "y", metin: "Y" }],
-                },
-                { id: "c", tur: "soru", soru: "C?", secimTuru: "metin" },
-                {
-                    id: "p",
-                    tur: "paywall",
-                    baslik: "P",
-                    metin: "",
-                    dugme: "Al",
-                    plan: "monthly",
-                },
-            ],
-        } as Tanim;
-        const puck = tanimdanPuck(tanim, VARSAYILAN);
-        expect(puck.content.map((o) => o.type)).toEqual([
-            "TekSecim",
-            "CokluSecim",
-            "SerbestYanit",
-            "Paywall",
-        ]);
-        expect(puckTanim(puck).adimlar).toEqual(tanim.adimlar);
-    });
-});
-
 describe("paywall faydaları ve yasal bağlantılar (Ç61)", () => {
     const paywall = (ek: object) =>
         ({
             sayfaBasligi: "x",
             adimlar: [
-                { id: "g", tur: "tanitim", baslik: "G", metin: "", dugme: "D" },
+                { id: "g", tur: "ekran", baslik: "G", bloklar: [], dugme: "D" },
                 {
                     id: "p",
                     tur: "paywall",
@@ -643,7 +547,7 @@ describe("logo (Ç61)", () => {
     const tanim = {
         sayfaBasligi: "x",
         adimlar: [
-            { id: "g", tur: "tanitim", baslik: "G", metin: "", dugme: "D" },
+            { id: "g", tur: "ekran", baslik: "G", bloklar: [], dugme: "D" },
             {
                 id: "p",
                 tur: "paywall",
@@ -665,25 +569,28 @@ describe("logo (Ç61)", () => {
 
 describe("görsel alt metni (Ç44)", () => {
     const g = "d".repeat(64);
-    const tanim = {
+    const tanim: Tanim = {
         sayfaBasligi: "x",
         adimlar: [
             {
                 id: "t",
-                tur: "tanitim",
+                tur: "ekran",
                 baslik: "T",
-                metin: "",
-                dugme: "D",
                 gorsel: g,
                 gorselMetni: "Ekran",
-            },
-            {
-                id: "s",
-                tur: "soru",
-                soru: "?",
-                secenekler: [
-                    { id: "a", metin: "A", gorsel: g, gorselMetni: "Aile" },
-                    { id: "b", metin: "B" },
+                bloklar: [
+                    {
+                        tur: "soru",
+                        secenekler: [
+                            {
+                                id: "a",
+                                metin: "A",
+                                gorsel: g,
+                                gorselMetni: "Aile",
+                            },
+                            { id: "b", metin: "B" },
+                        ],
+                    },
                 ],
             },
             {
@@ -695,20 +602,26 @@ describe("görsel alt metni (Ç44)", () => {
                 plan: "monthly",
             },
         ],
-    } as Tanim;
+    };
     it("gidiş-dönüşte aynı", () => {
         expect(puckTanim(tanimdanPuck(tanim, VARSAYILAN))).toEqual(tanim);
     });
     it("görsel kaldırılınca alt metin tanıma yazılmaz (çekirdek reddederdi)", () => {
         const veri = tanimdanPuck(tanim, VARSAYILAN);
         const t = veri.content[0]!;
-        t.props = { ...t.props, gorsel: "" } as typeof t.props;
-        const s = veri.content[1]!;
-        const sp = s.props as unknown as { secenekler: { gorsel: string }[] };
-        sp.secenekler[0]!.gorsel = "";
+        const tp = t.props as unknown as {
+            gorsel: string;
+            bloklar: { props: { secenekler: { gorsel: string }[] } }[];
+        };
+        tp.gorsel = "";
+        tp.bloklar[0]!.props.secenekler[0]!.gorsel = "";
         const sonuc = puckTanim(veri);
         expect(sonuc.adimlar[0]).not.toHaveProperty("gorselMetni");
-        const soru = sonuc.adimlar[1] as { secenekler: object[] };
-        expect(soru.secenekler[0]).not.toHaveProperty("gorselMetni");
+        const ekran = sonuc.adimlar[0] as {
+            bloklar: { secenekler: object[] }[];
+        };
+        expect(ekran.bloklar[0]!.secenekler[0]).not.toHaveProperty(
+            "gorselMetni",
+        );
     });
 });

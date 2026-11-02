@@ -197,15 +197,6 @@
                     "items": {
                         "oneOf": [
                             {
-                                "$ref": "#/$defs/TanitimAdimi"
-                            },
-                            {
-                                "$ref": "#/$defs/SoruAdimi"
-                            },
-                            {
-                                "$ref": "#/$defs/YorumAdimi"
-                            },
-                            {
                                 "$ref": "#/$defs/YuklemeAdimi"
                             },
                             {
@@ -477,64 +468,6 @@
                 }
             }
         },
-        "SoruAdimi": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "tur",
-                "soru"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/HuniKimligi"
-                },
-                "tur": {
-                    "type": "string",
-                    "enum": [
-                        "soru"
-                    ]
-                },
-                "soru": {
-                    "type": "string"
-                },
-                "aciklama": {
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "ilerlemeGoster": {
-                    "type": "boolean"
-                },
-                "secimTuru": {
-                    "type": "string",
-                    "enum": [
-                        "tekli",
-                        "coklu",
-                        "metin"
-                    ]
-                },
-                "duzen": {
-                    "description": "G4: seçeneklerin dizilişi (yoksa liste): liste · izgara (iki sütun; kısa seçenekler ve görselli seçenekler için). Serbest yanıtta kullanılmaz",
-                    "type": "string",
-                    "enum": [
-                        "liste",
-                        "izgara"
-                    ]
-                },
-                "yanitZorunlu": {
-                    "type": "boolean"
-                },
-                "devamDugmesi": {
-                    "type": "string"
-                },
-                "secenekler": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/$defs/SoruSecenegi"
-                    }
-                }
-            }
-        },
         "SoruBlogu": {
             "description": "T1b: ekranda en çok bir tane; cevap ekranın kimliğiyle kaydedilir. Soru metni ekranın başlığı / blokları. tekli: seçenek seçilince geçer (ekranda dugme olmaz). coklu / metin: ekranın düğmesi gönderir.",
             "type": "object",
@@ -607,113 +540,10 @@
                 }
             }
         },
-        "TanitimAdimi": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "tur",
-                "baslik",
-                "metin",
-                "dugme"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/HuniKimligi"
-                },
-                "tur": {
-                    "type": "string",
-                    "enum": [
-                        "tanitim"
-                    ]
-                },
-                "gorsel": {
-                    "$ref": "#/$defs/GorselKimligi"
-                },
-                "gorselMetni": {
-                    "$ref": "#/$defs/GorselMetni"
-                },
-                "duzen": {
-                    "description": "G5: görselin yeri (yoksa ust). kahraman: görsel ekranın üst yarısını kaplar · tamEkran: görsel bütün adımı kaplar, metin altta beyaz, karartmanın üstünde. kahraman ve tamEkran görsel ister",
-                    "type": "string",
-                    "enum": [
-                        "ust",
-                        "kahraman",
-                        "tamEkran"
-                    ]
-                },
-                "baslik": {
-                    "type": "string"
-                },
-                "metin": {
-                    "type": "string"
-                },
-                "dugme": {
-                    "type": "string"
-                },
-                "hedef": {
-                    "$ref": "#/$defs/AdimHedefi"
-                },
-                "ilerlemeGoster": {
-                    "type": "boolean"
-                }
-            }
-        },
         "YasalAdres": {
             "description": "Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı.",
             "type": "string",
             "pattern": "^https://[^\\s]{1,490}$"
-        },
-        "YorumAdimi": {
-            "description": "Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "tur",
-                "baslik",
-                "metin",
-                "yazar",
-                "unvan",
-                "dugme"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/HuniKimligi"
-                },
-                "tur": {
-                    "type": "string",
-                    "enum": [
-                        "yorum"
-                    ]
-                },
-                "baslik": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 200
-                },
-                "metin": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "yazar": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 80
-                },
-                "unvan": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "dugme": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 60
-                },
-                "ilerlemeGoster": {
-                    "type": "boolean"
-                }
-            }
         },
         "YorumBlogu": {
             "description": "Kısa müşteri yorumu; puan varsa yıldızla gösterilir",

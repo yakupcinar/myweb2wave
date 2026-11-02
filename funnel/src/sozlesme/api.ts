@@ -466,7 +466,7 @@ export interface components {
             tema?: components["schemas"]["HuniTemasi"];
             /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
             logo?: components["schemas"]["GorselKimligi"];
-            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["YuklemeAdimi"] | components["schemas"]["EkranAdimi"] | components["schemas"]["PaywallAdimi"])[];
+            adimlar: (components["schemas"]["YuklemeAdimi"] | components["schemas"]["EkranAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
         HuniTemasi: {
@@ -517,41 +517,6 @@ export interface components {
             gorsel: components["schemas"]["GorselKimligi"];
             karartma: number;
         };
-        TanitimAdimi: {
-            id: components["schemas"]["HuniKimligi"];
-            /** @enum {string} */
-            tur: "tanitim";
-            gorsel?: components["schemas"]["GorselKimligi"];
-            gorselMetni?: components["schemas"]["GorselMetni"];
-            /**
-             * @description G5: görselin yeri (yoksa ust). kahraman: görsel ekranın üst yarısını kaplar · tamEkran: görsel bütün adımı kaplar, metin altta beyaz, karartmanın üstünde. kahraman ve tamEkran görsel ister
-             * @enum {string}
-             */
-            duzen?: "ust" | "kahraman" | "tamEkran";
-            baslik: string;
-            metin: string;
-            dugme: string;
-            hedef?: components["schemas"]["AdimHedefi"];
-            ilerlemeGoster?: boolean;
-        };
-        SoruAdimi: {
-            id: components["schemas"]["HuniKimligi"];
-            /** @enum {string} */
-            tur: "soru";
-            soru: string;
-            aciklama?: string;
-            ilerlemeGoster?: boolean;
-            /** @enum {string} */
-            secimTuru?: "tekli" | "coklu" | "metin";
-            /**
-             * @description G4: seçeneklerin dizilişi (yoksa liste): liste · izgara (iki sütun; kısa seçenekler ve görselli seçenekler için). Serbest yanıtta kullanılmaz
-             * @enum {string}
-             */
-            duzen?: "liste" | "izgara";
-            yanitZorunlu?: boolean;
-            devamDugmesi?: string;
-            secenekler?: components["schemas"]["SoruSecenegi"][];
-        };
         SoruSecenegi: {
             id: components["schemas"]["HuniKimligi"];
             metin: string;
@@ -560,18 +525,6 @@ export interface components {
             gorsel?: components["schemas"]["GorselKimligi"];
             gorselMetni?: components["schemas"]["GorselMetni"];
             hedef?: components["schemas"]["AdimHedefi"];
-        };
-        /** @description Sosyal kanıt yorumu ve kaynak adı; kullanıcı metni düz yazı olarak gösterilir */
-        YorumAdimi: {
-            id: components["schemas"]["HuniKimligi"];
-            /** @enum {string} */
-            tur: "yorum";
-            baslik: string;
-            metin: string;
-            yazar: string;
-            unvan: string;
-            dugme: string;
-            ilerlemeGoster?: boolean;
         };
         /** @description Mobil görünüm 4: "planın hazırlanıyor" — düğmesiz; maddeler sırayla işaretlenir, süre dolunca sonraki adıma kendiliğinden geçer */
         YuklemeAdimi: {

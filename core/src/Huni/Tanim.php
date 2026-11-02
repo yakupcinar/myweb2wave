@@ -17,8 +17,8 @@ final class Tanim
     /** Alan → [en az, en çok] karakter. */
     private const UZUNLUK = [
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
-        'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
-        'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
+        'dugme' => [1, 60], 'secenek' => [1, 120],
+        'yazar' => [1, 80], 'unvan' => [0, 100],
         'fayda' => [1, 120], 'gorselMetni' => [1, 200], 'madde' => [1, 80],
         // T1: blok metinleri.
         'blokMetni' => [1, 1000], 'satir' => [1, 120], 'deger' => [1, 12], 'kutu' => [1, 500],
@@ -28,12 +28,12 @@ final class Tanim
      * T1: AI istemlerine (panel asistanı + MCP) ortak blok kataloğu yönergesi;
      * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
      */
-    public const EKRAN_YONERGESI = 'Tek türe sığmayan ekran için ekran adımı: baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
+    public const EKRAN_YONERGESI = 'İçerik adımı ekrandır (T1c: tanıtım, soru ve yorum adımı yok): baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
         .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin seçimde dugme gönderir). '
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
-        .'Neden bu ürün, nasıl çalışır, güvence gibi ekranları tanıtım yerine bloklarla kur; tüm huniyi tek tip adımla doldurma. '
+        .'Karşılama, neden bu ürün, nasıl çalışır, güvence gibi ekranları farklı blok dizilişleriyle kur; tüm huniyi aynı dizilişle doldurma. '
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
-        .'yorum bloğu da yorum adımı gibidir: gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
+        .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
 
     /** T1c: tam ekran kapaklı ekranda izinli bloklar (yüzeysiz, metin). */
     public const TAM_EKRAN_BLOKLARI = ['baslik', 'metin', 'maddeler', 'istatistik'];
@@ -65,16 +65,13 @@ final class Tanim
     /** G4: soru adımında seçeneklerin dizilişi. */
     public const SORU_DUZENLERI = ['liste', 'izgara'];
 
-    /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
+    /** Tür → zorunlu metin alanları (başka alan kabul edilmez). T1c: içerik ekranda. */
     private const TURLER = [
-        'tanitim' => ['baslik', 'metin', 'dugme'],
-        'soru' => ['soru'],
-        'yorum' => ['baslik', 'metin', 'yazar', 'unvan', 'dugme'],
-        // Mobil görünüm 4: düğmesiz; maddeler ve süre isteğe bağlı.
-        'yukleme' => ['baslik'],
         // T1: başlık (h1) + bloklar; düğme ve hedef aşağıda (T1b: tek seçimli
         // soru bloğunda düğme yok, seçenek geçirir).
         'ekran' => ['baslik'],
+        // Mobil görünüm 4: düğmesiz; maddeler ve süre isteğe bağlı.
+        'yukleme' => ['baslik'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
@@ -113,7 +110,7 @@ final class Tanim
             $yer = 'adım '.($i + 1);
             $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
             if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
-                $h[] = "{$yer}: tür tanitim, soru, yorum, yukleme, ekran ya da paywall olmalı";
+                $h[] = "{$yer}: tür ekran, yukleme ya da paywall olmalı";
                 continue;
             }
             $id = $adim['id'] ?? null;
@@ -125,7 +122,7 @@ final class Tanim
                 $gorulen[$id] = true;
             }
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
-                'soru' => ('metin' === ($adim['secimTuru'] ?? 'tekli')) ? [] : ['secenekler'], 'paywall' => ['plan'], 'ekran' => ['bloklar'], default => [],
+                'paywall' => ['plan'], 'ekran' => ['bloklar'], default => [],
             }];
             if (\array_key_exists('ilerlemeGoster', $adim)) {
                 $beklenen[] = 'ilerlemeGoster';
@@ -133,32 +130,8 @@ final class Tanim
                     $h[] = "{$yer}: ilerlemeGoster true ya da false olmalı";
                 }
             }
-            if ('soru' === $tur && \array_key_exists('secimTuru', $adim)) {
-                $beklenen[] = 'secimTuru';
-                if (!\in_array($adim['secimTuru'], ['tekli', 'coklu', 'metin'], true)) {
-                    $h[] = "{$yer}: secimTuru tekli, coklu ya da metin olmalı";
-                }
-            }
-            $metinYaniti = 'metin' === ($adim['secimTuru'] ?? 'tekli');
-            if ($metinYaniti && \array_key_exists('yanitZorunlu', $adim)) {
-                $beklenen[] = 'yanitZorunlu';
-                if (!\is_bool($adim['yanitZorunlu'])) {
-                    $h[] = "{$yer}: yanitZorunlu true ya da false olmalı";
-                }
-            }
-            if (!$metinYaniti && \array_key_exists('yanitZorunlu', $adim)) {
-                $h[] = "{$yer}: yanitZorunlu yalnız serbest yanıt türünde kullanılabilir";
-            }
-            if ('soru' === $tur && \array_key_exists('aciklama', $adim)) {
-                $beklenen[] = 'aciklama';
-                self::metin($adim['aciklama'], 'aciklama', "{$yer} aciklama", $h);
-            }
-            if ('soru' === $tur && \array_key_exists('devamDugmesi', $adim)) {
-                $beklenen[] = 'devamDugmesi';
-                self::metin($adim['devamDugmesi'], 'dugme', "{$yer} devamDugmesi", $h);
-            }
-            // E2.3: tanıtım adımında isteğe bağlı görsel; T1c: ekranın kapağı da.
-            $kapakli = \in_array($tur, ['tanitim', 'ekran'], true);
+            // E2.3 / T1c: ekranın kapağı (eski tanıtım görseli).
+            $kapakli = 'ekran' === $tur;
             if ($kapakli && \array_key_exists('gorsel', $adim)) {
                 $beklenen[] = 'gorsel';
                 self::gorsel($adim['gorsel'], $yer, $h);
@@ -166,11 +139,6 @@ final class Tanim
             if ($kapakli && \array_key_exists('gorselMetni', $adim)) {
                 $beklenen[] = 'gorselMetni';
                 self::gorselMetni($adim, $yer, $h);
-            }
-            // G4: seçeneklerin dizilişi — serbest yanıtta seçenek yok.
-            if ('soru' === $tur && \array_key_exists('duzen', $adim)) {
-                $beklenen[] = 'duzen';
-                self::soruDuzeni($adim['duzen'], $metinYaniti, $yer, $h);
             }
             // Mobil görünüm 4: yükleme adımının maddeleri ve süresi.
             if ('yukleme' === $tur && \array_key_exists('maddeler', $adim)) {
@@ -192,8 +160,8 @@ final class Tanim
                     $h[] = "{$yer}: duzen {$adim['duzen']} görsel ister";
                 }
             }
-            // H5: tanıtım düğmesi de atlayabilir — dallar ortak adımda birleşsin.
-            if (\in_array($tur, ['tanitim', 'ekran'], true) && \array_key_exists('hedef', $adim)) {
+            // H5: ekranın düğmesi de atlayabilir — dallar ortak adımda birleşsin.
+            if ('ekran' === $tur && \array_key_exists('hedef', $adim)) {
                 $beklenen[] = 'hedef';
                 self::hedef($adim['hedef'], $sira, $i, $yer, $h);
             }
@@ -232,9 +200,6 @@ final class Tanim
             }
             if ('ekran' === $tur) {
                 self::bloklar($adim['bloklar'], $sira, $i, $yer, $h, 'tamEkran' === ($adim['duzen'] ?? null));
-            }
-            if ('soru' === $tur && \array_key_exists('secenekler', $adim)) {
-                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($adim['secimTuru'] ?? 'tekli'));
             }
             if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
                 $h[] = "{$yer}: plan bu uygulamada yok";
@@ -280,6 +245,7 @@ final class Tanim
         }
         $adimlar = \is_array($tanim) && \is_array($tanim['adimlar'] ?? null) ? $tanim['adimlar'] : [];
         foreach ($adimlar as $adim) {
+            // Ekranın kapağı.
             if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {
                 $k[] = $adim['gorsel'];
             }
@@ -293,11 +259,6 @@ final class Tanim
                     if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
                         $k[] = $s['gorsel'];
                     }
-                }
-            }
-            foreach (\is_array($adim) && \is_array($adim['secenekler'] ?? null) ? $adim['secenekler'] : [] as $s) {
-                if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
-                    $k[] = $s['gorsel'];
                 }
             }
         }
