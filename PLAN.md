@@ -157,7 +157,7 @@
   - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
   - [x] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
   - [x] P2 · 2026-11-03, `docs/decisions/p2-huniler-sayfasi.md`: Huniler React sayfası + 6 JSON uç (sözleşme), Twig liste ve form uçları silindi; kabuk jetonu (düzenleyicininki geçmez). Kırma 9/9. Tarayıcı + "AI ile yeni huni": Ç93
-  - [ ] P3 · Puck düzenleyici panelin sayfası (sayfa yenilemeden); `huni-surukle.html.twig` silinir
+  - [x] P3 · 2026-11-03, `docs/decisions/p3-duzenleyici-sayfasi.md`: düzenleyici panel uygulamasının tembel yüklenen sayfası, açılış JSON ucundan; Twig ve ayrı giriş silindi; stil yalıtımı (tarayıcıda önizleme/kabuk farkı 0; yeni tuzak §43). Kırma 6/6. Açık Ç94
   - [ ] P4 · grafik: günlük ziyaret / ödeme serisi (Recharts)
   - [ ] P5 · Kullanıcılar (CRM): e-posta / UTM / kampanya araması, abonelik durumu (TanStack Table)
 - [x] **Panel görünümü** (kullanıcı 2026-10-27: "basit siyah ekran, web2wave'e bak") — sol menü, özet, huni şeridi, açık/koyu tema. `docs/decisions/panel-gorunum.md`

@@ -26,8 +26,7 @@ export default defineConfig({
         outDir: "../public/varliklar/panel",
         emptyOutDir: true,
         manifest: true,
-        // İki giriş (B5 geçişi): düzenleyici sayfası ve panel uygulaması;
-        // P3'te düzenleyici uygulamanın sayfası olur.
-        rollupOptions: { input: ["src/main.tsx", "src/uygulama/main.tsx"] },
+        // Tek giriş: panel uygulaması (P3'ten beri düzenleyici onun sayfası).
+        rollupOptions: { input: ["src/uygulama/main.tsx"] },
     },
 });

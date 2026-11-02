@@ -269,3 +269,9 @@ birden çok çekimle ölç.
 **Sebep:** `resolveData` bileşenin KENDİ verisi değişince/eklenince/yüklenince çağrılır; yuvadaki çocuk değişimi üstü tetiklemez.
 **Ölçüm (2026-11-02, `t1c-tasima-olcumu.md`):** tarayıcıda soru bloğu çokluya çevrildi, ekranın düğmesi gelmedi.
 **Doğrusu:** çocuklara bakan kural düzenleyici bekçisinde (her veri değişiminde saf işlev + `setData`); davranışı tarayıcıda ölç.
+
+## §43 — Puck sayfanın stilini önizleme çerçevesine kopyalar
+**Belirti:** düzenleyici başka bir uygulamanın içine taşınınca önizleme huniden farklı çizilir (koyu zemin, başka yazı tipi, dar içerik); hata yok, testler yeşil.
+**Sebep:** Puck'ın çerçevesi kabuk belgesinin `<style>`/`<link>` düğümlerini kopyalar — kabuğun genel sıfırlaması (Tailwind preflight, `body` kuralları) huniye de uygulanır.
+**Ölçüm (2026-11-03, `p3-duzenleyici-sayfasi.md`):** panel stiliyle önizlemede 16 öğenin 39 özelliği farklı (genişlik 520 → 438 px, zemin koyu), düzenleyici kabuğunda 253 fark.
+**Doğrusu:** düzenleyici açıkken kabuğun stil düğümüne `media="not all"` (kopyası da kapalı gelir), çıkınca geri; eski sayfa koşuluyla hesaplanmış stilleri gerçek tarayıcıda karşılaştır.

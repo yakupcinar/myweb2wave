@@ -14,7 +14,6 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
-import { gezgin } from "./Huniler";
 
 type Istek = {
     yontem: string;
@@ -22,6 +21,9 @@ type Istek = {
     jeton: string | null;
     govde: unknown;
 };
+
+let yonlendirici: ReturnType<typeof createMemoryRouter>;
+const konum = (): string => yonlendirici.state.location.pathname;
 
 function kur() {
     const kabuk = document.createElement("div");
@@ -78,6 +80,9 @@ function kur() {
                 new Response(JSON.stringify(o), { status: durum });
             if (adres === "/panel/api/uygulamalar")
                 return j({ uygulamalar: ["keepchat"] });
+            // Düzenleyici sayfası burada ölçülmüyor (HuniDuzenle.test).
+            if (adres.endsWith("/duzenleyici"))
+                return j({ hatalar: ["yok"] }, 404);
             if (istek.method === "GET") return j(liste);
             if (adres.endsWith("/huniler") && istek.method === "POST") {
                 const { ad } = JSON.parse(metin) as { ad: string };
@@ -95,9 +100,11 @@ function kur() {
     render(
         <QueryClientProvider client={new QueryClient()}>
             <RouterProvider
-                router={createMemoryRouter(yollar, {
-                    initialEntries: ["/panel/huniler"],
-                })}
+                router={
+                    (yonlendirici = createMemoryRouter(yollar, {
+                        initialEntries: ["/panel/huniler"],
+                    }))
+                }
             />
         </QueryClientProvider>,
     );
@@ -156,6 +163,21 @@ describe("P2: Huniler sayfası", () => {
         expect(
             within(satir("eski")).getByRole("button", { name: "Arşivle" }),
         ).toBeTruthy();
+    });
+
+    it("Düzenle düzenleyiciyi aynı uygulamada açar (P3)", async () => {
+        kur();
+        await waitFor(() =>
+            expect(
+                document.querySelector('tr[data-huni="genel"]'),
+            ).not.toBeNull(),
+        );
+        fireEvent.click(
+            within(satir("bos")).getByRole("link", { name: "Düzenle" }),
+        );
+        await waitFor(() =>
+            expect(konum()).toBe("/panel/huniler/keepchat/bos"),
+        );
     });
 
     it("kaldırma iki adımlı; onaylanınca DELETE kabuğun jetonuyla, sonuç bildirilir", async () => {
@@ -217,8 +239,8 @@ describe("P2: Huniler sayfası", () => {
         ]);
     });
 
-    it("yeni huni kopyadan açılır ve düzenleyiciye gidilir; hata metni gösterilir", async () => {
-        const git = vi.spyOn(gezgin, "git").mockImplementation(() => {});
+    it("yeni huni kopyadan açılır ve düzenleyiciye sayfa yenilemeden gidilir", async () => {
+        // P3: düzenleyici aynı uygulamada açılır (sayfa yenilemeden).
         const istekler = kur();
         await waitFor(() =>
             expect(
@@ -234,7 +256,7 @@ describe("P2: Huniler sayfası", () => {
         });
         fireEvent.click(form.getByRole("button", { name: "Huni aç" }));
         await waitFor(() =>
-            expect(git).toHaveBeenCalledWith("/panel/huniler/keepchat/fitness"),
+            expect(konum()).toBe("/panel/huniler/keepchat/fitness"),
         );
         expect(yazmalar(istekler)).toEqual([
             {
@@ -244,7 +266,16 @@ describe("P2: Huniler sayfası", () => {
                 govde: { ad: "fitness", kaynak: "genel" },
             },
         ]);
+    });
 
+    it("yeni huni hatası gösterilir, sayfa değişmez", async () => {
+        const istekler = kur();
+        await waitFor(() =>
+            expect(
+                document.querySelector('tr[data-huni="genel"]'),
+            ).not.toBeNull(),
+        );
+        const form = within(screen.getByRole("form", { name: "Yeni huni" }));
         fireEvent.change(form.getByLabelText("Yeni huni adı"), {
             target: { value: "genel" },
         });
@@ -255,8 +286,8 @@ describe("P2: Huniler sayfası", () => {
         expect((await screen.findByRole("alert")).textContent).toContain(
             "zaten var",
         );
-        expect(yazmalar(istekler)[1]?.govde).toEqual({ ad: "genel" });
-        expect(git).toHaveBeenCalledTimes(1);
+        expect(yazmalar(istekler)[0]?.govde).toEqual({ ad: "genel" });
+        expect(konum()).toBe("/panel/huniler");
     });
 
     it("kurallar: sıra, ilk/son taşıma kapalı, ekle/taşı/sil istekleri", async () => {

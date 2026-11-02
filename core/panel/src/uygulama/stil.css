@@ -3,6 +3,13 @@
    renkleri adlarıyla kullanır (bg-yuzey, text-soluk…), ham renk yazmaz. */
 @import "tailwindcss";
 
+/* P3: düzenleyici sayfası bu sayfayı tanıyıp kapatır (useYalitim) — Puck
+   kabuğun stilini önizleme çerçevesine kopyalar; panelin sıfırlaması huniyi
+   önizlemede farklı çizerdi (ölçüldü: p3-duzenleyici-sayfasi.md). */
+#panel-stil-isareti {
+    --panel-stil: 1;
+}
+
 @theme {
     --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;

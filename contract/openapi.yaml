@@ -557,6 +557,41 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Geçersiz istek, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/huniler/{ad}/duzenleyici:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: ad, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiHuniDuzenleyici
+      summary: P3 — düzenleyici sayfasının açılışı (taslak, imza, seçenekler, uç adresleri, düzenleyici jetonu)
+      responses:
+        "200":
+          description: Açılış verisi
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [baslik, taslak, imza, planlar, temaVarsayilan, yaziTipleri, jeton, adresler]
+                properties:
+                  baslik: { type: string }
+                  taslak: { $ref: "#/components/schemas/HuniTanimi" }
+                  imza: { type: string, description: "Ç39: taslak imzası; kayıtta geri yollanır (eşleşmezse 409)" }
+                  planlar: { type: array, items: { type: string } }
+                  temaVarsayilan: { $ref: "#/components/schemas/HuniTemasi" }
+                  yaziTipleri: { type: array, items: { type: string } }
+                  jeton: { type: string, description: "Düzenleyici uçlarının CSRF jetonu (huni-<app>)" }
+                  adresler:
+                    type: object
+                    additionalProperties: false
+                    required: [kaydet, durum, medya, aiDurum, aiSohbet]
+                    properties:
+                      kaydet: { type: string }
+                      durum: { type: string }
+                      medya: { type: string }
+                      aiDurum: { type: string }
+                      aiSohbet: { type: string }
+        "404": { description: Bilinmeyen uygulama ya da huni, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/huniler/{ad}/varsayilan:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }

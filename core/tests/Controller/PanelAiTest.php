@@ -286,9 +286,10 @@ final class PanelAiTest extends WebTestCase
 
     private function jeton(): string
     {
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
+        $this->client->request('GET', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici');
+        $acilis = json_decode((string) $this->client->getResponse()->getContent(), true);
 
-        return (string) $this->client->getCrawler()->filter('#puck-duzenleyici')->attr('data-jeton');
+        return \is_array($acilis) && \is_string($acilis['jeton'] ?? null) ? $acilis['jeton'] : '';
     }
 
     private function girisYap(): void

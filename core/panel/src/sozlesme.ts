@@ -323,6 +323,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/huniler/{ad}/duzenleyici": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        /** P3 — düzenleyici sayfasının açılışı (taslak, imza, seçenekler, uç adresleri, düzenleyici jetonu) */
+        get: operations["panelApiHuniDuzenleyici"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/huniler/{ad}/varsayilan": {
         parameters: {
             query?: never;
@@ -1819,6 +1839,55 @@ export interface operations {
             };
             /** @description Geçersiz istek */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiHuniDuzenleyici: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Açılış verisi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        baslik: string;
+                        taslak: components["schemas"]["HuniTanimi"];
+                        /** @description Ç39: taslak imzası; kayıtta geri yollanır (eşleşmezse 409) */
+                        imza: string;
+                        planlar: string[];
+                        temaVarsayilan: components["schemas"]["HuniTemasi"];
+                        yaziTipleri: string[];
+                        /** @description Düzenleyici uçlarının CSRF jetonu (huni-<app>) */
+                        jeton: string;
+                        adresler: {
+                            kaydet: string;
+                            durum: string;
+                            medya: string;
+                            aiDurum: string;
+                            aiSohbet: string;
+                        };
+                    };
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da huni */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

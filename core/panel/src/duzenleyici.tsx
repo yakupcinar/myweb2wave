@@ -1,5 +1,6 @@
-// Panel sürükle-bırak huni düzenleyicisi (A7 / E2.4). Twig sayfası
-// #puck-duzenleyici'ye taslağı ve uç adreslerini öznitelik olarak gömer.
+// Panel sürükle-bırak huni düzenleyicisi (A7 / E2.4). P3'ten beri panel
+// uygulamasının sayfası (sayfalar/HuniDuzenle.tsx): taslak ve uç adresleri
+// açılış ucundan gelir.
 // Üst çubuk (b1): Kaydet · Önizle · Yayınla · Sürümler — rakiplerdeki gibi
 // düzenleyicinin içinde. Doğrulama çekirdekte.
 import {
@@ -10,15 +11,8 @@ import {
     type Data,
 } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import {
-    StrictMode,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
-import { createRoot } from "react-dom/client";
+import "./duzenleyici.css";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     puckTanim,
     tanimdanPuck,
@@ -39,35 +33,6 @@ import { OTURUM_DUSTU, oturumDustu } from "./oturum";
 import { dugmeler, type YayinDurumu } from "./ustCubuk";
 import { yapilandirma, type Ortam } from "./yapilandirma";
 
-const kok = document.getElementById("puck-duzenleyici");
-if (kok) {
-    const ds = kok.dataset;
-    const json = <T,>(ad: string): T => JSON.parse(ds[ad] ?? "null") as T;
-    const ortam: Ortam = {
-        planlar: json<string[]>("planlar"),
-        yaziTipleri: json<string[]>("yaziTipleri"),
-        medyaAdresi: ds["medya"] ?? "",
-        jeton: ds["jeton"] ?? "",
-    };
-    createRoot(kok).render(
-        <StrictMode>
-            <Duzenleyici
-                taslak={json<Tanim>("taslak")}
-                varsayilanTema={json<Tema>("temaVarsayilan")}
-                ortam={ortam}
-                kaydetAdresi={ds["kaydet"] ?? ""}
-                ilkImza={ds["imza"] ?? ""}
-                durumAdresi={ds["durum"] ?? ""}
-                baslik={ds["baslik"] ?? ""}
-                ai={{
-                    durumAdresi: ds["aiDurum"] ?? "",
-                    sohbetAdresi: ds["aiSohbet"] ?? "",
-                }}
-            />
-        </StrictMode>,
-    );
-}
-
 type Bildirim = {
     tur: "tamam" | "hata";
     metin: string;
@@ -77,7 +42,7 @@ type Bildirim = {
 /** Kaydedilmemiş değişikliği bulmak için: aynı çeviriden geçen tanımın metni. */
 const imza = (veri: HuniVerisi): string => JSON.stringify(puckTanim(veri));
 
-function Duzenleyici({
+export function Duzenleyici({
     taslak,
     varsayilanTema,
     ortam,

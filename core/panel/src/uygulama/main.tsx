@@ -1,9 +1,9 @@
 // Panel uygulaması (B5): Symfony /panel'de bu kabuğu verir; sayfaları
 // istemci yönlendirir, veriler /panel/api/* uçlarından (TanStack Query).
-// Geçiş P1–P5 (PLAN.md): Huniler P2'de geldi; düzenleyici P3'te.
+// Geçiş P1–P5 (PLAN.md): Huniler (P2) ve düzenleyici (P3) burada.
 import "./stil.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
@@ -11,6 +11,11 @@ import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Baglam } from "./sayfalar/Baglam";
 import { Huniler } from "./sayfalar/Huniler";
 import { Rapor } from "./sayfalar/Rapor";
+
+// P3: düzenleyici (Puck) ayrı parça — yalnız düzenleyici sayfası indirir.
+const HuniDuzenle = lazy(async () => ({
+    default: (await import("./sayfalar/HuniDuzenle")).HuniDuzenle,
+}));
 
 export const yollar = [
     {
@@ -22,6 +27,15 @@ export const yollar = [
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
         ],
+    },
+    {
+        // Tam ekran: sol menü yok (Puck kendi düzenini kurar).
+        path: "/panel/huniler/:app/:ad",
+        element: (
+            <Suspense fallback={<p className="p-4">Düzenleyici yükleniyor…</p>}>
+                <HuniDuzenle />
+            </Suspense>
+        ),
     },
 ];
 

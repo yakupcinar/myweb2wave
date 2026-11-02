@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Huni\Huniler;
-use App\Huni\Tema;
 use App\Panel\Varliklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -38,31 +37,24 @@ final class PanelHuniController extends AbstractController
     }
 
     /**
-     * Huni düzenleyicisi (E2.4, React + Puck; b2: tek düzenleyici — klasik
-     * form düzenleyicisi kaldırıldı, Ç53). Betik/stil: Varliklar (manifest).
-     * Derlenmemişse sessizce boş sayfa değil, açık hata.
+     * Huni düzenleyicisi (E2.4, React + Puck; b2: tek düzenleyici, Ç53).
+     * P3'ten beri panel uygulamasının kabuğu — derin bağlantı ve yenileme
+     * için; bilinmeyen huni yine 404. Derlenmemişse açık hata.
      */
     #[Route('/{app}/{ad}', name: 'panel_huni', methods: ['GET'])]
     public function duzenle(string $app, string $ad): Response
     {
         $this->uygulama($app);
-        $taslak = $this->huniler->taslak($app, $ad) ?? throw new NotFoundHttpException();
-        $giris = $this->varliklar->giris('src/main.tsx');
+        if (null === $this->huniler->taslak($app, $ad)) {
+            throw new NotFoundHttpException();
+        }
+        // P3: düzenleyici panel uygulamasının sayfası; veri açılış ucundan.
+        $giris = $this->varliklar->giris('src/uygulama/main.tsx');
         if (null === $giris) {
-            return self::korumali(new Response('Sürükle-bırak düzenleyici derlenmemiş: docker compose run --rm panel npm run build', 503));
+            return self::korumali(new Response('Panel derlenmemiş: docker compose run --rm panel npm run build', 503));
         }
 
-        return self::korumali($this->render('panel/huni-surukle.html.twig', [
-            'uygulama' => $app,
-            'huni' => $ad,
-            'taslak' => $taslak,
-            'imza' => $this->huniler->taslakImzasi($app, $ad),
-            'planlar' => array_keys($this->uygulamalar[$app]),
-            'tema_varsayilan' => Tema::VARSAYILAN,
-            'yazi_tipleri' => Tema::YAZI_TIPLERI,
-            'betik' => $giris['betik'],
-            'stiller' => $giris['stiller'],
-        ]));
+        return self::korumali($this->render('panel/uygulama.html.twig', $giris));
     }
 
     /** Düzenleyicinin JSON kaydı: 200 ya da 422 + hatalar. */

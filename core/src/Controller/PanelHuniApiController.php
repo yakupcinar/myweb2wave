@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Huni\Huniler;
+use App\Huni\Tema;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 /**
  * P2: panelin Huniler sayfası (React) — uygulama başına huniler ve
@@ -28,6 +30,7 @@ final class PanelHuniApiController extends AbstractController
         private readonly array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private readonly string $funnelBaseUrl,
+        private readonly CsrfTokenManagerInterface $jetonlar,
     ) {
     }
 
@@ -79,6 +82,39 @@ final class PanelHuniApiController extends AbstractController
                 ? self::korumali(new JsonResponse(['sonuc' => $sonuc]))
                 : self::hata($sonuc, 422);
         });
+    }
+
+    /**
+     * P3: düzenleyici sayfasının açılışı. Jeton düzenleyici uçlarınınki
+     * (huni-<app>; kaydet, durum, medya) — bu uçlar P3'te değişmedi.
+     */
+    #[Route('/huniler/{ad}/duzenleyici', name: 'panel_api_huni_duzenleyici', methods: ['GET'])]
+    public function duzenleyici(string $app, string $ad): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::hata("bilinmeyen uygulama: {$app}", 404);
+        }
+        $taslak = $this->huniler->taslak($app, $ad);
+        if (null === $taslak) {
+            return self::hata("'{$ad}' hunisi yok", 404);
+        }
+
+        return self::korumali(new JsonResponse([
+            'baslik' => "{$app} · {$ad}",
+            'taslak' => $taslak,
+            'imza' => $this->huniler->taslakImzasi($app, $ad),
+            'planlar' => array_keys($this->uygulamalar[$app]),
+            'temaVarsayilan' => Tema::VARSAYILAN,
+            'yaziTipleri' => Tema::YAZI_TIPLERI,
+            'jeton' => $this->jetonlar->getToken('huni-'.$app)->getValue(),
+            'adresler' => [
+                'kaydet' => $this->generateUrl('panel_huni_taslak', ['app' => $app, 'ad' => $ad]),
+                'durum' => $this->generateUrl('panel_huni_durum', ['app' => $app, 'ad' => $ad]),
+                'medya' => $this->generateUrl('panel_medya_liste', ['app' => $app]),
+                'aiDurum' => $this->generateUrl('panel_api_ai_durum'),
+                'aiSohbet' => $this->generateUrl('panel_api_ai_sohbet', ['app' => $app, 'huni' => $ad]),
+            ],
+        ]));
     }
 
     #[Route('/huniler/{ad}/varsayilan', name: 'panel_api_huni_varsayilan', methods: ['POST'])]

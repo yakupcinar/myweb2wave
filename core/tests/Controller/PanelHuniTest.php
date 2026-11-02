@@ -192,26 +192,53 @@ final class PanelHuniTest extends WebTestCase
         }
     }
 
-    public function testSurukleBirakSayfasiManifesttekiBetigiYukler(): void
+    /** P3: düzenleyici panel uygulamasının sayfası; veri açılış ucundan (JSON, kaçışsız gömme yok). */
+    public function testDuzenleyiciSayfasiKabukVeAcilisUcu(): void
     {
-        // Derleme kontrolde testten önce (bin/kontrol editor-derle); adres içerik özetli.
         $manifest = json_decode((string) file_get_contents(\dirname(__DIR__, 2).'/public/varliklar/panel/.vite/manifest.json'), true);
         self::assertIsArray($manifest);
-        self::assertIsArray($manifest['src/main.tsx'] ?? null);
+        self::assertArrayNotHasKey('src/main.tsx', $manifest, 'ayrı düzenleyici girişi kalktı');
+        $giris = $manifest['src/uygulama/main.tsx'] ?? null;
+        self::assertIsArray($giris);
+        $kabuk = $giris['file'] ?? null;
+        self::assertIsString($kabuk);
         $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('"><script>alert(1)</script>'));
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        self::assertResponseRedirects('/panel/giris');
+        foreach (['/panel/huniler/keepchat/genel', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici'] as $adres) {
+            $this->client->request('GET', $adres);
+            self::assertResponseRedirects('/panel/giris', null, $adres);
+        }
         $this->girisYap();
 
         $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel');
-
         self::assertResponseStatusCodeSame(200);
-        $betik = $manifest['src/main.tsx']['file'] ?? null;
-        self::assertIsString($betik);
-        self::assertSame('/varliklar/panel/'.$betik, $crawler->filter('script[type=module]')->attr('src'));
-        self::assertEquals(self::tanim('"><script>alert(1)</script>'), json_decode((string) $crawler->filter('#puck-duzenleyici')->attr('data-taslak'), true));
-        self::assertStringNotContainsString('<script>alert(1)', (string) $this->client->getResponse()->getContent());
+        self::assertSame('/varliklar/panel/'.$kabuk, $crawler->filter('script[type=module]')->attr('src'));
+        self::assertCount(1, $crawler->filter('#panel-uygulama'));
+        self::assertStringNotContainsString('alert(1)', (string) $this->client->getResponse()->getContent());
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
+
+        [$durum, $acilis] = $this->api('GET', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici');
+        self::assertSame(200, $durum);
+        Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/huniler/{ad}/duzenleyici', $this->client->getResponse());
+        self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
+        self::assertIsArray($acilis);
+        self::assertEquals(self::tanim('"><script>alert(1)</script>'), $acilis['taslak']);
+        self::assertSame($this->huniler->taslakImzasi('keepchat', 'genel'), $acilis['imza']);
+        self::assertSame('keepchat · genel', $acilis['baslik']);
+        self::assertSame([
+            'kaydet' => '/panel/huniler/keepchat/genel/taslak',
+            'durum' => '/panel/huniler/keepchat/genel/durum',
+            'medya' => '/panel/medya/keepchat',
+            'aiDurum' => '/panel/api/ai/durum',
+            'aiSohbet' => '/panel/api/ai/huniler/keepchat/genel/sohbet',
+        ], $acilis['adresler']);
+        // Açılıştaki jeton düzenleyici uçlarında geçer (kayıt 200).
+        $this->kaydet(self::tanim('Yeni'), \is_string($acilis['jeton']) ? $acilis['jeton'] : '');
+        self::assertResponseStatusCodeSame(200);
+
+        foreach (['/panel/huniler/keepchat/olmayan', '/panel/api/uygulamalar/keepchat/huniler/olmayan/duzenleyici', '/panel/api/uygulamalar/olmayan/huniler/genel/duzenleyici'] as $adres) {
+            $this->client->request('GET', $adres);
+            self::assertResponseStatusCodeSame(404, $adres);
+        }
     }
 
     /**
@@ -256,7 +283,7 @@ final class PanelHuniTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/panel/huniler/keepchat/genel');
         self::assertCount(0, $crawler->filter('script[src*=huni-duzenleyici]'));
-        self::assertCount(1, $crawler->filter('#puck-duzenleyici'));
+        self::assertCount(0, $crawler->filter('#puck-duzenleyici'));
         self::assertFileDoesNotExist(\dirname(__DIR__, 2).'/public/varliklar/huni-duzenleyici.js');
 
         $jeton = $this->jeton();
@@ -402,9 +429,10 @@ final class PanelHuniTest extends WebTestCase
 
     private function jeton(): string
     {
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
+        $this->client->request('GET', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici');
+        $acilis = json_decode((string) $this->client->getResponse()->getContent(), true);
 
-        return (string) $this->client->getCrawler()->filter('#puck-duzenleyici')->attr('data-jeton');
+        return \is_array($acilis) && \is_string($acilis['jeton'] ?? null) ? $acilis['jeton'] : '';
     }
 
     /** @return array<string, mixed> */
@@ -437,9 +465,10 @@ final class PanelHuniTest extends WebTestCase
     /** Düzenleyicinin açılışta aldığı taslak imzası. */
     private function imza(): string
     {
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
+        $this->client->request('GET', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici');
+        $acilis = json_decode((string) $this->client->getResponse()->getContent(), true);
 
-        return (string) $this->client->getCrawler()->filter('#puck-duzenleyici')->attr('data-imza');
+        return \is_array($acilis) && \is_string($acilis['imza'] ?? null) ? $acilis['imza'] : '';
     }
 
     /** @return array{sayfaBasligi: string, adimlar: array<int, array<string, mixed>>} */

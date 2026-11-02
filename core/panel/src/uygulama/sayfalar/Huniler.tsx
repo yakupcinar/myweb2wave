@@ -1,9 +1,10 @@
 // Huniler (P2; A7, A8): uygulama başına huniler ve reklam adresinin hangi
-// huniyi açacağını seçen kurallar. Düzenleyici (Puck) henüz ayrı sayfa (P3)
-// → "Düzenle" ve yeni huni tam sayfa yüklemesiyle açılır. Kaldırma geri
+// huniyi açacağını seçen kurallar. "Düzenle" ve yeni huni düzenleyiciyi
+// sayfa yenilemeden açar (P3). Kaldırma geri
 // alınamaz: tarayıcı onay penceresi yerine iki adımlı düğme.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { SayfaBasi } from "../Duzen";
@@ -14,11 +15,6 @@ import { Tablo, Td, Th } from "../ui/Tablo";
 
 type Liste = components["schemas"]["PanelHunileri"];
 type Huni = Liste["huniler"][number];
-
-/** Tam sayfa geçişi (düzenleyici React uygulamasının dışında); testte izlenir. */
-export const gezgin = {
-    git: (adres: string): void => window.location.assign(adres),
-};
 
 // Sözleşme başlığı zorunlu tutuyor; asıl jetonu api.ts yazar.
 const JETON = { "X-CSRF-Token": "" };
@@ -140,6 +136,7 @@ function HuniTablosu({
     calistir: Calistir;
     hataGoster: (metin: string) => void;
 }): ReactNode {
+    const git = useNavigate();
     const [kaldirSor, setKaldirSor] = useState<string | null>(null);
     const [ad, setAd] = useState("");
     const [kaynak, setKaynak] = useState("");
@@ -156,7 +153,7 @@ function HuniTablosu({
                 throw new Error((error?.hatalar ?? ["Açılmadı."]).join(" "));
             return data;
         },
-        onSuccess: (d) => gezgin.git(d.duzenle),
+        onSuccess: (d) => void git(d.duzenle),
         onError: (e) => hataGoster(e.message),
     });
     const kaldir = (h: Huni): void => {
@@ -213,12 +210,12 @@ function HuniTablosu({
                             </Td>
                             <Td className="text-right">
                                 <span className="inline-flex flex-wrap justify-end gap-2">
-                                    <a
-                                        href={h.duzenle}
+                                    <Link
+                                        to={h.duzenle}
                                         className={dugmeSinifi({ tur: "ana" })}
                                     >
                                         Düzenle
-                                    </a>
+                                    </Link>
                                     <a
                                         href={h.ac}
                                         target="_blank"

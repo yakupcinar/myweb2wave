@@ -157,6 +157,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§40** | **Boyamadan sonra (`useEffect`) yazılan tema + CSS geçişi** ilk görünümü ara renkte çizer — jsdom görmez; `useLayoutEffect`, ölçüm gerçek tarayıcıda. |
 | **§41** | **Postgres sıralaması (en_US) JS `sort()` ile aynı değil** — iki taraf aynı listeyi farklı sırada üretir, ikisi de yeşil; `COLLATE "C"` + ortak örnekli eşlik testi. |
 | **§42** | **Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz** — birim testi yeşil, düzenleyicide etkisiz; kural bekçide, ölçüm tarayıcıda. |
+| **§43** | **Puck kabuk sayfasının stilini önizleme çerçevesine kopyalar** — panelin sıfırlaması huniyi farklı çizer, testler yeşil; düzenleyici açıkken kabuk stiline `media="not all"`, ölçüm tarayıcıda. |
 
 ---
 

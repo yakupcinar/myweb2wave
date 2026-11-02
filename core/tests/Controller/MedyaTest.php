@@ -179,12 +179,13 @@ final class MedyaTest extends WebTestCase
 
     private function yukle(string $yol, int $beklenen = 201): string
     {
-        // Jeton düzenleyici sayfasından (huni-<app>); sayfa için huni gerekir (zaten varsa hata döner, sorun değil).
+        // Jeton düzenleyicinin açılış ucundan (huni-<app>); sayfa için huni gerekir (zaten varsa hata döner, sorun değil).
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $huniler->yeniHuni('keepchat', 'genel', null);
-        $this->client->request('GET', '/panel/huniler/keepchat/genel');
-        $jeton = (string) $this->client->getCrawler()->filter('#puck-duzenleyici')->attr('data-jeton');
+        $this->client->request('GET', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici');
+        $acilis = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $jeton = \is_array($acilis) && \is_string($acilis['jeton'] ?? null) ? $acilis['jeton'] : '';
         $this->client->request('POST', '/panel/medya/keepchat', [], [
             'dosya' => new UploadedFile($yol, basename($yol), null, null, true),
         ], ['HTTP_X_CSRF_TOKEN' => $jeton]);
