@@ -41,3 +41,5 @@ Kullanıcı 2026-11-02: "T1b ile devam et". T1a'dan kalan (Ç83 (2)): ekran blok
 | B17 | AI isteminde soru bloğu yok | 🔴 — ilk koşuda YEŞİL: test yalın adı arıyordu, "soru" kelimesi metnin başka yerinde de geçiyor; test "ad (" katalog biçimine sıkılaştırıldı |
 
 Ortam: yerel Docker, macOS; her deneme dosyayı yedekleyip geri yükledi.
+
+CI (bağımlılıklar kilit dosyasından sıfırdan): koşu 41432906740, SHA 75f7232, `KONTROL: YEŞİL` (core 354 test, panel + huni testleri dahil).
