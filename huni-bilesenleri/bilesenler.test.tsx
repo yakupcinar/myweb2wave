@@ -405,7 +405,12 @@ describe("T1 — ekran adımı (blok kataloğu)", () => {
         // "ekran" ve "bloklar" yalnız kapsayıcı: kendileri boyanmaz, kuralları
         // çocuklarını seçer.
         expect(css).toMatch(/\.huni \.ekran [^{]*\{/);
-        expect(css).toMatch(/\.huni \.bloklar > p \{/);
+        expect(css).toMatch(/\.huni \.bloklar > p,/);
+        // Puck her bloğu ayrı kutuya sarar (tarayıcıda ölçüldü).
+        for (const p of ["p", "p.istatistik", "p.kutu"])
+            expect(css).toContain(
+                `.huni .bloklar > [data-puck-component] > ${p} {`,
+            );
         // İlk blok başlığa yapışıyordu (ekran görüntüsünde görüldü).
         expect(css).toMatch(/\.huni \.bloklar \{[^}]*margin-top/);
         for (const s of [...siniflar].filter(

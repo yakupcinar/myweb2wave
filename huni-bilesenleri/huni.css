@@ -327,12 +327,15 @@ html:has(> body.huni) {
 /* T1: ekran blokları. Renkler temadan; ana renk yalnız süste (yıldız,
    kutu çizgisi) — metin her yerde metin rengi (okunurluğu çekirdek ölçer).
    Bloklar div.bloklar içinde (Puck yuvası da öyle): paragraf kuralı burada
-   yinelenir, "section > p" oraya ulaşmaz. */
+   yinelenir, "section > p" oraya ulaşmaz. Puck düzenleyicide her bloğu ayrıca
+   [data-puck-component] kutusuna sarar (tarayıcıda ölçüldü: "> p" ulaşmıyor,
+   paragraf metin renginde 17 px) — o kutu da sayılır. */
 .huni .bloklar {
     /* Başlığın 8 px alt boşluğu ilk bloğu başlığa yapıştırıyordu (ekranda görüldü). */
     margin-top: calc(16px * var(--ara, 1));
 }
-.huni .bloklar > p {
+.huni .bloklar > p,
+.huni .bloklar > [data-puck-component] > p {
     margin: 0 0 calc(20px * var(--ara, 1));
     text-align: var(--hiza, left);
     color: var(--soluk);
@@ -401,7 +404,8 @@ html:has(> body.huni) {
     font-size: 18px;
     letter-spacing: 2px;
 }
-.huni .bloklar > p.istatistik {
+.huni .bloklar > p.istatistik,
+.huni .bloklar > [data-puck-component] > p.istatistik {
     display: flex;
     align-items: baseline;
     gap: 12px;
@@ -415,7 +419,8 @@ html:has(> body.huni) {
     font-weight: 800;
     letter-spacing: -0.02em;
 }
-.huni .bloklar > p.kutu {
+.huni .bloklar > p.kutu,
+.huni .bloklar > [data-puck-component] > p.kutu {
     display: flex;
     align-items: flex-start;
     gap: 12px;

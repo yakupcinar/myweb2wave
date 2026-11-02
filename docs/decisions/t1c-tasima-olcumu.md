@@ -29,3 +29,13 @@ Hiçbiri birebir aynı DOM vermedi:
 ## Sonuç
 
 Kayıpsız taşıma yok: yayındaki hunileri dönüştürmek görünümlerini değiştirir, yükleme ve ödeme bloklara sığmaz. Yapılmadı — karar kullanıcıda (Ç86). Seçenekler Ç86'da.
+
+## Puck düzenleyicisi tarayıcıda (2026-11-02, Ç83 (4))
+
+Kullanıcının Chrome'u, `keepchat/ai-ornek` düzenleyicisi; hiçbir şey KAYDEDİLMEDİ.
+
+- Ekran sürüklenince kimliğe ek geldi (`ekran-248d`), varsayılan paragraf bloğu yuvaya Puck kimliğiyle girdi (`MetinBlogu-<uuid>`), yuva `div.bloklar` sınıfını taşıyor. ✅
+- **Kusur bulundu:** Puck düzenleyicide her bloğu ayrıca `[data-puck-component]` kutusuna sarıyor → `.bloklar > p` kuralı ulaşmıyor: paragraf metin renginde ve 17 px (hunide soluk, 20 px). `Render` testleri bunu göremezdi (o kutu yalnız düzenleyicide). Düzeltme: kurallar o kutuyu da sayar; ölçüm sonrası soluk renk + 20 px. Kırma: kutu seçicisi bozulunca bileşen testi 🔴.
+- Soru bloğu yanlışlıkla kök bölgeye bırakıldı → "Ekran bloğu bir Ekran adımının içine konmalı: SoruBlogu" uyarısı göründü ✅; sürükleyip yuvaya taşıyınca uyarı kalktı, yuvada [MetinBlogu, SoruBlogu] ✅.
+- Soru bloğunun seçenek hedef listesi: "Sıradaki adım" + ekrandan SONRAKİ 8 adım (ekranın kendisi ve öncekiler yok) ✅.
+- Görülen: varsayılan ekranın düğmesi "Devam" — tek seçimli soru bloğu eklenince düğme alanını boşaltmak gerekiyor, yoksa kayıtta çekirdek "dugme olmaz" der (Ç87).
