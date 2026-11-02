@@ -45,3 +45,5 @@ Kullanıcı 2026-11-02: "blok kataloğu ile devam et". Plan: T1 (temel 1) "ekran
 | K17 | Puck yuvasının sınıfı yok | 🔴 onizleme (Render) |
 
 Ortam: yerel Docker, macOS; her deneme dosyayı yedekleyip geri yükledi.
+
+CI (bağımlılıklar kilit dosyasından sıfırdan): koşu 41429768805, SHA 3e7efce, `KONTROL: YEŞİL` (core 339 test, panel + huni testleri dahil).
