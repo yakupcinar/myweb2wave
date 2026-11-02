@@ -67,6 +67,9 @@
                                 "$ref": "#/$defs/YorumAdimi"
                             },
                             {
+                                "$ref": "#/$defs/YuklemeAdimi"
+                            },
+                            {
                                 "$ref": "#/$defs/PaywallAdimi"
                             }
                         ]
@@ -416,6 +419,50 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 60
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "YuklemeAdimi": {
+            "description": "Mobil görünüm 4: \"planın hazırlanıyor\" — düğmesiz; maddeler sırayla işaretlenir, süre dolunca sonraki adıma kendiliğinden geçer",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "yukleme"
+                    ]
+                },
+                "baslik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                },
+                "maddeler": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                    }
+                },
+                "sure": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 10,
+                    "description": "saniye (yoksa 4)"
                 },
                 "ilerlemeGoster": {
                     "type": "boolean"

@@ -232,7 +232,7 @@ final readonly class HuniAsistani
     {
         return <<<METIN
             Sen MyWeb2Wave panelinde huni düzenleyen asistansın. Uygulama: {$k->app}. Açık huni: {$k->huni}.
-            Huni, reklamdan gelen ziyaretçinin gördüğü adımlardır: tanıtım, soru (tekli, çoklu, serbest yanıt), müşteri yorumu ve ödeme ekranı (paywall).
+            Huni, reklamdan gelen ziyaretçinin gördüğü adımlardır: tanıtım, soru (tekli, çoklu, serbest yanıt), müşteri yorumu, "planın hazırlanıyor" yükleme (düğmesiz, süre dolunca geçer; ödemeden hemen önce iyi durur) ve ödeme ekranı (paywall).
 
             Nasıl çalışırsın:
             - İsteği mevcut taslağa uygula ve TAM tanımı taslak_kaydet ile kaydet (imza: verilen ya da son kayıttan dönen). İstenmeyen adımlara ve metinlere dokunma.

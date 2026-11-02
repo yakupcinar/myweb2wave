@@ -466,7 +466,7 @@ export interface components {
             tema?: components["schemas"]["HuniTemasi"];
             /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
             logo?: components["schemas"]["GorselKimligi"];
-            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["PaywallAdimi"])[];
+            adimlar: (components["schemas"]["TanitimAdimi"] | components["schemas"]["SoruAdimi"] | components["schemas"]["YorumAdimi"] | components["schemas"]["YuklemeAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
         HuniTemasi: {
@@ -570,6 +570,17 @@ export interface components {
             yazar: string;
             unvan: string;
             dugme: string;
+            ilerlemeGoster?: boolean;
+        };
+        /** @description Mobil görünüm 4: "planın hazırlanıyor" — düğmesiz; maddeler sırayla işaretlenir, süre dolunca sonraki adıma kendiliğinden geçer */
+        YuklemeAdimi: {
+            id: components["schemas"]["HuniKimligi"];
+            /** @enum {string} */
+            tur: "yukleme";
+            baslik: string;
+            maddeler?: string[];
+            /** @description saniye (yoksa 4) */
+            sure?: number;
             ilerlemeGoster?: boolean;
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */

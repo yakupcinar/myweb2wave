@@ -87,6 +87,7 @@ final class McpTest extends WebTestCase
         self::assertStringContainsString('Hedef kitle: Aileler', self::metin(self::yol($ilk, 'result', 'instructions')));
         // Ç71: panel asistanıyla aynı tema yönergesi.
         self::assertStringContainsString(Tema::aiYonergesi(), self::metin(self::yol($ilk, 'result', 'instructions')));
+        self::assertStringContainsString('"planın hazırlanıyor" yükleme', self::metin(self::yol($ilk, 'result', 'instructions')));
         $this->rpc(['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $bearer);
         self::assertResponseStatusCodeSame(202);
 

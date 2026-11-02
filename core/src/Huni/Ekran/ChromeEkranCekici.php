@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Huni\Ekran;
 
 use HeadlessChromium\BrowserFactory;
+use HeadlessChromium\Communication\Message;
 use HeadlessChromium\Page;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -66,6 +67,10 @@ final readonly class ChromeEkranCekici implements EkranCekici
         $sayfa = $tarayici->createPage();
         try {
             $sayfa->setDeviceMetricsOverride(['width' => self::GENISLIK, 'height' => self::YUKSEKLIK, 'deviceScaleFactor' => 2, 'mobile' => true])->await();
+            // Hareket azaltma: huni bu tercihte animasyonları kapatır — çekim
+            // ara kare değil son, durağan hâli gösterir (yükleme çubuğu boş,
+            // maddeler soluk çıkıyordu; mobil-gorunum-3-5.md).
+            $sayfa->getSession()->sendMessageSync(new Message('Emulation.setEmulatedMedia', ['features' => [['name' => 'prefers-reduced-motion', 'value' => 'reduce']]]), self::SURE_MS);
             $sayfa->navigate($adres)->waitForNavigation(Page::LOAD, self::SURE_MS);
             $son = microtime(true) + self::SURE_MS / 1000;
             while (true !== $sayfa->evaluate(self::HAZIR)->getReturnValue()) {

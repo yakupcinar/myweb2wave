@@ -117,7 +117,7 @@
   - [x] 1 · görünüm: seçenek kartları + işaret, alta yapışık düğme, plan kartı — 2026-10-27
   - [x] 2 · tek seçimde otomatik ilerleme — zaten vardı
   - [x] 3 · 2026-11-02, `docs/decisions/mobil-gorunum-3-5.md`: seçenek `simge` (tek emoji, görselle değil, `aria-hidden`); ekran kabına renkli emoji fontu (AI kutu görüyordu); bölünen emoji taşması düzeltildi. Kırma 8/8
-  - [ ] 4 · ödemeden önce "planın hazırlanıyor" adımı
+  - [x] 4 · 2026-11-02, `mobil-gorunum-3-5.md`: `yukleme` adım türü (düğmesiz, süre dolunca oynatıcı geçirir, geri dönünce iptal); ekran çekicisi hareket azaltmayı öykünür (AI son hâli görür). Kırma 10/10
   - [ ] 5 · başarı / iptal sayfaları aynı görünümde
 - [ ] **Huni görünüm yüzeyi** (Ç71 (b); kullanıcı 2026-10-27: "AI birebir aynı quiz verdi, renk farkı yok yazı farkı yok"). Bugün görünüm = huni başına 5 tema alanı + logo; adım başına çeşit yok. (a) AI yönergesi yapıldı (`docs/decisions/ai-tema-yonergesi.md`). Her adım `/blok`; her yeni alan = sözleşme `HuniTemasi`/adım şeması + `Tema.php`/`Tanim.php` + `huni-bilesenleri` + Puck alanı + `Tema::aiYonergesi` örnekleri (AI ancak sözleşmedekini üretebilir):
   - [x] G1 · 2026-10-27, `docs/decisions/gorunum-g1.md`: envanter (web2wave, Formbricks) + 19 varyant × 3 adım ekran ölçümü; zemin baskın, yapısal ayarlar ikinci, düğme/köşe küçük. Sıra aşağıda (ölçüme göre); Ç75, Ç76

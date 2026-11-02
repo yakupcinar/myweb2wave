@@ -154,6 +154,16 @@ function Oynatici({
       ?.focus();
   }, [mevcut, tanim, ziyaretSozu]);
 
+  // Mobil görünüm 4: yükleme adımı süre dolunca sıradakine geçer; adım
+  // değişirse (geri tuşu) zamanlayıcı iptal. Ekran çekiminde geçmez — AI
+  // yükleme ekranını görsün.
+  useEffect(() => {
+    const adim = tanim.adimlar[mevcut];
+    if (adim?.tur !== "yukleme" || ekranCekimi) return;
+    const zaman = setTimeout(() => ileri(), (adim.sure ?? 4) * 1000);
+    return () => clearTimeout(zaman);
+  }, [mevcut, tanim, ekranCekimi]);
+
   /** H5: hedef varsa o adıma (çekirdek yalnız ileriyi kabul eder), yoksa sıradakine. */
   function ileri(hedef?: string): void {
     const sira = hedef

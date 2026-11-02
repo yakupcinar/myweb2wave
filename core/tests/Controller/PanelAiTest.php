@@ -195,6 +195,8 @@ final class PanelAiTest extends WebTestCase
         // Ç71: tema yönergesi sistem isteminde; bağlam metni görünümü de kapsar.
         self::assertStringContainsString(Tema::aiYonergesi(), self::metin(self::yol($ilk, 'text')));
         self::assertStringContainsString('metinleri ve görünümü (tema)', $baglam);
+        // Mobil görünüm 4: yeni adım türü istemde.
+        self::assertStringContainsString('"planın hazırlanıyor" yükleme', self::metin(self::yol($ilk, 'text')));
     }
 
     public function testTurSiniriDonguyuKeser(): void

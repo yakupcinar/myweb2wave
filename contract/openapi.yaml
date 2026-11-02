@@ -770,6 +770,7 @@ components:
               - $ref: "#/components/schemas/TanitimAdimi"
               - $ref: "#/components/schemas/SoruAdimi"
               - $ref: "#/components/schemas/YorumAdimi"
+              - $ref: "#/components/schemas/YuklemeAdimi"
               - $ref: "#/components/schemas/PaywallAdimi"
     HuniTemasi:
       description: "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)"
@@ -891,6 +892,21 @@ components:
         yazar: { type: string, minLength: 1, maxLength: 80 }
         unvan: { type: string, maxLength: 100 }
         dugme: { type: string, minLength: 1, maxLength: 60 }
+        ilerlemeGoster: { type: boolean }
+    YuklemeAdimi:
+      description: "Mobil görünüm 4: \"planın hazırlanıyor\" — düğmesiz; maddeler sırayla işaretlenir, süre dolunca sonraki adıma kendiliğinden geçer"
+      type: object
+      additionalProperties: false
+      required: [id, tur, baslik]
+      properties:
+        id: { $ref: "#/components/schemas/HuniKimligi" }
+        tur: { type: string, enum: [yukleme] }
+        baslik: { type: string, minLength: 1, maxLength: 200 }
+        maddeler:
+          type: array
+          maxItems: 5
+          items: { type: string, minLength: 1, maxLength: 80 }
+        sure: { type: integer, minimum: 2, maximum: 10, description: "saniye (yoksa 4)" }
         ilerlemeGoster: { type: boolean }
     AdimHedefi:
       description: >-

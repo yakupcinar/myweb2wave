@@ -369,6 +369,27 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         );
     });
 
+    it("Mobil görünüm 4: yükleme adımı kendi bloğuyla gidiş-dönüş (ödemeye dönüşmez)", () => {
+        const yuklemeli: Tanim = {
+            ...temel,
+            adimlar: [
+                ...temel.adimlar.slice(0, -1),
+                {
+                    id: "hazirlik",
+                    tur: "yukleme",
+                    baslik: "Planın hazırlanıyor",
+                    maddeler: ["Cevapların inceleniyor", "Plan seçiliyor"],
+                    sure: 5,
+                },
+                { id: "kisa", tur: "yukleme", baslik: "Bir saniye" },
+                ...temel.adimlar.slice(-1),
+            ],
+        };
+        const veri = tanimdanPuck(yuklemeli, VARSAYILAN);
+        expect(veri.content.map((o) => o.type)).toContain("Yukleme");
+        expect(puckTanim(veri)).toStrictEqual(yuklemeli);
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);

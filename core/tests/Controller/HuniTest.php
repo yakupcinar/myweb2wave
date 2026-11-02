@@ -142,6 +142,23 @@ final class HuniTest extends WebTestCase
         self::assertSame('https://ornek.com/gizlilik', $paywall['gizlilik'] ?? null);
     }
 
+    /** Mobil görünüm 4: yükleme adımı geçerli, yayında sözleşmeye uyar. */
+    public function testYuklemeAdimiGecerliYayindaSozlesmeyeUyar(): void
+    {
+        $tanim = self::tanim('X');
+        array_splice($tanim['adimlar'], 2, 0, [
+            ['id' => 'hazirlik', 'tur' => 'yukleme', 'baslik' => 'Planın hazırlanıyor', 'maddeler' => ['Cevapların inceleniyor', 'Plan seçiliyor'], 'sure' => 5],
+            ['id' => 'kisa', 'tur' => 'yukleme', 'baslik' => 'Bir saniye'],
+        ]);
+        self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     /** Ç44: tanıtım kapağı ve seçenek görseli isteğe bağlı alt metin taşır. */
     public function testGorselMetniGecerliYayindaDoner(): void
     {
@@ -271,7 +288,21 @@ final class HuniTest extends WebTestCase
         $t = self::tanim('X');
         yield 'tekrar eden kimlik' => ['tekrar ediyor', self::ile(1, 'id', 'giris')];
         yield 'geçersiz kimlik' => ['kimlik küçük harf', self::ile(0, 'id', 'Giris')];
-        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum ya da paywall', self::ile(0, 'tur', 'html')];
+        yield 'bilinmeyen tür' => ['tür tanitim, soru, yorum, yukleme ya da paywall', self::ile(0, 'tur', 'html')];
+        // Mobil görünüm 4: yükleme adımı.
+        $yuk = static function (array $ek): array {
+            $t = self::tanim('X');
+            array_splice($t['adimlar'], 2, 0, [['id' => 'hazirlik', 'tur' => 'yukleme', 'baslik' => 'Planın hazırlanıyor'] + $ek]);
+
+            return $t;
+        };
+        yield 'yükleme süresi kısa' => ['sure: 2–10 tam sayı', $yuk(['sure' => 1])];
+        yield 'yükleme süresi metin' => ['sure: 2–10 tam sayı', $yuk(['sure' => '5'])];
+        yield 'yükleme madde çok' => ['maddeler: en çok 5', $yuk(['maddeler' => ['a', 'b', 'c', 'd', 'e', 'f']])];
+        yield 'yükleme madde uzun' => ['1–80 karakter', $yuk(['maddeler' => [str_repeat('a', 81)]])];
+        yield 'yükleme madde boş' => ['1–80 karakter', $yuk(['maddeler' => ['']])];
+        yield 'yükleme maddeler liste değil' => ['maddeler: en çok 5', $yuk(['maddeler' => ['x' => 'a']])];
+        yield 'yükleme düğme' => ['adım 3', $yuk(['dugme' => 'Devam'])];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
         yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu ya da metin olmalı', self::ile(1, 'secimTuru', 'belirsiz')];

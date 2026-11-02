@@ -19,7 +19,7 @@ final class Tanim
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
         'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
         'yazar' => [1, 80], 'unvan' => [0, 100], 'aciklama' => [0, 500],
-        'fayda' => [1, 120], 'gorselMetni' => [1, 200],
+        'fayda' => [1, 120], 'gorselMetni' => [1, 200], 'madde' => [1, 80],
     ];
 
     /** G5: tanıtım adımında görselin yeri. */
@@ -33,6 +33,8 @@ final class Tanim
         'tanitim' => ['baslik', 'metin', 'dugme'],
         'soru' => ['soru'],
         'yorum' => ['baslik', 'metin', 'yazar', 'unvan', 'dugme'],
+        // Mobil görünüm 4: düğmesiz; maddeler ve süre isteğe bağlı.
+        'yukleme' => ['baslik'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
@@ -71,7 +73,7 @@ final class Tanim
             $yer = 'adım '.($i + 1);
             $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
             if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
-                $h[] = "{$yer}: tür tanitim, soru, yorum ya da paywall olmalı";
+                $h[] = "{$yer}: tür tanitim, soru, yorum, yukleme ya da paywall olmalı";
                 continue;
             }
             $id = $adim['id'] ?? null;
@@ -128,6 +130,17 @@ final class Tanim
             if ('soru' === $tur && \array_key_exists('duzen', $adim)) {
                 $beklenen[] = 'duzen';
                 self::soruDuzeni($adim['duzen'], $metinYaniti, $yer, $h);
+            }
+            // Mobil görünüm 4: yükleme adımının maddeleri ve süresi.
+            if ('yukleme' === $tur && \array_key_exists('maddeler', $adim)) {
+                $beklenen[] = 'maddeler';
+                self::maddeler($adim['maddeler'], $yer, $h);
+            }
+            if ('yukleme' === $tur && \array_key_exists('sure', $adim)) {
+                $beklenen[] = 'sure';
+                if (!\is_int($adim['sure']) || $adim['sure'] < 2 || $adim['sure'] > 10) {
+                    $h[] = "{$yer}: sure: 2–10 tam sayı (saniye) olmalı";
+                }
             }
             // G5: görselin yeri; kahraman/tamEkran görselsiz anlamsız.
             if ('tanitim' === $tur && \array_key_exists('duzen', $adim)) {
@@ -244,6 +257,19 @@ final class Tanim
             return;
         }
         self::metin($nesne['gorselMetni'], 'gorselMetni', "{$yer} gorselMetni", $h);
+    }
+
+    /** @param list<string> $h */
+    private static function maddeler(mixed $maddeler, string $yer, array &$h): void
+    {
+        if (!\is_array($maddeler) || !array_is_list($maddeler) || \count($maddeler) > 5) {
+            $h[] = "{$yer}: maddeler: en çok 5 metinlik liste olmalı";
+
+            return;
+        }
+        foreach ($maddeler as $j => $m) {
+            self::metin($m, 'madde', "{$yer} madde ".($j + 1), $h);
+        }
     }
 
     /** @param list<string> $h */

@@ -70,6 +70,14 @@ export type YorumProps = {
     dugme: string;
     ilerlemeGoster: boolean;
 };
+/** Mobil görünüm 4: Puck dizi alanı nesne ister — madde {metin}. Süre 4 tanıma yazılmaz. */
+export type YuklemeProps = {
+    kimlik: string;
+    baslik: string;
+    maddeler: { metin: string }[];
+    sure: number;
+    ilerlemeGoster: boolean;
+};
 export type KokProps = {
     sayfaBasligi: string;
     /** Ç61 (5): boş dize = logo yok. */
@@ -101,6 +109,7 @@ export type Bilesenler = {
     CokluSecim: SoruProps;
     SerbestYanit: SoruProps;
     Yorum: YorumProps;
+    Yukleme: YuklemeProps;
     Paywall: PaywallProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
@@ -216,6 +225,20 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             yazar: adim.yazar,
                             unvan: adim.unvan,
                             dugme: adim.dugme,
+                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                        },
+                    };
+                case "yukleme":
+                    return {
+                        type: "Yukleme" as const,
+                        props: {
+                            id,
+                            kimlik: adim.id,
+                            baslik: adim.baslik,
+                            maddeler: (adim.maddeler ?? []).map((metin) => ({
+                                metin,
+                            })),
+                            sure: adim.sure ?? 4,
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
                     };
@@ -342,6 +365,20 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     yazar: p.yazar,
                     unvan: p.unvan,
                     dugme: p.dugme,
+                    ...(p.ilerlemeGoster === false
+                        ? { ilerlemeGoster: false }
+                        : {}),
+                };
+            }
+            case "Yukleme": {
+                const p = oge.props as YuklemeProps;
+                const maddeler = (p.maddeler ?? []).map((m) => m.metin);
+                return {
+                    id: p.kimlik,
+                    tur: "yukleme",
+                    baslik: p.baslik,
+                    ...(maddeler.length ? { maddeler } : {}),
+                    ...(Number(p.sure) !== 4 ? { sure: Number(p.sure) } : {}),
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),

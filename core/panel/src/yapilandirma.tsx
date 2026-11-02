@@ -16,6 +16,7 @@ import {
     Soru,
     Tanitim,
     Yorum,
+    Yukleme,
 } from "../../../huni-bilesenleri/bilesenler";
 import "../../../huni-bilesenleri/huni.css";
 import {
@@ -773,6 +774,53 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             yazar={yazar}
                             unvan={unvan}
                             dugme={dugme}
+                        />
+                    </div>
+                ),
+            },
+            // Mobil görünüm 4: düğmesiz; süre dolunca huni sıradakine geçer
+            // (önizlemede beklemez). Ödeme adımı en sonda olduğu için son olamaz.
+            Yukleme: {
+                label: "Plan hazırlanıyor (yükleme)",
+                resolveData: eklenince,
+                fields: {
+                    kimlik: kimlikAlani,
+                    baslik: { type: "text", label: "Başlık" },
+                    maddeler: {
+                        type: "array",
+                        label: "Maddeler (en çok 5, sırayla işaretlenir)",
+                        max: 5,
+                        getItemSummary: (m: { metin: string }) =>
+                            m.metin || "madde",
+                        defaultItemProps: { metin: "" },
+                        arrayFields: {
+                            metin: { type: "text", label: "Metin" },
+                        },
+                    },
+                    sure: {
+                        type: "number",
+                        label: "Süre (saniye, 2–10)",
+                        min: 2,
+                        max: 10,
+                    },
+                    ilerlemeGoster: ilerlemeAlani,
+                },
+                defaultProps: {
+                    kimlik: "hazirlik",
+                    baslik: "Planın hazırlanıyor",
+                    maddeler: [
+                        { metin: "Cevapların inceleniyor" },
+                        { metin: "Sana uygun plan seçiliyor" },
+                    ],
+                    sure: 4,
+                    ilerlemeGoster: true,
+                },
+                render: ({ baslik, maddeler, sure }) => (
+                    <div style={kart}>
+                        <Yukleme
+                            baslik={baslik}
+                            maddeler={(maddeler ?? []).map((m) => m.metin)}
+                            sure={Number(sure)}
                         />
                     </div>
                 ),

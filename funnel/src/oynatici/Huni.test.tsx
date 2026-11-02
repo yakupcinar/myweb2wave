@@ -542,6 +542,55 @@ describe("D7 — tema", () => {
   });
 });
 
+describe("Mobil görünüm 4 — yükleme adımı kendiliğinden geçer", () => {
+  const yuklemeli = (): Yayin => {
+    const y = yayin();
+    y.tanim.adimlar.splice(2, 0, {
+      id: "hazirlik",
+      tur: "yukleme",
+      baslik: "Planın hazırlanıyor",
+      sure: 2,
+    });
+    return y;
+  };
+  const gorunur = (metin: string): boolean =>
+    screen.getByText(metin).closest("[hidden]") === null;
+  it("süre dolunca sonraki adım, ilerleme bildirilir", async () => {
+    tanim = { durum: 200, govde: yuklemeli() };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunur("Planın hazırlanıyor")).toBe(true);
+    await waitFor(() => expect(gorunur("Pro")).toBe(true), { timeout: 3500 });
+    await waitFor(() =>
+      expect(ilerlemeler()).toContainEqual(
+        expect.objectContaining({ adim: "paywall" }),
+      ),
+    );
+  }, 8000);
+  it("geri dönülürse zamanlayıcı iptal: süre geçince yine önceki adımda", async () => {
+    tanim = { durum: 200, govde: yuklemeli() };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    expect(gorunur("Planın hazırlanıyor")).toBe(true);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: { adim: 1 } }));
+    await waitFor(() => expect(gorunur("Kiminle?")).toBe(true));
+    await new Promise((r) => setTimeout(r, 2600));
+    expect(gorunur("Kiminle?")).toBe(true);
+  }, 8000);
+  it("ekran çekiminde (ekran=1) geçmez — AI yükleme ekranını görür", async () => {
+    tanim = { durum: 200, govde: yuklemeli() };
+    kur("?huni=fitness&onizleme=abc&ekran=1&adim=hazirlik");
+    await yuklendi();
+    expect(gorunur("Planın hazırlanıyor")).toBe(true);
+    await new Promise((r) => setTimeout(r, 2600));
+    expect(gorunur("Planın hazırlanıyor")).toBe(true);
+  }, 8000);
+});
+
 describe("D9 · D10 · D11 · D12 — ilerleme", () => {
   it("ziyaret bir kez, huni + sürümle; ilk adım bildirilir", async () => {
     kur("?utm_source=meta");

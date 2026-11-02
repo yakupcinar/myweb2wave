@@ -76,7 +76,7 @@ final readonly class McpSunucusu
     private function talimat(string $app): string
     {
         $metin = <<<METIN
-            MyWeb2Wave huni platformu, uygulama: {$app}. Huni = reklamdan gelen ziyaretçinin gördüğü adımlar (tanıtım, soru: tekli/çoklu/serbest yanıt, müşteri yorumu, ödeme ekranı).
+            MyWeb2Wave huni platformu, uygulama: {$app}. Huni = reklamdan gelen ziyaretçinin gördüğü adımlar (tanıtım, soru: tekli/çoklu/serbest yanıt, müşteri yorumu, "planın hazırlanıyor" yükleme — düğmesiz, süre dolunca geçer, ödemeden hemen önce iyi durur, ödeme ekranı).
             Çalışma: huniler_listele ile bak; değiştirmeden önce huni_oku ile tanımı ve imzayı al; TAM tanımı taslak_kaydet ile yaz (imza zorunlu). Hata dönerse düzeltip yeniden kaydet. Sonuçta onizleme_adresi ile bağlantı ver.
             Yalnız TASLAĞA yazarsın; yayınlamak panelde insanın işi. Gerçek olmayan müşteri yorumu uydurma (unvana "Örnek — yayından önce gerçeğiyle değiştir"); fiyat yazma (ödeme ekranı Stripe'tan gösterir); kesin sonuç vaadi yazma.
             METIN;

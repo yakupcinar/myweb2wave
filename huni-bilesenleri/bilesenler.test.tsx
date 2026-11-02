@@ -1,6 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Adim, Logo, Paywall, Soru, Tanitim, Yorum } from "./bilesenler";
+import {
+    Adim,
+    Logo,
+    Paywall,
+    Soru,
+    Tanitim,
+    Yorum,
+    Yukleme,
+} from "./bilesenler";
 import css from "./huni.css?raw";
 
 const G = "a".repeat(64);
@@ -245,6 +253,46 @@ describe("G4 — seçenek dizilişi ve düğme biçimi", () => {
         );
         expect(css).toMatch(
             /section\[data-duzen="tamEkran"\] button\.ana \{[^}]*background: var\(--ana\)/,
+        );
+    });
+});
+
+describe("Mobil görünüm 4 — yükleme adımı", () => {
+    const html = renderToStaticMarkup(
+        <Yukleme
+            baslik="Planın hazırlanıyor"
+            maddeler={["Cevapların inceleniyor", "Plan seçiliyor"]}
+            sure={5}
+        />,
+    );
+    it("başlık, maddeler sırayla, süre değişkende; düğme yok; meşgul duyurulur", () => {
+        expect(html).toContain('<section class="yukleme" aria-busy="true"');
+        expect(html).toContain("--sure:5s");
+        expect(html).toContain('<li style="--i:0">Cevapların inceleniyor</li>');
+        expect(html).toContain('<li style="--i:1">Plan seçiliyor</li>');
+        expect(html).not.toContain("<button");
+    });
+    it("süre yoksa 4 sn, madde yoksa liste yok", () => {
+        const yalin = renderToStaticMarkup(<Yukleme baslik="Bir saniye" />);
+        expect(yalin).toContain("--sure:4s");
+        expect(yalin).not.toContain("<ul");
+    });
+    it("Adim yükleme adımını çizer", () => {
+        expect(
+            renderToStaticMarkup(
+                <Adim
+                    adim={{ tur: "yukleme", baslik: "Hazır", sure: 3 }}
+                    medyaKoku={KOK}
+                />,
+            ),
+        ).toContain('class="yukleme"');
+    });
+    it("CSS: çubuk süre boyunca dolar, maddeler sırayla; hareket azaltmada animasyon yok", () => {
+        expect(css).toMatch(
+            /\.huni \.yukleme-cubuk span \{[^}]*animation: huni-dolum var\(--sure\)/,
+        );
+        expect(css).toMatch(
+            /@media \(prefers-reduced-motion: no-preference\) \{[^@]*huni-dolum/,
         );
     });
 });

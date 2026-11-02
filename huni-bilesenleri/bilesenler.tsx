@@ -3,7 +3,7 @@
 // Etkileşim alanları (on…, kapali, hata) isteğe bağlı: Puck geçmez. Metinler yalnız JSX metni —
 // tanım HTML taşıyamaz (D1); ham HTML basan React özniteliği bin/kontrol'de
 // yasak (html-yok adımı; adı burada yazılsa adım kendini yakalar).
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /** E2.3: görsel çekirdekten, kimlikten kurulur (D2); kök huni sayfasında çekirdeğin adresi, panelde "". */
 function Gorsel({
@@ -297,6 +297,48 @@ export function Paywall({
     );
 }
 
+/**
+ * Mobil görünüm 4: "planın hazırlanıyor" — düğmesiz; çubuk süre boyunca
+ * dolar, maddeler sırayla belirir (CSS). Sonraki adıma geçişi oynatıcı
+ * yapar (zamanlayıcı); Puck önizlemesi beklemez.
+ */
+export function Yukleme({
+    baslik,
+    maddeler = [],
+    sure = 4,
+}: {
+    baslik: string;
+    maddeler?: string[] | undefined;
+    sure?: number | undefined;
+}): ReactNode {
+    return (
+        <section
+            className="yukleme"
+            aria-busy="true"
+            style={
+                {
+                    "--sure": `${sure}s`,
+                    "--n": maddeler.length,
+                } as CSSProperties
+            }
+        >
+            <h1 tabIndex={-1}>{baslik}</h1>
+            <div className="yukleme-cubuk" aria-hidden="true">
+                <span />
+            </div>
+            {maddeler.length ? (
+                <ul className="yukleme-maddeler">
+                    {maddeler.map((m, i) => (
+                        <li key={i} style={{ "--i": i } as CSSProperties}>
+                            {m}
+                        </li>
+                    ))}
+                </ul>
+            ) : null}
+        </section>
+    );
+}
+
 export function Yorum({
     baslik,
     metin,
@@ -363,6 +405,12 @@ export type TanimAdimi =
           yazar: string;
           unvan: string;
           dugme: string;
+      }
+    | {
+          tur: "yukleme";
+          baslik: string;
+          maddeler?: string[];
+          sure?: number;
       }
     | {
           tur: "paywall";
@@ -453,6 +501,14 @@ export function Adim({
                     gizlilik={adim.gizlilik}
                     iptal={adim.iptal}
                     {...odeme}
+                />
+            );
+        case "yukleme":
+            return (
+                <Yukleme
+                    baslik={adim.baslik}
+                    maddeler={adim.maddeler}
+                    sure={adim.sure}
                 />
             );
         case "yorum":

@@ -11,3 +11,15 @@ Kalan maddeler (`huni-mobil-gorunum.md`): 3 seçenek simgesi · 4 "planın hazı
 - Testler: `HuniTest` (5 geçerli simge türü, 5 hata durumu) · `bilesenler.test.tsx` (simge önce, gizli, yalnız simgeli seçenekte; CSS: boyut, en az genişlik, esnemez) · `donustur.test.ts` (gidiş-dönüş).
 - Kırma 8/8: K1 alan kabul edilmez · K2 grafem sınırı yok (iki emoji geçer) · K3 emoji denetimi yok (harf geçer) · K4 görselle birlikte geçer · K5 ekran okuyucuya açık · **K6 esneme kuralı simgeyi kapsar — ilk denemede tutmadı (test yoktu) → bekçi eklendi, K6b kırmızı** · K7 sabit genişlik · K8 Puck simgeyi okumaz.
 - Gerçek sistem: KeepChat taslağı yedeklendi → simgeler (👨‍👩‍👧 🧑‍🤝‍🧑 💼 🤔) → çekim → **aynen geri yüklendi** (tanım + imza eşit). `bin/kontrol` yeşil (305 çekirdek testi).
+- CI (madde 3): koşu 41398054165, SHA ce65901, `KONTROL: YEŞİL`, 305 test.
+
+## 4 · "Planın hazırlanıyor" yükleme adımı
+- **Karar:** yeni adım türü `yukleme` — `baslik` (zorunlu), `maddeler` (0–5, her biri 1–80), `sure` (2–10 sn, yoksa 4). Düğmesiz; çubuk süre boyunca dolar, maddeler sırayla belirir (CSS). Sonraki adıma geçişi **oynatıcı** yapar (zamanlayıcı; adım değişince — geri tuşu — iptal). Ekran çekiminde (`ekran=1`) geçmez. Ödeme adımı zaten en sonda zorunlu → yükleme son adım olamaz (ek kural gerekmedi). `aria-busy`; hareket azaltmada animasyon yok, geçiş yine olur.
+- **Puck:** "Plan hazırlanıyor (yükleme)" bloğu (maddeler dizisi, süre); önizleme beklemez. **Dönüştürücüde tuzak:** bilinmeyen tür `default` dalında sessizce **ödeme** bloğuna eşleniyordu — `yukleme` dalı eklendi, test "ödemeye dönüşmez".
+- **AI:** panel asistanı ve MCP talimatı yeni türü sayar (kural 7: iki istem birlikte, testli).
+- **Ekran çekicisi:** ilk çekim animasyonun ilk karesiydi (çubuk boş, maddeler soluk) → `ChromeEkranCekici` artık `prefers-reduced-motion: reduce` öykünür: huni animasyonları kapatır, AI son ve durağan hâli görür (G3'teki ara kare sorununun genel çözümü). Otomatik testi yok — gerçek çekimle ölçüldü.
+- Var olan bekçi doğru bir şeyi yakaladı: "her animasyon tek `prefers-reduced-motion: no-preference` bloğunda" — yeni animasyonlar o bloğa taşındı.
+- Testler: `HuniTest` (geçerli + sözleşme, 7 hata durumu, tür hata metni) · `bilesenler.test.tsx` (çizim, varsayılanlar, `Adim`, CSS) · `Huni.test.tsx` (süre dolunca geçer + bildirir, geri dönünce iptal, ekran çekiminde geçmez — gerçek zamanlayıcı, sure 2) · `donustur.test.ts` · `PanelAiTest`/`McpTest` (istemler).
+- Kırma 10/10: K1 tür tanınmaz · K2 süre sınırı yok · K3 madde sınırı yok · K4 varsayılan süre · K5 `Adim` çizmez · K6 zamanlayıcı ilerlemez · K7 iptal yok (geri dönünce yine geçer) · K8 ekran çekiminde geçer · K9 dönüştürücü ödemeye eşler · K10 çubuk animasyonu yok.
+- Gerçek sistem (taslak yedeklendi → **aynen geri yüklendi**): ödemeden önce yükleme (3 sn, 3 madde); başsız Chrome'da ekran işareti olmadan **3,04 sn'de** ödeme adımına geçti; çekim (hareket azaltmalı) son hâli gösteriyor.
+- `bin/kontrol` yeşil (313 çekirdek testi).

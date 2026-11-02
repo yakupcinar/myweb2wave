@@ -331,6 +331,15 @@ html:has(> body.huni) {
     .huni [data-gecis] > [data-sira] {
         animation: huni-adim-gir 220ms ease-out;
     }
+    /* Mobil görünüm 4: yükleme çubuğu ve maddeler. */
+    .huni .yukleme-cubuk span {
+        animation: huni-dolum var(--sure) linear both;
+    }
+    .huni .yukleme-maddeler li {
+        animation: huni-madde 300ms ease-out both;
+        animation-delay: calc(var(--sure) * var(--i) / (var(--n) + 1));
+    }
+
     .huni button {
         transition:
             transform 120ms ease-out,
@@ -339,6 +348,45 @@ html:has(> body.huni) {
     }
     .huni button:active:not(:disabled) {
         transform: scale(0.98);
+    }
+}
+/* Mobil görünüm 4: yükleme adımı. Hareket azaltmada çubuk dolu, maddeler
+   görünür (animasyon yok); geçişi yine oynatıcının zamanlayıcısı yapar. */
+.huni .yukleme-cubuk {
+    height: 8px;
+    margin: 24px 0;
+    border-radius: 999px;
+    background: var(--cizgi);
+    overflow: hidden;
+}
+.huni .yukleme-cubuk span {
+    display: block;
+    height: 100%;
+    background: var(--ana);
+    transform-origin: left;
+}
+.huni .yukleme-maddeler {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.huni .yukleme-maddeler li::before {
+    content: "✓";
+    margin-right: 10px;
+    color: var(--ana);
+    font-weight: 750;
+}
+@keyframes huni-dolum {
+    from {
+        transform: scaleX(0);
+    }
+}
+@keyframes huni-madde {
+    from {
+        opacity: 0.25;
+        transform: translateY(4px);
     }
 }
 @keyframes huni-adim-gir {
