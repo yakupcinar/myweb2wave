@@ -22,6 +22,9 @@ final class Tanim
         'fayda' => [1, 120], 'gorselMetni' => [1, 200],
     ];
 
+    /** G5: tanıtım adımında görselin yeri. */
+    public const DUZENLER = ['ust', 'kahraman', 'tamEkran'];
+
     /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
     private const TURLER = [
         'tanitim' => ['baslik', 'metin', 'dugme'],
@@ -117,6 +120,15 @@ final class Tanim
             if ('tanitim' === $tur && \array_key_exists('gorselMetni', $adim)) {
                 $beklenen[] = 'gorselMetni';
                 self::gorselMetni($adim, $yer, $h);
+            }
+            // G5: görselin yeri; kahraman/tamEkran görselsiz anlamsız.
+            if ('tanitim' === $tur && \array_key_exists('duzen', $adim)) {
+                $beklenen[] = 'duzen';
+                if (!\in_array($adim['duzen'], self::DUZENLER, true)) {
+                    $h[] = "{$yer}: duzen: ".implode(', ', self::DUZENLER).' olmalı';
+                } elseif ('ust' !== $adim['duzen'] && !\array_key_exists('gorsel', $adim)) {
+                    $h[] = "{$yer}: duzen {$adim['duzen']} görsel ister";
+                }
             }
             // H5: tanıtım düğmesi de atlayabilir — dallar ortak adımda birleşsin.
             if ('tanitim' === $tur && \array_key_exists('hedef', $adim)) {

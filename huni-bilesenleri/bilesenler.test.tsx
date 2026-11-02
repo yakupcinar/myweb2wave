@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Logo, Paywall, Soru, Tanitim, Yorum } from "./bilesenler";
+import { Adim, Logo, Paywall, Soru, Tanitim, Yorum } from "./bilesenler";
 import css from "./huni.css?raw";
 
 const G = "a".repeat(64);
@@ -194,6 +194,63 @@ describe("D2 — görsel adresi kimlikten", () => {
         expect(html.match(/<img /g)?.length).toBe(1);
         expect(html).toContain(
             `<img class="secenek-gorseli" src="${KOK}/medya/${G}.webp"`,
+        );
+    });
+});
+
+describe("G5 — tanıtım düzeni", () => {
+    const ciz = (duzen?: "ust" | "kahraman" | "tamEkran"): string =>
+        renderToStaticMarkup(
+            <Tanitim
+                baslik="Merhaba"
+                metin="Kısa"
+                dugme="Başla"
+                gorsel={G}
+                duzen={duzen}
+                medyaKoku={KOK}
+            />,
+        );
+    // Bağımsız beklenti (§3): aynı bileşenin iki çıktısını kıyaslamak
+    // ikisi birden "ust" yazsa da eşit kalırdı (K4 ilk denemede tutmadı).
+    it("ust ya da yoksa işaret hiç yok (DOM eskisiyle aynı)", () => {
+        expect(ciz()).not.toContain("data-duzen");
+        expect(ciz("ust")).not.toContain("data-duzen");
+        expect(ciz()).toContain("<section><img");
+    });
+    it("oynatıcının Adim'i düzeni tanımdan aktarır", () => {
+        const html = renderToStaticMarkup(
+            <Adim
+                adim={{
+                    tur: "tanitim",
+                    baslik: "Merhaba",
+                    metin: "Kısa",
+                    dugme: "Başla",
+                    gorsel: G,
+                    duzen: "tamEkran",
+                }}
+                medyaKoku={KOK}
+            />,
+        );
+        expect(html).toContain('<section data-duzen="tamEkran">');
+    });
+    it("kahraman ve tamEkran bölümde işaret olarak", () => {
+        expect(ciz("kahraman")).toMatch(/<section data-duzen="kahraman">/);
+        expect(ciz("tamEkran")).toMatch(/<section data-duzen="tamEkran">/);
+    });
+    it("CSS: kahraman görseli kırpar; tamEkran metni beyaz, karartma sabit", () => {
+        expect(css).toMatch(
+            /section\[data-duzen="kahraman"\] img\.kapak \{[^}]*object-fit: cover/,
+        );
+        expect(css).toMatch(
+            /section\[data-duzen="tamEkran"\] \{[^}]*color: #ffffff/,
+        );
+        expect(css).toMatch(
+            /section\[data-duzen="tamEkran"\]::before \{[^}]*linear-gradient/,
+        );
+        // Ölçülen kusur: düğmenin auto boşluğu başlığı karartmanın zayıf
+        // yerinde bırakıyordu (beyaz görselde 2,58:1) — gorunum-g5.md.
+        expect(css).toMatch(
+            /section\[data-duzen="tamEkran"\] \.eylem \{[^}]*margin-top: 0/,
         );
     });
 });

@@ -58,16 +58,19 @@ export function Tanitim({
     dugme,
     gorsel,
     gorselMetni,
+    duzen = "ust",
     medyaKoku,
     onDugme,
 }: {
     baslik: string;
     metin: string;
     dugme: string;
+    /** G5: görselin yeri; ust (varsayılan) için işaret yok — DOM eskisiyle aynı. */
+    duzen?: "ust" | "kahraman" | "tamEkran" | undefined;
 } & GorselAlani &
     Tiklama): ReactNode {
     return (
-        <section>
+        <section data-duzen={duzen === "ust" ? undefined : duzen}>
             {gorsel ? (
                 <Gorsel
                     id={gorsel}
@@ -319,6 +322,7 @@ export type TanimAdimi =
           dugme: string;
           gorsel?: string;
           gorselMetni?: string;
+          duzen?: "ust" | "kahraman" | "tamEkran";
       }
     | {
           tur: "soru";
@@ -395,6 +399,7 @@ export function Adim({
                     dugme={adim.dugme}
                     gorsel={adim.gorsel}
                     gorselMetni={adim.gorselMetni}
+                    duzen={adim.duzen}
                     medyaKoku={medyaKoku}
                     onDugme={onIleri}
                 />

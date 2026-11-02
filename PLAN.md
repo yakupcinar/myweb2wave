@@ -125,7 +125,7 @@
   - [x] G6 · 2026-10-27, `docs/decisions/gorunum-g6.md`: `tema.kartRengi`; kart varsa okunurluk metin ↔ kart (koyu zemin + açık kart geçerli), zemin sayfa kökünde, yanlarda boşluk; Puck alanı + aynı kurallı uyarı, AI örneği. Kırma 11/11
   - [x] G7 · 2026-10-30, `docs/decisions/gorunum-g7.md`: `baslikBoyu` (kucuk/normal/buyuk), `yogunluk` (sik/normal/ferah), `hizalama` (sol/orta); Puck alanları, AI örnekleri; gerçek düzen farkı %71–88. Kırma 9/9
   - [x] G2 · 2026-10-30, `docs/decisions/gorunum-g2.md`: kullanıcı kararı seçenek 3 — fontlar huniyle birlikte (Fontsource OFL, latin + latin-ext); serif → Lora, yuvarlak → Nunito, yeni modern (Manrope), geometrik (Outfit); KVKK bekçisi (CSS'te dış adres yok), aile başına ≤ 80 KB. Kırma 8/8
-  - [ ] G5 · adım başına görünüm çeşidi (ör. tanıtım: görsel üstte / tam ekran) — boş alanı doldurur; T1 blok kataloğuyla çakışır, sırası orada kararlaştırılır
+  - [x] G5 · 2026-11-02, `docs/decisions/gorunum-g5.md`: tanıtımda `duzen` ust/kahraman/tamEkran (görsel ister), tam ekranda sabit karartma + beyaz metin — beyaz görselde 13,97:1 (ilk sürüm 2,58 → düzeltildi). Kapsam T1'e kadar yalnız tanıtım (Ç77). Kırma 8/8
   - [ ] G4 · düğme biçimi (dolu / çerçeve / hap) + seçenek kartı düzeni (liste / ızgara / görselli) — ölçülen etki düşük; ızgara soru adımında
 - [ ] **YOL HARİTASI — AI asistanı + platform temelleri** (kullanıcı 2026-10-27: "MCP'yi içine göm, prompt iç arayüzde"; araştırma `docs/decisions/ai-asistan-arastirmasi.md`, `web2wave-platform-yapisi.md`). Sıra bağımlılığa göre; her adım `/blok`, ayrı commit:
   - [x] **A0** · araç katmanı `HuniAraclari`: listele, oku, doğrula, taslağa yaz, önizleme; girdi şeması sözleşmedeki `HuniTanimi`'den (elle kopya yok)

@@ -318,6 +318,15 @@
                 "gorselMetni": {
                     "$ref": "#/$defs/GorselMetni"
                 },
+                "duzen": {
+                    "description": "G5: görselin yeri (yoksa ust). kahraman: görsel ekranın üst yarısını kaplar · tamEkran: görsel bütün adımı kaplar, metin altta beyaz, karartmanın üstünde. kahraman ve tamEkran görsel ister",
+                    "type": "string",
+                    "enum": [
+                        "ust",
+                        "kahraman",
+                        "tamEkran"
+                    ]
+                },
                 "baslik": {
                     "type": "string"
                 },

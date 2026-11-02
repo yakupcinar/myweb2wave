@@ -30,6 +30,8 @@ export type TanitimProps = {
     dugme: string;
     gorsel: string;
     gorselMetni: string;
+    /** G5: "ust" tanıma yazılmaz. */
+    duzen: "ust" | "kahraman" | "tamEkran";
     hedef: string;
     ilerlemeGoster: boolean;
 };
@@ -166,6 +168,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             dugme: adim.dugme,
                             gorsel: adim.gorsel ?? "",
                             gorselMetni: adim.gorselMetni ?? "",
+                            duzen: adim.duzen ?? "ust",
                             hedef: adim.hedef ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                         },
@@ -257,6 +260,9 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                             baslik: p.baslik,
                             metin: p.metin,
                             dugme: p.dugme,
+                            ...(p.duzen && p.duzen !== "ust"
+                                ? { duzen: p.duzen }
+                                : {}),
                             ...(p.ilerlemeGoster === false
                                 ? { ilerlemeGoster: false }
                                 : {}),

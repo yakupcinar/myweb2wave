@@ -321,6 +321,21 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("G5 tanıtım düzeni: gidiş-dönüş aynı; ust yazılmaz", () => {
+        const duzenli: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((a, i) =>
+                i === 0 && a.tur === "tanitim"
+                    ? { ...a, gorsel: G1, duzen: "tamEkran" as const }
+                    : a,
+            ),
+        };
+        const veri = tanimdanPuck(duzenli, VARSAYILAN);
+        expect(puckTanim(veri)).toStrictEqual(duzenli);
+        (veri.content[0]!.props as { duzen: string }).duzen = "ust";
+        expect("duzen" in puckTanim(veri).adimlar[0]!).toBe(false);
+    });
+
     it("tema kapatılınca tanımdan çıkar; köşe sayıya çevrilir", () => {
         const veri = tanimdanPuck({ ...temel, tema: VARSAYILAN }, VARSAYILAN);
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);

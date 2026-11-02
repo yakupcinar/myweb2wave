@@ -570,6 +570,16 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     dugme: { type: "text", label: "Düğme" },
                     gorsel: gorselAlani(ortam, "Kapak görseli"),
                     gorselMetni: gorselMetniAlani,
+                    // G5: kahraman/tamEkran görsel ister (kayıtta çekirdek denetler).
+                    duzen: {
+                        type: "radio",
+                        label: "Görsel düzeni",
+                        options: [
+                            { label: "Üstte", value: "ust" },
+                            { label: "Büyük", value: "kahraman" },
+                            { label: "Tam ekran", value: "tamEkran" },
+                        ],
+                    },
                     ilerlemeGoster: ilerlemeAlani,
                     hedef: tanitimHedefAlani,
                 },
@@ -587,10 +597,18 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     dugme: "Devam",
                     gorsel: "",
                     gorselMetni: "",
+                    duzen: "ust",
                     ilerlemeGoster: true,
                     hedef: "",
                 },
-                render: ({ baslik, metin, dugme, gorsel, gorselMetni }) => (
+                render: ({
+                    baslik,
+                    metin,
+                    dugme,
+                    gorsel,
+                    gorselMetni,
+                    duzen,
+                }) => (
                     <div style={kart}>
                         <Tanitim
                             baslik={baslik}
@@ -598,6 +616,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             dugme={dugme}
                             gorsel={gorsel}
                             gorselMetni={gorselMetni}
+                            duzen={duzen}
                             medyaKoku=""
                         />
                     </div>

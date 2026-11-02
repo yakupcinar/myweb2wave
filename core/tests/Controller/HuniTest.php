@@ -162,6 +162,18 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
+    /** G5: tanıtım düzeni; ust görselsiz de geçerli, kahraman/tamEkran görselle. */
+    public function testTanitimDuzeniGecerli(): void
+    {
+        $gorselli = self::ile(0, 'gorsel', str_repeat('c', 64));
+        foreach (['ust', 'kahraman', 'tamEkran'] as $duzen) {
+            $t = $gorselli;
+            $t['adimlar'][0]['duzen'] = $duzen;
+            self::assertSame([], Tanim::hatalar($t, ['monthly']), $duzen);
+        }
+        self::assertSame([], Tanim::hatalar(self::ile(0, 'duzen', 'ust'), ['monthly']));
+    }
+
     public function testLogoGecerliYayindaDonerSozlesmeyeUyar(): void
     {
         $logo = str_repeat('a1', 32);
@@ -263,6 +275,11 @@ final class HuniTest extends WebTestCase
         $uzun['adimlar'][0]['gorselMetni'] = str_repeat('a', 201);
         yield 'uzun görsel metni' => ['1–200 karakter', $uzun];
         yield 'seçenekte görselsiz görsel metni' => ['gorselMetni yalnız gorsel ile', self::ile(1, 'secenekler', [['id' => 'a', 'metin' => 'A', 'gorselMetni' => 'x'], ['id' => 'b', 'metin' => 'B']])];
+        // G5: düzen yalnız tanıtımda, bilinen değer; kahraman/tamEkran görsel ister.
+        yield 'düzen bilinmeyen' => ['duzen: ust, kahraman, tamEkran', self::ile(0, 'duzen', 'yan')];
+        yield 'görselsiz kahraman' => ['duzen kahraman görsel ister', self::ile(0, 'duzen', 'kahraman')];
+        yield 'görselsiz tam ekran' => ['duzen tamEkran görsel ister', self::ile(0, 'duzen', 'tamEkran')];
+        yield 'soruda düzen' => ['adım 2: alanlar tam olarak', self::ile(1, 'duzen', 'ust')];
         // Ç61 (5): isteğe bağlı logo — görsel kimliği.
         yield 'logo geçersiz' => ['logo: görsel kimliği geçersiz', $t + ['logo' => 'logo.png']];
         yield 'logo boş' => ['logo: görsel kimliği geçersiz', $t + ['logo' => '']];

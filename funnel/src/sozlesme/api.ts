@@ -518,6 +518,11 @@ export interface components {
             tur: "tanitim";
             gorsel?: components["schemas"]["GorselKimligi"];
             gorselMetni?: components["schemas"]["GorselMetni"];
+            /**
+             * @description G5: görselin yeri (yoksa ust). kahraman: görsel ekranın üst yarısını kaplar · tamEkran: görsel bütün adımı kaplar, metin altta beyaz, karartmanın üstünde. kahraman ve tamEkran görsel ister
+             * @enum {string}
+             */
+            duzen?: "ust" | "kahraman" | "tamEkran";
             baslik: string;
             metin: string;
             dugme: string;
