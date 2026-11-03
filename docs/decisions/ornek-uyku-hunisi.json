@@ -1,0 +1,131 @@
+{
+  "sayfaBasligi": "Sana özel uyku planı",
+  "tema": {
+    "anaRenk": "#b7a6ff", "arkaPlan": "#0e1330", "metinRengi": "#eef0ff",
+    "yaziTipi": "modern", "kose": 18, "baslikBoyu": "buyuk", "yogunluk": "ferah",
+    "dugmeBicimi": "hap", "hizalama": "orta", "kartRengi": "#1a2148",
+    "zemin": { "tur": "gecis", "ikinciRenk": "#251a4a" }
+  },
+  "adimlar": [
+    { "id": "giris", "tur": "ekran", "duzen": "tamEkran",
+      "gorsel": "3f2d1d625e5e1ac8e3f50e4448341f003194217adab5b322bd917602f116e7e4",
+      "gorselMetni": "Gece karanlığında sakin bir oda",
+      "baslik": "Sabah yorgun uyanmaya son",
+      "bloklar": [
+        { "tur": "metin", "metin": "Birkaç kısa soruyla uyku düzenini tanıyalım, sana uygun bir akşam rutini çıkaralım." },
+        { "tur": "istatistik", "deger": "3 dk", "metin": "testin ortalama süresi" },
+        { "tur": "maddeler", "maddeler": ["Kişisel akşam rutini", "Uykuya dalma teknikleri", "Haftalık ilerleme takibi"] }
+      ],
+      "dugme": "Teste başla" },
+
+    { "id": "yas", "tur": "ekran", "baslik": "Yaş aralığın?", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "metin", "metin": "Uyku ihtiyacı yaşla değişir; planı buna göre ayarlarız." },
+        { "tur": "soru", "secimTuru": "tekli", "duzen": "izgara", "secenekler": [
+          { "id": "18-24", "metin": "18–24", "simge": "🎓" },
+          { "id": "25-34", "metin": "25–34", "simge": "💼" },
+          { "id": "35-44", "metin": "35–44", "simge": "🏡" },
+          { "id": "45", "metin": "45+", "simge": "🌿" } ] } ] },
+
+    { "id": "sorun", "tur": "ekran", "baslik": "Uykunla ilgili en çok neyi yaşıyorsun?", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "soru", "secimTuru": "tekli", "secenekler": [
+          { "id": "dalamama", "metin": "Uykuya dalmakta zorlanıyorum", "simge": "🌀" },
+          { "id": "uyanma", "metin": "Gece sık uyanıyorum", "simge": "⏰" },
+          { "id": "yorgun", "metin": "Uyusam da yorgun kalkıyorum", "simge": "🥱" },
+          { "id": "duzensiz", "metin": "Saatlerim çok düzensiz", "simge": "🔀" } ] } ] },
+
+    { "id": "bilgi", "tur": "ekran", "baslik": "Yalnız değilsin", "ilerlemeGoster": true,
+      "degerler": [
+        { "kosullar": [ { "ozellik": "cevap.sorun", "islem": "icerir", "deger": "uyanma" } ], "alan": "baslik", "deger": "Gece uyanmaları çözülebilir" } ],
+      "bloklar": [
+        { "tur": "metin", "metin": "Uyku sorunları çoğu zaman alışkanlıklardan gelir — ve alışkanlıklar değişebilir.",
+          "degerler": [
+            { "kosullar": [ { "ozellik": "cevap.sorun", "islem": "icerir", "deger": "dalamama" } ], "alan": "metin", "deger": "Uykuya dalmak bir beceri: zihni yavaşlatan küçük bir rutin çoğu zaman yeter." },
+            { "kosullar": [ { "ozellik": "cevap.sorun", "islem": "icerir", "deger": "duzensiz" } ], "alan": "metin", "deger": "Vücut saati düzenle çalışır: her gün aynı saatte kalkmak en güçlü adımdır." } ] },
+        { "tur": "kutu", "simge": "💡", "metin": "Planında bu soruna özel bir bölüm olacak." } ],
+      "dugme": "Devam" },
+
+    { "id": "aliskanlik", "tur": "ekran", "baslik": "Yatmadan önceki saatte neler yapıyorsun?", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "metin", "metin": "Birden fazla seçebilirsin." },
+        { "tur": "soru", "secimTuru": "coklu", "duzen": "izgara", "secenekler": [
+          { "id": "telefon", "metin": "Telefona bakıyorum", "simge": "📱" },
+          { "id": "dizi", "metin": "Dizi izliyorum", "simge": "📺" },
+          { "id": "kafein", "metin": "Kahve / çay içiyorum", "simge": "☕" },
+          { "id": "is", "metin": "İş düşünüyorum", "simge": "💭" },
+          { "id": "spor", "metin": "Spor yapıyorum", "simge": "🏃" },
+          { "id": "okuma", "metin": "Kitap okuyorum", "simge": "📖" } ] } ],
+      "dugme": "Devam",
+      "hedef": "telefon",
+      "yonlendirme": [
+        { "kosullar": [ { "ozellik": "cevap.aliskanlik", "islem": "icerir", "deger": "kafein" } ], "hedef": "kafein" } ] },
+
+    { "id": "kafein", "tur": "ekran", "baslik": "Akşam kafeini hakkında", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "metin", "metin": "Kafeinin etkisi saatlerce sürebilir; akşam içilen bir fincan uykuya dalmayı geciktirebilir." },
+        { "tur": "kutu", "simge": "☕", "metin": "Planında kafeini öğleden sonra bırakmana yardım eden bir adım olacak." } ],
+      "dugme": "Anladım" },
+
+    { "id": "telefon", "tur": "ekran", "baslik": "Ekran ışığı ve uyku", "ilerlemeGoster": true,
+      "goster": { "kosullar": [ { "ozellik": "cevap.aliskanlik", "islem": "icerir", "deger": "telefon" } ] },
+      "bloklar": [
+        { "tur": "baslik", "metin": "Küçük değişiklikler" },
+        { "tur": "maddeler", "maddeler": ["Yatmadan 30 dakika önce gece modunu aç", "Telefonu yataktan uzakta şarj et", "Kaydırmak yerine kısa bir sesli rutin dinle"] } ],
+      "dugme": "Devam" },
+
+    { "id": "zihin", "tur": "ekran", "baslik": "“Yatınca aklım bir türlü susmuyor.”", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "metin", "metin": "Bu cümle sana ne kadar uyuyor?" },
+        { "tur": "soru", "secimTuru": "tekli", "secenekler": [
+          { "id": "evet", "metin": "Tam olarak ben", "simge": "😩", "hedef": "nefes" },
+          { "id": "bazen", "metin": "Bazen", "simge": "🤔", "hedef": "sosyal" },
+          { "id": "hayir", "metin": "Hiç değil", "simge": "😌", "hedef": "sosyal" } ] } ] },
+
+    { "id": "nefes", "tur": "ekran", "baslik": "Zihni yavaşlatmanın kısa yolu", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "metin", "metin": "Yavaş ve uzun nefes vermek bedene “güvendesin” sinyali gönderir. Planında her akşam iki dakikalık bir nefes egzersizi olacak." },
+        { "tur": "kutu", "simge": "🫁", "metin": "4 saniye al, 6 saniye ver — şimdi bir kez dene." } ],
+      "dugme": "Denedim" },
+
+    { "id": "sosyal", "tur": "ekran", "baslik": "Başkaları ne diyor?", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "yorum", "puan": 5, "yazar": "Örnek kullanıcı", "unvan": "Örnek yorum — yayından önce gerçeğiyle değiştir", "metin": "İlk hafta akşam rutinine uydum; artık telefonu yatağa götürmüyorum." },
+        { "tur": "yorum", "puan": 4, "yazar": "Örnek kullanıcı 2", "unvan": "Örnek yorum — yayından önce gerçeğiyle değiştir", "metin": "Nefes egzersizi gece uyandığımda tekrar uykuya dönmeme yardım ediyor." } ],
+      "dugme": "Devam" },
+
+    { "id": "sure", "tur": "ekran", "baslik": "Her akşam rutinine ne kadar zaman ayırabilirsin?", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "soru", "secimTuru": "tekli", "duzen": "izgara", "secenekler": [
+          { "id": "5", "metin": "5 dk", "simge": "⚡" },
+          { "id": "10", "metin": "10 dk", "simge": "🌙" },
+          { "id": "20", "metin": "20 dk", "simge": "🛁" },
+          { "id": "30", "metin": "30 dk+", "simge": "🧘" } ] } ] },
+
+    { "id": "not", "tur": "ekran", "baslik": "Eklemek istediğin bir şey var mı?", "ilerlemeGoster": true,
+      "bloklar": [
+        { "tur": "metin", "metin": "Örneğin vardiyalı çalışıyorsan ya da bebeğin varsa yaz — isteğe bağlı." },
+        { "tur": "soru", "secimTuru": "metin", "yanitZorunlu": false } ],
+      "dugme": "Planımı hazırla" },
+
+    { "id": "hazirlaniyor", "tur": "yukleme", "baslik": "Planın hazırlanıyor", "sure": 6, "ilerlemeGoster": true,
+      "maddeler": ["Cevapların inceleniyor", "Akşam rutinin seçiliyor", "Teknikler sıraya diziliyor", "Haftalık hedeflerin belirleniyor"] },
+
+    { "id": "ozet", "tur": "ekran", "baslik": "Uyku planın hazır",
+      "degerler": [
+        { "kosullar": [ { "ozellik": "cevap.sorun", "islem": "icerir", "deger": "dalamama" } ], "alan": "baslik", "deger": "Daha hızlı uykuya dalma planın hazır" },
+        { "kosullar": [ { "ozellik": "cevap.sorun", "islem": "icerir", "deger": "uyanma" } ], "alan": "baslik", "deger": "Kesintisiz uyku planın hazır" } ],
+      "bloklar": [
+        { "tur": "baslik", "metin": "Planında neler var" },
+        { "tur": "maddeler", "maddeler": ["Sana göre ayarlanmış akşam rutini", "Gün gün küçük alışkanlık hedefleri", "Nefes ve gevşeme egzersizleri"] },
+        { "tur": "kutu", "simge": "✅", "metin": "Rutin her akşam seçtiğin süreye sığacak şekilde hazırlandı.",
+          "degerler": [
+            { "kosullar": [ { "ozellik": "cevap.zihin", "islem": "icerir", "deger": "evet" } ], "alan": "metin", "deger": "Aklın susmadığında kullanacağın iki dakikalık nefes egzersizi de planında." } ] } ],
+      "dugme": "Planımı aç" },
+
+    { "id": "paywall", "tur": "paywall", "plan": "monthly", "baslik": "Kişisel uyku planına başla",
+      "metin": "İstediğin zaman iptal edebilirsin.", "dugme": "Planımı başlat",
+      "faydalar": ["Sana özel akşam rutini", "Uykuya dalma ve gece uyanması teknikleri", "Haftalık ilerleme takibi", "İstediğin zaman iptal"],
+      "sartlar": "https://example.com/sartlar", "gizlilik": "https://example.com/gizlilik", "iptal": "https://example.com/iptal" }
+  ]
+}
