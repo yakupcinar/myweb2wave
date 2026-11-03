@@ -51,9 +51,14 @@ final readonly class CheckoutController
             return new JsonResponse(['error' => 'unknown_plan'], 422);
         }
 
+        // E1: huninin e-posta adımında yazılan adres ödeme sayfasında hazır.
+        $ziyaret = $govde['ziyaret'] ?? null;
+        $eposta = \is_string($ziyaret) ? $this->ziyaretler->eposta($ziyaret, $app) : null;
+
         try {
             $session = $this->stripe->checkout->sessions->create([
                 'mode' => 'subscription',
+                ...(null === $eposta ? [] : ['customer_email' => $eposta]),
                 'line_items' => [['price' => $prices[$plan], 'quantity' => 1]],
                 'success_url' => $this->funnelBaseUrl.'/'.$app.'/basarili?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => $this->funnelBaseUrl.'/'.$app.'/iptal',
@@ -72,7 +77,6 @@ final readonly class CheckoutController
 
         // Atıf (A6): huni ziyaret kimliği gönderdiyse oturum ona bağlanır;
         // yoksa ya da tanınmazsa ödeme yine açılır.
-        $ziyaret = $govde['ziyaret'] ?? null;
         if (\is_string($ziyaret)) {
             $this->ziyaretler->oturumBagla($ziyaret, $app, $session->id, $request->getClientIp(), $request->headers->get('User-Agent'));
         }

@@ -139,6 +139,41 @@ final readonly class Ziyaretler
     }
 
     /**
+     * E1: huninin e-posta adımı — ziyaret başına tek adres, son yazılan
+     * geçerli. Pazarlama izni yalnız $izin ile; işaretsiz yeniden gönderim
+     * izni kaldırır (ziyaretçi kutuyu boşalttı). Ziyaret yoksa false.
+     */
+    public function epostaKaydet(string $ziyaret, string $eposta, bool $izin): bool
+    {
+        if (1 !== preg_match(self::UUID, $ziyaret)) {
+            return false;
+        }
+
+        return 1 === $this->db->executeStatement(
+            'INSERT INTO huni_epostalari (ziyaret_id, eposta, pazarlama_izni_at)
+             SELECT id, :eposta, CASE WHEN :izin THEN now() END FROM huni_ziyaretleri WHERE id = :ziyaret
+             ON CONFLICT (ziyaret_id) DO UPDATE SET eposta = EXCLUDED.eposta, updated_at = now(),
+                pazarlama_izni_at = CASE WHEN :izin THEN coalesce(huni_epostalari.pazarlama_izni_at, now()) END',
+            ['ziyaret' => $ziyaret, 'eposta' => $eposta, 'izin' => $izin],
+            ['izin' => \Doctrine\DBAL\ParameterType::BOOLEAN],
+        );
+    }
+
+    /** E1: ödeme sayfası adresi önceden doldursun — ziyaret bu uygulamanınsa. */
+    public function eposta(string $ziyaret, string $app): ?string
+    {
+        if (1 !== preg_match(self::UUID, $ziyaret)) {
+            return null;
+        }
+        $eposta = $this->db->fetchOne(
+            'SELECT e.eposta FROM huni_epostalari e JOIN huni_ziyaretleri z ON z.id = e.ziyaret_id WHERE z.id = :ziyaret AND z.app = :app',
+            ['ziyaret' => $ziyaret, 'app' => $app],
+        );
+
+        return \is_string($eposta) ? $eposta : null;
+    }
+
+    /**
      * Anket ilerlemesi: adıma ulaşıldı (bir kez sayılır), varsa bu adımın
      * cevabı (son cevap geçerli). Ziyaret yoksa false — hiçbir şey yazılmaz.
      */

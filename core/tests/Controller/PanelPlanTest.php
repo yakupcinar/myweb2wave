@@ -43,7 +43,7 @@ final class PanelPlanTest extends WebTestCase
         $this->db->executeStatement("DELETE FROM planlar WHERE anahtar <> 'monthly'");
         // Fiyat değişimi testi satırı değiştirir; düşerse sonraki koşuya taşınmasın.
         $this->db->executeStatement("UPDATE planlar SET stripe_fiyat = 'price_test_keepchat_aylik' WHERE anahtar = 'monthly'");
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
         $onbellek = static::getContainer()->get('fiyat.onbellegi');
         self::assertInstanceOf(CacheInterface::class, $onbellek);
         self::assertTrue(method_exists($onbellek, 'clear') && $onbellek->clear());

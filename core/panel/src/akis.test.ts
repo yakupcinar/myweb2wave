@@ -422,6 +422,18 @@ describe("ekran düğmesi yuvadaki soruya uyar (Ç84, Ç87)", () => {
             ),
         ).toBeNull();
     });
+    it("E1: e-posta zorunluysa önizlemede kapalı, düğme korunur", () => {
+        const p = props(
+            ekranDugmeleri(
+                veri(
+                    [soru({ secimTuru: "eposta", yanitZorunlu: "zorunlu" })],
+                    "Planımı gönder",
+                ),
+            ),
+        );
+        expect(p["dugme"]).toBe("Planımı gönder");
+        expect(p["onizlemeKapali"]).toBe(true);
+    });
     it("değişiklik yoksa null (bekçi döngüye girmez); sorusuz ekrana dokunulmaz", () => {
         expect(
             ekranDugmeleri(

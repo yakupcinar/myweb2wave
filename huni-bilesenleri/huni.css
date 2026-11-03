@@ -96,7 +96,8 @@ html:has(> body.huni) {
     color: var(--soluk);
     font-size: 15px;
 }
-.huni .serbest-yanit textarea {
+.huni .serbest-yanit textarea,
+.huni .serbest-yanit input[type="email"] {
     box-sizing: border-box;
     width: 100%;
     min-height: 112px;
@@ -108,6 +109,27 @@ html:has(> body.huni) {
     font: inherit;
     resize: vertical;
 }
+/* E1: e-posta alanı tek satır; yükseklik metin alanından gelmesin. */
+.huni .serbest-yanit input[type="email"] {
+    min-height: 0;
+    resize: none;
+}
+.huni .eposta-izni {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: -4px 0 16px;
+    color: var(--soluk);
+    font-size: 14px;
+}
+.huni .eposta-izni input {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 1px 0 0;
+    accent-color: var(--ana);
+}
+.huni .serbest-yanit input[type="email"]:focus,
 .huni .serbest-yanit textarea:focus {
     outline: none;
     border-color: var(--ana);

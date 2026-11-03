@@ -56,7 +56,7 @@ Sözleşme: `contract/openapi.yaml`.
 
 | Grup | Uçlar | Kim çağırır |
 |---|---|---|
-| Huni | `GET /huni/{app}` · `GET /huni/{app}/taslak` · `POST /huni/ziyaretler` · `POST /huni/ziyaretler/{ziyaret}/ilerleme` · `POST·DELETE /huni/ziyaretler/{ziyaret}/izin` · `POST /huni/giris-baglantisi` | huni sayfası (anahtarsız) |
+| Huni | `GET /huni/{app}` · `GET /huni/{app}/taslak` · `POST /huni/ziyaretler` · `POST /huni/ziyaretler/{ziyaret}/ilerleme` · `POST /huni/ziyaretler/{ziyaret}/eposta` (E1) · `POST·DELETE /huni/ziyaretler/{ziyaret}/izin` · `POST /huni/giris-baglantisi` | huni sayfası (anahtarsız) |
 | Ödeme | `POST /checkout/sessions` · `POST /webhooks/stripe` | huni · Stripe |
 | Uygulama | `POST /apps/{app}/baglama/kod` · `POST /apps/{app}/baglama/dogrula` · `POST /apps/{app}/giris/kullan` · `GET /apps/{app}/kullanicilar/{kullanici}/hak` | mobil uygulama sunucusu (uygulama anahtarı) |
 | Panel API | `/panel/api/rapor` · `/panel/api/kullanicilar` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/anahtarlar` · `…/{app}/huniler` (+ `/{ad}`, `/{ad}/varsayilan`, `/{ad}/duzenleyici`) · `…/{app}/kurallar` (+ `/{id}`, `/{id}/tasi`) · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` | panel (oturum + CSRF) |

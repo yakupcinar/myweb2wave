@@ -470,6 +470,28 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
                     ],
                     dugme: "Gönder",
                 },
+                // E1: e-posta sorusu izin kutusuyla, ve kutusuz isteğe bağlı.
+                {
+                    id: "eposta",
+                    tur: "ekran",
+                    baslik: "Planını nereye gönderelim?",
+                    bloklar: [
+                        {
+                            tur: "soru",
+                            secimTuru: "eposta",
+                            yanitZorunlu: true,
+                            izinMetni: "İpuçları gönderilebilir.",
+                        },
+                    ],
+                    dugme: "Gönder",
+                },
+                {
+                    id: "eposta2",
+                    tur: "ekran",
+                    baslik: "E-posta",
+                    bloklar: [{ tur: "soru", secimTuru: "eposta" }],
+                    dugme: "Devam",
+                },
                 ...temel.adimlar.slice(-1),
             ],
         };

@@ -34,6 +34,7 @@
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
+| E-posta adımı (E1) | ✅ 454 çekirdek testi, kırma 19/20 (K16 kodu kaldırttı), gerçek Stripe oturumunda customer_email; gerçek ziyaretle tarayıcı yürüyüşü bekliyor (Ç98) | `docs/decisions/e1-eposta-adimi.md` |
 | Fiyat kataloğu (M1a) | ✅ 437 çekirdek testi, kırma 15/15, gerçek Stripe test API; panel tarayıcıda bekliyor (Ç96) | `docs/decisions/m1a-fiyat-katalogu.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
@@ -172,6 +173,7 @@
   - [x] S6 · paketleri kaldır, yeniden ölç
 
 - [ ] **YOL HARİTASI — para ve büyüme modülleri** (kullanıcı 2026-11-03: "quiz builder bitti, web2wave'in diğer özelliklerini sırayla planla"; gerekçe, kapsam dışı liste ve dış girdiler `docs/decisions/web2wave-platform-yapisi.md` § Ek 2026-11-03). **Sıra onaylandı — `pre-setup.md` A14** (2026-11-03). Her biri `/blok`:
+  - [x] E1 · e-posta adımı (kullanıcı 2026-11-03: "önce e-posta, sonra M1b"; Ç97 (1)) — 2026-11-03, `docs/decisions/e1-eposta-adimi.md`: `secimTuru: eposta` + izin kutusu, ayrı uç/tablo, ödeme sayfası adresle, izinsiz adres 90 gün. Kırma 19/20. Açık Ç98, Ç99
   - [ ] M1 · fiyat kataloğu — üç blok:
     - [x] M1a · 2026-11-03, `docs/decisions/m1a-fiyat-katalogu.md`: `planlar` tablosu, panel → Planlar (Stripe'ta ürün + fiyat; fiyat değişimi yeni fiyat), ödeme/huni/Puck/AI katalogdan, ortam değişkeni → `app:plan-ice-aktar`. Gerçek Stripe test API. Kırma 15/15 (K11 testi buldu). Açık Ç96
     - [ ] M1b · teklifler: kartlı deneme + ücretli giriş dönemi + ilk dönem indirimi

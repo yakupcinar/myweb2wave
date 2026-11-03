@@ -60,7 +60,21 @@ export type YanitEtkilesimi = {
     onSecim?: ((sira: number) => void) | undefined;
     onSecenekDegistir?: ((sira: number) => void) | undefined;
     onMetinDegistir?: ((metin: string) => void) | undefined;
+    /** E1: e-posta sorusunun pazarlama izni kutusu. */
+    izinVar?: boolean | undefined;
+    onIzinDegistir?: ((izin: boolean) => void) | undefined;
 };
+type SecimTuru = "tekli" | "coklu" | "metin" | "eposta";
+
+/**
+ * E1: düğmeyi açan biçim denetimi — çekirdek ayrıca FILTER_VALIDATE_EMAIL
+ * ile denetler; bu yalnız apaçık yazım hatasını (boşluk, @'siz) yakalar.
+ */
+export function epostaGecerli(eposta: string): boolean {
+    return (
+        eposta.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eposta.trim())
+    );
+}
 type SoruSecenegi = { metin: string; simge?: string | undefined } & Omit<
     GorselAlani,
     "medyaKoku"
@@ -71,6 +85,7 @@ function Yanit({
     secenekler = [],
     secimTuru = "tekli",
     yanitZorunlu = false,
+    izinMetni,
     cevapMetni = "",
     secili = [],
     duzen = "liste",
@@ -78,13 +93,50 @@ function Yanit({
     onSecim,
     onSecenekDegistir,
     onMetinDegistir,
+    izinVar = false,
+    onIzinDegistir,
 }: {
     secenekler?: SoruSecenegi[] | undefined;
-    secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+    secimTuru?: SecimTuru | undefined;
     yanitZorunlu?: boolean | undefined;
+    izinMetni?: string | undefined;
     duzen?: "liste" | "izgara" | undefined;
     medyaKoku: string;
 } & YanitEtkilesimi): ReactNode {
+    if (secimTuru === "eposta")
+        return (
+            <>
+                <label className="serbest-yanit">
+                    E-posta adresiniz{yanitZorunlu ? "" : " (isteğe bağlı)"}
+                    <input
+                        type="email"
+                        aria-label="E-posta adresiniz"
+                        autoComplete="email"
+                        inputMode="email"
+                        required={yanitZorunlu}
+                        maxLength={254}
+                        value={cevapMetni}
+                        readOnly={!onMetinDegistir}
+                        onChange={(e) =>
+                            onMetinDegistir?.(e.currentTarget.value)
+                        }
+                    />
+                </label>
+                {izinMetni ? (
+                    <label className="eposta-izni">
+                        <input
+                            type="checkbox"
+                            checked={izinVar}
+                            readOnly={!onIzinDegistir}
+                            onChange={(e) =>
+                                onIzinDegistir?.(e.currentTarget.checked)
+                            }
+                        />
+                        <span>{izinMetni}</span>
+                    </label>
+                ) : null}
+            </>
+        );
     return secimTuru === "metin" ? (
         <label className="serbest-yanit">
             Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
@@ -286,9 +338,10 @@ export type EkranBlogu =
     | { tur: "kutu"; metin: string; simge?: string | undefined }
     | {
           tur: "soru";
-          secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+          secimTuru?: SecimTuru | undefined;
           duzen?: "liste" | "izgara" | undefined;
           yanitZorunlu?: boolean | undefined;
+          izinMetni?: string | undefined;
           secenekler?: SoruSecenegi[] | undefined;
       };
 
@@ -310,6 +363,7 @@ export function Blok({
                     secenekler={blok.secenekler}
                     secimTuru={blok.secimTuru}
                     yanitZorunlu={blok.yanitZorunlu}
+                    izinMetni={blok.izinMetni}
                     duzen={blok.duzen}
                     medyaKoku={medyaKoku}
                     {...yanit}
@@ -496,6 +550,8 @@ export function Adim({
     onCokluDevam,
     cevapMetni,
     onMetinDegistir,
+    izinVar,
+    onIzinDegistir,
     odeme = {},
 }: {
     adim: TanimAdimi;
@@ -507,6 +563,8 @@ export function Adim({
     onCokluDevam?: (() => void) | undefined;
     cevapMetni?: string | undefined;
     onMetinDegistir?: ((metin: string) => void) | undefined;
+    izinVar?: boolean | undefined;
+    onIzinDegistir?: ((izin: boolean) => void) | undefined;
     odeme?: {
         onDugme?: () => void;
         kapali?: boolean;
@@ -556,15 +614,23 @@ export function Adim({
                         onSecim,
                         onSecenekDegistir,
                         onMetinDegistir,
+                        izinVar,
+                        onIzinDegistir,
                     }}
                     kapali={
                         (tur === "coklu" && !secili?.length) ||
                         (tur === "metin" &&
                             !!soru?.yanitZorunlu &&
-                            !cevapMetni?.trim())
+                            !cevapMetni?.trim()) ||
+                        // E1: zorunluysa geçerli adres; isteğe bağlıda boş
+                        // geçer ama yazılmış bozuk adres geçmez.
+                        (tur === "eposta" &&
+                            (cevapMetni?.trim()
+                                ? !epostaGecerli(cevapMetni)
+                                : !!soru?.yanitZorunlu))
                     }
                     onDugme={
-                        tur === "coklu" || tur === "metin"
+                        tur === "coklu" || tur === "metin" || tur === "eposta"
                             ? onCokluDevam
                             : onIleri
                     }

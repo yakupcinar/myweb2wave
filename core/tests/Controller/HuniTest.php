@@ -28,7 +28,7 @@ final class HuniTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, medya');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
@@ -334,6 +334,8 @@ final class HuniTest extends WebTestCase
             self::ekran([['tur' => 'metin', 'metin' => 'Kimle?'], ['tur' => 'soru', 'secenekler' => $sec, 'duzen' => 'izgara'], ['tur' => 'kutu', 'metin' => 'Gizli kalır.']], ['id' => 'tek', 'dugme' => null]),
             self::ekran([['tur' => 'soru', 'secimTuru' => 'coklu', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]]], ['id' => 'cok', 'hedef' => 'paywall']),
             self::ekran([['tur' => 'soru', 'secimTuru' => 'metin', 'yanitZorunlu' => true]], ['id' => 'yazi']),
+            // E1: e-posta sorusu, izin kutusuyla.
+            self::ekran([['tur' => 'soru', 'secimTuru' => 'eposta', 'yanitZorunlu' => true, 'izinMetni' => 'İpuçları ve teklifler gönderilebilir.']], ['id' => 'eposta']),
         ]);
         self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
         // Seçenek görseli de bu uygulamaya yüklenmiş olmalı.
@@ -589,7 +591,17 @@ final class HuniTest extends WebTestCase
         yield 'soru bloğu seçeneksiz' => ['blok 1: alanlar tam olarak', $ekr([['tur' => 'soru']], ['dugme' => null])];
         yield 'soru bloğu tekli zorunlu' => ['yanitZorunlu yalnız serbest yanıt', $ekr([$tekli + ['yanitZorunlu' => true]], ['dugme' => null])];
         yield 'soru bloğu serbest düzen' => ['duzen yalnız seçmeli soruda', $ekr([['tur' => 'soru', 'secimTuru' => 'metin', 'duzen' => 'izgara']])];
-        yield 'soru bloğu biçim' => ['blok 1: secimTuru tekli, coklu ya da metin', $ekr([$tekli + ['secimTuru' => 'iki']])];
+        yield 'soru bloğu biçim' => ['blok 1: secimTuru tekli, coklu, metin ya da eposta', $ekr([$tekli + ['secimTuru' => 'iki']])];
+        // E1: e-posta sorusu serbest yanıt ailesinde; izin kutusu yalnız onda.
+        $eposta = ['tur' => 'soru', 'secimTuru' => 'eposta'];
+        yield 'e-posta sorusunda seçenek' => ['blok 1: alanlar tam olarak', $ekr([$eposta + ['secenekler' => $iki]])];
+        yield 'e-posta sorusunda düzen' => ['duzen yalnız seçmeli soruda', $ekr([$eposta + ['duzen' => 'izgara']])];
+        yield 'e-posta sorusu düğmesiz' => ['dugme olmalı', $ekr([$eposta], ['dugme' => null])];
+        yield 'izin metni serbest yanıtta' => ['blok 1: izinMetni yalnız eposta sorusunda', $ekr([['tur' => 'soru', 'secimTuru' => 'metin', 'izinMetni' => 'x']])];
+        yield 'izin metni uzun' => ['blok 1 izinMetni: 1–200 karakter', $ekr([$eposta + ['izinMetni' => str_repeat('a', 201)]])];
+        yield 'izin metni boş' => ['blok 1 izinMetni: 1–200 karakter', $ekr([$eposta + ['izinMetni' => ' ']])];
+        $epostaKosulu = self::blok(['secimTuru' => 'eposta', 'secenekler' => null], ['dugme' => 'Devam', 'yonlendirme' => [['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'var']], 'hedef' => 'paywall']]]);
+        yield 'e-posta cevabı koşulda' => ['koşul 1: cevap.soru1 e-posta sorusu; e-posta cevabı koşulda kullanılmaz', $epostaKosulu];
         // Mobil görünüm 4: yükleme adımı.
         $yuk = static function (array $ek): array {
             $t = self::tanim('X');
@@ -606,7 +618,7 @@ final class HuniTest extends WebTestCase
         yield 'yükleme düğme' => ['adım 3', $yuk(['dugme' => 'Devam'])];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
-        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu ya da metin olmalı', self::blok(['secimTuru' => 'belirsiz'])];
+        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu, metin ya da eposta olmalı', self::blok(['secimTuru' => 'belirsiz'])];
         yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'baslik', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];

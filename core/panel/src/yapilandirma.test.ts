@@ -107,18 +107,29 @@ describe("adım menüsü (T1c)", () => {
     // Ç91: koşullu değerlerde özellik seçenekleri — sunucunun listesi + ekranın
     // ÖNCEKİ ekranlarının cevapları; blokta ekran Puck'ın "parent"ından.
     describe("Ç91: koşullu değer özellikleri", () => {
-        const soruEkrani = (id: string, kimlik: string) => ({
+        const soruEkrani = (
+            id: string,
+            kimlik: string,
+            secimTuru?: string,
+        ) => ({
             type: "Ekran",
             props: {
                 id,
                 kimlik,
-                bloklar: [{ type: "SoruBlogu", props: { id: `${id}-s` } }],
+                bloklar: [
+                    {
+                        type: "SoruBlogu",
+                        props: { id: `${id}-s`, secimTuru },
+                    },
+                ],
             },
         });
+        // E1: aradaki e-posta ekranının cevabı hiçbir listede yok.
         const appState = {
             data: {
                 content: [
                     soruEkrani("E1", "kiminle"),
+                    soruEkrani("Ep", "eposta", "eposta"),
                     soruEkrani("E2", "cihaz"),
                     soruEkrani("E3", "son"),
                 ],

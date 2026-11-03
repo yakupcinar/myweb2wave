@@ -117,8 +117,10 @@ export type KutuBloguProps = {
 /** T1b: soru bloğunun yanıt alanları (soru metni ekranın başlığı). */
 export type SoruBloguProps = {
     secenekler: SecenekProps[];
-    secimTuru: "tekli" | "coklu" | "metin";
+    secimTuru: "tekli" | "coklu" | "metin" | "eposta";
     yanitZorunlu: "istege_bagli" | "zorunlu";
+    /** E1: yalnız e-postada; boş dize = kutu yok. */
+    izinMetni: string;
     /** G4: "liste" tanıma yazılmaz; serbest yanıtta yok sayılır. */
     duzen: "liste" | "izgara";
 };
@@ -311,6 +313,7 @@ function bloktanPuckYalin(b: EkranBlogu, id: string) {
                     yanitZorunlu: b.yanitZorunlu
                         ? ("zorunlu" as const)
                         : ("istege_bagli" as const),
+                    izinMetni: b.izinMetni ?? "",
                     secenekler: (b.secenekler ?? []).map(secenektenPuck),
                 },
             };
@@ -344,10 +347,22 @@ function yanitAlanlari(p: SoruBloguProps) {
                       : {}),
               }
             : {}),
-        ...(p.secimTuru !== "metin" && p.duzen === "izgara"
+        // E1: e-posta serbest yanıt gibi; izin kutusu metni varsa.
+        ...(p.secimTuru === "eposta"
+            ? {
+                  secimTuru: "eposta" as const,
+                  ...(p.yanitZorunlu === "zorunlu"
+                      ? { yanitZorunlu: true }
+                      : {}),
+                  ...(p.izinMetni?.trim() ? { izinMetni: p.izinMetni } : {}),
+              }
+            : {}),
+        ...(p.secimTuru !== "metin" &&
+        p.secimTuru !== "eposta" &&
+        p.duzen === "izgara"
             ? { duzen: "izgara" as const }
             : {}),
-        ...(p.secimTuru === "metin"
+        ...(p.secimTuru === "metin" || p.secimTuru === "eposta"
             ? {}
             : {
                   secenekler: (p.secenekler ?? []).map((s) => {

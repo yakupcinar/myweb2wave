@@ -230,6 +230,20 @@ describe("önizleme = huni: soru bloklu ekran", () => {
         expect(huni).toContain(' disabled="">Gönder');
         expect(puck).toBe(huni.replace(' disabled=""', ""));
     });
+    it("E1 e-posta: aynı DOM (isteğe bağlı, kapalı değil); izin kutusu iki yolda da", () => {
+        const [puck, huni] = ciz({
+            id: "eposta",
+            tur: "ekran",
+            baslik: "Planını nereye gönderelim?",
+            bloklar: [
+                { tur: "soru", secimTuru: "eposta", izinMetni: "İpuçları." },
+            ],
+            dugme: "Gönder",
+        });
+        expect(puck).toBe(huni);
+        expect(huni).toContain('type="email"');
+        expect(huni).toContain('type="checkbox"');
+    });
 });
 
 describe("önizleme = huni: tema", () => {

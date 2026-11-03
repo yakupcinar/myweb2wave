@@ -250,11 +250,19 @@ export function ozellikSecenekleri(
         // -1 ile slice "sondan biri hariç hepsi" verirdi (Ç91 testinde ölçüldü).
         ...(sira < 0 ? [] : icerik)
             .slice(0, buEkranDahil ? sira + 1 : sira)
+            // E1: e-posta cevabı koşul özelliği değil (çekirdek reddeder).
             .filter(
                 (o) =>
                     Array.isArray(o.props["bloklar"]) &&
-                    (o.props["bloklar"] as { type: string }[]).some(
-                        (b) => b.type === "SoruBlogu",
+                    (
+                        o.props["bloklar"] as {
+                            type: string;
+                            props?: { secimTuru?: string };
+                        }[]
+                    ).some(
+                        (b) =>
+                            b.type === "SoruBlogu" &&
+                            b.props?.secimTuru !== "eposta",
                     ),
             )
             .map((o) => ({
@@ -424,15 +432,21 @@ function soruAlanlari(ortam: Ortam) {
                 { label: "Tek seçim", value: "tekli" },
                 { label: "Çoklu seçim", value: "coklu" },
                 { label: "Serbest yanıt", value: "metin" },
+                { label: "E-posta", value: "eposta" },
             ],
         },
         yanitZorunlu: {
             type: "radio",
-            label: "Serbest yanıt zorunluluğu",
+            label: "Yanıt zorunluluğu",
             options: [
                 { label: "İsteğe bağlı", value: "istege_bagli" },
                 { label: "Zorunlu", value: "zorunlu" },
             ],
+        },
+        // E1: boşsa kutu yok, pazarlama izni alınmaz.
+        izinMetni: {
+            type: "text",
+            label: "Pazarlama izni kutusu (boşsa yok)",
         },
         // G4: kısa ya da görselli seçenekler için iki sütun.
         duzen: {
@@ -835,12 +849,19 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 resolveFields: (veri, { fields, appState }) => {
                     const secenekler = fields.secenekler;
                     if (secenekler.type !== "array") return fields;
-                    const metin = veri.props.secimTuru === "metin";
+                    // E1: e-posta da serbest yanıt ailesinde (seçeneksiz).
+                    const metin =
+                        veri.props.secimTuru === "metin" ||
+                        veri.props.secimTuru === "eposta";
                     return {
                         ...fields,
                         yanitZorunlu: {
                             ...fields.yanitZorunlu,
                             visible: metin,
+                        },
+                        izinMetni: {
+                            ...fields.izinMetni,
+                            visible: veri.props.secimTuru === "eposta",
                         },
                         duzen: { ...fields.duzen, visible: !metin },
                         secenekler: {
@@ -863,16 +884,27 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 defaultProps: {
                     secimTuru: "tekli",
                     yanitZorunlu: "istege_bagli",
+                    izinMetni: "",
                     duzen: "liste",
                     secenekler: VARSAYILAN_SECENEKLER,
                 },
-                render: ({ secimTuru, duzen, yanitZorunlu, secenekler }) => (
+                render: ({
+                    secimTuru,
+                    duzen,
+                    yanitZorunlu,
+                    izinMetni,
+                    secenekler,
+                }) => (
                     <Blok
                         blok={{
                             tur: "soru",
                             secimTuru,
                             duzen,
                             yanitZorunlu: yanitZorunlu === "zorunlu",
+                            izinMetni:
+                                secimTuru === "eposta" && izinMetni?.trim()
+                                    ? izinMetni
+                                    : undefined,
                             secenekler: secenekler ?? [],
                         }}
                         medyaKoku=""

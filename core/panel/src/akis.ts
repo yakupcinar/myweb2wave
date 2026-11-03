@@ -32,7 +32,8 @@ export function ekranDugmeleri(veri: HuniVerisi): HuniVerisi | null {
             tur === "tekli" ? "" : tur && !p.dugme ? "Devam" : p.dugme;
         const kapali =
             tur === "coklu" ||
-            (tur === "metin" && soru?.yanitZorunlu === "zorunlu");
+            ((tur === "metin" || tur === "eposta") &&
+                soru?.yanitZorunlu === "zorunlu");
         if (dugme === p.dugme && kapali === (p.onizlemeKapali ?? false))
             return o;
         degisti = true;

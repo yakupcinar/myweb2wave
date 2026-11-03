@@ -122,6 +122,27 @@ export function ilerlemeBildir(
 }
 
 /**
+ * E1: e-posta adımı — ayrı uç; adres olay listesine (koşullar) ve serbest
+ * yanıtlara girmez. Önizlemede ziyaret yok, gitmez. Hata yutulur: ödeme
+ * sayfası adresi yine kendisi sorar.
+ */
+export function epostaBildir(
+  ziyaretSozu: Promise<string | undefined>,
+  eposta: string,
+  pazarlamaIzni: boolean,
+): void {
+  void ziyaretSozu
+    .then((ziyaret) => {
+      if (!ziyaret) return;
+      return cekirdek.POST("/huni/ziyaretler/{ziyaret}/eposta", {
+        params: { path: { ziyaret } },
+        body: { eposta: eposta.trim(), pazarlamaIzni },
+      });
+    })
+    .catch(() => undefined);
+}
+
+/**
  * Onay şeridinde "Kabul": izin + o anki tıklama kimlikleri. Hata yutulur.
  * Söz istek bitince çözülür: geri alma onu bekler, yoksa önce varan silmeyi
  * geç varan Kabul ezer (Ç58).

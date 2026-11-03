@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/ziyaretler/{ziyaret}/eposta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Huninin e-posta adımı (E1) — adres ödeme sayfasını doldurur; izinliyse yeniden ulaşmaya saklanır */
+        post: operations["recordFunnelEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/huni/ziyaretler/{ziyaret}/izin": {
         parameters: {
             query?: never;
@@ -896,11 +913,13 @@ export interface components {
             /** @enum {string} */
             tur: "soru";
             /** @enum {string} */
-            secimTuru?: "tekli" | "coklu" | "metin";
+            secimTuru?: "tekli" | "coklu" | "metin" | "eposta";
             /** @enum {string} */
             duzen?: "liste" | "izgara";
-            /** @description Yalnız metin */
+            /** @description Yalnız metin ve eposta */
             yanitZorunlu?: boolean;
+            /** @description Yalnız eposta: pazarlama izni kutusunun metni (yoksa kutu yok, izin alınmaz) */
+            izinMetni?: string;
             /** @description Seçmelide zorunlu (2–8), serbest yanıtta yok */
             secenekler?: components["schemas"]["SoruSecenegi"][];
         };
@@ -1186,6 +1205,60 @@ export interface operations {
                     cevap?: components["schemas"]["HuniKimligi"];
                     cevaplar?: components["schemas"]["HuniKimligi"][];
                     cevapMetni?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ziyaret yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description Geçersiz alan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    recordFunnelEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ziyaret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    eposta: string;
+                    /** @description İşaretsiz gönderim önceki izni kaldırır */
+                    pazarlamaIzni?: boolean;
                 };
             };
         };

@@ -24,6 +24,8 @@ final class Tanim
         'fayda' => [1, 120], 'gorselMetni' => [1, 200], 'madde' => [1, 80],
         // T1: blok metinleri.
         'blokMetni' => [1, 1000], 'satir' => [1, 120], 'deger' => [1, 12], 'kutu' => [1, 500],
+        // E1: e-posta sorusunun pazarlama izni kutusu.
+        'izinMetni' => [1, 200],
     ];
 
     /**
@@ -31,7 +33,7 @@ final class Tanim
      * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
      */
     public const EKRAN_YONERGESI = 'İçerik adımı ekrandır (T1c: tanıtım, soru ve yorum adımı yok): baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
-        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin seçimde dugme gönderir). '
+        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin/eposta seçimde dugme gönderir; secimTuru eposta = e-posta alanı, isteğe bağlı izinMetni pazarlama izni kutusunu açar — adres ödeme sayfasını doldurur, koşulda kullanılmaz; en iyi hunilerde kişisel sonuç ve paywall adımından hemen önce). '
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
         .'Koşullu yönlendirme (isteğe bağlı, ekranda): yonlendirme: [{"kosullar": [{"ozellik": "cevap.<bu ya da önceki ekran>", "islem": "icerir", "deger": "<seçenek kimliği>"}], "hedef": "<sonraki adım>"}] — ilk tutan kural kazanır; özellikler utm.source/medium/campaign/content/term, izin.reklam, huni, huni.surum, adim.son, cevap.<adım>; seçmeli cevapta icerir/icermez, diğerlerinde esit/esit_degil, her biri için var/yok; birden çok koşulda "baglac": "herhangi" VEYA yapar. Yalnız kişiselleştirme gerçekten gerekiyorsa kullan (ör. farklı kitleye farklı ekran). '
         .'Koşullu gösterim (isteğe bağlı, ilk ekran dışında): goster: {"kosullar": [...], "baglac"?} — aynı koşul biçimi, cevap yalnız ÖNCEKİ ekranlardan; tutmazsa ekran atlanır, sıradaki adıma geçilir. '
@@ -89,7 +91,7 @@ final class Tanim
         'istatistik' => [['deger' => 'deger', 'metin' => 'satir'], []],
         'kutu' => [['metin' => 'kutu'], ['simge' => null]],
         // T1b: secenekler serbest yanıtta yok, seçmelide zorunlu (aşağıda).
-        'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null]],
+        'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null, 'izinMetni' => 'izinMetni']],
     ];
 
     /** G5: tanıtım adımında görselin yeri. */
@@ -147,7 +149,8 @@ final class Tanim
             }
             foreach ($adim['bloklar'] as $b) {
                 if (\is_array($b) && 'soru' === ($b['tur'] ?? null)) {
-                    $sorular[$id] = [
+                    // E1: e-posta cevabı koşul özelliği değil (null) — adres tanıma yazılmasın.
+                    $sorular[$id] = 'eposta' === ($b['secimTuru'] ?? null) ? null : [
                         'metin' !== ($b['secimTuru'] ?? 'tekli'),
                         array_values(array_filter(array_map(static fn (mixed $s): mixed => \is_array($s) ? ($s['id'] ?? null) : null, \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : []), \is_string(...))),
                     ];
@@ -418,7 +421,8 @@ final class Tanim
             // T3c: koşullu değerler ekranın döngüsünde denetlenir.
             unset($b['degerler']);
             [$zorunlu, $istege] = self::BLOKLAR[$tur];
-            $metinYaniti = 'soru' === $tur && 'metin' === ($b['secimTuru'] ?? 'tekli');
+            // E1: e-posta da serbest yanıt ailesinde (seçeneksiz, düzensiz).
+            $metinYaniti = 'soru' === $tur && \in_array($b['secimTuru'] ?? 'tekli', ['metin', 'eposta'], true);
             if ('soru' === $tur && !$metinYaniti) {
                 $zorunlu = ['secenekler' => null];
             }
@@ -460,8 +464,11 @@ final class Tanim
      */
     private static function soruBlogu(array $b, bool $metinYaniti, array $sira, int $i, string $yer, array &$h): void
     {
-        if (\array_key_exists('secimTuru', $b) && !\in_array($b['secimTuru'], ['tekli', 'coklu', 'metin'], true)) {
-            $h[] = "{$yer}: secimTuru tekli, coklu ya da metin olmalı";
+        if (\array_key_exists('secimTuru', $b) && !\in_array($b['secimTuru'], ['tekli', 'coklu', 'metin', 'eposta'], true)) {
+            $h[] = "{$yer}: secimTuru tekli, coklu, metin ya da eposta olmalı";
+        }
+        if (\array_key_exists('izinMetni', $b) && 'eposta' !== ($b['secimTuru'] ?? null)) {
+            $h[] = "{$yer}: izinMetni yalnız eposta sorusunda kullanılabilir";
         }
         if (\array_key_exists('yanitZorunlu', $b)) {
             if (!$metinYaniti) {
@@ -496,9 +503,9 @@ final class Tanim
      * türüne uygun; seçmelide değer gerçek seçenek (yazım hatası sessizce hiç
      * tutmayan kural olurdu).
      *
-     * @param array<string, int>                       $sira
-     * @param array<string, array{bool, list<string>}> $sorular
-     * @param list<string>                             $h
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
      */
     private static function yonlendirme(mixed $kurallar, array $sira, array $sorular, int $i, string $yer, array &$h): void
     {
@@ -535,11 +542,11 @@ final class Tanim
      * vermek görünmeyen alan açardı) ve değer o alanın kendi kuralına uyar.
      * Gösterimde hesaplanır: cevap yalnız önceki adımlardan.
      *
-     * @param array<mixed>                             $oge
-     * @param array<string, ?string>                   $alanlar alan → metin türü (null: görsel/simge)
-     * @param array<string, int>                       $sira
-     * @param array<string, array{bool, list<string>}> $sorular
-     * @param list<string>                             $h
+     * @param array<mixed>                                  $oge
+     * @param array<string, ?string>                        $alanlar alan → metin türü (null: görsel/simge)
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
      */
     private static function degerler(mixed $kurallar, array $oge, array $alanlar, array $sira, array $sorular, int $i, string $yer, array &$h): void
     {
@@ -574,9 +581,9 @@ final class Tanim
      * T3b: gösterim koşulu ekran çizilmeden önce hesaplanır — cevap yalnız
      * ÖNCEKİ adımlardan; ilk adımda yok (hep gösterilir, geri tuşu sade kalır).
      *
-     * @param array<string, int>                       $sira
-     * @param array<string, array{bool, list<string>}> $sorular
-     * @param list<string>                             $h
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
      */
     private static function goster(mixed $goster, array $sira, array $sorular, int $i, string $yer, array &$h): void
     {
@@ -597,10 +604,10 @@ final class Tanim
     /**
      * T3b/T3c: bağlaç + 1–5 koşul; cevap en çok `$sinir` sıradaki adımdan.
      *
-     * @param array<mixed>                             $grup
-     * @param array<string, int>                       $sira
-     * @param array<string, array{bool, list<string>}> $sorular
-     * @param list<string>                             $h
+     * @param array<mixed>                                  $grup
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
      */
     private static function kosulGrubu(array $grup, array $sira, array $sorular, int $sinir, string $yer, array &$h): void
     {
@@ -619,9 +626,9 @@ final class Tanim
     }
 
     /**
-     * @param array<string, int>                       $sira
-     * @param array<string, array{bool, list<string>}> $sorular
-     * @param list<string>                             $h
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
      */
     private static function kosul(mixed $kosul, array $sira, array $sorular, int $i, string $yer, array &$h): void
     {
@@ -646,12 +653,17 @@ final class Tanim
         $soru = null;
         if ('cevap' === $onek) {
             $adim = substr($ozellik, 6);
-            if (!isset($sira[$adim], $sorular[$adim]) || $sira[$adim] > $i) {
+            if (!isset($sira[$adim]) || !\array_key_exists($adim, $sorular) || $sira[$adim] > $i) {
                 $h[] = "{$yer}: {$ozellik} bu adımda ya da önceki adımlarda sorulmuyor";
 
                 return;
             }
             $soru = $sorular[$adim];
+            if (null === $soru) {
+                $h[] = "{$yer}: {$ozellik} e-posta sorusu; e-posta cevabı koşulda kullanılmaz";
+
+                return;
+            }
         }
         $liste = null !== $soru && $soru[0];
         $islemler = $liste ? self::LISTE_ISLEMLERI : self::DEGER_ISLEMLERI;

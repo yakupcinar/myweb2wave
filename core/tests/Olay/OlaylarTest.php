@@ -29,7 +29,7 @@ final class OlaylarTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, subscriptions CASCADE');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions CASCADE');
         $ziyaretler = self::getContainer()->get(Ziyaretler::class);
         self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
         $this->ziyaretler = $ziyaretler;

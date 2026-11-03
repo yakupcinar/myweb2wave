@@ -28,6 +28,7 @@ import { fiyatMetni } from "../lib/fiyat";
 import { izinOku, izinYaz, type Izin } from "../lib/izin";
 import { temaKaydet } from "../lib/sonuc-tema";
 import {
+  epostaBildir,
   ilerlemeBildir,
   izinBildir,
   izinGeriAl,
@@ -72,7 +73,7 @@ function kisisel(adim: TanimAdimi, o: Ozellikler): TanimAdimi {
 
 function sorusu(adim: TanimAdimi): {
   id: string;
-  secimTuru?: "tekli" | "coklu" | "metin" | undefined;
+  secimTuru?: "tekli" | "coklu" | "metin" | "eposta" | undefined;
   secenekler?: Secenek[] | undefined;
   yanitZorunlu?: boolean | undefined;
 } | null {
@@ -192,6 +193,10 @@ function Oynatici({
     ileri(kural ?? hedef);
   }
   const [serbestYanilar, setSerbestYanilar] = useState<Record<string, string>>(
+    {},
+  );
+  // E1: e-posta sorusunun pazarlama izni kutusu (adım kimliği → işaretli mi).
+  const [epostaIzinleri, setEpostaIzinleri] = useState<Record<string, boolean>>(
     {},
   );
   // H4: geçiş animasyonu yalnız adım DEĞİŞİNCE — ilk adım hemen görünür
@@ -418,8 +423,20 @@ function Oynatici({
                 secili={secili}
                 cevapMetni={cevapMetni}
                 onMetinDegistir={(metin) => {
-                  if (soru?.secimTuru !== "metin") return;
+                  if (
+                    soru?.secimTuru !== "metin" &&
+                    soru?.secimTuru !== "eposta"
+                  )
+                    return;
                   setSerbestYanilar((once) => ({ ...once, [soru.id]: metin }));
+                }}
+                izinVar={soru ? !!epostaIzinleri[soru.id] : false}
+                onIzinDegistir={(izinVar) => {
+                  if (soru?.secimTuru !== "eposta") return;
+                  setEpostaIzinleri((once) => ({
+                    ...once,
+                    [soru.id]: izinVar,
+                  }));
                 }}
                 onSecenekDegistir={(s) => {
                   if (!soru) return;
@@ -438,6 +455,18 @@ function Oynatici({
                 onCokluDevam={() => {
                   if (!soru) return;
                   const hedef = adim.tur === "ekran" ? adim.hedef : undefined;
+                  if (soru.secimTuru === "eposta") {
+                    // Geçersiz/eksik adreste düğme kapalı (Adim); burada
+                    // ikinci denetim ölçülemedi (kırma K16), yazılmadı.
+                    if (cevapMetni.trim())
+                      epostaBildir(
+                        ziyaretSozu,
+                        cevapMetni,
+                        !!epostaIzinleri[soru.id],
+                      );
+                    cik(adim, hedef);
+                    return;
+                  }
                   if (soru.secimTuru === "metin") {
                     if (soru.yanitZorunlu && !cevapMetni.trim()) return;
                     bildir(mevcut, soru.id, undefined, cevapMetni);

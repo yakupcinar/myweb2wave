@@ -185,6 +185,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /huni/ziyaretler/{ziyaret}/eposta:
+    post:
+      operationId: recordFunnelEmail
+      summary: Huninin e-posta adımı (E1) — adres ödeme sayfasını doldurur; izinliyse yeniden ulaşmaya saklanır
+      parameters:
+        - { name: ziyaret, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [eposta]
+              properties:
+                eposta: { type: string, format: email, maxLength: 254 }
+                pazarlamaIzni: { type: boolean, description: "İşaretsiz gönderim önceki izni kaldırır" }
+      responses:
+        "204": { description: Kaydedildi }
+        "400": { description: Gövde JSON değil }
+        "404":
+          description: Ziyaret yok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "422":
+          description: Geçersiz alan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /huni/ziyaretler/{ziyaret}/izin:
     post:
       operationId: grantMeasurementConsent
@@ -1413,9 +1443,14 @@ components:
       required: [tur]
       properties:
         tur: { type: string, enum: [soru] }
-        secimTuru: { type: string, enum: [tekli, coklu, metin] }
+        secimTuru: { type: string, enum: [tekli, coklu, metin, eposta] }
         duzen: { type: string, enum: [liste, izgara] }
-        yanitZorunlu: { type: boolean, description: "Yalnız metin" }
+        yanitZorunlu: { type: boolean, description: "Yalnız metin ve eposta" }
+        izinMetni:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: "Yalnız eposta: pazarlama izni kutusunun metni (yoksa kutu yok, izin alınmaz)"
         secenekler:
           description: "Seçmelide zorunlu (2–8), serbest yanıtta yok"
           type: array

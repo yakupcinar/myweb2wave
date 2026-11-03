@@ -145,6 +145,7 @@ beforeEach(() => {
     if (i.yontem === "GET" && i.yol.startsWith("/huni/keepchat")) return tanim;
     if (i.yol === "/huni/ziyaretler") return ziyaret;
     if (i.yol.endsWith("/ilerleme")) return { durum: 204 };
+    if (i.yol.endsWith("/eposta")) return { durum: 204 };
     if (i.yol === "/checkout/sessions") return odeme;
     return { durum: 404 };
   };
@@ -467,6 +468,119 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
       target: { value: "Bir cevap" },
     });
     expect((devam as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  // E1: e-posta adımı — adres ayrı uca, ilerlemeye (koşullar, serbest
+  // yanıtlar) girmez; izin yalnız kutu işaretlenince.
+  const epostaYayini = (
+    blok: Partial<Extract<Blok, { tur: "soru" }>> = {},
+  ): Yanit => {
+    const temel = yayin();
+    return {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.id === "kiminle"
+              ? kiminle(
+                  [{ tur: "soru", secimTuru: "eposta", ...blok }],
+                  "Planımı gönder",
+                )
+              : adim,
+          ),
+        },
+      },
+    };
+  };
+  const epostalar = (): unknown[] =>
+    istekler("POST", `/huni/ziyaretler/${Z}/eposta`).map((i) => i.govde);
+
+  it("E1: e-posta izin kutusuyla ayrı uca gider, ilerlemede cevap yok", async () => {
+    tanim = epostaYayini({
+      yanitZorunlu: true,
+      izinMetni: "İpuçları gönderilebilir.",
+    });
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "E-posta adresiniz" }),
+      { target: { value: "  ayse@ornek.com " } },
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "İpuçları gönderilebilir." }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Planımı gönder" }));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    await waitFor(() => expect(epostalar()).toHaveLength(1));
+    expect(epostalar()[0]).toEqual({
+      eposta: "ayse@ornek.com",
+      pazarlamaIzni: true,
+    });
+    await waitFor(() => expect(ilerlemeler()).toHaveLength(3));
+    expect(ilerlemeler()[1]).toEqual({ sira: 1, adim: "kiminle" });
+  });
+
+  it("E1: kutu işaretlenmezse izin false; kutu metni yoksa kutu yok", async () => {
+    tanim = epostaYayini({ izinMetni: "İpuçları gönderilebilir." });
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "E-posta adresiniz" }),
+      { target: { value: "ayse@ornek.com" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Planımı gönder" }));
+    await waitFor(() => expect(epostalar()).toHaveLength(1));
+    expect(epostalar()[0]).toEqual({
+      eposta: "ayse@ornek.com",
+      pazarlamaIzni: false,
+    });
+    cleanup();
+    tanim = epostaYayini();
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    expect(screen.queryByRole("checkbox")).toBeNull();
+  });
+
+  it("E1: zorunluda boş ve bozuk adres geçmez; isteğe bağlıda boş geçer, bozuk geçmez", async () => {
+    tanim = epostaYayini({ yanitZorunlu: true });
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    const devam = (): HTMLButtonElement =>
+      screen.getByRole("button", { name: "Planımı gönder" });
+    const alan = (): HTMLElement =>
+      screen.getByRole("textbox", { name: "E-posta adresiniz" });
+    expect(devam().disabled).toBe(true);
+    for (const bozuk of ["ayse", "ayse@ornek", "ay se@ornek.com"]) {
+      fireEvent.change(alan(), { target: { value: bozuk } });
+      expect(devam().disabled).toBe(true);
+      fireEvent.click(devam());
+    }
+    expect(gorunenBaslik()).toBe("Kiminle?");
+    expect(epostalar()).toHaveLength(0);
+
+    cleanup();
+    tanim = epostaYayini();
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    expect(screen.getByText(/E-posta adresiniz \(isteğe bağlı\)/)).toBeTruthy();
+    fireEvent.change(alan(), { target: { value: "ayse@" } });
+    expect(devam().disabled).toBe(true);
+    fireEvent.change(alan(), { target: { value: "" } });
+    fireEvent.click(devam());
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    expect(epostalar()).toHaveLength(0);
   });
 
   it("yorum bloklu ekran alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {

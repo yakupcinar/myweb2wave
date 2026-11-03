@@ -627,7 +627,8 @@
                     "enum": [
                         "tekli",
                         "coklu",
-                        "metin"
+                        "metin",
+                        "eposta"
                     ]
                 },
                 "duzen": {
@@ -639,7 +640,13 @@
                 },
                 "yanitZorunlu": {
                     "type": "boolean",
-                    "description": "Yalnız metin"
+                    "description": "Yalnız metin ve eposta"
+                },
+                "izinMetni": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "Yalnız eposta: pazarlama izni kutusunun metni (yoksa kutu yok, izin alınmaz)"
                 },
                 "secenekler": {
                     "description": "Seçmelide zorunlu (2–8), serbest yanıtta yok",
