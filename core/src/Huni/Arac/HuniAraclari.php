@@ -7,6 +7,7 @@ namespace App\Huni\Arac;
 use App\Huni\Ekran\EkranCekici;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
+use App\Medya\StokGorseller;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -27,6 +28,7 @@ final readonly class HuniAraclari
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private string $funnelBaseUrl,
         private EkranCekici $ekran,
+        private StokGorseller $stok,
     ) {
     }
 
@@ -55,6 +57,16 @@ final readonly class HuniAraclari
                 'surum' => ['type' => 'string', 'enum' => ['taslak', 'yayin'], 'description' => 'taslak (varsayılan) ya da yayındaki sürüm'],
             ], ['huni'])],
         ];
+        // V3b: anahtar yoksa araç hiç gösterilmez (model boşuna denemesin).
+        if ($this->stok->acik()) {
+            $araclar[] = ['name' => 'stok_gorsel_ara', 'description' => 'Pexels\'te fotoğraf arar (İngilizce sorgu daha iyi sonuç verir); sonuçlar kimlik, boyut, fotoğrafçı ve açıklamayla. Kapak, zemin ya da görsel bloğu için; ekranda gerçek görsel yoksa kullan.', 'input_schema' => $nesne([
+                'sorgu' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 100],
+                'yon' => ['type' => 'string', 'enum' => ['portrait', 'landscape', 'square'], 'description' => 'Kapak/tam ekran için portrait'],
+            ], ['sorgu'])];
+            $araclar[] = ['name' => 'stok_gorsel_al', 'description' => 'Pexels görselini bu uygulamanın görsellerine alır (kaynak ve lisans kaydedilir) ve tanımda kullanılacak görsel kimliğini döndürür. Lisans gereği: tanınabilir kişiyi kötü gösterme, ürünü onaylıyormuş gibi (yorum, önce/sonra, "kullanıcımız") kullanma.', 'input_schema' => $nesne([
+                'kimlik' => ['type' => 'integer', 'minimum' => 1, 'description' => 'stok_gorsel_ara sonucundaki kimlik'],
+            ], ['kimlik'])];
+        }
         if (null === $kapsam->huni) {
             $araclar[] = ['name' => 'yeni_huni', 'description' => "'{$kapsam->app}' uygulamasında yeni huni açar (boş şablon ya da kaynak huninin taslağından kopya); taslağı sonra taslak_kaydet ile doldur.", 'input_schema' => $nesne(['huni' => $huni, 'kaynak' => ['description' => 'kopyalanacak huni (isteğe bağlı)'] + $huni], ['huni'])];
         }
@@ -109,11 +121,25 @@ final readonly class HuniAraclari
                 ? AracSonucu::hata("'{$huni}' adında huni yok")
                 : new AracSonucu(['adres' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.'&onizleme='.$this->huniler->onizlemeAnahtari($app, $huni, time())]),
             'ekran_goruntusu' => $this->ekranGoruntusu($app, $huni, $girdi['adim'] ?? null, 'yayin' === ($girdi['surum'] ?? 'taslak')),
+            'stok_gorsel_ara' => $this->stokAra($girdi['sorgu'], $girdi['yon'] ?? null),
+            'stok_gorsel_al' => isset(($s = $this->stok->al($app, $girdi['kimlik']))['id'])
+                ? new AracSonucu(['gorsel' => $s['id'], 'lisans' => StokGorseller::LISANS])
+                : AracSonucu::hata(...$s),
             'yeni_huni' => [] === ($h = $this->huniler->yeniHuni($app, $huni, isset($girdi['kaynak']) && \is_string($girdi['kaynak']) ? $girdi['kaynak'] : null))
                 ? new AracSonucu(['huni' => $huni, 'imza' => $this->huniler->taslakImzasi($app, $huni)])
                 : AracSonucu::hata(...$h),
             default => AracSonucu::hata("bilinmeyen araç: {$ad}"),
         };
+    }
+
+    private function stokAra(mixed $sorgu, mixed $yon): AracSonucu
+    {
+        $s = $this->stok->ara($sorgu, $yon);
+        if (isset($s['sonuclar'])) {
+            return new AracSonucu(['sonuclar' => $s['sonuclar']]);
+        }
+
+        return AracSonucu::hata(...array_values(array_filter($s, \is_string(...))));
     }
 
     /** Ç72: adım önizlemesi (ölçümsüz, ödeme kapalı) tarayıcıda çekilir; adım kimliği önce burada doğrulanır. */

@@ -98,7 +98,7 @@ final class McpTest extends WebTestCase
         $liste = $this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $bearer);
         $araclar = self::yol($liste, 'result', 'tools');
         self::assertIsArray($araclar);
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'yeni_huni'], array_column($araclar, 'name'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al', 'yeni_huni'], array_column($araclar, 'name'));
         $sema = array_column($araclar, 'inputSchema', 'name')['taslak_kaydet'] ?? null;
         self::assertIsArray(self::yol($sema, '$defs', 'HuniTanimi'));
 

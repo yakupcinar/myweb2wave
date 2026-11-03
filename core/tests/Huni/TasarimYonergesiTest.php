@@ -22,6 +22,8 @@ final class TasarimYonergesiTest extends TestCase
             'Görüntüye bakmadığın ekranın nasıl göründüğünü anlatma',
             'son satırında tek kısa kelime', 'tek birincil düğme',
             'hedef sorusu ilk üç ekranda', 'e-posta', 'verilmeyen sayı',
+            // V3b: Pexels lisansı — onay ima edilemez.
+            'stok_gorsel_ara', 'gorselMetni', 'müşteri, yorum sahibi ya da önce/sonra örneği gibi gösterme',
         ] as $parca) {
             self::assertStringContainsString($parca, TasarimYonergesi::METIN);
         }

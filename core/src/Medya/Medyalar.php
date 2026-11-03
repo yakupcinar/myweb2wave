@@ -95,16 +95,27 @@ final readonly class Medyalar
         return ['id' => $id];
     }
 
-    /** @return list<array{id: string, genislik: int, yukseklik: int, ozgun_ad: string}> en yeni önce */
+    /**
+     * V3b: stok görselde kaynak (adres, fotoğrafçı, lisans) da — panel atfı gösterir.
+     *
+     * @return list<array{id: string, genislik: int, yukseklik: int, ozgun_ad: string, kaynak: array{ad: string, adres: string, yazar: string, yazarAdresi: string|null, lisans: string, lisansAdresi: string}|null}> en yeni önce
+     */
     public function listele(string $app): array
     {
+        $dizge = static fn (mixed $d): string => \is_string($d) ? $d : '';
+
         return array_map(static fn (array $s): array => [
-            'id' => \is_string($s['id']) ? $s['id'] : '',
+            'id' => $dizge($s['id']),
             'genislik' => is_numeric($s['genislik']) ? (int) $s['genislik'] : 0,
             'yukseklik' => is_numeric($s['yukseklik']) ? (int) $s['yukseklik'] : 0,
-            'ozgun_ad' => \is_string($s['ozgun_ad']) ? $s['ozgun_ad'] : '',
+            'ozgun_ad' => $dizge($s['ozgun_ad']),
+            'kaynak' => \is_string($s['kaynak']) ? [
+                'ad' => $s['kaynak'], 'adres' => $dizge($s['kaynak_adresi']), 'yazar' => $dizge($s['yazar']),
+                'yazarAdresi' => \is_string($s['yazar_adresi']) ? $s['yazar_adresi'] : null,
+                'lisans' => $dizge($s['lisans']), 'lisansAdresi' => $dizge($s['lisans_adresi']),
+            ] : null,
         ], $this->db->fetchAllAssociative(
-            'SELECT id, genislik, yukseklik, ozgun_ad FROM medya WHERE app = :app ORDER BY created_at DESC, id',
+            'SELECT id, genislik, yukseklik, ozgun_ad, kaynak, kaynak_adresi, yazar, yazar_adresi, lisans, lisans_adresi FROM medya WHERE app = :app ORDER BY created_at DESC, id',
             ['app' => $app],
         ));
     }

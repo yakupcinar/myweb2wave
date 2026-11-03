@@ -166,7 +166,7 @@ final class PanelAiTest extends WebTestCase
         // Açık huni kapsamı: yeni huni yok, yayınlama yok.
         $araclar = self::yol($g, 'tools');
         self::assertIsArray($araclar);
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu'], array_column($araclar, 'name'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al'], array_column($araclar, 'name'));
         $sema = array_column($araclar, 'input_schema', 'name')['taslak_kaydet'] ?? null;
         self::assertFalse(self::yol($sema, 'additionalProperties'), 'JSON Şeması anahtarı camelCase→snake çevrilmedi');
         self::assertIsArray(self::yol($sema, '$defs', 'HuniTanimi'));

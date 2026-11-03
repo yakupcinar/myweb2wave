@@ -56,6 +56,9 @@ final class SahteRevenueCat
         if (str_starts_with($url, 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/')) {
             return (new SahteSimge())($url);
         }
+        if (str_starts_with($url, 'https://api.pexels.com/') || str_starts_with($url, 'https://images.pexels.com/')) {
+            return (new SahtePexels())($url, $secenekler);
+        }
         $basliklar = $secenekler['headers'] ?? [];
         $govde = $secenekler['body'] ?? '';
         self::$istekler[] = [

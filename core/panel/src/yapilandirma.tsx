@@ -111,7 +111,129 @@ type Gorsel = {
     ozgun_ad: string;
     genislik: number;
     yukseklik: number;
+    /** V3b: stok görselin kaynağı ve lisansı (yüklenende null). */
+    kaynak?: {
+        adres: string;
+        yazar: string;
+        lisans: string;
+        lisansAdresi: string;
+    } | null;
 };
+type StokSonucu = {
+    kimlik: number;
+    kucuk: string;
+    yazar: string;
+    aciklama: string;
+};
+
+/**
+ * V3b: Pexels'te ara, tıklananı içe al (çekirdek kaynağı ve lisansı saklar).
+ * Pexels API kuralı: aramanın yanında Pexels'e görünür bağlantı.
+ */
+function StokArama({
+    ortam,
+    onAlindi,
+}: {
+    ortam: Ortam;
+    onAlindi: (id: string) => void;
+}): ReactNode {
+    const [sorgu, setSorgu] = useState("");
+    const [sonuclar, setSonuclar] = useState<StokSonucu[]>([]);
+    const [durum, setDurum] = useState("");
+    const ara = async (): Promise<void> => {
+        setDurum("Aranıyor…");
+        const y = await fetch(
+            `${ortam.medyaAdresi}/stok?${new URLSearchParams({ q: sorgu })}`,
+        );
+        const j = (await y.json()) as {
+            sonuclar?: StokSonucu[];
+            hatalar?: string[];
+        };
+        setSonuclar(j.sonuclar ?? []);
+        setDurum(
+            j.sonuclar
+                ? j.sonuclar.length
+                    ? ""
+                    : "Sonuç yok."
+                : (j.hatalar ?? ["arama başarısız"]).join(" · "),
+        );
+    };
+    const al = async (kimlik: number): Promise<void> => {
+        setDurum("Alınıyor…");
+        const y = await fetch(`${ortam.medyaAdresi}/stok/${kimlik}`, {
+            method: "POST",
+            headers: { "X-CSRF-Token": ortam.jeton },
+        });
+        const j = (await y.json()) as { id?: string; hatalar?: string[] };
+        if (!y.ok || !j.id) {
+            setDurum((j.hatalar ?? ["alınamadı"]).join(" · "));
+            return;
+        }
+        setDurum("");
+        setSonuclar([]);
+        onAlindi(j.id);
+    };
+    return (
+        <div style={{ display: "grid", gap: 6 }}>
+            <form
+                style={{ display: "flex", gap: 6 }}
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    if (sorgu.trim()) void ara();
+                }}
+            >
+                <input
+                    aria-label="Stok fotoğraf ara"
+                    placeholder="Stok fotoğraf ara (İngilizce)"
+                    value={sorgu}
+                    onChange={(e) => setSorgu(e.target.value)}
+                    style={{ flex: 1, minWidth: 0 }}
+                />
+                <button type="submit">Ara</button>
+            </form>
+            {sonuclar.length ? (
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gap: 4,
+                    }}
+                >
+                    {sonuclar.map((s) => (
+                        <button
+                            key={s.kimlik}
+                            type="button"
+                            title={`${s.aciklama} — ${s.yazar}`}
+                            onClick={() => void al(s.kimlik)}
+                            style={{ padding: 0, border: 0, cursor: "pointer" }}
+                        >
+                            <img
+                                src={s.kucuk}
+                                alt={s.aciklama}
+                                style={{
+                                    width: "100%",
+                                    aspectRatio: "1",
+                                    objectFit: "cover",
+                                    borderRadius: 4,
+                                }}
+                            />
+                        </button>
+                    ))}
+                </div>
+            ) : null}
+            {durum ? <small>{durum}</small> : null}
+            <small>
+                <a
+                    href="https://www.pexels.com"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Fotoğraflar: Pexels
+                </a>
+            </small>
+        </div>
+    );
+}
 
 // Puck özel alanın etiketini kendisi çizmiyor (tarayıcıda görüldü) — FieldLabel ile.
 const renkAlani = (label: string): CustomField<string> => ({
@@ -157,6 +279,7 @@ function GorselSecici({
 }): ReactNode {
     const [liste, setListe] = useState<Gorsel[]>([]);
     const [hata, setHata] = useState("");
+    const kaynak = liste.find((g) => g.id === value)?.kaynak;
     const yenile = async (): Promise<void> => {
         const y = await fetch(ortam.medyaAdresi);
         setListe(
@@ -215,6 +338,29 @@ function GorselSecici({
                 }}
             />
             {hata ? <small style={{ color: "#cf222e" }}>{hata}</small> : null}
+            {kaynak ? (
+                <small>
+                    Foto:{" "}
+                    <a href={kaynak.adres} target="_blank" rel="noreferrer">
+                        {kaynak.yazar}
+                    </a>{" "}
+                    ·{" "}
+                    <a
+                        href={kaynak.lisansAdresi}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {kaynak.lisans}
+                    </a>
+                </small>
+            ) : null}
+            <StokArama
+                ortam={ortam}
+                onAlindi={async (id) => {
+                    await yenile();
+                    onChange(id);
+                }}
+            />
         </div>
     );
 }

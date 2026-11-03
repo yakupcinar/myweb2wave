@@ -41,8 +41,8 @@ final class HuniAraclariTest extends KernelTestCase
     {
         $adlar = fn (?string $huni): array => array_column($this->araclarTanimi($huni), 'name');
 
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'yeni_huni'], $adlar(null));
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu'], $adlar('genel'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al', 'yeni_huni'], $adlar(null));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al'], $adlar('genel'));
     }
 
     /** Tanım şeması sözleşmedeki HuniTanimi'nin kendisi (bağımsız okuma: YAML doğrudan) ve her $ref çözülür. */
