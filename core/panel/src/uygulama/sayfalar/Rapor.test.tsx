@@ -15,6 +15,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { components } from "../../sozlesme";
 import { yollar } from "../main";
 
+// P4: grafikler tembel parça — testte önceden yüklenir; ölçülen içerik,
+// parçanın indirilme süresi değil (yavaş koşuda 1 sn'lik bekleme aşıldı).
+await import("./GunlukGrafikler");
+
 type PanelRaporu = components["schemas"]["PanelRaporu"];
 
 const RAPOR: PanelRaporu = {

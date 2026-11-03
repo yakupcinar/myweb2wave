@@ -1,6 +1,13 @@
 // Panel düzeni (B5): solda menü (dar ekranda üstte), sağda sayfa. Bulunulan
 // sayfa NavLink'le işaretlenir (aria-current).
-import { ChartColumn, Filter, KeyRound, LogOut, Sparkles } from "lucide-react";
+import {
+    ChartColumn,
+    Filter,
+    KeyRound,
+    LogOut,
+    Sparkles,
+    Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router";
 import { cn } from "./ui/cn";
@@ -34,6 +41,10 @@ export function Duzen(): ReactNode {
                 <NavLink to="/panel/huniler" className={ogeSinifi}>
                     <Filter aria-hidden="true" className="size-4.5" />
                     Huniler
+                </NavLink>
+                <NavLink to="/panel/kullanicilar" className={ogeSinifi}>
+                    <Users aria-hidden="true" className="size-4.5" />
+                    Kullanıcılar
                 </NavLink>
                 <NavLink to="/panel/baglam" className={ogeSinifi}>
                     <Sparkles aria-hidden="true" className="size-4.5" />

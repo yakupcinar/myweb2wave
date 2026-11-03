@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Panel\Kullanicilar;
 use App\Panel\Rapor;
 use App\Panel\Varliklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,6 +30,7 @@ final class PanelController extends AbstractController
     #[Route('/panel/baglam', name: 'panel_baglam', methods: ['GET'])]
     #[Route('/panel/anahtarlar', name: 'panel_anahtarlar', methods: ['GET'])]
     #[Route('/panel/huniler', name: 'panel_huniler', methods: ['GET'])]
+    #[Route('/panel/kullanicilar', name: 'panel_kullanicilar', methods: ['GET'])]
     public function uygulama(Varliklar $varliklar): Response
     {
         $giris = $varliklar->giris('src/uygulama/main.tsx');
@@ -37,6 +39,17 @@ final class PanelController extends AbstractController
         }
 
         return self::korumali($this->render('panel/uygulama.html.twig', $giris));
+    }
+
+    /** P5: abonelikler (CRM) — e-posta maskeli; arama ve durum süzgeci. */
+    #[Route('/panel/api/kullanicilar', name: 'panel_api_kullanicilar', methods: ['GET'])]
+    public function kullanicilar(Request $request, Kullanicilar $kullanicilar): JsonResponse
+    {
+        return self::korumali(new JsonResponse([
+            'azami' => Kullanicilar::AZAMI_SATIR,
+            'durumlar' => $kullanicilar->durumlar(),
+            'satirlar' => $kullanicilar->liste(mb_substr($request->query->getString('ara'), 0, 100), mb_substr($request->query->getString('durum'), 0, 40)),
+        ]));
     }
 
     /** Rapor verisi (sözleşme: PanelRaporu). */

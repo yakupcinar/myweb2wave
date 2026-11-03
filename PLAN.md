@@ -159,7 +159,7 @@
   - [x] P2 · 2026-11-03, `docs/decisions/p2-huniler-sayfasi.md`: Huniler React sayfası + 6 JSON uç (sözleşme), Twig liste ve form uçları silindi; kabuk jetonu (düzenleyicininki geçmez). Kırma 9/9. Tarayıcı + "AI ile yeni huni": Ç93
   - [x] P3 · 2026-11-03, `docs/decisions/p3-duzenleyici-sayfasi.md`: düzenleyici panel uygulamasının tembel yüklenen sayfası, açılış JSON ucundan; Twig ve ayrı giriş silindi; stil yalıtımı (tarayıcıda önizleme/kabuk farkı 0; yeni tuzak §43). Kırma 6/6. Açık Ç94
   - [x] P4 · 2026-11-03, `docs/decisions/p4-grafik.md`: raporda iki grafik (günlük ziyaret; ödemeye geçti/ödedi), UTC günü, olay deposundan; doğrulanmış renkler, tablo görünümü, tembel parça. Tarayıcıda gerçek veriyle (düzenek). Kırma 5/5
-  - [ ] P5 · Kullanıcılar (CRM): e-posta / UTM / kampanya araması, abonelik durumu (TanStack Table)
+  - [x] P5 · 2026-11-03, `docs/decisions/p5-kullanicilar.md`: Kullanıcılar sayfası — abonelik başına satır, kaynak/kampanya, kişi/bağlantı, maskeli e-posta, arama + durum süzgeci, istemcide sıralama (tablo kitaplığı gerekmedi). Kırma 6/6
 - [x] **Panel görünümü** (kullanıcı 2026-10-27: "basit siyah ekran, web2wave'e bak") — sol menü, özet, huni şeridi, açık/koyu tema. `docs/decisions/panel-gorunum.md`
 
 ## 2. Backlog

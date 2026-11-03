@@ -246,6 +246,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/kullanicilar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** P5 — abonelikler (CRM) — e-posta maskeli; arama e-posta, kaynak ve kampanyada */
+        get: operations["panelApiKullanicilar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar": {
         parameters: {
             query?: never;
@@ -1595,6 +1612,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiKullanicilar: {
+        parameters: {
+            query?: {
+                /** @description E-posta, utm_source ya da utm_campaign içinde (büyük/küçük harf fark etmez) */
+                ara?: string;
+                /** @description Abonelik durumu (active, past_due, canceled…); boş = hepsi */
+                durum?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description En yeni güncellenen önce, en çok azami satır */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        azami: number;
+                        /** @description Süzgeç için veride geçen durumlar */
+                        durumlar: string[];
+                        satirlar: {
+                            abonelik: string;
+                            app: string | null;
+                            durum: string;
+                            /** @description Maskeli (a***@alan.com) — tam adres Stripe'ta */
+                            email: string | null;
+                            /** Format: date-time */
+                            guncelleme: string;
+                            /**
+                             * Format: date-time
+                             * @description Ödemenin tamamlandığı an
+                             */
+                            odeme: string | null;
+                            /** @description Ödemeyi başlatan ziyaret reklamdan mı (Rapor ile aynı tanım) */
+                            reklam: boolean;
+                            kaynak: string | null;
+                            ortam: string | null;
+                            kampanya: string | null;
+                            huni: string | null;
+                            /** @description Kişi kaydı var (e-posta doğrulandı) */
+                            kisi: boolean;
+                            /** @description Kişi bu uygulamaya bağlandı (A10) */
+                            bagli: boolean;
+                        }[];
+                    };
                 };
             };
         };

@@ -13,7 +13,7 @@ use Doctrine\DBAL\Connection;
 final readonly class Rapor
 {
     /** Tıklama kimliği ya da ücretli UTM ortamı varsa reklam; yoksa organik. */
-    private const REKLAM = "(z.fbclid IS NOT NULL OR z.ttclid IS NOT NULL
+    public const REKLAM = "(z.fbclid IS NOT NULL OR z.ttclid IS NOT NULL
         OR lower(z.utm_medium) IN ('cpc', 'ppc', 'paid', 'paid_social', 'paidsocial', 'display', 'ads'))";
 
     public const GUNLER = [7, 30, 90];

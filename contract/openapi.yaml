@@ -451,6 +451,45 @@ paths:
         "422": { description: İstem boş ya da çok uzun, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "429": { description: Saatlik sınır, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "503": { description: AI kapalı (anahtar yok), content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/kullanicilar:
+    get:
+      operationId: panelApiKullanicilar
+      summary: P5 — abonelikler (CRM) — e-posta maskeli; arama e-posta, kaynak ve kampanyada
+      parameters:
+        - { name: ara, in: query, required: false, schema: { type: string, maxLength: 100 }, description: "E-posta, utm_source ya da utm_campaign içinde (büyük/küçük harf fark etmez)" }
+        - { name: durum, in: query, required: false, schema: { type: string, maxLength: 40 }, description: "Abonelik durumu (active, past_due, canceled…); boş = hepsi" }
+      responses:
+        "200":
+          description: En yeni güncellenen önce, en çok azami satır
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [azami, durumlar, satirlar]
+                properties:
+                  azami: { type: integer }
+                  durumlar: { type: array, items: { type: string }, description: Süzgeç için veride geçen durumlar }
+                  satirlar:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli]
+                      properties:
+                        abonelik: { type: string }
+                        app: { type: [string, "null"] }
+                        durum: { type: string }
+                        email: { type: [string, "null"], description: "Maskeli (a***@alan.com) — tam adres Stripe'ta" }
+                        guncelleme: { type: string, format: date-time }
+                        odeme: { type: [string, "null"], format: date-time, description: Ödemenin tamamlandığı an }
+                        reklam: { type: boolean, description: Ödemeyi başlatan ziyaret reklamdan mı (Rapor ile aynı tanım) }
+                        kaynak: { type: [string, "null"] }
+                        ortam: { type: [string, "null"] }
+                        kampanya: { type: [string, "null"] }
+                        huni: { type: [string, "null"] }
+                        kisi: { type: boolean, description: Kişi kaydı var (e-posta doğrulandı) }
+                        bagli: { type: boolean, description: Kişi bu uygulamaya bağlandı (A10) }
   /panel/api/uygulamalar:
     get:
       operationId: panelUygulamalari

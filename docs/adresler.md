@@ -11,13 +11,19 @@ güncellenir (kural 7); güncel liste:
 
 | Adres | Ne | Not |
 |---|---|---|
-| http://localhost:8081 | Çekirdek API + panel (Symfony / FrankenPHP) | sağlık: `/health` |
-| http://localhost:4321 | Huni (ziyaretçi sayfaları, Astro) | compose dışında `huni-dev` kabı |
-| http://localhost:8025 | Mailpit — geliştirmede giden e-postalar | gerçek kutuya gitmez |
-| localhost:5435 | Postgres (`app` / `app`) | |
-| http://localhost:8081/mcp | MCP sunucusu (Claude bağlantısı) | panelden alınan kişisel anahtar ister |
+http://localhost:8081
+| Çekirdek API + panel (Symfony / FrankenPHP) | sağlık: `/health` |
+http://localhost:4321
+| Huni (ziyaretçi sayfaları, Astro) | compose dışında `huni-dev` kabı |
+http://localhost:8025 
+| Mailpit — geliştirmede giden e-postalar | gerçek kutuya gitmez |
+localhost:5435
+| Postgres (`app` / `app`) | |
+http://localhost:8081/mcp
+| MCP sunucusu (Claude bağlantısı) | panelden alınan kişisel anahtar ister |
 | `ekran:9222` (yalnız iç ağ) | Başsız Chrome — AI ekran görüntüsü | dışarıya port yok |
-| http://localhost:8082 | `myweb2wave-ui-preview` kabı (çekirdek imajı, compose dışı) | amacı kayıtlı değil |
+http://localhost:8082 
+| `myweb2wave-ui-preview` kabı (çekirdek imajı, compose dışı) | amacı kayıtlı değil |
 
 ## 2. Panel sayfaları (yönetici girişi gerekir)
 
