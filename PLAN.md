@@ -34,6 +34,7 @@
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
+| Hareket (V4) | ✅ 483 çekirdek testi, kırma 12/12, Chrome'da ölçüldü; Ç101 kapandı | `docs/decisions/v4-hareket.md` |
 | Stok fotoğraf (V3b) | ✅ testlerle (sahte Pexels); gerçek Pexels anahtar bekliyor (Ç103); kırma 12/12 | `docs/decisions/v3b-stok-fotograf.md` |
 | Fluent simgeler (V3a) | ✅ 470 çekirdek testi, kırma 11/11, gerçek GitHub + Chrome + panel önizlemesinde ölçüldü | `docs/decisions/v3a-fluent-simgeler.md` |
 | Hazır temalar (V2) | ✅ 12 tema, panel seçici Puck'ta ölçüldü, kırma 8/8 | `docs/decisions/v2-hazir-temalar.md` |
@@ -184,7 +185,7 @@
     - [ ] V2b · tohum renkten palet (material-color-utilities, Apache-2.0 ölçüldü)
     - [x] V3a · 2026-11-03, `docs/decisions/v3a-fluent-simgeler.md`: Fluent simgeler (renkli 3B / tek renk ana renkte), dizin depoda, görsel ilk istekte sabit commit'ten → WebP. Kırma 11/11. Açık Ç102
     - [x] V3b · 2026-11-03, `docs/decisions/v3b-stok-fotograf.md`: Pexels (lisans + API kuralları ölçüldü; Unsplash/Openverse elendi), içe alma yeniden kodlar, kaynak/fotoğrafçı/lisans saklanır, panel arama + AI araçları. Kırma 12/12. **Gerçek Pexels anahtar bekliyor (Ç103)**
-    - [ ] V4 · hareket katmanı (tema `hareket`, blok girişi, seçim efekti, sayaç)
+    - [x] V4 · 2026-11-03, `docs/decisions/v4-hareket.md`: tema `hareket` (yok/sakin/canlı) — sırayla giriş, seçim efekti, sayan istatistik; Ç101 kapandı. Gerçek tarayıcıda `getAnimations` ile ölçüldü. Kırma 12/12
     - [ ] V5 · yeni bloklar (projeksiyon grafiği, kaydırıcı/ölçek, önce/sonra, Lottie)
     - [ ] V6 · niş şablonları
   - [ ] M1 · fiyat kataloğu — üç blok:

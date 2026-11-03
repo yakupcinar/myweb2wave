@@ -6,10 +6,13 @@
 import {
     createContext,
     useContext,
+    useEffect,
+    useRef,
     useState,
     type CSSProperties,
     type ReactNode,
 } from "react";
+import { sayiParcalari, sayiYaz } from "./sayac";
 import { simgeKodu } from "./simge";
 
 /** E2.3: görsel çekirdekten, kimlikten kurulur (D2); kök huni sayfasında çekirdeğin adresi, panelde "". */
@@ -80,6 +83,59 @@ function Simge({ simge }: { simge: string }): ReactNode {
             <img src={adres} alt="" hidden onError={() => setYok(true)} />
         </span>
     );
+}
+
+/** V4: temanın hareket düzeyi — CSS kökteki data-hareket'i okur, bu bağlam yalnız sayan istatistik için. */
+export const HareketBaglami = createContext<"yok" | "sakin" | "canli">("sakin");
+
+/** V4: sayaç bu ortamda çalışacak mı (canlı, hareket serbest, gözlemci var). */
+function sayacCalisir(hareket: "yok" | "sakin" | "canli"): boolean {
+    return (
+        hareket === "canli" &&
+        typeof IntersectionObserver !== "undefined" &&
+        typeof matchMedia !== "undefined" &&
+        !matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+}
+
+/**
+ * V4: canlı harekette istatistik sayısı ekrana girince sıfırdan sayar.
+ * Sayacak ortamda ilk çizim sıfırdan başlar (son değer önce görünüp geri
+ * sıçrıyordu — tarayıcıda ölçüldü: "3 dk" → "1 dk"); sayılmayacaksa
+ * (statik çizim, ekran görüntüsü, hareketsiz ziyaretçi) son değer.
+ */
+function Sayac({ deger }: { deger: string }): ReactNode {
+    const hareket = useContext(HareketBaglami);
+    const oge = useRef<HTMLElement>(null);
+    const ilk = (): string => {
+        const p = sayiParcalari(deger);
+        return p && sayacCalisir(hareket) ? sayiYaz(p, 0) : deger;
+    };
+    const [metin, setMetin] = useState(ilk);
+    useEffect(() => {
+        setMetin(ilk());
+        const p = sayiParcalari(deger);
+        const el = oge.current;
+        if (!p || !el || !sayacCalisir(hareket)) return;
+        let kare = 0;
+        const gozcu = new IntersectionObserver((girdiler) => {
+            if (!girdiler.some((g) => g.isIntersecting)) return;
+            gozcu.disconnect();
+            const bas = performance.now();
+            const adim = (simdi: number): void => {
+                const t = Math.min(1, (simdi - bas) / 900);
+                setMetin(sayiYaz(p, p.sayi * (1 - (1 - t) ** 3)));
+                if (t < 1) kare = requestAnimationFrame(adim);
+            };
+            kare = requestAnimationFrame(adim);
+        });
+        gozcu.observe(el);
+        return () => {
+            gozcu.disconnect();
+            cancelAnimationFrame(kare);
+        };
+    }, [deger, hareket]);
+    return <strong ref={oge}>{metin}</strong>;
 }
 
 /** Ç61 (5): sayfanın başındaki logo; başlık ürünü zaten adlandırır → alt boş. */
@@ -465,7 +521,7 @@ export function Blok({
         case "istatistik":
             return (
                 <p className="istatistik">
-                    <strong>{blok.deger}</strong> <span>{blok.metin}</span>
+                    <Sayac deger={blok.deger} /> <span>{blok.metin}</span>
                 </p>
             );
         case "kutu":

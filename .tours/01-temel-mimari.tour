@@ -1,0 +1,60 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "01 · Temel Mimari: Bir Huni Nasıl Doğar ve Çizilir?",
+  "description": "Sözleşmeden React editörüne, PHP güvenlik bekçisinden canlı huni oynatıcısına uçtan uca mimari yolculuğu.",
+  "isPrimary": true,
+  "nextTour": "02 · Para ve Abonelik: Stripe'tan Mobil Uygulamaya",
+  "steps": [
+    {
+      "description": "## 🚀 MyWeb2Wave Mimarisine Hoş Geldiniz!\n\nBu tur, sistemin **ana omurgasını** ve bir anketin/huninin nasıl oluşturulup canlıda nasıl gösterildiğini 5 kritik durakta kod satırlarıyla incelemenizi sağlar.\n\n### Kuşbakışı Sistem:\n1. **Sözleşme (`contract/`):** Her şeyin başladığı tek gerçek kaynak (OpenAPI).\n2. **Admin Paneli (`core/panel/`):** Sürükle-bırak Puck editörü (React 19).\n3. **Çekirdek API (`core/`):** Güvenlik bekçisi ve JSONB veritabanı (Symfony 7 + Postgres 18).\n4. **Huni Oynatıcısı (`funnel/`):** Kullanıcının gördüğü <20KB boyutundaki ultra hızlı mobil arayüz (Preact).\n\n*Hadi ilk durak olan Sözleşme dosyasına gidelim! 👉*"
+    },
+    {
+      "file": "contract/openapi.yaml",
+      "line": 1,
+      "selection": {
+        "start": { "line": 1, "character": 1 },
+        "end": { "line": 28, "character": 1 }
+      },
+      "description": "### 📍 1. DURAK: Anayasa (Contract-First)\nBackend (PHP) ve Frontend (TypeScript) **asla bağımsız hareket edemez**; aralarındaki tek anlaşma bu dosyadır.\n\n- Bir huni; `sayfaBasligi`, `tema` ve `adimlar` dizisinden oluşan bir JSON şablonudur.\n- İki tarafın tipleri de doğrudan bu dosyadan otomatik üretilir.\n\n---\n> [▶️ TİPLERİ OTOMATİK ÜRET](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm contract npm run uret\"})\n\n*(Yukarıdaki butona tıklayarak terminalde tipleri yeniden üretebilirsiniz)*"
+    },
+    {
+      "file": "core/panel/src/duzenleyici.tsx",
+      "line": 45,
+      "selection": {
+        "start": { "line": 45, "character": 1 },
+        "end": { "line": 75, "character": 1 }
+      },
+      "description": "### 📍 2. DURAK: Puck Sürükle-Bırak Düzenleyicisi\nAdmin panelindeki huni editörünün kalbi burasıdır.\n\n- Sol menüden bir soru veya puanlama bloğu sürüklediğinizde Puck arka planda standart bir JSON nesnesi üretir.\n- Önizleme ekranı canlı huniyle aynı `huni-bilesenleri` paketini kullandığı için **0 stil ve 0 DOM farkı** vardır.\n- Üstteki 'Kaydet'e bastığınızda bu JSON, `PUT /panel/api/.../taslak` ucuna gönderilir.\n\n---\n> [▶️ DÖNÜŞTÜRÜCÜ TESTİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T panel npm test src/donustur.test.ts\"})"
+    },
+    {
+      "file": "core/src/Huni/Tanim.php",
+      "line": 25,
+      "selection": {
+        "start": { "line": 25, "character": 1 },
+        "end": { "line": 55, "character": 1 }
+      },
+      "description": "### 📍 3. DURAK: Güvenlik Bekçisi (Backend Doğrulama)\nPanelden gelen JSON veritabanına girmeden önce **mutlaka** bu sınıftan onay almak zorundadır.\n\n- `Tanim.php` gelen veriyi satır satır denetler.\n- HTML kodu veya `<script>` enjeksiyonu var mı? (XSS engeli — Tuzak D1)\n- Metin uzunlukları aşılmış mı? Şıklar eksik mi?\n- Temizse onay verir; geçersizse 400 hatasıyla reddeder.\n\n---\n> [▶️ GÜVENLİK TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter HuniTest\"})"
+    },
+    {
+      "file": "core/src/Controller/PanelHuniApiController.php",
+      "line": 45,
+      "selection": {
+        "start": { "line": 45, "character": 1 },
+        "end": { "line": 70, "character": 1 }
+      },
+      "description": "### 📍 4. DURAK: Veritabanına Kayıt (Hibrit JSONB)\nOnaylanan huni taslağı PostgreSQL'e burada mühürlenir.\n\n- Sorular için ayrı ayrı tablolar açmadık; `huniler` tablosundaki tek bir `taslak: jsonb` hücresine bütün anket yapısı tek parça olarak kaydedilir.\n- 'Yayınla' butonuna basıldığında ise bu taslak dondurularak `huni_surumleri` tablosuna (v1, v2...) kopyalanır."
+    },
+    {
+      "file": "funnel/src/oynatici/Huni.tsx",
+      "line": 91,
+      "selection": {
+        "start": { "line": 91, "character": 1 },
+        "end": { "line": 120, "character": 1 }
+      },
+      "description": "### 📍 5. DURAK: Canlı Huni Oynatıcısı (Preact / <20KB)\nMüşteri reklama tıkladığında bu minicik bileşen çalışır.\n\n- Sayfa açılır açılmaz Symfony'den az önce kaydettiğimiz JSON'ı çeker (`GET /huni/keepchat`).\n- Gelen JSON'daki adımları sırayla ekrana çizer (`Ekran`, `Soru`, `Paywall`).\n- `kosul.ts` motoru sayesinde kullanıcının cevaplarına göre sonraki adımı anlık olarak hesaplar veya atlar.\n\n---\n> [▶️ OYNATICI TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T funnel npm test\"})"
+    },
+    {
+      "description": "## 🎉 1. Modül Tamamlandı!\n\nHuninin nasıl tasarlandığını, nasıl doğrulandığını ve mobilde nasıl çizildiğini gördünüz.\n\nŞimdi müşterinin Paywall ekranında 'Satın Al' dedikten sonra paranın nasıl aktığını görmek için **2. Modül: Para ve Abonelik** turuna geçebilirsiniz!"
+    }
+  ]
+}

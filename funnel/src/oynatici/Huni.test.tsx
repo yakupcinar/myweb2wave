@@ -153,6 +153,7 @@ beforeEach(() => {
   window.localStorage.clear(); // izin seçimi testler arasında sızmasın
   window.sessionStorage.clear(); // Ç34: sekmedeki ziyaret de
   document.documentElement.removeAttribute("style");
+  document.body.removeAttribute("data-hareket");
   document.title = "";
 });
 afterEach(() => {
@@ -703,6 +704,29 @@ describe("D7 — tema", () => {
     // Olumsuz iddia: önce effect'in koştuğunu gör (başlık aynı effect'te).
     await waitFor(() => expect(document.title).toBe("KeepChat Pro"));
     expect(document.documentElement.style.getPropertyValue("--ana")).toBe("");
+  });
+
+  it("V4: hareket düzeyi body.huni'de data-hareket; tema yoksa sakin", async () => {
+    kur();
+    await yuklendi();
+    await waitFor(() => expect(document.body.dataset["hareket"]).toBe("sakin"));
+    cleanup();
+    tanim = {
+      durum: 200,
+      govde: yayin({
+        tema: {
+          anaRenk: "#f97316",
+          arkaPlan: "#111111",
+          metinRengi: "#f5f5f5",
+          yaziTipi: "sistem",
+          kose: 12,
+          hareket: "canli",
+        },
+      }),
+    };
+    kur();
+    await yuklendi();
+    await waitFor(() => expect(document.body.dataset["hareket"]).toBe("canli"));
   });
 });
 

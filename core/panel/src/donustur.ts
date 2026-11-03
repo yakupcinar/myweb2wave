@@ -10,7 +10,12 @@ export type Tema = components["schemas"]["HuniTemasi"];
 type Zemin = NonNullable<Tema["zemin"]>;
 type OnAyar<
     K extends
-        "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi" | "simgeler",
+        | "baslikBoyu"
+        | "yogunluk"
+        | "hizalama"
+        | "dugmeBicimi"
+        | "simgeler"
+        | "hareket",
 > = NonNullable<Tema[K]>;
 type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
@@ -154,6 +159,8 @@ export type KokProps = {
     dugmeBicimi: OnAyar<"dugmeBicimi">;
     /** V3a: emoji simgeleri; "cihaz" tanıma yazılmaz. */
     simgeler: OnAyar<"simgeler">;
+    /** V4: hareket düzeyi; "sakin" tanıma yazılmaz. */
+    hareket: OnAyar<"hareket">;
 };
 export type Bilesenler = {
     Yukleme: YuklemeProps;
@@ -501,6 +508,7 @@ export function kokTemasi(
         hizalama: tema.hizalama ?? "sol",
         dugmeBicimi: tema.dugmeBicimi ?? "dolu",
         simgeler: tema.simgeler ?? "cihaz",
+        hareket: tema.hareket ?? "sakin",
     };
 }
 
@@ -710,11 +718,21 @@ export function kokZemini(
 export function kokOnAyarlari(
     k: Pick<
         KokProps,
-        "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi" | "simgeler"
+        | "baslikBoyu"
+        | "yogunluk"
+        | "hizalama"
+        | "dugmeBicimi"
+        | "simgeler"
+        | "hareket"
     >,
 ): Pick<
     Tema,
-    "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi" | "simgeler"
+    | "baslikBoyu"
+    | "yogunluk"
+    | "hizalama"
+    | "dugmeBicimi"
+    | "simgeler"
+    | "hareket"
 > {
     return {
         ...(k.baslikBoyu !== "normal" ? { baslikBoyu: k.baslikBoyu } : {}),
@@ -726,5 +744,6 @@ export function kokOnAyarlari(
         ...(k.simgeler && k.simgeler !== "cihaz"
             ? { simgeler: k.simgeler }
             : {}),
+        ...(k.hareket && k.hareket !== "sakin" ? { hareket: k.hareket } : {}),
     };
 }

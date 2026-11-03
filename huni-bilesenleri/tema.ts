@@ -28,6 +28,8 @@ export type Tema = {
     dugmeBicimi?: "dolu" | "cerceve" | "hap";
     /** V3a: emoji simgeleri; CSS değil, bileşen bağlamı (SimgeBaglami). */
     simgeler?: "cihaz" | "renkli" | "tekrenk";
+    /** V4: kökte data-hareket (CSS) + HareketBaglami (sayan istatistik). */
+    hareket?: "yok" | "sakin" | "canli";
 };
 
 /** G7: ön ayar → CSS değeri (gorunum-g7.md). "normal"/"sol" = huni.css yedeği. */

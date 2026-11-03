@@ -1,0 +1,68 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "02 · Para ve Abonelik: Stripe'tan Mobil Uygulamaya",
+  "description": "Paywall tıklamasından Stripe webhook senkronizasyonuna, past_due toleransından KeepChat hak sorgulamasına para ve yetki akışı.",
+  "nextTour": "03 · Yapay Zeka ve Otomasyon: Claude, CDP ve MCP",
+  "steps": [
+    {
+      "description": "## 💳 2. MODÜL: Para ve Abonelik Akışı\n\nBu turda, bir müşterinin web üzerinden kartıyla abone olmasından, KeepChat mobil uygulamasında kilitlerin açılmasına kadar geçen **finansal ve yetki zincirini** inceliyoruz.\n\n### İzleyeceğimiz Yol:\n1. **Paywall:** Kullanıcı planı seçer ve 'Abone Ol' der.\n2. **Stripe Oturumu:** Backend Stripe'ta ödeme oturumu açar.\n3. **Webhook Güvenliği:** Idempotency (çift çekim engeli) ve `past_due` toleransı.\n4. **Uygulamaya Bağlama:** E-posta ile 6 haneli doğrulama kodu.\n5. **Hak Kontrolü:** Mobil sunucunun yetki sorgulaması.\n\n*Hadi Paywall bileşeninden başlayalım! 👉*"
+    },
+    {
+      "file": "huni-bilesenleri/bilesenler.tsx",
+      "line": 153,
+      "selection": {
+        "start": { "line": 153, "character": 1 },
+        "end": { "line": 185, "character": 1 }
+      },
+      "description": "### 📍 1. DURAK: Paywall Bileşeni (Ödeme Ekranı)\nAnketin sonundaki ödeme adımı burasıdır.\n\n- `fiyat`: Stripe'tan çekilen dinamik fiyat metnidir ('€9,99 / ay').\n- `kapali`: Ödeme isteği uçuşta iken buton kilitlenir; kullanıcının heyecanla 2 kez basıp çift ödeme oturumu açması engellenir (Tuzak D13)."
+    },
+    {
+      "file": "core/src/Controller/CheckoutController.php",
+      "line": 35,
+      "selection": {
+        "start": { "line": 35, "character": 1 },
+        "end": { "line": 65, "character": 1 }
+      },
+      "description": "### 📍 2. DURAK: Stripe Checkout Oturumu Açma\nKullanıcı butona bastığında `POST /checkout/sessions` çağrılır.\n\n- `metadata.app`: Oturuma hangi uygulamanın (örn: 'keepchat') satın alındığı yazılır.\n- Stripe'ın ödeme sayfası adresi üretilir ve kullanıcı o adrese yönlendirilir.\n\n---\n> [▶️ CHECKOUT TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter CheckoutControllerTest\"})"
+    },
+    {
+      "file": "core/src/Billing/SubscriptionSync.php",
+      "line": 38,
+      "selection": {
+        "start": { "line": 38, "character": 1 },
+        "end": { "line": 75, "character": 1 }
+      },
+      "description": "### 📍 3. DURAK: Webhook Senkronizasyonu & Güvenlik\nKullanıcı kartını ödediği an Stripe bizim sunucumuza webhook atar.\n\n- `processed_webhook_events`: Stripe aynı webhook'u tekrar yollarsa veritabanına zarar veremez (Idempotency - R3).\n- `status_event_created`: Ağ gecikmesiyle sırasız gelen eski bir webhook asla daha yeni bir durumu ezemez (Tuzak §13).\n- Oturum ödendiğinde `subscriptions` tablosuna kayıt atılır.\n\n---\n> [▶️ WEBHOOK TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter StripeWebhookControllerTest\"})"
+    },
+    {
+      "file": "core/src/Kimlik/Hak.php",
+      "line": 15,
+      "selection": {
+        "start": { "line": 15, "character": 1 },
+        "end": { "line": 45, "character": 1 }
+      },
+      "description": "### 📍 4. DURAK: 'Past_Due' Toleransı (Grace Period)\nSistemin en kritik iş kuralı buradadır:\n\n`public const ERISIM_VEREN = ['active', 'trialing', 'past_due'];`\n\n- Kart limiti yetersiz olduğunda kullanıcı hemen uygulamadan atılmaz.\n- Stripe kartı 3-4 gün aralıklarla tekrar denerken, `past_due` durumu kullanıcıya erişim vermeye devam eder."
+    },
+    {
+      "file": "core/src/Kimlik/DogrulamaKodu.php",
+      "line": 35,
+      "selection": {
+        "start": { "line": 35, "character": 1 },
+        "end": { "line": 65, "character": 1 }
+      },
+      "description": "### 📍 5. DURAK: Mobil Uygulamaya E-posta ile Bağlama\nMüşteri KeepChat iOS uygulamasını açar ve 'Aboneliğimi Bağla' der.\n\n- Kullanıcı e-postasını yazar; bu sınıf 6 haneli rastgele bir kod üretip postalar.\n- Güvenlik: Kod veritabanında düz metin olarak değil, HMAC-SHA256 özetiyle saklanır. 10 dakika geçerlidir, 5 yanlış denemede kilitlenir.\n\n---\n> [▶️ KİMLİK TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter KimlikControllerTest\"})"
+    },
+    {
+      "file": "core/src/Kimlik/Hak.php",
+      "line": 24,
+      "selection": {
+        "start": { "line": 24, "character": 1 },
+        "end": { "line": 46, "character": 1 }
+      },
+      "description": "### 📍 6. DURAK: Mobil Hak Sorgulaması (Son Kilit Açılışı)\nMüşteri kodu doğruladığında `baglantilar` tablosuna `keepchat + ahmet123 <-> kisi_id` kaydı atılmıştır.\n\n- KeepChat sunucusu gizli anahtarıyla bu metoda sorar: `GET /apps/keepchat/kullanicilar/ahmet123/hak`.\n- Çekirdek tek sorguyla `baglantilar -> kisiler -> subscriptions` yolunu izler ve `{\"aktif\": true}` döner.\n- Mobil uygulamada tüm premium kilitler açılır!"
+    },
+    {
+      "description": "## 🎉 2. Modül Tamamlandı!\n\nParanın ve abonelik haklarının nasıl işlendiğini gördünüz.\n\nSıradaki turda; projenin en ileri teknolojisi olan **Yapay Zeka Huni Asistanı, Headless Chrome ile görsel denetim ve MCP sunucusunu** incelemek için 3. Modüle geçebilirsiniz!"
+    }
+  ]
+}

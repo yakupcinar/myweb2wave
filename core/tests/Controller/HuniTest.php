@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Huni\Huniler;
 use App\Huni\Tanim;
+use App\Huni\Tema;
 use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use DoctrineMigrations\Version20261020180000;
@@ -349,6 +350,17 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
     }
 
+    /** Ç101: açık ana renk ya da temasız (varsayılan 3,19:1) tam ekran kapak geçer; kahramanda kural yok. */
+    public function testTamEkranKapaktaAcikDugmeGecer(): void
+    {
+        $t = self::tanim('X');
+        array_splice($t['adimlar'], 1, 0, [self::ekran([['tur' => 'baslik', 'metin' => 'Başlık']], ['gorsel' => str_repeat('c', 64), 'duzen' => 'tamEkran'])]);
+        self::assertSame([], Tanim::hatalar($t, ['monthly']), 'varsayılan ana renk');
+        self::assertSame([], Tanim::hatalar($t + ['tema' => ['anaRenk' => '#b7a6ff'] + Tema::VARSAYILAN], ['monthly']));
+        $t['adimlar'][1]['duzen'] = 'kahraman';
+        self::assertSame([], Tanim::hatalar($t + ['tema' => ['anaRenk' => '#111827'] + Tema::VARSAYILAN], ['monthly']));
+    }
+
     /** Mobil görünüm 4: yükleme adımı geçerli, yayında sözleşmeye uyar. */
     public function testYuklemeAdimiGecerliYayindaSozlesmeyeUyar(): void
     {
@@ -536,6 +548,15 @@ final class HuniTest extends WebTestCase
         yield 'ekran kapaksız kahraman' => ['adım 2: duzen kahraman görsel ister', $ekr([$b], ['duzen' => 'kahraman'])];
         yield 'ekran düzen bilinmeyen' => ['adım 2: duzen: ust, kahraman, tamEkran', $ekr([$b], $kapak + ['duzen' => 'yan'])];
         yield 'tam ekranda kutu' => ['blok 2: tam ekranda yalnız baslik, metin, maddeler, istatistik', $ekr([$b, ['tur' => 'kutu', 'metin' => 'x']], $kapak + ['duzen' => 'tamEkran'])];
+        // Ç101: dolu düğme kapak karartmasında (siyah–#1f1f1f) en az 3:1.
+        $koyuTema = static function (string $ana): array {
+            $t = self::tanim('X');
+            array_splice($t['adimlar'], 1, 0, [self::ekran([['tur' => 'baslik', 'metin' => 'Başlık']], ['gorsel' => str_repeat('c', 64), 'duzen' => 'tamEkran'])]);
+
+            return $t + ['tema' => ['anaRenk' => $ana] + Tema::VARSAYILAN];
+        };
+        yield 'tam ekran kapakta koyu düğme' => ['adım 2: tam ekran kapakta düğme karartmada görünmüyor (ana renk 1.08:1, en az 3.0:1)', $koyuTema('#111827')];
+        yield 'tam ekran kapakta sınırın altı' => ['ana renk 2.46:1', $koyuTema('#1d4ed8')];
         yield 'tam ekranda soru' => ['blok 1: tam ekranda yalnız', $ekr([['tur' => 'soru', 'secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'b', 'metin' => 'B']]]], $kapak + ['duzen' => 'tamEkran', 'dugme' => null])];
         // T3a: yönlendirme kuralları.
         $kural = static fn (array $kosul, array $ek = []): array => self::yonlendirmeli([array_merge(['kosullar' => [$kosul], 'hedef' => 'paywall'], $ek)]);

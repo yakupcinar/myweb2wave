@@ -35,6 +35,8 @@ final class Tema
         'dugmeBicimi' => ['dolu', 'cerceve', 'hap'],
         // V3a: emoji simgeleri cihazın yazı tipiyle mi, Fluent görseliyle mi.
         'simgeler' => ['cihaz', 'renkli', 'tekrenk'],
+        // V4: hareket düzeyi — sakin bugünkü davranış (varsayılan).
+        'hareket' => ['yok', 'sakin', 'canli'],
     ];
 
     /** G3: görsel zeminde karartma katmanının üst sınırı (%100 görseli tamamen örterdi). */
@@ -49,15 +51,15 @@ final class Tema
         'gece' => ['ad' => 'Gece', 'uygun' => 'uyku, rahatlama, meditasyon', 'tema' => ['anaRenk' => '#b7a6ff', 'arkaPlan' => '#0e1330', 'metinRengi' => '#eef0ff', 'yaziTipi' => 'modern', 'kose' => 20, 'kartRengi' => '#1a2148', 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#251a4a'], 'baslikBoyu' => 'buyuk', 'yogunluk' => 'ferah', 'hizalama' => 'orta', 'dugmeBicimi' => 'hap', 'simgeler' => 'renkli']],
         'nane' => ['ad' => 'Nane', 'uygun' => 'sağlık, sakinlik, beslenme', 'tema' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah', 'dugmeBicimi' => 'hap']],
         'kod' => ['ad' => 'Kod', 'uygun' => 'teknoloji, üretkenlik, yapay zekâ', 'tema' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b'], 'simgeler' => 'tekrenk']],
-        'lacivert' => ['ad' => 'Lacivert', 'uygun' => 'finans, hukuk, ciddi ürünler', 'tema' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff', 'simgeler' => 'tekrenk']],
-        'seker' => ['ad' => 'Şeker', 'uygun' => 'eğlence, çocuk, oyun', 'tema' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta', 'simgeler' => 'renkli']],
+        'lacivert' => ['ad' => 'Lacivert', 'uygun' => 'finans, hukuk, ciddi ürünler', 'tema' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff', 'simgeler' => 'tekrenk', 'hareket' => 'yok']],
+        'seker' => ['ad' => 'Şeker', 'uygun' => 'eğlence, çocuk, oyun', 'tema' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta', 'simgeler' => 'renkli', 'hareket' => 'canli']],
         'lavanta' => ['ad' => 'Lavanta', 'uygun' => 'iletişim, sosyal, ilişki', 'tema' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'modern', 'kose' => 16]],
-        'enerji' => ['ad' => 'Enerji', 'uygun' => 'fitness, spor, kilo verme', 'tema' => ['anaRenk' => '#f97316', 'arkaPlan' => '#111111', 'metinRengi' => '#f5f5f5', 'yaziTipi' => 'geometrik', 'kose' => 12, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1c1917'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta', 'simgeler' => 'renkli']],
+        'enerji' => ['ad' => 'Enerji', 'uygun' => 'fitness, spor, kilo verme', 'tema' => ['anaRenk' => '#f97316', 'arkaPlan' => '#111111', 'metinRengi' => '#f5f5f5', 'yaziTipi' => 'geometrik', 'kose' => 12, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1c1917'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta', 'simgeler' => 'renkli', 'hareket' => 'canli']],
         'kum' => ['ad' => 'Kum', 'uygun' => 'yaşam tarzı, yemek, kişisel gelişim', 'tema' => ['anaRenk' => '#b45309', 'arkaPlan' => '#f5ede1', 'metinRengi' => '#292524', 'yaziTipi' => 'serif', 'kose' => 14, 'kartRengi' => '#fffdf9', 'yogunluk' => 'ferah']],
-        'okyanus' => ['ad' => 'Okyanus', 'uygun' => 'dil öğrenme, eğitim, seyahat', 'tema' => ['anaRenk' => '#0284c7', 'arkaPlan' => '#f0f9ff', 'metinRengi' => '#0c4a6e', 'yaziTipi' => 'yuvarlak', 'kose' => 18, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#e0f2fe'], 'dugmeBicimi' => 'hap', 'simgeler' => 'renkli']],
+        'okyanus' => ['ad' => 'Okyanus', 'uygun' => 'dil öğrenme, eğitim, seyahat', 'tema' => ['anaRenk' => '#0284c7', 'arkaPlan' => '#f0f9ff', 'metinRengi' => '#0c4a6e', 'yaziTipi' => 'yuvarlak', 'kose' => 18, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#e0f2fe'], 'dugmeBicimi' => 'hap', 'simgeler' => 'renkli', 'hareket' => 'canli']],
         'gul' => ['ad' => 'Gül', 'uygun' => 'güzellik, cilt bakımı, kadın sağlığı', 'tema' => ['anaRenk' => '#be185d', 'arkaPlan' => '#fff1f2', 'metinRengi' => '#4c0519', 'yaziTipi' => 'modern', 'kose' => 22, 'kartRengi' => '#ffffff', 'baslikBoyu' => 'buyuk', 'dugmeBicimi' => 'hap']],
         'orman' => ['ad' => 'Orman', 'uygun' => 'zihin sağlığı, doğa, alışkanlık', 'tema' => ['anaRenk' => '#86efac', 'arkaPlan' => '#052e16', 'metinRengi' => '#ecfdf5', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#14532d'], 'yogunluk' => 'ferah', 'hizalama' => 'orta']],
-        'sade' => ['ad' => 'Sade', 'uygun' => 'her ürün; markasız, tarafsız', 'tema' => ['anaRenk' => '#111827', 'arkaPlan' => '#ffffff', 'metinRengi' => '#111827', 'yaziTipi' => 'sistem', 'kose' => 8, 'yogunluk' => 'normal', 'simgeler' => 'tekrenk']],
+        'sade' => ['ad' => 'Sade', 'uygun' => 'her ürün; markasız, tarafsız', 'tema' => ['anaRenk' => '#111827', 'arkaPlan' => '#ffffff', 'metinRengi' => '#111827', 'yaziTipi' => 'sistem', 'kose' => 8, 'yogunluk' => 'normal', 'simgeler' => 'tekrenk', 'hareket' => 'yok']],
     ];
 
     /**
@@ -85,6 +87,8 @@ final class Tema
             .'İsteğe bağlı dugmeBicimi '.implode('|', self::ON_AYARLAR['dugmeBicimi']).' (cerceve: ana renk düğmenin altındaki yüzeyde okunmalı); kısa ya da görselli seçenekli soru bloğunda duzen: izgara (iki sütun). '
             // Mobil görünüm 3 (seçenek alanı)
             .'Seçeneğe simge alanıyla tek emoji koyabilirsin (metne değil; görselli seçenekte değil) — anlam yine metinde olmalı, ekran okuyucu simgeyi okumaz. '
+            // V4
+            .'İsteğe bağlı hareket '.implode('|', self::ON_AYARLAR['hareket']).' (yoksa sakin): yok = adım geçişi ve düğme hareketi yok (ciddi, sade ürün); sakin = kısa kayma; canli = başlık, bloklar ve düğme sırayla girer, seçilen seçenek belirginleşir, istatistikteki sayı sayarak gelir (enerjik, oyunsu ürün). Hareketi azaltmayı seçen ziyaretçiye hiç uygulanmaz. '
             // V3a
             .'İsteğe bağlı simgeler '.implode('|', self::ON_AYARLAR['simgeler']).' (yoksa cihaz): cihaz = telefonun kendi emojisi (her cihazda farklı); renkli = her cihazda aynı 3B görsel (sıcak, oyunsu ürün); tekrenk = ana renkte tek renk çizim (ciddi, markalı ürün). Bayrak gibi bazı emojilerin görseli yok — cihazınki görünür. '
             // G5 (adım alanı, tema değil)

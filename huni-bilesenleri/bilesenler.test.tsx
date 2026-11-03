@@ -711,3 +711,30 @@ describe("çoklu seçim", () => {
         expect(css).toContain('.huni .secenekler button[aria-pressed="true"]');
     });
 });
+
+// V4 + Ç101: tarayıcıda ölçülen davranışların CSS bekçisi (getAnimations ve
+// hesaplanmış renk gerçek tarayıcıda ölçüldü; v4-hareket.md). Vitest CSS'i
+// boşaltır (§32) — huni.css test.css.include ile gerçek metin.
+describe("V4 — hareket düzeyleri CSS'te", () => {
+    const azaltmasiz = css.slice(
+        css.indexOf("@media (prefers-reduced-motion: no-preference)"),
+    );
+    it("canlı: adım geçişinde sırayla giriş ve seçim efekti, yalnız hareket serbestken", () => {
+        expect(azaltmasiz).toContain(
+            '.huni[data-hareket="canli"] [data-gecis] > [data-sira] .bloklar > *',
+        );
+        expect(azaltmasiz).toMatch(
+            /\.huni\[data-hareket="canli"\] \.secenekler button\[aria-pressed="true"\] \{\s*animation: huni-sec/,
+        );
+    });
+    it("yok: adım geçişi kapalı", () => {
+        expect(azaltmasiz).toMatch(
+            /\.huni\[data-hareket="yok"\] \[data-gecis\] > \[data-sira\] \{\s*animation: none;/,
+        );
+    });
+    it("Ç101: tam ekranda istatistik düzenleyicide de beyaz", () => {
+        expect(css).toMatch(
+            /\.huni section\[data-duzen="tamEkran"\] \.bloklar p\.istatistik \{\s*color: rgb\(255 255 255 \/ 0\.9\);/,
+        );
+    });
+});

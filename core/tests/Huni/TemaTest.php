@@ -31,6 +31,10 @@ final class TemaTest extends TestCase
         self::assertGreaterThanOrEqual(1, \count(array_filter(array_column(Tema::HAZIR_TEMALAR, 'tema'), static fn (array $t): bool => isset($t['kartRengi']))));
         // G7: yerleşim ön ayarı kullanan örnekler de (G1: başlık ve boşluk düzeni en çok değiştiriyor).
         self::assertGreaterThanOrEqual(2, \count(array_filter(array_column(Tema::HAZIR_TEMALAR, 'tema'), static fn (array $t): bool => [] !== array_intersect_key($t, Tema::ON_AYARLAR))));
+        // V4: hazır temalar hareket düzeylerini de gösterir (yok ve canlı).
+        $hareketler = array_values(array_unique(array_column(array_column(Tema::HAZIR_TEMALAR, 'tema'), 'hareket')));
+        sort($hareketler);
+        self::assertSame(['canli', 'yok'], $hareketler);
         // V3a: iki Fluent simge biçimi de hazır temalarda gösterilir.
         self::assertSame(['renkli', 'tekrenk'], array_values(array_unique(array_column(array_column(Tema::HAZIR_TEMALAR, 'tema'), 'simgeler'))));
         // G2: huniyle gelen yeni yazı tiplerinden en az biri örnekte.
@@ -40,7 +44,7 @@ final class TemaTest extends TestCase
 
         $y = Tema::aiYonergesi();
         // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
-        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi', 'baslikBoyu', 'yogunluk', 'hizalama', 'tamEkran', 'dugmeBicimi', 'izgara', 'simge'] as $parca) {
+        foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi', 'baslikBoyu', 'yogunluk', 'hizalama', 'tamEkran', 'dugmeBicimi', 'izgara', 'simge', 'hareket yok|sakin|canli', 'Hareketi azaltmayı seçen'] as $parca) {
             self::assertStringContainsString($parca, $y);
         }
         foreach (array_column(Tema::HAZIR_TEMALAR, 'tema') as $tema) {
@@ -154,6 +158,7 @@ final class TemaTest extends TestCase
         yield 'büyük harf hex' => ['#rrggbb', ['anaRenk' => '#2563EB'] + $v];
         yield 'başlık boyu bilinmeyen' => ['tema baslikBoyu: kucuk, normal, buyuk', ['baslikBoyu' => '40px'] + $v];
         yield 'yoğunluk bilinmeyen' => ['tema yogunluk: sik, normal, ferah', ['yogunluk' => 'genis'] + $v];
+        yield 'hareket bilinmeyen' => ['tema hareket: yok, sakin, canli', ['hareket' => 'hizli'] + $v];
         yield 'düğme biçimi bilinmeyen' => ['tema dugmeBicimi: dolu, cerceve, hap', ['dugmeBicimi' => 'golge'] + $v];
         yield 'hizalama bilinmeyen' => ['tema hizalama: sol, orta', ['hizalama' => 'sag'] + $v];
         yield 'kart rengi büyük harf' => ['tema kartRengi: #rrggbb', ['kartRengi' => '#FFFFFF'] + $v];

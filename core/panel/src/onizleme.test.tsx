@@ -261,7 +261,10 @@ describe("önizleme = huni: tema", () => {
         )) {
             expect(cikti).toContain(`${ad}:${deger}`);
         }
-        expect(cikti).toContain('<div class="huni">ICERIK</div>');
+        // V4: hareket düzeyi .huni'nin özniteliği (huni sayfasında body.huni).
+        expect(cikti).toContain(
+            '<div class="huni" data-hareket="sakin">ICERIK</div>',
+        );
     });
     // G3: zemin de aynı değişkenle; dış kutu onu çizer (huni sayfasında body.huni).
     it("zemin geçişi → --zemin değişkeni ve dış kutu onu çizer", () => {

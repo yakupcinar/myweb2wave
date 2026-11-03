@@ -732,6 +732,11 @@ export interface components {
              */
             hizalama?: "sol" | "orta";
             /**
+             * @description V4: hareket düzeyi (yoksa sakin): yok (geçiş ve düğme hareketi yok) · sakin (kısa kayma) · canli (sırayla giriş, seçim efekti, sayan istatistik); hareketi azaltmayı seçen ziyaretçiye hiç uygulanmaz
+             * @enum {string}
+             */
+            hareket?: "yok" | "sakin" | "canli";
+            /**
              * @description V3a: emoji simgeleri (yoksa cihaz): cihaz (telefonun emojisi) · renkli (Fluent 3B, her cihazda aynı) · tekrenk (Fluent tek renk, ana renkte)
              * @enum {string}
              */

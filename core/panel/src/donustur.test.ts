@@ -328,6 +328,37 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("V4: hareket gidiş-dönüş; sakin (varsayılan) yazılmaz", () => {
+        for (const hareket of ["yok", "canli"] as const) {
+            const t: Tanim = {
+                ...soruyla({
+                    tur: "soru",
+                    secenekler: [
+                        { id: "a", metin: "A" },
+                        { id: "b", metin: "B" },
+                    ],
+                }),
+                tema: { ...VARSAYILAN, hareket },
+            };
+            expect(puckTanim(tanimdanPuck(t, VARSAYILAN))).toStrictEqual(t);
+        }
+        const veri = tanimdanPuck(
+            {
+                ...soruyla({
+                    tur: "soru",
+                    secenekler: [
+                        { id: "a", metin: "A" },
+                        { id: "b", metin: "B" },
+                    ],
+                }),
+                tema: { ...VARSAYILAN, hareket: "canli" },
+            },
+            VARSAYILAN,
+        );
+        veri.root.props!.hareket = "sakin";
+        expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
+    });
+
     it("seçenek simgesi gidiş-dönüş; boş simge yazılmaz", () => {
         const simgeli = soruyla({
             tur: "soru",

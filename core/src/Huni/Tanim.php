@@ -94,6 +94,9 @@ final class Tanim
         'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null, 'izinMetni' => 'izinMetni']],
     ];
 
+    /** Ç101: tam ekran kapak karartmasında düğmenin en az kontrastı (WCAG 1.4.11). */
+    public const KAPAK_DUGME_KONTRASTI = 3.0;
+
     /** G5: tanıtım adımında görselin yeri. */
     public const DUZENLER = ['ust', 'kahraman', 'tamEkran'];
 
@@ -131,6 +134,17 @@ final class Tanim
         $adimlar = $tanim['adimlar'];
         if (!\is_array($adimlar) || !array_is_list($adimlar) || \count($adimlar) < 2 || \count($adimlar) > self::AZAMI_ADIM) {
             return [...$h, 'adimlar 2–'.self::AZAMI_ADIM.' öğeli bir liste olmalı'];
+        }
+        // Ç101: tam ekran kapakta düğme her temada dolu ve kapağın %88 siyah
+        // karartmasında durur — arka plan siyah ile #1f1f1f (beyaz fotoğraf)
+        // arası. Ana renk ikisine karşı en az 3:1 (WCAG 1.4.11, metin dışı);
+        // yoksa düğme kaybolur (Sade #111827: 1,08:1, ekranda görüldü).
+        $ana = [] === $h && \is_array($tanim['tema'] ?? null) && \is_string($tanim['tema']['anaRenk'] ?? null) ? $tanim['tema']['anaRenk'] : Tema::VARSAYILAN['anaRenk'];
+        $kapakOrani = min(Tema::kontrast($ana, '#000000'), Tema::kontrast($ana, '#1f1f1f'));
+        foreach ($adimlar as $i => $adim) {
+            if (\is_array($adim) && 'tamEkran' === ($adim['duzen'] ?? null) && \is_string($adim['dugme'] ?? null) && $kapakOrani < self::KAPAK_DUGME_KONTRASTI) {
+                $h[] = \sprintf('adım %d: tam ekran kapakta düğme karartmada görünmüyor (ana renk %.2f:1, en az %.1f:1) — ana rengi açık seç ya da duzen kahraman kullan', $i + 1, $kapakOrani, self::KAPAK_DUGME_KONTRASTI);
+            }
         }
 
         // H5: hedef yalnız İLERİ — kimlik → sıra (döngü olamaz, doğrulama tek geçiş).

@@ -236,7 +236,11 @@ html:has(> body.huni) {
 }
 /* T1c: ekranın blokları (çekirdek tam ekranda yalnız yüzeysiz metin bloklarına
    izin verir); istatistik değeri ve ara başlık tam beyaz kalır (miras). */
-.huni section[data-duzen="tamEkran"] .bloklar p {
+.huni section[data-duzen="tamEkran"] .bloklar p,
+/* Ç101: düzenleyicide istatistiğin kendi kuralı ([data-puck-component] ile)
+   bundan özgüldü — değer temanın metin renginde, koyu temada koyu kapakta
+   okunmuyordu (hesaplanmış renk ölçüldü). */
+.huni section[data-duzen="tamEkran"] .bloklar p.istatistik {
     color: rgb(255 255 255 / 0.9);
 }
 /* Düğme çubuğunun margin-top: auto'su boşluğu başlıkla bölüşüyordu —
@@ -427,6 +431,8 @@ html:has(> body.huni) {
     line-height: 1;
     font-weight: 800;
     letter-spacing: -0.02em;
+    /* V4: sayarken rakam genişliği sabit — metin titremesin. */
+    font-variant-numeric: tabular-nums;
 }
 .huni .bloklar > p.kutu,
 .huni .bloklar > [data-puck-component] > p.kutu {
@@ -505,6 +511,108 @@ html:has(> body.huni) {
     }
     .huni button:active:not(:disabled) {
         transform: scale(0.98);
+    }
+
+    /* V4 canlı (öznitelik .huni'nin kendisinde — panel yalıtımı, §43):
+       adım geçişinde başlık, bloklar ve düğme sırayla girer
+       ([data-gecis] yalnız oynatıcıda ve ilk geçişten sonra — ilk boyama
+       ve Puck önizlemesi hareketsiz). En çok 8 kademe; sonrası birlikte. */
+    .huni[data-hareket="canli"] [data-gecis] > [data-sira] h1,
+    .huni[data-hareket="canli"] [data-gecis] > [data-sira] .bloklar > *,
+    .huni[data-hareket="canli"] [data-gecis] > [data-sira] .eylem {
+        animation: huni-giris 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+        animation-delay: 60ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(1) {
+        animation-delay: 120ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(2) {
+        animation-delay: 180ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(3) {
+        animation-delay: 240ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(4) {
+        animation-delay: 300ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(5) {
+        animation-delay: 360ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(6) {
+        animation-delay: 420ms;
+    }
+    .huni[data-hareket="canli"]
+        [data-gecis]
+        > [data-sira]
+        .bloklar
+        > :nth-child(n + 7) {
+        animation-delay: 480ms;
+    }
+    .huni[data-hareket="canli"] [data-gecis] > [data-sira] .eylem {
+        animation-delay: 300ms;
+    }
+    /* Seçilen seçenek belirginleşir (çoklu seçimde basılı hâl). */
+    .huni[data-hareket="canli"] .secenekler button[aria-pressed="true"] {
+        animation: huni-sec 260ms ease-out;
+    }
+    .huni[data-hareket="canli"]
+        .secenekler
+        button[aria-pressed="true"]
+        .isaret {
+        animation: huni-isaret 260ms cubic-bezier(0.3, 1.6, 0.5, 1);
+    }
+
+    /* V4 yok: adım geçişi, çubuk ve düğme hareketi kapalı; yükleme
+       çubuğu ve maddeleri kalır (bilgi taşıyorlar). */
+    .huni[data-hareket="yok"] [data-gecis] > [data-sira] {
+        animation: none;
+    }
+    .huni[data-hareket="yok"] .ilerleme-dolum,
+    .huni[data-hareket="yok"] button {
+        transition: none;
+    }
+    .huni[data-hareket="yok"] button:active:not(:disabled) {
+        transform: none;
+    }
+}
+@keyframes huni-giris {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+}
+@keyframes huni-sec {
+    50% {
+        transform: scale(1.025);
+    }
+}
+@keyframes huni-isaret {
+    from {
+        transform: scale(0.4);
     }
 }
 /* Mobil görünüm 4: yükleme adımı. Hareket azaltmada çubuk dolu, maddeler
