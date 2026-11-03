@@ -149,8 +149,8 @@
   - [ ] **A5** · MCP sunucusu (B6, HTTP) — araştırma `mcp-sunucu-arastirmasi.md`:
     - [x] A5a · (`mcp-a5a.md`) kişisel API anahtarları (panel, özet saklanır, uygulama kapsamlı) + `/mcp` Streamable HTTP (`mcp/sdk` 0.8.1), Bearer; ölçüm Claude Code + localhost
     - [x] A5+ · (`ai-ekran-goruntusu.md`, Ç72 (1)) `ekran_goruntusu` aracı: başsız Chrome kabı (`ekran`), önizlemede `?adim=`, MCP görüntü içeriği; gerçek MCP HTTP ile ölçüldü. Kalan: Ç72 (2)–(4), Ç73, Ç74
-    - [ ] A5b · herkese açık adres (geçici Cloudflare tüneli onayla / dağıtım) + claude.ai özel bağlayıcı
-    - [ ] A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa
+    - [ ] ⏸ A5b · herkese açık adres + claude.ai özel bağlayıcı — **sunucuya ertelendi** (kullanıcı 2026-11-03: Oracle Cloud sunucusunu sonra kuracak; geçici tünel yerine kalıcı adres dağıtımla gelir. Not: geçici Cloudflare tüneli ve DuckDNS ücretsiz — maliyet engel değil)
+    - [ ] ⏸ A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa; A5b ile birlikte sunucuya ertelendi (2026-11-03)
   - [x] **A6** · 2026-11-03, `docs/decisions/ai-a6-degerlendirme.md`: `app:ai-degerlendir` — 6 brieflik set, geçici huni + panelin döngüsü, geçerli oran/tur/maliyet/süre JSON, --model/--efor. Sahte Claude ile ölçüldü; gerçek koşu Ç95 (anahtar). Kırma 4/4
   - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
