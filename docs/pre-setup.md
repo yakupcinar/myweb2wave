@@ -176,11 +176,27 @@ eşzamanlı kayıt 409 · Ç41 8 sa oturum + uyarı, huni arşivleme · Ç35
 oturumlar DB'de (**2FA şimdilik hayır**) · Ç34 ziyaret hız sınırı +
 sekmede ziyaret sürdürme · Ç23 ölü bağlantı denetimi · Ç14 Dependabot ·
 Ç19/Ç21 fiyat tek kaynak Stripe; **Adaptive Pricing AÇIK kalır**
-(kullanıcı 2026-10-26, ilk "kapat" kararını geri aldı) · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
+(kullanıcı 2026-10-26, ilk "kapat" kararını geri aldı; → **A14 ile kapanır**, 2026-11-03) · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
 testi · Ç20 past_due test clock · Ç54 yöne göre geçiş · Ç50 Preact
 denemesi (ölç, iyiyse geç). Reddedilen / ertelenen: Ç32 bağlama geçmişi.
 Dış girdi bekleyenler (sunucu, anahtarlar, hukuk, KeepChat, anket metni)
 döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
+
+**A14 · Para modülleri: sıra, para birimi, ödeme yeri, teklifler**
+(2026-11-03, kullanıcı; plan `web2wave-platform-yapisi.md` § Ek 2026-11-03).
+- **Sıra M1 → M2 → M3 → M4** (fiyat kataloğu → ayrı paywall → downsell/
+  upsell → deneyler); sonra M5–M11. Reddedilen: önce raporlar (M5), önce
+  iptal/portal (M6).
+- **Para birimi: plan başına elle girilen sabit tutarlar** (Stripe
+  `currency_options`, ziyaretçinin ülkesinden seçilir, ziyaretçi seçmez).
+  ⚠️ A13'teki "Adaptive Pricing AÇIK kalır" kararı **değişti → kapanır**
+  (otomatik çeviri €18,47 gibi tutar verir ve paywall kesin yerel fiyatı
+  gösteremez). Reddedilen: Stripe otomatik çeviri; tek para birimi.
+- **Ödeme paywall sayfasında, gömülü** (Stripe gömülü form + Apple/Google
+  Pay; M2 alt bloğu). Apple Pay alan adı doğrulaması sunucuyla. Reddedilen:
+  Stripe'ın barındırılan sayfasına yönlendirme (bugünkü yol, M2'ye dek kalır).
+- **M1 teklif türleri: üçü de** — kartlı ücretsiz deneme, ücretli giriş
+  dönemi (Subscription Schedule), ilk dönem indirimi (kupon).
 
 ## §B — Yığın
 

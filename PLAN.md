@@ -170,9 +170,9 @@
   - [x] S5 · tarayıcıda eşlik (H3/L20 stil farkı 0, uçtan uca)
   - [x] S6 · paketleri kaldır, yeniden ölç
 
-- [ ] **YOL HARİTASI — para ve büyüme modülleri** (kullanıcı 2026-11-03: "quiz builder bitti, web2wave'in diğer özelliklerini sırayla planla"; gerekçe, kapsam dışı liste ve dış girdiler `docs/decisions/web2wave-platform-yapisi.md` § Ek 2026-11-03). **Sıra öneri — kullanıcı onayı bekliyor.** Her biri `/blok`:
-  - [ ] M1 · fiyat kataloğu: çok plan, giriş teklifi + deneme, çok para birimi
-  - [ ] M2 · paywall ayrı varlık + paywall blokları (plan seçici, sayaç, dinamik koşullar…), cevaba göre paywall; gömülü ödeme + Apple/Google Pay alt blok
+- [ ] **YOL HARİTASI — para ve büyüme modülleri** (kullanıcı 2026-11-03: "quiz builder bitti, web2wave'in diğer özelliklerini sırayla planla"; gerekçe, kapsam dışı liste ve dış girdiler `docs/decisions/web2wave-platform-yapisi.md` § Ek 2026-11-03). **Sıra onaylandı — `pre-setup.md` A14** (2026-11-03). Her biri `/blok`:
+  - [ ] M1 · fiyat kataloğu: çok plan; kartlı deneme + ücretli giriş dönemi + ilk dönem indirimi; sabit tutarlı çok para birimi (Adaptive Pricing kapanır)
+  - [ ] M2 · paywall ayrı varlık + paywall blokları (plan seçici, sayaç, dinamik koşullar…), cevaba göre paywall; **gömülü ödeme** + Apple/Google Pay alt blok
   - [ ] M3 · downsell penceresi + ödeme sonrası tek tık upsell
   - [ ] M4 · deneyler: yönlendirme + içerik (`deney.<id>`), yapışık atama, sonuçlar
   - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla
