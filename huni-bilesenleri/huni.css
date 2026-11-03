@@ -688,6 +688,13 @@ html:has(> body.huni) {
     flex-direction: column;
     min-height: calc(100dvh - 32px - 2 * var(--kart-bosluk, 0px));
 }
+/* V1: oynatıcının bağlama kökü (funnel/<app>/index.html) kutu üretmez —
+   Astro'nun astro-island'ı da display: contents'ti; Vite geçişinde (9c90af2)
+   düz div kaldı, main'in yüksekliği adımlara ulaşmadı, düğme yapışmadı
+   (ekran ölçümü: altı %33–58 boş). */
+.huni main > #huni {
+    display: contents;
+}
 .huni .adimlar {
     flex: 1;
     display: flex;
@@ -698,6 +705,12 @@ html:has(> body.huni) {
     flex: 1;
     display: flex;
     flex-direction: column;
+}
+/* V1: yükleme ekranında eklenecek blok yok — telefonda dikey ortada
+   (ölçüm: içerik üstte, ekranın %58'i boştu). */
+.huni .adimlar > [data-sira] > section.yukleme {
+    justify-content: center;
+    padding-bottom: 12vh;
 }
 .huni .adimlar .eylem {
     position: sticky;

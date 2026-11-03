@@ -91,6 +91,7 @@ final class McpTest extends WebTestCase
         self::assertStringContainsString('"planın hazırlanıyor" yükleme', self::metin(self::yol($ilk, 'result', 'instructions')));
         // T1: blok kataloğu ve uydurma sayı/yorum yasağı panel istemiyle aynı.
         self::assertStringContainsString(Tanim::EKRAN_YONERGESI, self::metin(self::yol($ilk, 'result', 'instructions')));
+        self::assertStringContainsString(\App\Huni\TasarimYonergesi::METIN, self::metin(self::yol($ilk, 'result', 'instructions')));
         $this->rpc(['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $bearer);
         self::assertResponseStatusCodeSame(202);
 

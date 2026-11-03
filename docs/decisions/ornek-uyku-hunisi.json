@@ -152,6 +152,14 @@
           ]
         },
         {
+          "tur": "maddeler",
+          "maddeler": [
+            "Sorununa özel akşam rutini",
+            "Her gün kısa, uygulanabilir adımlar",
+            "Haftalık küçük hedefler"
+          ]
+        },
+        {
           "tur": "kutu",
           "metin": "Planında bu soruna özel bir bölüm olacak.",
           "simge": "💡"
@@ -246,8 +254,15 @@
           "metin": "Kafeinin etkisi saatlerce sürebilir; akşam içilen bir fincan uykuya dalmayı geciktirebilir."
         },
         {
+          "tur": "maddeler",
+          "maddeler": [
+            "Son kahveni öğleden sonra iç",
+            "Akşam kafeinsiz bir içecek seç"
+          ]
+        },
+        {
           "tur": "kutu",
-          "metin": "Planında kafeini öğleden sonra bırakmana yardım eden bir adım olacak.",
+          "metin": "Planın, kafeini öğleden sonra bırakmana yardım edecek.",
           "simge": "☕"
         }
       ],
@@ -275,10 +290,15 @@
         {
           "tur": "maddeler",
           "maddeler": [
-            "Yatmadan 30 dakika önce gece modunu aç",
+            "Yatmadan önce gece modunu aç",
             "Telefonu yataktan uzakta şarj et",
-            "Kaydırmak yerine kısa bir sesli rutin dinle"
+            "Kaydırmak yerine sesli rutin dinle"
           ]
+        },
+        {
+          "tur": "kutu",
+          "metin": "Planın bu adımları her akşam sana hatırlatır.",
+          "simge": "🔔"
         }
       ],
       "ilerlemeGoster": true
@@ -327,7 +347,7 @@
       "bloklar": [
         {
           "tur": "metin",
-          "metin": "Yavaş ve uzun nefes vermek bedene “güvendesin” sinyali gönderir. Planında her akşam iki dakikalık bir nefes egzersizi olacak."
+          "metin": "Yavaş ve uzun nefes vermek bedene “güvendesin” sinyali gönderir. Planına her akşam iki dakikalık bir nefes egzersizi ekliyoruz."
         },
         {
           "tur": "kutu",
@@ -353,7 +373,7 @@
         {
           "tur": "yorum",
           "puan": 4,
-          "metin": "Nefes egzersizi gece uyandığımda tekrar uykuya dönmeme yardım ediyor.",
+          "metin": "Gece uyandığımda nefes egzersiziyle yeniden uykuya dalabiliyorum.",
           "unvan": "Örnek yorum — yayından önce gerçeğiyle değiştir",
           "yazar": "Örnek kullanıcı 2"
         }
@@ -429,6 +449,7 @@
     {
       "id": "eposta",
       "tur": "ekran",
+      "dugme": "Planımı göster",
       "baslik": "Planını nereye gönderelim?",
       "bloklar": [
         {
@@ -437,17 +458,16 @@
         },
         {
           "tur": "soru",
+          "izinMetni": "Uyku ipuçları ve teklifler e-postayla gönderilebilir. İstediğin an ayrılabilirsin.",
           "secimTuru": "eposta",
-          "yanitZorunlu": true,
-          "izinMetni": "Uyku ipuçları ve teklifler e-postayla gönderilebilir. İstediğin an ayrılabilirsin."
+          "yanitZorunlu": true
         },
         {
           "tur": "kutu",
           "metin": "Adresin yalnız planın ve ödeme sayfası için kullanılır.",
           "simge": "🔒"
         }
-      ],
-      "dugme": "Planımı göster"
+      ]
     },
     {
       "id": "ozet",

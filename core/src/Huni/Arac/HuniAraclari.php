@@ -134,12 +134,16 @@ final readonly class HuniAraclari
         $adres = $this->funnelBaseUrl.'/'.$app.'/?huni='.$huni.($yayin ? '&yayin=1' : '').'&adim='.$adim.'&ekran=1'
             .'&onizleme='.$this->huniler->onizlemeAnahtari($app, $huni, time());
         try {
-            $gorsel = $this->ekran->cek($adres);
+            $cekim = $this->ekran->cek($adres);
         } catch (\RuntimeException $e) {
             return AracSonucu::hata('ekran görüntüsü alınamadı: '.$e->getMessage());
         }
 
-        return new AracSonucu(['huni' => $huni, 'adim' => $adim, 'surum' => $yayin ? 'yayin' : 'taslak', 'adimlar' => $adimlar], gorsel: $gorsel);
+        // V1: ölçüm ve uyarılar görüntünün yanında — model "nasıl göründüğünü" sayıyla da okur.
+        return new AracSonucu([
+            'huni' => $huni, 'adim' => $adim, 'surum' => $yayin ? 'yayin' : 'taslak', 'adimlar' => $adimlar,
+            'olcum' => $cekim->olcum, 'uyarilar' => $cekim->uyarilar(),
+        ], gorsel: $cekim->gorsel);
     }
 
     private function kaydet(string $app, string $huni, mixed $tanim, mixed $imza): AracSonucu

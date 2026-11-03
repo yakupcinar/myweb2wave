@@ -159,6 +159,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§42** | **Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz** — birim testi yeşil, düzenleyicide etkisiz; kural bekçide, ölçüm tarayıcıda. |
 | **§43** | **Puck kabuk sayfasının stilini önizleme çerçevesine kopyalar; tembel düzenleyici CSS'i de çıkınca sayfada kalır** — panel ↔ huni aynı CSS değişken adları birbirini ezer, testler yeşil; yalıtım iki yönlü (`media="not all"`), ölçüm tarayıcıda gezinme sırasıyla. |
 | **§44** | **happy-dom `step="0.01"`+`min`'li sayı alanında geçerli tutarı reddeder, form sessizce gönderilmez** — "istek gitmez" testi yalancı yeşil; ondalık sınırı sunucuda, alanda `step="any"`. |
+| **§45** | **Çatı değişince bağlama kökü (`<div id>`) flex zincirini koparır** — telefonda yapışık düğme içeriğin altında kalır, hata yok; kök `display: contents`, ölçüm gerçek tarayıcıda. |
 
 ---
 
@@ -171,6 +172,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | [docs/decisions/acik-uclar.md](docs/decisions/acik-uclar.md) | Karara dönüşmemiş gözlemler (Ç-no) |
 | [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzakların tam metni, ölçümü ve doğrusu |
 | [docs/adresler.md](docs/adresler.md) | Panel sayfaları, huni sayfaları, portlar ve API uçları (yerel) |
+| [docs/backend-mimarisi.md](docs/backend-mimarisi.md) | **Backend mimarisi & veri akışları**: teknoloji rolleri, şema felsefesi, uçtan uca akışlar |
 | [docs/uygulama-entegrasyonu.md](docs/uygulama-entegrasyonu.md) | Bir uygulama (KeepChat…) çekirdeğe nasıl bağlanır: anahtar, uçlar, akış, App Store kuralları |
 | [docs/yontem/](docs/yontem/README.md) | **Yöntem el kitabı** (okuyucu için, bölümlü): nasıl ve neden böyle çalışıyoruz; kayıtlara bağlantı verir, kopyalamaz |
 | `.claude/skills/` | `blok` (işin dokuz adımı) · `kirma` (testin ölçtüğünü kanıtla) · `belge` (bilgiyi depoya yaz) · `kontrol` (tam doğrulama — **yığına göre doldur**) |

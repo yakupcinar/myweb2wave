@@ -39,6 +39,65 @@ final readonly class ChromeEkranCekici implements EkranCekici
         })()
         JS;
 
+    /**
+     * V1: görünür adımın yerleşimi. Boşluk = içeriğin altından yapışık
+     * düğmenin üstüne (düğme yoksa ekranın altına); içerik altı boyutlu
+     * YAPRAK öğelerin en alt kenarı (kart rengi tüm ekranı kaplayan kabı
+     * saymasın). Yetim satır: yalnız yaprak metin öğesi (seçenekte emoji
+     * metnin üstünde ayrı satır gibi ölçülüyordu), çok satırlı ve son satır
+     * genişliğin %20'sinden kısa.
+     */
+    private const OLCUM = <<<'JS'
+        (() => {
+            const vh = innerHeight;
+            const adim = document.querySelector('[data-adim]:not([hidden])');
+            const eylem = adim.querySelector('.eylem');
+            let alt = 0;
+            for (const el of adim.querySelectorAll('*')) {
+                if (eylem?.contains(el)) continue;
+                const yaprak = el.children.length === 0 || ['IMG', 'BUTTON', 'INPUT', 'TEXTAREA', 'svg'].includes(el.tagName);
+                const r = el.getBoundingClientRect();
+                if (yaprak && r.width > 0 && r.height > 0) alt = Math.max(alt, r.bottom);
+            }
+            const yetim = [];
+            for (const el of adim.querySelectorAll('*')) {
+                const metin = el.textContent.trim();
+                if (el.children.length > 0 || !metin || el.closest('[hidden]')) continue;
+                const aralik = document.createRange();
+                aralik.selectNodeContents(el);
+                const satirlar = [...aralik.getClientRects()].reduce((s, r) => {
+                    const son = s.at(-1);
+                    if (son && Math.abs(son.ust - r.top) < 4) { son.sol = Math.min(son.sol, r.left); son.sag = Math.max(son.sag, r.right); }
+                    else s.push({ ust: r.top, sol: r.left, sag: r.right });
+                    return s;
+                }, []);
+                const g = el.getBoundingClientRect().width;
+                const son = satirlar.at(-1);
+                if (satirlar.length > 1 && son && (son.sag - son.sol) < g * 0.2) yetim.push(metin.slice(0, 60));
+            }
+            const dugme = adim.querySelector('.eylem button, .paywall button');
+            const dr = dugme?.getBoundingClientRect();
+            const taban = eylem ? Math.min(vh, eylem.getBoundingClientRect().top) : vh;
+            let kucuk = 0, tasan = 0;
+            for (const el of adim.querySelectorAll('button, input, textarea')) {
+                const r = el.getBoundingClientRect();
+                if (r.height > 0 && r.height < 44 && el.type !== 'checkbox') kucuk++;
+            }
+            for (const el of adim.querySelectorAll('h1, h2, p, li, button, span')) {
+                if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== 'visible') tasan++;
+            }
+            return JSON.stringify({
+                // Yükleme ekranı CSS'te ortalı; altındaki boşluk bilinçli, eklenecek blok yok.
+                bosAlt: adim.querySelector('section.yukleme') ? 0 : Math.max(0, (taban - alt) / vh),
+                kaydirma: document.documentElement.scrollHeight > vh + 1,
+                dugmeGorunur: dr ? dr.bottom <= vh : null,
+                yetimSatirlar: yetim,
+                kucukHedefler: kucuk,
+                tasanlar: tasan,
+            });
+        })()
+        JS;
+
     public function __construct(
         private HttpClientInterface $http,
         #[Autowire('%env(default::EKRAN_CDP)%')]
@@ -46,7 +105,7 @@ final readonly class ChromeEkranCekici implements EkranCekici
     ) {
     }
 
-    public function cek(string $adres): string
+    public function cek(string $adres): EkranCekimi
     {
         if (null === $this->cdp || '' === $this->cdp) {
             throw new \RuntimeException('ekran servisi kapalı (EKRAN_CDP boş)');
@@ -82,8 +141,13 @@ final readonly class ChromeEkranCekici implements EkranCekici
             }
 
             $b64 = $sayfa->screenshot(['format' => 'jpeg', 'quality' => 80])->getBase64(self::SURE_MS);
+            $gorsel = (\is_string($b64) ? base64_decode($b64, true) : false) ?: throw new \RuntimeException('görüntü çözülemedi');
+            $json = $sayfa->evaluate(self::OLCUM)->getReturnValue();
+            /** @var array{bosAlt: float, kaydirma: bool, dugmeGorunur: bool|null, yetimSatirlar: list<string>, kucukHedefler: int, tasanlar: int} $olcum */
+            $olcum = \is_string($json) ? json_decode($json, true, flags: \JSON_THROW_ON_ERROR) : throw new \RuntimeException('ölçüm okunamadı');
+            $olcum['bosAlt'] = round((float) $olcum['bosAlt'], 2);
 
-            return (\is_string($b64) ? base64_decode($b64, true) : false) ?: throw new \RuntimeException('görüntü çözülemedi');
+            return new EkranCekimi($gorsel, $olcum);
         } finally {
             // Tarayıcıyı değil yalnız sekmeyi kapat: tarayıcı paylaşılan servis.
             $sayfa->close();

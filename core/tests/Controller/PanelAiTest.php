@@ -159,6 +159,10 @@ final class PanelAiTest extends WebTestCase
         self::assertStringContainsString('server-side-fallback-2026-07-01', implode("\n", SahteClaude::$basliklar[0]));
         self::assertSame(['type' => 'ephemeral'], self::yol($g, 'system', 0, 'cache_control'));
         self::assertCount(1, (array) self::yol($g, 'system'), 'bağlam yokken ek blok yok');
+        // V1: tasarım yönergesi ve görsel döngü sistem isteminde.
+        $sistem = self::yol($g, 'system', 0, 'text');
+        self::assertIsString($sistem);
+        self::assertStringContainsString(\App\Huni\TasarimYonergesi::METIN, $sistem);
         // Açık huni kapsamı: yeni huni yok, yayınlama yok.
         $araclar = self::yol($g, 'tools');
         self::assertIsArray($araclar);

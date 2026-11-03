@@ -8,9 +8,9 @@ namespace App\Huni\Ekran;
 interface EkranCekici
 {
     /**
-     * @return string JPEG baytları
+     * V1: görüntüyle birlikte yerleşim ölçümü.
      *
      * @throws \RuntimeException tarayıcıya ulaşılamadı ya da sayfa açılmadı (mesaj modele gider)
      */
-    public function cek(string $adres): string;
+    public function cek(string $adres): EkranCekimi;
 }

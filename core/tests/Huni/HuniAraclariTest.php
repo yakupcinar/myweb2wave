@@ -169,7 +169,7 @@ final class HuniAraclariTest extends KernelTestCase
         $ilk = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel'], $k);
         self::assertFalse($ilk->hata);
         self::assertSame(SahteEkranCekici::BAYTLAR, $ilk->gorsel);
-        self::assertSame(['huni' => 'genel', 'adim' => 'karsilama', 'surum' => 'taslak', 'adimlar' => ['karsilama', 'hedef', 'kilo-sorusu', 'kas-sorusu', 'sure', 'paywall']], $ilk->icerik);
+        self::assertSame(['huni' => 'genel', 'adim' => 'karsilama', 'surum' => 'taslak', 'adimlar' => ['karsilama', 'hedef', 'kilo-sorusu', 'kas-sorusu', 'sure', 'paywall'], 'olcum' => SahteEkranCekici::TEMIZ, 'uyarilar' => []], $ilk->icerik);
         $q = self::sorgu(SahteEkranCekici::$adresler[0], 'https://huni.test/keepchat/');
         self::assertSame(['huni', 'adim', 'ekran', 'onizleme'], array_keys($q));
         // Ç75: ekran=1 — şeritsiz, ödeme düğmesi ziyaretçideki gibi çizilir.
@@ -180,6 +180,24 @@ final class HuniAraclariTest extends KernelTestCase
         self::assertFalse($yayin->hata);
         $q = self::sorgu(SahteEkranCekici::$adresler[1], 'https://huni.test/keepchat/');
         self::assertSame(['genel', '1', 'paywall'], [$q['huni'], $q['yayin'] ?? null, $q['adim']]);
+    }
+
+    /** V1: tarayıcının ölçtüğü yerleşim kusuru modele Türkçe uyarı olarak gider. */
+    public function testEkranGoruntusuOlcumUyarilariSonucta(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::fitness()));
+        SahteEkranCekici::$olcum = ['bosAlt' => 0.42, 'kaydirma' => false, 'dugmeGorunur' => false, 'yetimSatirlar' => ['Uzun bir cümle aç'], 'kucukHedefler' => 2, 'tasanlar' => 1];
+
+        $s = $this->araclar->calistir('ekran_goruntusu', ['huni' => 'genel'], new AracKapsami('keepchat'));
+
+        self::assertFalse($s->hata);
+        self::assertSame([
+            'içerikle düğme (ya da ekranın altı) arasında ekranın %42 kadar boşluk: içerik üstte toplanmış — blok ekle (görsel, istatistik, kutu, yorum) ya da var olanı zenginleştir',
+            'birincil düğme ilk ekranda görünmüyor (kaydırmak gerekiyor): blokları azalt ya da metni kısalt',
+            'son satırda tek kısa kelime kalmış: "Uzun bir cümle aç" — metni yeniden yaz',
+            '2 dokunma hedefi 44 pikselden alçak',
+            '1 öğenin metni yatayda taşıyor (bölünmeyen uzun kelime?)',
+        ], $s->icerik['uyarilar'] ?? null);
     }
 
     public function testEkranGoruntusuHatalariTarayiciyaGitmeden(): void

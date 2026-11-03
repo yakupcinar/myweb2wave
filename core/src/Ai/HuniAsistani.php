@@ -28,6 +28,7 @@ use App\Huni\Arac\AracKapsami;
 use App\Huni\Arac\HuniAraclari;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
+use App\Huni\TasarimYonergesi;
 use App\Huni\Tema;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\HttpClient\Psr18Client;
@@ -253,6 +254,6 @@ final readonly class HuniAsistani
             - Gerçek olmayan müşteri yorumu uydurma: yorum bloğu eklersen unvanına "Örnek — yayından önce gerçeğiyle değiştir" yaz.
             - Fiyat yazma: ödeme ekranı fiyatı Stripe'tan kendisi gösterir. Sağlık, gelir ya da kesin sonuç vaadi yazma.
             - Ziyaretçiye "sen" diye, sade Türkçe yaz.
-            METIN."\n".Tanim::EKRAN_YONERGESI."\n\n".Tema::aiYonergesi();
+            METIN."\n".Tanim::EKRAN_YONERGESI."\n\n".Tema::aiYonergesi()."\n\n".TasarimYonergesi::METIN;
     }
 }

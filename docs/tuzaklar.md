@@ -282,3 +282,9 @@ birden çok çekimle ölç.
 **Sebep:** happy-dom adım geçerliliğini kayan noktayla hesaplar: `step="0.01"` + `min="0.01"` iken (59 − 0,01) / 0,01 tam sayı çıkmaz → alan geçersiz → `submit` olayı hiç oluşmaz. Gerçek tarayıcı bunu ondalık hesapla geçerli sayar.
 **Ölçüm (2026-11-03, `m1a-fiyat-katalogu.md`):** aynı test `step="0.01"` ile 3/4 kırmızı (istek listesi yalnız GET), `step="any"` ile istek gitti.
 **Doğrusu:** ondalık sınırını sunucuda doğrula, alanda `step="any"`; "gönderilmez" testinin önce gönderilebilen bir kontrol grubunu ölçtüğünü gör.
+
+## §45 — Çatı değişince bağlama kökü (`<div id="…">`) flex zincirini sessizce koparır
+**Belirti:** telefonda alta yapışması gereken düğme içeriğin hemen altında durur, ekranın altı boş; hata yok, testler yeşil, düzen "zevk meselesi" gibi görünür.
+**Sebep:** tam yükseklik `main`'den adımlara flex zinciriyle iner (`flex: 1`). Astro'nun `astro-island`'ı `display: contents`'ti (kutu üretmez); Vite + Preact geçişinde yerine konan düz `<div id="huni">` blok kutu üretir, zincir orada kopar.
+**Ölçüm (2026-11-03, `v1-tasarim-dongusu.md`):** ekran ölçümü 16 adımın çoğunda altta %33–58 boşluk; tarayıcıda hesaplanmış stil zinciri `MAIN(flex) → DIV#huni(block) → .adimlar(flex:1)`. `display: contents` sonrası düğme altta (boşluk %4).
+**Doğrusu:** çatı/sarmalayıcı değişince yerleşimi gerçek tarayıcıda ölç (ekran_goruntusu → `olcum`); bağlama kökü düzen zincirindeyse `display: contents` ve onu ölçen test.
