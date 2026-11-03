@@ -89,8 +89,8 @@
 - [ ] Reklam ölçümünün canlıya hazır olması — H6b sunucu aktarımı tamam; H6c tarayıcı pikselleri + Ç56 hukuk/izin açıkları tamamlanmadan ücretli trafikten önce kapanmaz.
 - [ ] KeepChat "aboneliğimi bağla" (KeepChat deposunda) · Apple · Google · hesap silme
 - [ ] Ç19/Ç21 (fiyat tek kaynak) — OpenAPI + huni tarafında üretilen tipler; ilk gerçek uç (ödeme oturumu) ile
-- [ ] **Ödeme sağlayıcısı araştırması** — Ç10
-- [ ] **Ç9 kararı** — uygulamayla eşleme (e-posta / parmak izi), hangi iOS uygulaması
+- [x] **Ödeme sağlayıcısı** — Ç10 kararı 2026-11-03 (kullanıcı): **canlıda da Stripe**; Paddle ücretleri yüksek, reddedildi. Canlıya geçişte Stripe hesabının şirket/ülke koşulu (DE) yine çözülmeli
+- [ ] **Ç9 — uygulamaya giriş** (kullanıcı 2026-11-03: ana yöntem e-posta kodu; araştırma `docs/decisions/eposta-kodu-arastirmasi.md` — değerler sektör aralığında). Kalan: giriş bağlantısı Universal Link + yedek sayfa (sunucu/alan adıyla) · KeepChat'te `.oneTimeCode` · Apple/Google girişi + hesap silme (KeepChat deposu) · sıradaki iOS uygulaması
 - [x] **`/kontrol`** — `bin/kontrol`, kırma K4–K7
 - [ ] **DÖNGÜ KUYRUĞU — A13** (kararlar 2026-10-26, `pre-setup.md` A13). Sırayla, her biri ayrı blok (`/blok`), bitince commit + push; dış girdi gerekirse açık uca yaz, atla. İşaretle ve `docs/decisions/`e taşı:
   - [x] L1 · Ç60 dev DB göçü + `bin/kontrol` uyarı adımı · Ç62 `reference.php` `.gitignore` — `docs/decisions/dev-goc-uyari.md`
