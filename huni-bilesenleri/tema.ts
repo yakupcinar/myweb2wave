@@ -26,6 +26,8 @@ export type Tema = {
     hizalama?: "sol" | "orta";
     /** G4: ana düğme biçimi; yoksa dolu. */
     dugmeBicimi?: "dolu" | "cerceve" | "hap";
+    /** V3a: emoji simgeleri; CSS değil, bileşen bağlamı (SimgeBaglami). */
+    simgeler?: "cihaz" | "renkli" | "tekrenk";
 };
 
 /** G7: ön ayar → CSS değeri (gorunum-g7.md). "normal"/"sol" = huni.css yedeği. */

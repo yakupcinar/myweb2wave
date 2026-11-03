@@ -731,6 +731,11 @@ export interface components {
              * @enum {string}
              */
             hizalama?: "sol" | "orta";
+            /**
+             * @description V3a: emoji simgeleri (yoksa cihaz): cihaz (telefonun emojisi) · renkli (Fluent 3B, her cihazda aynı) · tekrenk (Fluent tek renk, ana renkte)
+             * @enum {string}
+             */
+            simgeler?: "cihaz" | "renkli" | "tekrenk";
             /** @description G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır */
             kartRengi?: string;
             /** @description G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer */

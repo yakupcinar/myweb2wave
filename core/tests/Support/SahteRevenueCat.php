@@ -53,6 +53,9 @@ final class SahteRevenueCat
         if (str_starts_with($url, 'https://api.anthropic.com/')) {
             return (new SahteClaude())($method, $url, $secenekler);
         }
+        if (str_starts_with($url, 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/')) {
+            return (new SahteSimge())($url);
+        }
         $basliklar = $secenekler['headers'] ?? [];
         $govde = $secenekler['body'] ?? '';
         self::$istekler[] = [

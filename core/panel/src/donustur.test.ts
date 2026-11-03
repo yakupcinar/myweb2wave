@@ -297,6 +297,37 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("V3a: simge biçimi gidiş-dönüş; cihaz (varsayılan) yazılmaz", () => {
+        for (const simgeler of ["renkli", "tekrenk"] as const) {
+            const t: Tanim = {
+                ...soruyla({
+                    tur: "soru",
+                    secenekler: [
+                        { id: "a", metin: "A", simge: "🌙" },
+                        { id: "b", metin: "B" },
+                    ],
+                }),
+                tema: { ...VARSAYILAN, simgeler },
+            };
+            expect(puckTanim(tanimdanPuck(t, VARSAYILAN))).toStrictEqual(t);
+        }
+        const veri = tanimdanPuck(
+            {
+                ...soruyla({
+                    tur: "soru",
+                    secenekler: [
+                        { id: "a", metin: "A" },
+                        { id: "b", metin: "B" },
+                    ],
+                }),
+                tema: { ...VARSAYILAN, simgeler: "renkli" },
+            },
+            VARSAYILAN,
+        );
+        veri.root.props!.simgeler = "cihaz";
+        expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
+    });
+
     it("seçenek simgesi gidiş-dönüş; boş simge yazılmaz", () => {
         const simgeli = soruyla({
             tur: "soru",

@@ -445,6 +445,27 @@ html:has(> body.huni) {
     font-size: 20px;
     line-height: 1.2;
 }
+/* V3a: Fluent simgesi emojinin kapladığı kutuda (1,2em kare); tek renk
+   sürüm ana renkte maske — temayı izler. */
+.huni .simge img {
+    display: block;
+    width: 1.2em;
+    height: 1.2em;
+}
+/* Yoklama img'si gizli kalmalı: yukarıdaki display: block, tarayıcının
+   [hidden] kuralını eziyordu — siyah SVG maskenin üstünde çiziliyordu
+   (ekran görüntüsünde ölçüldü). */
+.huni .simge img[hidden] {
+    display: none;
+}
+.huni .simge-tekrenk {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    background: var(--ana);
+    -webkit-mask: var(--simge) center / contain no-repeat;
+    mask: var(--simge) center / contain no-repeat;
+}
 .huni .onizleme {
     background: #fde68a;
     color: #000;

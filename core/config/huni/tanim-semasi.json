@@ -309,6 +309,15 @@
                         "orta"
                     ]
                 },
+                "simgeler": {
+                    "description": "V3a: emoji simgeleri (yoksa cihaz): cihaz (telefonun emojisi) · renkli (Fluent 3B, her cihazda aynı) · tekrenk (Fluent tek renk, ana renkte)",
+                    "type": "string",
+                    "enum": [
+                        "cihaz",
+                        "renkli",
+                        "tekrenk"
+                    ]
+                },
                 "kartRengi": {
                     "description": "G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır",
                     "type": "string",

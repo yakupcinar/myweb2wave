@@ -288,3 +288,9 @@ birden çok çekimle ölç.
 **Sebep:** tam yükseklik `main`'den adımlara flex zinciriyle iner (`flex: 1`). Astro'nun `astro-island`'ı `display: contents`'ti (kutu üretmez); Vite + Preact geçişinde yerine konan düz `<div id="huni">` blok kutu üretir, zincir orada kopar.
 **Ölçüm (2026-11-03, `v1-tasarim-dongusu.md`):** ekran ölçümü 16 adımın çoğunda altta %33–58 boşluk; tarayıcıda hesaplanmış stil zinciri `MAIN(flex) → DIV#huni(block) → .adimlar(flex:1)`. `display: contents` sonrası düğme altta (boşluk %4).
 **Doğrusu:** çatı/sarmalayıcı değişince yerleşimi gerçek tarayıcıda ölç (ekran_goruntusu → `olcum`); bağlama kökü düzen zincirindeyse `display: contents` ve onu ölçen test.
+
+## §46 — Bir `display` kuralı tarayıcının `[hidden]` kuralını ezer
+**Belirti:** `hidden` öznitelikli öğe sayfada görünür; HTML'e bakan test özniteliği bulur, yeşil kalır.
+**Sebep:** `[hidden] { display: none }` tarayıcının varsayılan stil sayfasında, en düşük öncelikle; aynı öğeyi seçen herhangi bir yazar kuralı (`.simge img { display: block }`) onu ezer.
+**Ölçüm (2026-11-03, `v3a-fluent-simgeler.md`):** tek renk simgede yoklama için gizlenen siyah SVG maskenin üstünde çizildi — simgeler ana renk yerine siyah (ekran görüntüsünde görüldü).
+**Doğrusu:** `display` veren kuralın yanına `…[hidden] { display: none }`; görünürlüğü öznitelikten değil çizimden ölç (ekran görüntüsü / hesaplanmış stil).

@@ -11,7 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Adim, Logo } from "../../../huni-bilesenleri/bilesenler";
+import { Adim, Logo, SimgeBaglami } from "../../../huni-bilesenleri/bilesenler";
 import {
   degerleriUygula,
   grupTutar,
@@ -326,7 +326,10 @@ function Oynatici({
   }
 
   return (
-    <>
+    // V3a: emoji simgelerinin biçimi temadan; görseller çekirdekte.
+    <SimgeBaglami.Provider
+      value={{ stil: tanim.tema?.simgeler ?? "cihaz", kok: KOK }}
+    >
       {!onizleme && izin === null ? (
         <IzinSeridi
           onSec={izinSec}
@@ -508,6 +511,6 @@ function Oynatici({
           Gizlilik ayarları
         </button>
       ) : null}
-    </>
+    </SimgeBaglami.Provider>
   );
 }

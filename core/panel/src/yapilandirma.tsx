@@ -15,6 +15,7 @@ import {
     Ekran,
     Logo,
     Paywall,
+    SimgeBaglami,
     Yukleme,
 } from "../../../huni-bilesenleri/bilesenler";
 import "../../../huni-bilesenleri/huni.css";
@@ -671,6 +672,16 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         { label: "Hap", value: "hap" },
                     ],
                 },
+                // V3a: Fluent simgeleri çekirdekten (önizlemede kök "").
+                simgeler: {
+                    type: "radio",
+                    label: "Emoji simgeleri",
+                    options: [
+                        { label: "Cihazın", value: "cihaz" },
+                        { label: "Renkli 3B", value: "renkli" },
+                        { label: "Tek renk", value: "tekrenk" },
+                    ],
+                },
             },
             // V2: hazır tema seçilince alanlar açılıştaki eşlemeyle dolar,
             // tema özel olur; seçim alanı boşalır (tanıma yazılmaz).
@@ -708,6 +719,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 yogunluk,
                 hizalama,
                 dugmeBicimi,
+                simgeler,
             }) => {
                 const tema = ozelTema === "evet";
                 // Dış kutu huni sayfasındaki <body>'nin yerine: arka plan
@@ -727,6 +739,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                       yogunluk,
                                       hizalama,
                                       dugmeBicimi,
+                                      simgeler,
                                   }),
                                   ...kokZemini({
                                       zeminTuru,
@@ -762,10 +775,19 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                 4,5:1 olmalı, kaydedilemez.
                             </p>
                         ) : null}
-                        <div className="huni">
-                            {logo ? <Logo gorsel={logo} medyaKoku="" /> : null}
-                            {children}
-                        </div>
+                        <SimgeBaglami.Provider
+                            value={{
+                                stil: tema ? (simgeler ?? "cihaz") : "cihaz",
+                                kok: "",
+                            }}
+                        >
+                            <div className="huni">
+                                {logo ? (
+                                    <Logo gorsel={logo} medyaKoku="" />
+                                ) : null}
+                                {children}
+                            </div>
+                        </SimgeBaglami.Provider>
                     </div>
                 );
             },

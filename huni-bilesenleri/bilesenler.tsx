@@ -3,7 +3,14 @@
 // Etkileşim alanları (on…, kapali, hata) isteğe bağlı: Puck geçmez. Metinler yalnız JSX metni —
 // tanım HTML taşıyamaz (D1); ham HTML basan React özniteliği bin/kontrol'de
 // yasak (html-yok adımı; adı burada yazılsa adım kendini yakalar).
-import type { CSSProperties, ReactNode } from "react";
+import {
+    createContext,
+    useContext,
+    useState,
+    type CSSProperties,
+    type ReactNode,
+} from "react";
+import { simgeKodu } from "./simge";
 
 /** E2.3: görsel çekirdekten, kimlikten kurulur (D2); kök huni sayfasında çekirdeğin adresi, panelde "". */
 function Gorsel({
@@ -25,6 +32,53 @@ function Gorsel({
             alt={alt}
             decoding="async"
         />
+    );
+}
+
+/**
+ * V3a: emoji simgelerinin biçimi (tema `simgeler`) ve görsellerin kökü —
+ * oynatıcı ve Puck kökü sağlar; yoksa cihaz emojisi (bugünkü davranış).
+ */
+export const SimgeBaglami = createContext<{
+    stil: "cihaz" | "renkli" | "tekrenk";
+    kok: string;
+}>({ stil: "cihaz", kok: "" });
+
+/**
+ * Süs: anlam metinde, ekran okuyucu okumaz. Fluent görseli yoksa (bayrak,
+ * ağ hatası) cihaz emojisine döner. Tek renk maske hata olayı vermez — aynı
+ * adresi gizli img yoklar (tarayıcı önbelleğinden, ek istek yok).
+ */
+function Simge({ simge }: { simge: string }): ReactNode {
+    const { stil, kok } = useContext(SimgeBaglami);
+    const [yok, setYok] = useState(false);
+    if (stil === "cihaz" || yok)
+        return (
+            <span className="simge" aria-hidden="true">
+                {simge}
+            </span>
+        );
+    const kod = simgeKodu(simge);
+    if (stil === "renkli")
+        return (
+            <span className="simge" aria-hidden="true">
+                <img
+                    src={`${kok}/simge/renkli/${kod}.webp`}
+                    alt=""
+                    decoding="async"
+                    onError={() => setYok(true)}
+                />
+            </span>
+        );
+    const adres = `${kok}/simge/tekrenk/${kod}.svg`;
+    return (
+        <span
+            className="simge simge-tekrenk"
+            aria-hidden="true"
+            style={{ "--simge": `url("${adres}")` } as CSSProperties}
+        >
+            <img src={adres} alt="" hidden onError={() => setYok(true)} />
+        </span>
     );
 }
 
@@ -181,12 +235,7 @@ function Yanit({
                             alt={s.gorselMetni}
                         />
                     ) : null}
-                    {s.simge ? (
-                        // Süs: anlam metinde, ekran okuyucu okumaz.
-                        <span className="simge" aria-hidden="true">
-                            {s.simge}
-                        </span>
-                    ) : null}
+                    {s.simge ? <Simge simge={s.simge} /> : null}
                     <span>{s.metin}</span>
                     <span className="isaret" aria-hidden="true" />
                 </button>
@@ -422,11 +471,7 @@ export function Blok({
         case "kutu":
             return (
                 <p className="kutu">
-                    {blok.simge ? (
-                        <span className="simge" aria-hidden="true">
-                            {blok.simge}
-                        </span>
-                    ) : null}
+                    {blok.simge ? <Simge simge={blok.simge} /> : null}
                     <span>{blok.metin}</span>
                 </p>
             );

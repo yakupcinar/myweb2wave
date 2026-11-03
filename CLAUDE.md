@@ -160,6 +160,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§43** | **Puck kabuk sayfasının stilini önizleme çerçevesine kopyalar; tembel düzenleyici CSS'i de çıkınca sayfada kalır** — panel ↔ huni aynı CSS değişken adları birbirini ezer, testler yeşil; yalıtım iki yönlü (`media="not all"`), ölçüm tarayıcıda gezinme sırasıyla. |
 | **§44** | **happy-dom `step="0.01"`+`min`'li sayı alanında geçerli tutarı reddeder, form sessizce gönderilmez** — "istek gitmez" testi yalancı yeşil; ondalık sınırı sunucuda, alanda `step="any"`. |
 | **§45** | **Çatı değişince bağlama kökü (`<div id>`) flex zincirini koparır** — telefonda yapışık düğme içeriğin altında kalır, hata yok; kök `display: contents`, ölçüm gerçek tarayıcıda. |
+| **§46** | **`display` veren yazar kuralı `[hidden]`'ı ezer** — gizli öğe görünür, özniteliğe bakan test yeşil; yanına `[hidden] { display: none }`, ölçüm çizimde. |
 
 ---
 

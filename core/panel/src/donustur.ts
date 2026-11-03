@@ -8,8 +8,10 @@ import type { components } from "./sozlesme";
 export type Tanim = components["schemas"]["HuniTanimi"];
 export type Tema = components["schemas"]["HuniTemasi"];
 type Zemin = NonNullable<Tema["zemin"]>;
-type OnAyar<K extends "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi"> =
-    NonNullable<Tema[K]>;
+type OnAyar<
+    K extends
+        "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi" | "simgeler",
+> = NonNullable<Tema[K]>;
 type Adim = Tanim["adimlar"][number];
 type Plan = components["schemas"]["PaywallAdimi"]["plan"];
 type EkranAdimi = components["schemas"]["EkranAdimi"];
@@ -150,6 +152,8 @@ export type KokProps = {
     hizalama: OnAyar<"hizalama">;
     /** G4: "dolu" tanıma yazılmaz. */
     dugmeBicimi: OnAyar<"dugmeBicimi">;
+    /** V3a: emoji simgeleri; "cihaz" tanıma yazılmaz. */
+    simgeler: OnAyar<"simgeler">;
 };
 export type Bilesenler = {
     Yukleme: YuklemeProps;
@@ -496,6 +500,7 @@ export function kokTemasi(
         yogunluk: tema.yogunluk ?? "normal",
         hizalama: tema.hizalama ?? "sol",
         dugmeBicimi: tema.dugmeBicimi ?? "dolu",
+        simgeler: tema.simgeler ?? "cihaz",
     };
 }
 
@@ -703,14 +708,23 @@ export function kokZemini(
 
 /** G7: kök alanlarından yerleşim ön ayarları; varsayılan değer yazılmaz. */
 export function kokOnAyarlari(
-    k: Pick<KokProps, "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi">,
-): Pick<Tema, "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi"> {
+    k: Pick<
+        KokProps,
+        "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi" | "simgeler"
+    >,
+): Pick<
+    Tema,
+    "baslikBoyu" | "yogunluk" | "hizalama" | "dugmeBicimi" | "simgeler"
+> {
     return {
         ...(k.baslikBoyu !== "normal" ? { baslikBoyu: k.baslikBoyu } : {}),
         ...(k.yogunluk !== "normal" ? { yogunluk: k.yogunluk } : {}),
         ...(k.hizalama !== "sol" ? { hizalama: k.hizalama } : {}),
         ...(k.dugmeBicimi && k.dugmeBicimi !== "dolu"
             ? { dugmeBicimi: k.dugmeBicimi }
+            : {}),
+        ...(k.simgeler && k.simgeler !== "cihaz"
+            ? { simgeler: k.simgeler }
             : {}),
     };
 }
