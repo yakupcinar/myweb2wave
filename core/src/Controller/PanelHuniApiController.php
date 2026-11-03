@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Billing\Planlar;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
 use App\Huni\Tema;
@@ -26,6 +27,7 @@ final class PanelHuniApiController extends AbstractController
 {
     public function __construct(
         private readonly Huniler $huniler,
+        private readonly Planlar $planlar,
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private readonly array $uygulamalar,
@@ -104,7 +106,7 @@ final class PanelHuniApiController extends AbstractController
             'baslik' => "{$app} · {$ad}",
             'taslak' => $taslak,
             'imza' => $this->huniler->taslakImzasi($app, $ad),
-            'planlar' => array_keys($this->uygulamalar[$app]),
+            'planlar' => array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))),
             'temaVarsayilan' => Tema::VARSAYILAN,
             'yaziTipleri' => Tema::YAZI_TIPLERI,
             'ozellikler' => Tanim::kosulOzellikleri(),

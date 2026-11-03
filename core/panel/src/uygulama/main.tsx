@@ -11,6 +11,7 @@ import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Baglam } from "./sayfalar/Baglam";
 import { Huniler } from "./sayfalar/Huniler";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
+import { Planlar } from "./sayfalar/Planlar";
 import { Rapor } from "./sayfalar/Rapor";
 
 // P3: düzenleyici (Puck) ayrı parça — yalnız düzenleyici sayfası indirir.
@@ -26,6 +27,7 @@ export const yollar = [
             { index: true, element: <Rapor /> },
             { path: "huniler", element: <Huniler /> },
             { path: "kullanicilar", element: <Kullanicilar /> },
+            { path: "planlar", element: <Planlar /> },
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
         ],

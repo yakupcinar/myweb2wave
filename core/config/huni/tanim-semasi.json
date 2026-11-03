@@ -579,10 +579,7 @@
                     "type": "boolean"
                 },
                 "plan": {
-                    "type": "string",
-                    "enum": [
-                        "monthly"
-                    ]
+                    "$ref": "#/$defs/PlanAnahtari"
                 },
                 "faydalar": {
                     "description": "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)",
@@ -605,6 +602,11 @@
                     "$ref": "#/$defs/YasalAdres"
                 }
             }
+        },
+        "PlanAnahtari": {
+            "description": "M1a: fiyat kataloğundaki planın anahtarı (panel → Planlar); çekirdek uygulamanın planlarına karşı doğrular",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,31}$"
         },
         "SoruBlogu": {
             "description": "T1b: ekranda en çok bir tane; cevap ekranın kimliğiyle kaydedilir. Soru metni ekranın başlığı / blokları. tekli: seçenek seçilince geçer (ekranda dugme olmaz). coklu / metin: ekranın düğmesi gönderir.",

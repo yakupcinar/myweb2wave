@@ -6,6 +6,7 @@ import {
     KeyRound,
     LogOut,
     Sparkles,
+    Tags,
     Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -45,6 +46,10 @@ export function Duzen(): ReactNode {
                 <NavLink to="/panel/kullanicilar" className={ogeSinifi}>
                     <Users aria-hidden="true" className="size-4.5" />
                     Kullanıcılar
+                </NavLink>
+                <NavLink to="/panel/planlar" className={ogeSinifi}>
+                    <Tags aria-hidden="true" className="size-4.5" />
+                    Planlar
                 </NavLink>
                 <NavLink to="/panel/baglam" className={ogeSinifi}>
                     <Sparkles aria-hidden="true" className="size-4.5" />

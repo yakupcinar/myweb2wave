@@ -22,7 +22,7 @@ Uygulama istemcisi ──(kendi oturumu)──► UYGULAMANIN SUNUCUSU ──(uy
 |---|---|---|
 | Çekirdek adresi | ör. `http://localhost:8081` (yerel) | **boşsa özellik KAPALI** — çekirdek dağıtılmadan üretim buna ulaşamaz |
 | Uygulama anahtarı | çekirdekte `UYGULAMA_ANAHTARI_<APP>` ile aynı değer | sır; depoya girmez |
-| Uygulama adı | `keepchat` | çekirdekte `config/packages/uygulamalar.yaml` |
+| Uygulama adı | `keepchat` | çekirdekte `config/packages/uygulamalar.yaml` (planları panel → Planlar, M1a) |
 
 ## 3 · Akış: "Aboneliğimi bağla"
 

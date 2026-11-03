@@ -7,7 +7,6 @@ namespace App\Billing;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ExceptionInterface;
 use Stripe\StripeClient;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -25,9 +24,7 @@ final readonly class Fiyatlar
         private StripeClient $stripe,
         private CacheInterface $fiyatOnbellegi,
         private LoggerInterface $logger,
-        /** @var array<string, array<string, string>> uygulama → plan → Stripe fiyatı */
-        #[Autowire('%uygulamalar%')]
-        private array $uygulamalar,
+        private Planlar $planlar,
     ) {
     }
 
@@ -35,7 +32,7 @@ final readonly class Fiyatlar
     public function uygulama(string $app): array
     {
         $fiyatlar = [];
-        foreach ($this->uygulamalar[$app] ?? [] as $plan => $fiyatKimligi) {
+        foreach ($this->planlar->fiyatKimlikleri($app) as $plan => $fiyatKimligi) {
             try {
                 $fiyat = $this->fiyatOnbellegi->get('fiyat_'.hash('sha256', $fiyatKimligi), function (ItemInterface $oge) use ($fiyatKimligi): ?array {
                     $oge->expiresAfter(self::ONBELLEK_SN);

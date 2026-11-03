@@ -158,6 +158,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§41** | **Postgres sıralaması (en_US) JS `sort()` ile aynı değil** — iki taraf aynı listeyi farklı sırada üretir, ikisi de yeşil; `COLLATE "C"` + ortak örnekli eşlik testi. |
 | **§42** | **Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz** — birim testi yeşil, düzenleyicide etkisiz; kural bekçide, ölçüm tarayıcıda. |
 | **§43** | **Puck kabuk sayfasının stilini önizleme çerçevesine kopyalar; tembel düzenleyici CSS'i de çıkınca sayfada kalır** — panel ↔ huni aynı CSS değişken adları birbirini ezer, testler yeşil; yalıtım iki yönlü (`media="not all"`), ölçüm tarayıcıda gezinme sırasıyla. |
+| **§44** | **happy-dom `step="0.01"`+`min`'li sayı alanında geçerli tutarı reddeder, form sessizce gönderilmez** — "istek gitmez" testi yalancı yeşil; ondalık sınırı sunucuda, alanda `step="any"`. |
 
 ---
 

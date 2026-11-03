@@ -276,3 +276,9 @@ birden çok çekimle ölç.
 **Ölçüm (2026-11-03, `p3-duzenleyici-sayfasi.md`):** panel stiliyle önizlemede 16 öğenin 39 özelliği farklı (genişlik 520 → 438 px, zemin koyu), düzenleyici kabuğunda 253 fark.
 **Ters yön (2026-11-03, kullanıcı panelde ölçerken):** tembel yüklenen düzenleyici parçasının CSS'i (Puck + `huni.css`) çıkınca da sayfada kalır; `huni.css`'in `:root --metin`'i panelinkiyle **aynı ad** → düzenleyiciden dönünce panel yazısı koyu zeminde koyu (Kullanıcılar okunmaz). Testler yeşildi; yalnız gerçek gezinme sırasıyla görüldü.
 **Doğrusu:** yalıtım iki yönlü — düzenleyici açıkken kabuğun stil düğümüne `media="not all"` (kopyası da kapalı gelir), çıkınca kabuk geri açılır ve **düzenleyicinin** stil düğümü kapanır (her biri işaret kuralıyla bulunur); eski sayfa koşuluyla hesaplanmış stilleri ve gezinme sırasını (aç → çık → başka sayfa → yeniden aç) gerçek tarayıcıda ölç.
+
+## §44 — happy-dom `step`/`min`'li sayı alanında geçerli değeri reddeder, form gönderilmez
+**Belirti:** testte forma tutar yazılıp gönder düğmesine basılır; hiçbir istek gitmez, hata da yok. Olumlu iddia ("istek gitti") kırmızı; olumsuz iddia ("istek gitmez") **yalancı yeşil**.
+**Sebep:** happy-dom adım geçerliliğini kayan noktayla hesaplar: `step="0.01"` + `min="0.01"` iken (59 − 0,01) / 0,01 tam sayı çıkmaz → alan geçersiz → `submit` olayı hiç oluşmaz. Gerçek tarayıcı bunu ondalık hesapla geçerli sayar.
+**Ölçüm (2026-11-03, `m1a-fiyat-katalogu.md`):** aynı test `step="0.01"` ile 3/4 kırmızı (istek listesi yalnız GET), `step="any"` ile istek gitti.
+**Doğrusu:** ondalık sınırını sunucuda doğrula, alanda `step="any"`; "gönderilmez" testinin önce gönderilebilen bir kontrol grubunu ölçtüğünü gör.

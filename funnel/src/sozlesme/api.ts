@@ -479,6 +479,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/planlar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** Fiyat kataloğu (M1a) — tutar Stripe'tan */
+        get: operations["panelApiPlanlar"];
+        put?: never;
+        /** Yeni plan — Stripe'ta ürün + yinelenen fiyat açılır */
+        post: operations["panelApiPlanOlustur"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/planlar/{anahtar}/fiyat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                anahtar: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Yeni tutar — aynı üründe yeni Stripe fiyatı; eski fiyat satıştan kalkar, mevcut aboneler onda kalır */
+        put: operations["panelApiPlanFiyati"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -616,6 +656,17 @@ export interface components {
             fiyatlar?: {
                 [key: string]: components["schemas"]["PlanFiyati"];
             };
+        };
+        /** @description M1a: fiyat kataloğundaki planın anahtarı (panel → Planlar); çekirdek uygulamanın planlarına karşı doğrular */
+        PlanAnahtari: string;
+        PanelPlanlari: {
+            planlar: {
+                anahtar: components["schemas"]["PlanAnahtari"];
+                ad: string;
+                stripeFiyat: string;
+                /** @description Stripe'tan; okunamazsa null */
+                fiyat: components["schemas"]["PlanFiyati"] | null;
+            }[];
         };
         PlanFiyati: {
             /** @description Ana birimde (9.99) */
@@ -863,8 +914,7 @@ export interface components {
             metin: string;
             dugme: string;
             ilerlemeGoster?: boolean;
-            /** @enum {string} */
-            plan: "monthly";
+            plan: components["schemas"]["PlanAnahtari"];
             /** @description Ç61: paywall'da madde madde fayda listesi (isteğe bağlı) */
             faydalar?: string[];
             sartlar?: components["schemas"]["YasalAdres"];
@@ -928,8 +978,7 @@ export interface operations {
                      * @enum {string}
                      */
                     app: "keepchat";
-                    /** @enum {string} */
-                    plan: "monthly";
+                    plan: components["schemas"]["PlanAnahtari"];
                     /**
                      * Format: uuid
                      * @description /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
@@ -2303,6 +2352,159 @@ export interface operations {
             };
             /** @description Yok ya da zaten iptal */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiPlanlar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelPlanlari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiPlanOlustur: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    anahtar: components["schemas"]["PlanAnahtari"];
+                    ad: string;
+                    /** @description Ana birimde (9.99) */
+                    tutar: number;
+                    /** @enum {string} */
+                    paraBirimi: "EUR" | "USD" | "GBP" | "TRY";
+                    /** @enum {string} */
+                    aralik: "week" | "month" | "year";
+                };
+            };
+        };
+        responses: {
+            /** @description Oluşturuldu; güncel liste */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelPlanlari"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz alan */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiPlanFiyati: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                anahtar: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    tutar: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Güncel liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelPlanlari"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da plan */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz tutar ya da Stripe yanıt vermedi */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

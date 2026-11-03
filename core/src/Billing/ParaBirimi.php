@@ -13,4 +13,10 @@ final class ParaBirimi
     {
         return \in_array(strtoupper($para), self::SIFIR_ONDALIKLI, true) ? $tutar : $tutar / 100;
     }
+
+    /** M1a: panelde yazılan ana birim (9.99) → Stripe'ın küçük birimi (999); kayan nokta yuvarlanır. */
+    public static function kucukBirim(int|float $tutar, string $para): int
+    {
+        return (int) round(\in_array(strtoupper($para), self::SIFIR_ONDALIKLI, true) ? $tutar : $tutar * 100);
+    }
 }

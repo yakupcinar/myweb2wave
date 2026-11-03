@@ -72,4 +72,5 @@ için ilk koşuda görünmedi; yer tutucu ile düzeltildi, `env -i` ile ölçül
 ## Açık
 Ç33 (yedek aynı diskte) · Ç30 (gerçek e-posta sağlayıcısı — dağıtım
 öncesi gerekli, `null://` ön kontrolde reddediliyor) · sunucuda ilk koşu
-(`sunucu-hazirla.sh`, gerçek alan adı, Let's Encrypt, Stripe webhook).
+(`sunucu-hazirla.sh`, gerçek alan adı, Let's Encrypt, Stripe webhook) · M1a: ilk koşuda
+`bin/console app:plan-ice-aktar keepchat monthly <price_…>` (ortam değişkeni kaldırıldı, `m1a-fiyat-katalogu.md`).

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Huni;
 
+use App\Billing\Planlar;
 use App\Medya\Medyalar;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -25,7 +26,8 @@ final readonly class Huniler
     public function __construct(
         private Connection $db,
         private Medyalar $medyalar,
-        /** @var array<string, array<string, string>> uygulama → plan → Stripe fiyatı */
+        private Planlar $planlar,
+        /** @var array<string, array<string, string>> uygulama kaydı (A4); planlar veritabanında (M1a) */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
         #[Autowire('%kernel.secret%')]
@@ -384,7 +386,7 @@ final readonly class Huniler
      */
     public function bosTaslak(string $app): array
     {
-        $plan = (string) (array_key_first($this->uygulamalar[$app] ?? []) ?? 'monthly');
+        $plan = (string) (array_key_first($this->planlar->fiyatKimlikleri($app)) ?? '');
 
         return ['sayfaBasligi' => '', 'adimlar' => [
             ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => '', 'bloklar' => [], 'dugme' => 'Başla'],
@@ -413,7 +415,7 @@ final readonly class Huniler
             return ['bilinmeyen uygulama'];
         }
 
-        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->uygulamalar[$app])));
+        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))));
         // E2.3: görsel bu uygulamaya yüklenmiş olmalı (başka uygulamanınki ya da silinmiş değil).
         foreach ($this->medyalar->eksikler($app, Tanim::gorseller($tanim)) as $id) {
             $hatalar[] = 'görsel '.substr($id, 0, 8).'… bu uygulamada yok';

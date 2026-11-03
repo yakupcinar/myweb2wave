@@ -1051,7 +1051,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         options: ortam.planlar.map((p) => ({
                             label: p,
                             value: p,
-                        })) as { label: string; value: "monthly" }[],
+                        })),
                     },
                     faydalar: {
                         type: "array",

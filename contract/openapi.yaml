@@ -24,9 +24,7 @@ paths:
                   description: Hangi kendi uygulamamız (A4); çekirdek config/packages/uygulamalar.yaml
                   type: string
                   enum: [keepchat]
-                plan:
-                  type: string
-                  enum: [monthly]
+                plan: { $ref: "#/components/schemas/PlanAnahtari" }
                 ziyaret:
                   description: /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
                   type: string
@@ -779,6 +777,63 @@ paths:
         "204": { description: İptal edildi }
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Yok ya da zaten iptal, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/planlar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiPlanlar
+      summary: Fiyat kataloğu (M1a) — tutar Stripe'tan
+      responses:
+        "200": { description: Planlar, content: { application/json: { schema: { $ref: "#/components/schemas/PanelPlanlari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiPlanOlustur
+      summary: Yeni plan — Stripe'ta ürün + yinelenen fiyat açılır
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [anahtar, ad, tutar, paraBirimi, aralik]
+              properties:
+                anahtar: { $ref: "#/components/schemas/PlanAnahtari" }
+                ad: { type: string, minLength: 1, maxLength: 100 }
+                tutar: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1000000, description: Ana birimde (9.99) }
+                paraBirimi: { type: string, enum: [EUR, USD, GBP, TRY] }
+                aralik: { type: string, enum: [week, month, year] }
+      responses:
+        "201": { description: Oluşturuldu; güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelPlanlari" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz alan, plan zaten var ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/planlar/{anahtar}/fiyat:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: anahtar, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: panelApiPlanFiyati
+      summary: Yeni tutar — aynı üründe yeni Stripe fiyatı; eski fiyat satıştan kalkar, mevcut aboneler onda kalır
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [tutar]
+              properties:
+                tutar: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1000000 }
+      responses:
+        "200": { description: Güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelPlanlari" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da plan, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz tutar ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -980,6 +1035,28 @@ components:
             metnini gösterir.
           type: object
           additionalProperties: { $ref: "#/components/schemas/PlanFiyati" }
+    PlanAnahtari:
+      description: "M1a: fiyat kataloğundaki planın anahtarı (panel → Planlar); çekirdek uygulamanın planlarına karşı doğrular"
+      type: string
+      pattern: "^[a-z][a-z0-9_]{0,31}$"
+    PanelPlanlari:
+      type: object
+      additionalProperties: false
+      required: [planlar]
+      properties:
+        planlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [anahtar, ad, stripeFiyat, fiyat]
+            properties:
+              anahtar: { $ref: "#/components/schemas/PlanAnahtari" }
+              ad: { type: string }
+              stripeFiyat: { type: string }
+              fiyat:
+                description: Stripe'tan; okunamazsa null
+                oneOf: [{ $ref: "#/components/schemas/PlanFiyati" }, { type: "null" }]
     PlanFiyati:
       type: object
       additionalProperties: false
@@ -1360,7 +1437,7 @@ components:
         metin: { type: string }
         dugme: { type: string }
         ilerlemeGoster: { type: boolean }
-        plan: { type: string, enum: [monthly] }
+        plan: { $ref: "#/components/schemas/PlanAnahtari" }
         faydalar:
           description: "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)"
           type: array

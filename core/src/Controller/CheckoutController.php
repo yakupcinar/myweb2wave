@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Atif\Ziyaretler;
+use App\Billing\Planlar;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -25,7 +26,8 @@ final readonly class CheckoutController
         private StripeClient $stripe,
         private LoggerInterface $logger,
         private Ziyaretler $ziyaretler,
-        /** @var array<string, array<string, string>> uygulama → plan → Stripe fiyatı */
+        private Planlar $planlar,
+        /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
@@ -44,7 +46,7 @@ final readonly class CheckoutController
         if (!\is_string($app) || !isset($this->uygulamalar[$app])) {
             return new JsonResponse(['error' => 'unknown_app'], 422);
         }
-        $prices = $this->uygulamalar[$app];
+        $prices = $this->planlar->fiyatKimlikleri($app);
         if (!\is_string($plan) || !isset($prices[$plan])) {
             return new JsonResponse(['error' => 'unknown_plan'], 422);
         }
