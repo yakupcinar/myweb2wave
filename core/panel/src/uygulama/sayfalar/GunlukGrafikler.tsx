@@ -27,8 +27,18 @@ const ZIYARET: Seri[] = [
     { anahtar: "ziyaret", ad: "Ziyaret", renk: "var(--seri-1)" },
 ];
 const ODEME: Seri[] = [
-    { anahtar: "odemeBaslatildi", ad: "Ödemeye geçti", renk: "var(--seri-1)" },
-    { anahtar: "odemeTamamlandi", ad: "Ödedi", renk: "var(--seri-2)" },
+    // Olay sayısı (ödeme oturumu), ziyaret değil: özet kartlarının "Ödemeye
+    // geçti / Ödedi"si ziyaret sayar — aynı ad iki farklı sayı gösteriyordu.
+    {
+        anahtar: "odemeBaslatildi",
+        ad: "Başlatılan ödeme",
+        renk: "var(--seri-1)",
+    },
+    {
+        anahtar: "odemeTamamlandi",
+        ad: "Tamamlanan ödeme",
+        renk: "var(--seri-2)",
+    },
 ];
 
 // Gün UTC (uç da UTC günü sayar) — yerel saat günü kaydırmasın.

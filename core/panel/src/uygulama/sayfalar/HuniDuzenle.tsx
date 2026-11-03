@@ -11,38 +11,47 @@ import { api } from "../api";
 /** Eski Twig sayfasının gövde kuralı (önizleme çerçevesine de kopyalanır). */
 const GOVDE = "body { margin: 0; font: 15px/1.45 system-ui, sans-serif; }";
 
+/** İşaret kuralı taşıyan stil düğümleri (`<style>` ve `<link>`). */
+function isaretli(secici: string): (HTMLStyleElement | HTMLLinkElement)[] {
+    return [
+        ...document.querySelectorAll<HTMLStyleElement | HTMLLinkElement>(
+            'style, link[rel="stylesheet"]',
+        ),
+    ].filter((d) => {
+        try {
+            return [...(d.sheet?.cssRules ?? [])].some(
+                (k) => "selectorText" in k && k.selectorText === secici,
+            );
+        } catch {
+            return false; // başka kaynaktan sayfa (okunamaz) — bizim değil
+        }
+    });
+}
+
 /**
- * P3: düzenleyici açıkken panelin stil sayfası kapalı (media="not all" —
- * Puck'ın çerçeveye kopyaladığı düğüm de kapalı gelir), Twig sayfasının gövde
- * kuralı açık; çıkınca geri. Puck'ı bundan sonraya bekletmek gerekmedi:
- * çerçeve eşzamansız yüklenir (ölçüldü, bekletmesiz de fark 0).
+ * P3: stil yalıtımı iki yönlü. Düzenleyici açıkken panelin stil sayfası
+ * kapalı (media="not all" — Puck'ın çerçeveye kopyaladığı düğüm de kapalı
+ * gelir) ve Twig sayfasının gövde kuralı açık. Çıkınca panel geri açılır,
+ * düzenleyicinin sayfası (Puck + huni.css; parça bir kez yüklenince sayfada
+ * kalır) KAPANIR — huni.css'in :root --metin'i panelinkiyle aynı ad
+ * (ölçüldü: dönüşte panel yazısı koyu zeminde koyu). Puck'ı bekletmek
+ * gerekmedi: çerçeve eşzamansız yüklenir (ölçüldü, bekletmesiz de fark 0).
  */
 export function useYalitim(): void {
     useLayoutEffect(() => {
-        const kapatilan: [Element, string | null][] = [];
-        for (const dugum of document.querySelectorAll<
-            HTMLStyleElement | HTMLLinkElement
-        >('style, link[rel="stylesheet"]')) {
-            let panelin = false;
-            try {
-                panelin = [...(dugum.sheet?.cssRules ?? [])].some(
-                    (k) =>
-                        "selectorText" in k &&
-                        k.selectorText === "#panel-stil-isareti",
-                );
-            } catch {
-                continue; // başka kaynaktan sayfa (okunamaz) — panelin değil
-            }
-            if (!panelin) continue;
-            kapatilan.push([dugum, dugum.getAttribute("media")]);
-            dugum.setAttribute("media", "not all");
-        }
+        const panel = isaretli("#panel-stil-isareti").map(
+            (d) => [d, d.getAttribute("media")] as const,
+        );
+        const duzenleyici = isaretli("#duzenleyici-stil-isareti");
+        for (const [d] of panel) d.setAttribute("media", "not all");
+        for (const d of duzenleyici) d.removeAttribute("media");
         const govde = document.createElement("style");
         govde.textContent = GOVDE;
         document.head.append(govde);
         return () => {
             govde.remove();
-            for (const [d, m] of kapatilan)
+            for (const d of duzenleyici) d.setAttribute("media", "not all");
+            for (const [d, m] of panel)
                 if (m === null) d.removeAttribute("media");
                 else d.setAttribute("media", m);
         };

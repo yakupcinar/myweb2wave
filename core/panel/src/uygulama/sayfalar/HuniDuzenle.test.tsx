@@ -117,6 +117,31 @@ describe("P3: düzenleyici sayfası", () => {
 // P3: panelin stil sayfası düzenleyici açıkken kapalı, çıkınca eski hâlinde;
 // gövde kuralı yalnız açıkken (ölçüm: p3-duzenleyici-sayfasi.md).
 describe("P3: stil yalıtımı", () => {
+    it("düzenleyicinin stil sayfası yalnız açıkken etkin; çıkınca kapalı (panel değişkenlerini ezmesin)", async () => {
+        const { useYalitim } = await import("./HuniDuzenle");
+        // Düzenleyici parçası yüklenince sayfada kalır; huni.css :root --metin'i
+        // panelinkiyle aynı ad (ölçüldü: dönüşte panel yazısı koyu zeminde koyu).
+        const duzenleyici = document.createElement("style");
+        duzenleyici.textContent =
+            "#duzenleyici-stil-isareti { --duzenleyici-stil: 1; } :root { --metin: #111827; }";
+        document.head.append(duzenleyici);
+        const Deneme = () => {
+            useYalitim();
+            return <p>hazır</p>;
+        };
+        const ilk = render(<Deneme />);
+        await screen.findByText("hazır");
+        expect(duzenleyici.hasAttribute("media")).toBe(false);
+        ilk.unmount();
+        expect(duzenleyici.getAttribute("media")).toBe("not all");
+        // Yeniden açılınca (parça zaten yüklü) yine etkin.
+        const ikinci = render(<Deneme />);
+        await screen.findByText("hazır");
+        expect(duzenleyici.hasAttribute("media")).toBe(false);
+        ikinci.unmount();
+        duzenleyici.remove();
+    });
+
     it("açıkken panel sayfası media=not all + gövde kuralı; kapanınca geri", async () => {
         const { useYalitim } = await import("./HuniDuzenle");
         const panel = document.createElement("style");

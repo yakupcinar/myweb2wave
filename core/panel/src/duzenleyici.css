@@ -1,6 +1,11 @@
 /* Düzenleyici sayfasının üst çubuğu, bildirimleri ve AI paneli (P3: Twig
    sayfasının satır içi stilinden taşındı, aynen; sayfa gövdesi kuralı
    useYalitim'de — yalnız düzenleyici açıkken). */
+
+/* useYalitim bu sayfayı tanıyıp düzenleyiciden çıkınca kapatır. */
+#duzenleyici-stil-isareti {
+    --duzenleyici-stil: 1;
+}
 .puck-ust {
     display: flex;
     flex-wrap: wrap;

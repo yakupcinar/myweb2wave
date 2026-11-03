@@ -35,3 +35,11 @@ R1 panel stili kapatılmıyor · R2 çıkınca geri açılmıyor · R3 açılı�
 ## Kontrol
 
 `bin/kontrol` 204 s, EXIT=0, `KONTROL: YEŞİL` — core 413 test / 3.291 doğrulama, panel 96 test (önceki koşu PHPStan'da kırmızıydı).
+
+## Ek 2026-11-03 — panelde gerçek oturumla ölçüm (kullanıcı giriş yaptı)
+
+Rapor, Huniler (iki adımlı kaldırma: Sil → Vazgeç, hiçbir şey silinmedi), düzenleyici (sayfa yenilenmeden, panel stili kabukta ve çerçevede `not all`, önizleme `system-ui` + `content-box` — eski Twig koşulu), geri dönüş, Kullanıcılar (arama `?ara=meta`, sıralama `aria-sort`), Ürün bağlamı, API anahtarları; konsolda hata yok.
+
+**Bulunan kusur:** düzenleyiciden dönünce panelin yazısı koyu zeminde koyu (`--metin` #111827). Sebep: düzenleyici parçasının CSS'i (`huni.css` dahil) sayfada kalıyor, `:root --metin` panelinkiyle aynı ad (tuzak §43, ters yön). Düzeltme: `useYalitim` iki yönlü — çıkınca düzenleyicinin stil düğümü (işaret `#duzenleyici-stil-isareti`) `media="not all"`, yeniden açılınca etkin. Tarayıcıda: aç → çık → Kullanıcılar (yazı #e7e9ee, düzenleyici stili `not all`) → yeniden aç (önizlemede `--ana` ve başlık stili var) → çık. Kırma Y1 (çıkınca açık kalır) · Y2 (yeniden açılınca kapalı kalır) kırmızı.
+
+**Yan bulgu (Rapor):** özet kartı "Ödemeye geçti 13" (ziyaret) ile grafik "ödemeye geçti 14" (ödeme oturumu) aynı adla farklı şey sayıyordu → grafik serileri "Başlatılan ödeme / Tamamlanan ödeme" (test önce kırmızı).

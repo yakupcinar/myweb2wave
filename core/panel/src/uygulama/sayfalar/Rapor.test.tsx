@@ -133,14 +133,16 @@ describe("Rapor", () => {
             ziyaret.getByText("3 gün (UTC) · toplam ziyaret 8"),
         ).toBeTruthy();
         expect(
-            odeme.getByText("3 gün (UTC) · toplam ödemeye geçti 3, ödedi 1"),
+            odeme.getByText(
+                "3 gün (UTC) · toplam başlatılan ödeme 3, tamamlanan ödeme 1",
+            ),
         ).toBeTruthy();
         expect(ziyaret.queryByRole("list", { name: "Gösterge" })).toBeNull();
         expect(
             within(odeme.getByRole("list", { name: "Gösterge" }))
                 .getAllByRole("listitem")
                 .map((l) => l.textContent),
-        ).toEqual(["Ödemeye geçti", "Ödedi"]);
+        ).toEqual(["Başlatılan ödeme", "Tamamlanan ödeme"]);
         const satir = (k: ReturnType<typeof within>, gun: string) =>
             [
                 ...k
