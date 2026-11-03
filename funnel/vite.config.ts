@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
-import erkenIstek from "./src/erken-istek-eklentisi";
+import erkenIstek from "./src/erken-istek-eklentisi.ts";
 
 const sayfa = (yol: string): string =>
   fileURLToPath(new URL(yol, import.meta.url));

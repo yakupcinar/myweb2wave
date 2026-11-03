@@ -4,7 +4,7 @@
 // `<script is:inline set:html>` yerine (Astro'yu kaldırma, S2). Değerler sabit
 // (uygulama adı, derlemedeki çekirdek adresi) ve JSON ile kaçışlanır.
 import type { Plugin } from "vite";
-import { tanimIstegi } from "./oynatici/erken-istek";
+import { tanimIstegi } from "./oynatici/erken-istek.ts";
 
 const ISARET = /<!-- erken-istek:([a-z0-9-]+) -->/;
 
