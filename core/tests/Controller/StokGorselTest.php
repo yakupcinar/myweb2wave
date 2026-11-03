@@ -83,8 +83,8 @@ final class StokGorselTest extends WebTestCase
         self::assertIsString($id);
         // Bilgi Pexels'ten (istemciden değil), görsel Pexels'in görsel sunucusundan.
         self::assertSame(['https://api.pexels.com/v1/photos/101', 'https://images.pexels.com/photos/101/b.jpeg?w=940&dpr=2'], array_column(SahtePexels::$istekler, 'url'));
-        // Yeniden kodlandı: 1880×2820 → en uzun kenar 1600.
-        self::assertEquals([1067, 1600], $this->db->fetchNumeric('SELECT genislik, yukseklik FROM medya WHERE id = :id', ['id' => $id]));
+        // Yeniden kodlandı: 1130×1700 → en uzun kenar 1600 (1130·1600/1700 = 1063,5 → 1064).
+        self::assertEquals([1064, 1600], $this->db->fetchNumeric('SELECT genislik, yukseklik FROM medya WHERE id = :id', ['id' => $id]));
         $this->client->request('GET', '/panel/medya/keepchat');
         $liste = $this->json()['gorseller'] ?? null;
         self::assertIsArray($liste);

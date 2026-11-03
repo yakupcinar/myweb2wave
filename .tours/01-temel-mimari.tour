@@ -15,7 +15,7 @@
         "start": { "line": 1, "character": 1 },
         "end": { "line": 28, "character": 1 }
       },
-      "description": "### 📍 1. DURAK: Anayasa (Contract-First)\nBackend (PHP) ve Frontend (TypeScript) **asla bağımsız hareket edemez**; aralarındaki tek anlaşma bu dosyadır.\n\n- Bir huni; `sayfaBasligi`, `tema` ve `adimlar` dizisinden oluşan bir JSON şablonudur.\n- İki tarafın tipleri de doğrudan bu dosyadan otomatik üretilir.\n\n---\n> [▶️ TİPLERİ OTOMATİK ÜRET](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm contract npm run uret\"})\n\n*(Yukarıdaki butona tıklayarak terminalde tipleri yeniden üretebilirsiniz)*"
+      "description": "### 📍 1. DURAK: Anayasa (Contract-First)\nBackend (PHP) ve Frontend (TypeScript) **asla bağımsız hareket edemez**; aralarındaki tek anlaşma bu dosyadır.\n\n- Bir huni; `sayfaBasligi`, `tema` ve `adimlar` dizisinden oluşan bir JSON şablonudur.\n- İki tarafın tipleri de doğrudan bu dosyadan otomatik üretilir.\n\n💻 **Çalıştırmak İstersen Terminal Komutu:**\n```bash\ndocker compose run --rm contract npm run uret\n```"
     },
     {
       "file": "core/panel/src/duzenleyici.tsx",
@@ -24,7 +24,7 @@
         "start": { "line": 45, "character": 1 },
         "end": { "line": 75, "character": 1 }
       },
-      "description": "### 📍 2. DURAK: Puck Sürükle-Bırak Düzenleyicisi\nAdmin panelindeki huni editörünün kalbi burasıdır.\n\n- Sol menüden bir soru veya puanlama bloğu sürüklediğinizde Puck arka planda standart bir JSON nesnesi üretir.\n- Önizleme ekranı canlı huniyle aynı `huni-bilesenleri` paketini kullandığı için **0 stil ve 0 DOM farkı** vardır.\n- Üstteki 'Kaydet'e bastığınızda bu JSON, `PUT /panel/api/.../taslak` ucuna gönderilir.\n\n---\n> [▶️ DÖNÜŞTÜRÜCÜ TESTİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T panel npm test src/donustur.test.ts\"})"
+      "description": "### 📍 2. DURAK: Puck Sürükle-Bırak Düzenleyicisi\nAdmin panelindeki huni editörünün kalbi burasıdır.\n\n- Sol menüden bir soru veya puanlama bloğu sürüklediğinizde Puck arka planda standart bir JSON nesnesi üretir.\n- Önizleme ekranı canlı huniyle aynı `huni-bilesenleri` paketini kullandığı için **0 stil ve 0 DOM farkı** vardır.\n- Üstteki 'Kaydet'e bastığınızda bu JSON, `PUT /panel/api/.../taslak` ucuna gönderilir.\n\n💻 **Dönüştürücü Testini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T panel npm test src/donustur.test.ts\n```"
     },
     {
       "file": "core/src/Huni/Tanim.php",
@@ -33,7 +33,7 @@
         "start": { "line": 25, "character": 1 },
         "end": { "line": 55, "character": 1 }
       },
-      "description": "### 📍 3. DURAK: Güvenlik Bekçisi (Backend Doğrulama)\nPanelden gelen JSON veritabanına girmeden önce **mutlaka** bu sınıftan onay almak zorundadır.\n\n- `Tanim.php` gelen veriyi satır satır denetler.\n- HTML kodu veya `<script>` enjeksiyonu var mı? (XSS engeli — Tuzak D1)\n- Metin uzunlukları aşılmış mı? Şıklar eksik mi?\n- Temizse onay verir; geçersizse 400 hatasıyla reddeder.\n\n---\n> [▶️ GÜVENLİK TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter HuniTest\"})"
+      "description": "### 📍 3. DURAK: Güvenlik Bekçisi (Backend Doğrulama)\nPanelden gelen JSON veritabanına girmeden önce **mutlaka** bu sınıftan onay almak zorundadır.\n\n- `Tanim.php` gelen veriyi satır satır denetler.\n- HTML kodu veya `<script>` enjeksiyonu var mı? (XSS engeli — Tuzak D1)\n- Metin uzunlukları aşılmış mı? Şıklar eksik mi?\n- Temizse onay verir; geçersizse 400 hatasıyla reddeder.\n\n💻 **Güvenlik Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter HuniTest\n```"
     },
     {
       "file": "core/src/Controller/PanelHuniApiController.php",
@@ -51,7 +51,7 @@
         "start": { "line": 91, "character": 1 },
         "end": { "line": 120, "character": 1 }
       },
-      "description": "### 📍 5. DURAK: Canlı Huni Oynatıcısı (Preact / <20KB)\nMüşteri reklama tıkladığında bu minicik bileşen çalışır.\n\n- Sayfa açılır açılmaz Symfony'den az önce kaydettiğimiz JSON'ı çeker (`GET /huni/keepchat`).\n- Gelen JSON'daki adımları sırayla ekrana çizer (`Ekran`, `Soru`, `Paywall`).\n- `kosul.ts` motoru sayesinde kullanıcının cevaplarına göre sonraki adımı anlık olarak hesaplar veya atlar.\n\n---\n> [▶️ OYNATICI TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T funnel npm test\"})"
+      "description": "### 📍 5. DURAK: Canlı Huni Oynatıcısı (Preact / <20KB)\nMüşteri reklama tıkladığında bu minicik bileşen çalışır.\n\n- Sayfa açılır açılmaz Symfony'den az önce kaydettiğimiz JSON'ı çeker (`GET /huni/keepchat`).\n- Gelen JSON'daki adımları sırayla ekrana çizer (`Ekran`, `Soru`, `Paywall`).\n- `kosul.ts` motoru sayesinde kullanıcının cevaplarına göre sonraki adımı anlık olarak hesaplar veya atlar.\n\n💻 **Huni Oynatıcı Testini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T funnel npm test\n```"
     },
     {
       "description": "## 🎉 1. Modül Tamamlandı!\n\nHuninin nasıl tasarlandığını, nasıl doğrulandığını ve mobilde nasıl çizildiğini gördünüz.\n\nŞimdi müşterinin Paywall ekranında 'Satın Al' dedikten sonra paranın nasıl aktığını görmek için **2. Modül: Para ve Abonelik** turuna geçebilirsiniz!"

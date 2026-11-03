@@ -13,7 +13,7 @@
         "start": { "line": 70, "character": 1 },
         "end": { "line": 105, "character": 1 }
       },
-      "description": "### 📍 1. DURAK: Panel İçi AI Asistanı (Claude Motoru)\nYönetici paneldeki sohbet kutusuna bir brief yazdığında bu metot çalışır.\n\n- Anthropic PHP SDK ile akışsız mesaj döngüsü kurulur.\n- `prompt-caching`: Sistem istemi ve araç tanımları önbelleğe alınır (`ephemeral`), böylece her mesajlaşmada API maliyeti %85 daha ucuzdur.\n- Döngü bizim kontrolümüzdedir; Claude bir hata yaparsa çekirdek hatayı modele geri verir ve model kendi kendini düzeltir.\n\n---\n> [▶️ AI PANEL TESTİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter PanelAiTest\"})"
+      "description": "### 📍 1. DURAK: Panel İçi AI Asistanı (Claude Motoru)\nYönetici paneldeki sohbet kutusuna bir brief yazdığında bu metot çalışır.\n\n- Anthropic PHP SDK ile akışsız mesaj döngüsü kurulur.\n- `prompt-caching`: Sistem istemi ve araç tanımları önbelleğe alınır (`ephemeral`), böylece her mesajlaşmada API maliyeti %85 daha ucuzdur.\n- Döngü bizim kontrolümüzdedir; Claude bir hata yaparsa çekirdek hatayı modele geri verir ve model kendi kendini düzeltir.\n\n💻 **AI Panel Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter PanelAiTest\n```"
     },
     {
       "file": "core/src/Huni/Arac/HuniAraclari.php",
@@ -40,7 +40,7 @@
         "start": { "line": 40, "character": 1 },
         "end": { "line": 70, "character": 1 }
       },
-      "description": "### 📍 4. DURAK: Model Context Protocol (MCP) Sunucusu\nSistemi sadece web panelinden değil, dış dünyadaki gelişmiş AI ajanlarından (Cursor, Windsurf, Claude Code) yönetebilmek için bu sunucu kurulmuştur.\n\n- Streamable HTTP `/mcp` protokolü çalışır.\n- Panelden üretilen kişisel Bearer API anahtarlarıyla korunur.\n- Dış bir agent bu uca bağlandığında, yukarıdaki tüm huni araçlarını ve ekran görüntüsü servisini uzaktan çağırabilir.\n\n---\n> [▶️ MCP TESTİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter McpTest\"})"
+      "description": "### 📍 4. DURAK: Model Context Protocol (MCP) Sunucusu\nSistemi sadece web panelinden değil, dış dünyadaki gelişmiş AI ajanlarından (Cursor, Windsurf, Claude Code) yönetebilmek için bu sunucu kurulmuştur.\n\n- Streamable HTTP `/mcp` protokolü çalışır.\n- Panelden üretilen kişisel Bearer API anahtarlarıyla korunur.\n- Dış bir agent bu uca bağlandığında, yukarıdaki tüm huni araçlarını ve ekran görüntüsü servisini uzaktan çağırabilir.\n\n💻 **MCP Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter McpTest\n```"
     },
     {
       "file": "core/src/Command/AiDegerlendirCommand.php",
@@ -49,7 +49,7 @@
         "start": { "line": 45, "character": 1 },
         "end": { "line": 85, "character": 1 }
       },
-      "description": "### 📍 5. DURAK: Model ve Maliyet Kıyaslama Motoru (A6)\nYeni modeller çıktığında (Claude 3.7 Sonnet, Opus 4 vb.) hangisinin daha ucuz ve başarılı olduğunu ölçen benchmark komutumuzdur:\n\n`bin/console app:ai-degerlendir --efor=low`\n\n- `config/ai/degerlendirme.json` içindeki brief setlerini alır.\n- Her biri için geçici bir test hunisi açıp Claude'a huni tasarlatır.\n- Başarı oranını, tur sayısını, milisaniye cinsinden süreyi ve mikrodolar ($) maliyetini raporlar.\n\n---\n> [▶️ BENCHMARK TESTİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter AiDegerlendirCommandTest\"})"
+      "description": "### 📍 5. DURAK: Model ve Maliyet Kıyaslama Motoru (A6)\nYeni modeller çıktığında (Claude 3.7 Sonnet, Opus 4 vb.) hangisinin daha ucuz ve başarılı olduğunu ölçen benchmark komutumuzdur:\n\n`bin/console app:ai-degerlendir --efor=low`\n\n- `config/ai/degerlendirme.json` içindeki brief setlerini alır.\n- Her biri için geçici bir test hunisi açıp Claude'a huni tasarlatır.\n- Başarı oranını, tur sayısını, milisaniye cinsinden süreyi ve mikrodolar ($) maliyetini raporlar.\n\n💻 **AI Değerlendirme Testini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter AiDegerlendirCommandTest\n```"
     },
     {
       "file": "docs/backend-mimarisi.md",

@@ -23,7 +23,7 @@
         "start": { "line": 35, "character": 1 },
         "end": { "line": 65, "character": 1 }
       },
-      "description": "### 📍 2. DURAK: Stripe Checkout Oturumu Açma\nKullanıcı butona bastığında `POST /checkout/sessions` çağrılır.\n\n- `metadata.app`: Oturuma hangi uygulamanın (örn: 'keepchat') satın alındığı yazılır.\n- Stripe'ın ödeme sayfası adresi üretilir ve kullanıcı o adrese yönlendirilir.\n\n---\n> [▶️ CHECKOUT TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter CheckoutControllerTest\"})"
+      "description": "### 📍 2. DURAK: Stripe Checkout Oturumu Açma\nKullanıcı butona bastığında `POST /checkout/sessions` çağrılır.\n\n- `metadata.app`: Oturuma hangi uygulamanın (örn: 'keepchat') satın alındığı yazılır.\n- Stripe'ın ödeme sayfası adresi üretilir ve kullanıcı o adrese yönlendirilir.\n\n💻 **Checkout Testini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter CheckoutControllerTest\n```"
     },
     {
       "file": "core/src/Billing/SubscriptionSync.php",
@@ -32,7 +32,7 @@
         "start": { "line": 38, "character": 1 },
         "end": { "line": 75, "character": 1 }
       },
-      "description": "### 📍 3. DURAK: Webhook Senkronizasyonu & Güvenlik\nKullanıcı kartını ödediği an Stripe bizim sunucumuza webhook atar.\n\n- `processed_webhook_events`: Stripe aynı webhook'u tekrar yollarsa veritabanına zarar veremez (Idempotency - R3).\n- `status_event_created`: Ağ gecikmesiyle sırasız gelen eski bir webhook asla daha yeni bir durumu ezemez (Tuzak §13).\n- Oturum ödendiğinde `subscriptions` tablosuna kayıt atılır.\n\n---\n> [▶️ WEBHOOK TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter StripeWebhookControllerTest\"})"
+      "description": "### 📍 3. DURAK: Webhook Senkronizasyonu & Güvenlik\nKullanıcı kartını ödediği an Stripe bizim sunucumuza webhook atar.\n\n- `processed_webhook_events`: Stripe aynı webhook'u tekrar yollarsa veritabanına zarar veremez (Idempotency - R3).\n- `status_event_created`: Ağ gecikmesiyle sırasız gelen eski bir webhook asla daha yeni bir durumu ezemez (Tuzak §13).\n- Oturum ödendiğinde `subscriptions` tablosuna kayıt atılır.\n\n💻 **Webhook Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter StripeWebhookControllerTest\n```"
     },
     {
       "file": "core/src/Kimlik/Hak.php",
@@ -50,7 +50,7 @@
         "start": { "line": 35, "character": 1 },
         "end": { "line": 65, "character": 1 }
       },
-      "description": "### 📍 5. DURAK: Mobil Uygulamaya E-posta ile Bağlama\nMüşteri KeepChat iOS uygulamasını açar ve 'Aboneliğimi Bağla' der.\n\n- Kullanıcı e-postasını yazar; bu sınıf 6 haneli rastgele bir kod üretip postalar.\n- Güvenlik: Kod veritabanında düz metin olarak değil, HMAC-SHA256 özetiyle saklanır. 10 dakika geçerlidir, 5 yanlış denemede kilitlenir.\n\n---\n> [▶️ KİMLİK TESTLERİNİ ÇALIŞTIR](command:codetour.sendTerminalCommand?{\"command\":\"docker compose run --rm -T core vendor/bin/phpunit --filter KimlikControllerTest\"})"
+      "description": "### 📍 5. DURAK: Mobil Uygulamaya E-posta ile Bağlama\nMüşteri KeepChat iOS uygulamasını açar ve 'Aboneliğimi Bağla' der.\n\n- Kullanıcı e-postasını yazar; bu sınıf 6 haneli rastgele bir kod üretip postalar.\n- Güvenlik: Kod veritabanında düz metin olarak değil, HMAC-SHA256 özetiyle saklanır. 10 dakika geçerlidir, 5 yanlış denemede kilitlenir.\n\n💻 **Kimlik Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter KimlikControllerTest\n```"
     },
     {
       "file": "core/src/Kimlik/Hak.php",

@@ -49,3 +49,7 @@ eklendi, kırmızı.
 `bin/kontrol` bir kez 10 dakikada bitmedi (adımlar yeşil, süreç çıkmadı;
 artık kap 17 dk açıktı); adımlar tek tek 8 sn ve 19 sn'de çıktı, yeniden tam
 koşu 192 sn YEŞİL. Sebep bulunamadı — disk %98 (4,2 GB boş, §14) → Ç105.
+
+## CI kırmızısı (2026-11-03)
+
+`e61d89e` CI'da kırmızı: sahte Pexels'in 1880×2820 JPEG'i + gerçek çözme aynı süreçte 128 MB'ı aştı (tuzak §47). Sahte 1130×1700'e indi, bir kez üretiliyor. Ölçüm: yalnız bu test eski boyla tepe 78,7 MB, yeni boyla sınıfın 9 testi 69 MB — CI'daki aşım tam süitte birikmiş bellek + bu testin sıçraması (tek başına 128'i aşmıyor). Yerel tam süit yeşildi — yerel kontrol bunu göstermedi.

@@ -28,6 +28,25 @@ final class SahtePexels
         self::$fotoEki = [];
     }
 
+    private static ?string $jpeg = null;
+
+    /**
+     * 1130×1700: küçültmeyi (en uzun kenar 1600) ölçer ama küçük — CI'da
+     * 1880×2820 sahte + gerçek çözme aynı süreçte 128 MB'ı aştı (V3b CI).
+     */
+    private static function jpeg(): string
+    {
+        if (null === self::$jpeg) {
+            $g = imagecreatetruecolor(1130, 1700);
+            imagefill($g, 0, 0, (int) imagecolorallocate($g, 20, 30, 70));
+            ob_start();
+            imagejpeg($g, null, 80);
+            self::$jpeg = (string) ob_get_clean();
+        }
+
+        return self::$jpeg;
+    }
+
     /** @return array<string, mixed> */
     public static function foto(int $id): array
     {
@@ -53,12 +72,7 @@ final class SahtePexels
             return new MockResponse('{"error":"x"}', ['http_code' => self::$durum]);
         }
         if (str_starts_with($url, 'https://images.pexels.com/')) {
-            $g = imagecreatetruecolor(1880, 2820);
-            imagefill($g, 0, 0, (int) imagecolorallocate($g, 20, 30, 70));
-            ob_start();
-            imagejpeg($g, null, 80);
-
-            return new MockResponse((string) ob_get_clean());
+            return new MockResponse(self::jpeg());
         }
         if (1 === preg_match('#/v1/photos/(\d+)#', $url, $m)) {
             return new MockResponse((string) json_encode(self::foto((int) $m[1])));

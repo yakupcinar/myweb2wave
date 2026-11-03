@@ -294,3 +294,9 @@ birden çok çekimle ölç.
 **Sebep:** `[hidden] { display: none }` tarayıcının varsayılan stil sayfasında, en düşük öncelikle; aynı öğeyi seçen herhangi bir yazar kuralı (`.simge img { display: block }`) onu ezer.
 **Ölçüm (2026-11-03, `v3a-fluent-simgeler.md`):** tek renk simgede yoklama için gizlenen siyah SVG maskenin üstünde çizildi — simgeler ana renk yerine siyah (ekran görüntüsünde görüldü).
 **Doğrusu:** `display` veren kuralın yanına `…[hidden] { display: none }`; görünürlüğü öznitelikten değil çizimden ölç (ekran görüntüsü / hesaplanmış stil).
+
+## §47 — Testin sahte verisi denetlenen kodla aynı `memory_limit`'i paylaşır
+**Belirti:** test yerelde yeşil, CI'da `Allowed memory size … exhausted` ile süreç ölür; kod değişmedi.
+**Sebep:** sahte (ör. büyük görsel üreten HTTP sahtesi) ve denetlenen kod (aynı görseli çözen) aynı PHP sürecinde; ikisi birlikte sınıra yakın. Yerelde aynı 128M ile geçmesi şanstı (sıra/çöp toplama).
+**Ölçüm (2026-11-03, `v3b-stok-fotograf.md`):** 1880×2820 sahte JPEG + gerçek çözme → CI'da tam süitte 128 MB aşıldı (test tek başına 78,7 MB — birikmiş süit belleğiyle aştı); 1130×1700 (küçültmeyi yine ölçer) ile 9 testlik sınıf 69 MB.
+**Doğrusu:** sahte veriyi davranışı ölçen en küçük boyda tut, bir kez üret; yerel yeşili "sınıra ne kadar yakın" sorusuyla oku (`Memory:` satırı).

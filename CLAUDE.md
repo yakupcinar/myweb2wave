@@ -161,6 +161,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§44** | **happy-dom `step="0.01"`+`min`'li sayı alanında geçerli tutarı reddeder, form sessizce gönderilmez** — "istek gitmez" testi yalancı yeşil; ondalık sınırı sunucuda, alanda `step="any"`. |
 | **§45** | **Çatı değişince bağlama kökü (`<div id>`) flex zincirini koparır** — telefonda yapışık düğme içeriğin altında kalır, hata yok; kök `display: contents`, ölçüm gerçek tarayıcıda. |
 | **§46** | **`display` veren yazar kuralı `[hidden]`'ı ezer** — gizli öğe görünür, özniteliğe bakan test yeşil; yanına `[hidden] { display: none }`, ölçüm çizimde. |
+| **§47** | **Testin sahtesi denetlenen kodla aynı `memory_limit`'i paylaşır** — yerelde yeşil, CI'da bellekten ölür; sahte veriyi en küçük ölçen boyda tut, `Memory:` satırını oku. |
 
 ---
 
