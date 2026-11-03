@@ -144,21 +144,30 @@ it("koşul özellikleri: sabit adlar + bu ve önceki ekranların cevapları", ()
             kose: 10,
         },
     );
-    const degerler = ozellikSecenekleri(
+    // Ç91: sabit kısım sunucudan gelen listedir (elle kopya yok), etiket "açıklama (ad)".
+    const sabit = [
+        { ad: "utm.source", aciklama: "reklam kaynağı" },
+        { ad: "adim.son", aciklama: "ulaşılan en ileri adım" },
+    ];
+    const secenekler = ozellikSecenekleri(
         { data: v } as unknown as AppState,
         String(v.content[2]!.props.id),
-    ).map((o) => o.value);
-    expect(degerler).toEqual([
-        "utm.source",
-        "utm.medium",
-        "utm.campaign",
-        "utm.content",
-        "utm.term",
-        "izin.reklam",
-        "huni",
-        "huni.surum",
-        "adim.son",
-        "cevap.s1",
-        "cevap.s2",
+        true,
+        sabit,
+    );
+    expect(secenekler).toEqual([
+        { label: "reklam kaynağı (utm.source)", value: "utm.source" },
+        { label: "ulaşılan en ileri adım (adim.son)", value: "adim.son" },
+        { label: "Cevap: s1", value: "cevap.s1" },
+        { label: "Cevap: s2", value: "cevap.s2" },
     ]);
+    // Gösterim / koşullu değer: bu ekranın cevabı yok.
+    expect(
+        ozellikSecenekleri(
+            { data: v } as unknown as AppState,
+            String(v.content[2]!.props.id),
+            false,
+            sabit,
+        ).map((o) => o.value),
+    ).toEqual(["utm.source", "adim.son", "cevap.s1"]);
 });

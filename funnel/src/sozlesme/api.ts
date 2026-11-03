@@ -1952,6 +1952,11 @@ export interface operations {
                         planlar: string[];
                         temaVarsayilan: components["schemas"]["HuniTemasi"];
                         yaziTipleri: string[];
+                        /** @description Ç91 — koşullarda kullanılabilen özellikler (T2 sözlüğünden; cevap.<adım> düzenleyicide ekranlardan eklenir) */
+                        ozellikler: {
+                            ad: string;
+                            aciklama: string;
+                        }[];
                         /** @description Düzenleyici uçlarının CSRF jetonu (huni-<app>) */
                         jeton: string;
                         adresler: {

@@ -37,6 +37,8 @@ export type Ortam = {
     yaziTipleri: string[];
     medyaAdresi: string; // panel listesi + yükleme ucu
     jeton: string;
+    /** Ç91: koşul özellikleri sunucudan (T2 sözlüğü) — elle kopya yok. */
+    ozellikler: { ad: string; aciklama: string }[];
 };
 
 type Gorsel = {
@@ -227,32 +229,26 @@ export function hedefSecenekleri(
 }
 
 /**
- * T3a: koşulun özellik seçenekleri — T2 sözlüğünün hunide bilinen adları
- * (ödeme/abonelik yok; core/src/Ozellik/Ozellikler.php ile eş tutulur, kayıtta
+ * T3a: koşulun özellik seçenekleri — sunucunun verdiği sözlük (Ç91; kayıtta
  * çekirdek yine denetler) + bu ve önceki ekranların soruları.
  */
-const SABIT_OZELLIKLER = [
-    ["utm.source", "Reklam kaynağı (utm_source)"],
-    ["utm.medium", "Reklam ortamı (utm_medium)"],
-    ["utm.campaign", "Kampanya (utm_campaign)"],
-    ["utm.content", "Reklam içeriği (utm_content)"],
-    ["utm.term", "Anahtar kelime (utm_term)"],
-    ["izin.reklam", "Reklam ölçümü izni (evet / hayir)"],
-    ["huni", "Huni adı"],
-    ["huni.surum", "Huni sürümü (sayı)"],
-    ["adim.son", "En ileri adım"],
-] as const;
 export function ozellikSecenekleri(
     appState: AppState,
     bilesen: string,
     /** T3b: gösterim koşulu ekran çizilmeden hesaplanır — bu ekranın cevabı yok. */
-    buEkranDahil = true,
+    buEkranDahil: boolean,
+    sabit: Ortam["ozellikler"],
 ): SelectField["options"] {
     const icerik = appState.data.content;
     const sira = icerik.findIndex((o) => o.props["id"] === bilesen);
     return [
-        ...SABIT_OZELLIKLER.map(([value, label]) => ({ label, value })),
-        ...icerik
+        ...sabit.map((o) => ({
+            label: `${o.aciklama} (${o.ad})`,
+            value: o.ad,
+        })),
+        // Ekranı bulunamayan (ekran dışına bırakılmış) blokta cevap yok:
+        // -1 ile slice "sondan biri hariç hepsi" verirdi (Ç91 testinde ölçüldü).
+        ...(sira < 0 ? [] : icerik)
             .slice(0, buEkranDahil ? sira + 1 : sira)
             .filter(
                 (o) =>
@@ -305,10 +301,8 @@ const yonlendirmeAlani = {
                 ozellik: {
                     type: "select" as const,
                     label: "Özellik",
-                    options: SABIT_OZELLIKLER.map(([value, label]) => ({
-                        label,
-                        value,
-                    })),
+                    // Ç91: seçenekler bileşenin resolveFields'ında (sunucu + ekranlar).
+                    options: [] as SelectField["options"],
                 },
                 islem: {
                     type: "select" as const,
@@ -360,6 +354,27 @@ function degerAlani(alanlar: [string, string][]) {
                 options: alanlar.map(([value, label]) => ({ label, value })),
             },
             deger: { type: "textarea" as const, label: "Yeni değer" },
+        },
+    };
+}
+
+/** Ç91: "Koşullu değerler" alanına özellik seçenekleri (koşullar dizisinin içinde). */
+function degerSecenekli(
+    alan: ReturnType<typeof degerAlani>,
+    secenekler: SelectField["options"],
+): ReturnType<typeof degerAlani> {
+    const k = alan.arrayFields.kosullar;
+    return {
+        ...alan,
+        arrayFields: {
+            ...alan.arrayFields,
+            kosullar: {
+                ...k,
+                arrayFields: {
+                    ...k.arrayFields,
+                    ozellik: { ...k.arrayFields.ozellik, options: secenekler },
+                },
+            },
         },
     };
 }
@@ -473,9 +488,19 @@ const VARSAYILAN_SECENEKLER: SecenekProps[] = [
     },
 ];
 
+/** T3c: koşullu değer alanı olan bloklar (soru ve maddeler dışı). */
+const DEGERLI_BLOKLAR = [
+    "BaslikBlogu",
+    "MetinBlogu",
+    "GorselBlogu",
+    "YorumBlogu",
+    "IstatistikBlogu",
+    "KutuBlogu",
+] as const;
+
 export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
     const soru = soruAlanlari(ortam);
-    return {
+    const yap: Config<Bilesenler, KokProps> = {
         root: {
             fields: {
                 sayfaBasligi: {
@@ -725,6 +750,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                             options: ozellikSecenekleri(
                                                 appState,
                                                 veri.props.id,
+                                                true,
+                                                ortam.ozellikler,
                                             ),
                                         },
                                     },
@@ -741,10 +768,21 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                         appState,
                                         veri.props.id,
                                         false,
+                                        ortam.ozellikler,
                                     ),
                                 },
                             },
                         },
+                        // Ç91: koşullu değer gösterimde hesaplanır — önceki ekranlar.
+                        degerler: degerSecenekli(
+                            fields.degerler as ReturnType<typeof degerAlani>,
+                            ozellikSecenekleri(
+                                appState,
+                                veri.props.id,
+                                false,
+                                ortam.ozellikler,
+                            ),
+                        ),
                     };
                 },
                 defaultProps: {
@@ -1124,4 +1162,33 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
         },
     };
+    // Ç91: bloğun koşullu değerinde, bloğun EKRANINDAN önceki ekranların
+    // cevapları (Puck yuvadaki bloğa üst bileşeni `parent` olarak verir).
+    for (const ad of DEGERLI_BLOKLAR) {
+        // Bileşen yapılandırmaları türce ayrı (prop'lar farklı); burada yalnız
+        // ortak koşullu değer alanına dokunulur.
+        const bilesen = yap.components[ad] as unknown as {
+            resolveFields?: (
+                veri: unknown,
+                p: {
+                    fields: Record<string, unknown>;
+                    appState: AppState;
+                    parent: { props: { id?: unknown } } | null;
+                },
+            ) => Record<string, unknown>;
+        };
+        bilesen.resolveFields = (_, { fields, appState, parent }) => ({
+            ...fields,
+            degerler: degerSecenekli(
+                fields["degerler"] as ReturnType<typeof degerAlani>,
+                ozellikSecenekleri(
+                    appState,
+                    String(parent?.props.id ?? ""),
+                    false,
+                    ortam.ozellikler,
+                ),
+            ),
+        });
+    }
+    return yap;
 }

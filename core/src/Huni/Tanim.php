@@ -50,6 +50,24 @@ final class Tanim
     /** T3a: hunide (tarayıcıda) bilinmeyen özellikler — ödemeden sonra sunucuda. */
     private const HUNI_DISI_OZELLIKLER = ['odeme', 'abonelik'];
 
+    /**
+     * Ç91: koşullarda kullanılabilen sabit özellikler (sözlük sırasıyla) —
+     * düzenleyici bunu açılışta alır; `cevap.<adım>` ekranlardan eklenir.
+     *
+     * @return list<array{ad: string, aciklama: string}>
+     */
+    public static function kosulOzellikleri(): array
+    {
+        $liste = [];
+        foreach (Ozellikler::SOZLUK as $ad => [, $aciklama]) {
+            if (!str_ends_with($ad, '.*') && !\in_array(explode('.', $ad, 2)[0], self::HUNI_DISI_OZELLIKLER, true)) {
+                $liste[] = ['ad' => $ad, 'aciklama' => $aciklama];
+            }
+        }
+
+        return $liste;
+    }
+
     /** T1c: tam ekran kapaklı ekranda izinli bloklar (yüzeysiz, metin). */
     public const TAM_EKRAN_BLOKLARI = ['baslik', 'metin', 'maddeler', 'istatistik'];
 

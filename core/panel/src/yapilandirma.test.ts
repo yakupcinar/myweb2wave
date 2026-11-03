@@ -7,6 +7,10 @@ const ortam: Ortam = {
     yaziTipleri: ["sistem", "serif", "yuvarlak", "mono"],
     medyaAdresi: "",
     jeton: "",
+    ozellikler: [
+        { ad: "utm.source", aciklama: "reklam kaynağı" },
+        { ad: "huni", aciklama: "ziyaretin gördüğü huni" },
+    ],
 };
 
 // T1c: soru adımı yok — soru, ekranın yuvasındaki soru bloğu.
@@ -97,6 +101,101 @@ describe("adım menüsü (T1c)", () => {
         const yorum = yapilandirma(ortam).components.YorumBlogu;
         expect(Object.keys(yorum.fields ?? {})).toEqual(
             expect.arrayContaining(["metin", "yazar", "unvan", "puan"]),
+        );
+    });
+
+    // Ç91: koşullu değerlerde özellik seçenekleri — sunucunun listesi + ekranın
+    // ÖNCEKİ ekranlarının cevapları; blokta ekran Puck'ın "parent"ından.
+    describe("Ç91: koşullu değer özellikleri", () => {
+        const soruEkrani = (id: string, kimlik: string) => ({
+            type: "Ekran",
+            props: {
+                id,
+                kimlik,
+                bloklar: [{ type: "SoruBlogu", props: { id: `${id}-s` } }],
+            },
+        });
+        const appState = {
+            data: {
+                content: [
+                    soruEkrani("E1", "kiminle"),
+                    soruEkrani("E2", "cihaz"),
+                    soruEkrani("E3", "son"),
+                ],
+            },
+        } as unknown as AppState;
+        const degerOzellikleri = (alanlar: unknown): unknown =>
+            (
+                alanlar as {
+                    degerler: {
+                        arrayFields: {
+                            kosullar: {
+                                arrayFields: {
+                                    ozellik: { options: { value: string }[] };
+                                };
+                            };
+                        };
+                    };
+                }
+            ).degerler.arrayFields.kosullar.arrayFields.ozellik.options.map(
+                (o) => o.value,
+            );
+        type Coz = (
+            veri: unknown,
+            p: { fields: unknown; appState: AppState; parent: unknown },
+        ) => unknown;
+
+        it("ekranda: sunucu listesi + önceki ekranların cevabı (kendisininki yok)", () => {
+            const ekran = yapilandirma(ortam).components.Ekran;
+            const coz = ekran.resolveFields as unknown as Coz;
+            expect(
+                degerOzellikleri(
+                    coz(
+                        { props: { id: "E2" } },
+                        { fields: ekran.fields, appState, parent: null },
+                    ),
+                ),
+            ).toEqual(["utm.source", "huni", "cevap.kiminle"]);
+        });
+
+        it.each([
+            "BaslikBlogu",
+            "MetinBlogu",
+            "GorselBlogu",
+            "YorumBlogu",
+            "IstatistikBlogu",
+            "KutuBlogu",
+        ] as const)(
+            "%s: bloğun ekranından önceki cevaplar; ekransız blokta yalnız sunucu listesi",
+            (tur) => {
+                const blok = yapilandirma(ortam).components[tur];
+                const coz = blok.resolveFields as unknown as Coz;
+                expect(
+                    degerOzellikleri(
+                        coz(
+                            { props: { id: "b" } },
+                            {
+                                fields: blok.fields,
+                                appState,
+                                parent: { props: { id: "E3" } },
+                            },
+                        ),
+                    ),
+                ).toEqual([
+                    "utm.source",
+                    "huni",
+                    "cevap.kiminle",
+                    "cevap.cihaz",
+                ]);
+                expect(
+                    degerOzellikleri(
+                        coz(
+                            { props: { id: "b" } },
+                            { fields: blok.fields, appState, parent: null },
+                        ),
+                    ),
+                ).toEqual(["utm.source", "huni"]);
+            },
         );
     });
 

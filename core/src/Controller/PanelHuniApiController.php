@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Huni\Huniler;
+use App\Huni\Tanim;
 use App\Huni\Tema;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -106,6 +107,7 @@ final class PanelHuniApiController extends AbstractController
             'planlar' => array_keys($this->uygulamalar[$app]),
             'temaVarsayilan' => Tema::VARSAYILAN,
             'yaziTipleri' => Tema::YAZI_TIPLERI,
+            'ozellikler' => Tanim::kosulOzellikleri(),
             'jeton' => $this->jetonlar->getToken('huni-'.$app)->getValue(),
             'adresler' => [
                 'kaydet' => $this->generateUrl('panel_huni_taslak', ['app' => $app, 'ad' => $ad]),

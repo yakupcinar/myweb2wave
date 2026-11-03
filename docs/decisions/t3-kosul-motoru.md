@@ -107,3 +107,11 @@ C1 alanın öğede var olması · C2 değer alanın kuralıyla · C3 bu ekranın
 ## Kontrol
 
 `bin/kontrol` 212 s, EXIT=0, `KONTROL: YEŞİL` — core 406 test / 3.109 doğrulama. Önceki koşu PHPStan'da kırmızıydı (test yardımcısı `mixed` üzerinde).
+
+# Ç91 — düzenleyicide koşul özellikleri sunucudan, koşullu değerde cevaplar (2026-11-03)
+
+- **Elle kopya kalktı:** düzenleyicinin özellik listesi (`SABIT_OZELLIKLER`) silindi; açılış ucu (`/panel/api/uygulamalar/{app}/huniler/{ad}/duzenleyici`, sözleşmede `ozellikler`) sözlükten gelir — `Tanim::kosulOzellikleri()`: `Ozellikler::SOZLUK` sırasıyla, `odeme`/`abonelik` (hunide bilinmez) ve `cevap.*` (ekranlardan eklenir) hariç. Etiket "açıklama (ad)".
+- **Koşullu değerlerde cevaplar:** ekranda ve altı blokta (`DEGERLI_BLOKLAR`) önceki ekranların `cevap.<kimlik>`'i. Blok kendi ekranını Puck'ın `resolveFields` → `parent`'ından bulur (Puck 0.23 türlerinden ölçüldü).
+- **Bulunan kusur (testle):** ekranı bulunamayan blokta `findIndex` −1 → `slice(0, -1)` "sondan biri hariç bütün ekranlar"ı veriyordu; artık cevap yok.
+- **Tarayıcı (kullanıcının oturumu):** `genel` taslağında `hazir` ekranının paragrafına kaydedilmemiş bir koşullu değer eklendi: özellik listesi sunucunun 9 adı + `cevap.kiminle`, `cevap.cihaz`, `cevap.oncelik` (kendi ekranı yok), etiket "reklam kaynağı (utm.source)"; geri al ile taslak "Yayındakiyle aynı" — hiçbir şey kaydedilmedi.
+- **Kırma (4/4 kırmızı):** Ç1 sunucu listesi kullanılmaz (ilk koşu KOŞULMADI — prettier satırı bölmüştü, §8) · Ç2 hunide bilinmeyen özellik listede · Ç3 blokta `parent` yok sayılır · Ç4 −1 koruması yok.

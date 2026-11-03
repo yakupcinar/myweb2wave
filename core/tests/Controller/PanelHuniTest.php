@@ -231,6 +231,12 @@ final class PanelHuniTest extends WebTestCase
             'aiDurum' => '/panel/api/ai/durum',
             'aiSohbet' => '/panel/api/ai/huniler/keepchat/genel/sohbet',
         ], $acilis['adresler']);
+        // Ç91: koşul özellikleri sunucudan (sözlük; hunide bilinmeyen ödeme/abonelik ve
+        // dinamik cevap.* yok) — düzenleyicide elle kopya liste kalmadı.
+        self::assertSame(
+            ['huni', 'huni.surum', 'utm.source', 'utm.medium', 'utm.campaign', 'utm.content', 'utm.term', 'izin.reklam', 'adim.son'],
+            array_column(\is_array($acilis['ozellikler']) ? $acilis['ozellikler'] : [], 'ad'),
+        );
         // Açılıştaki jeton düzenleyici uçlarında geçer (kayıt 200).
         $this->kaydet(self::tanim('Yeni'), \is_string($acilis['jeton']) ? $acilis['jeton'] : '');
         self::assertResponseStatusCodeSame(200);

@@ -102,6 +102,7 @@ const yap = yapilandirma({
     yaziTipleri: ["sistem", "serif", "yuvarlak", "mono"],
     medyaAdresi: "",
     jeton: "",
+    ozellikler: [],
 });
 const veri = tanimdanPuck(tanim, VARSAYILAN);
 // React 19'un sunucu çizimi görseller için başa <link rel="preload"> koyuyor

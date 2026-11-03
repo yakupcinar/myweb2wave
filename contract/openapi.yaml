@@ -611,7 +611,7 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [baslik, taslak, imza, planlar, temaVarsayilan, yaziTipleri, jeton, adresler]
+                required: [baslik, taslak, imza, planlar, temaVarsayilan, yaziTipleri, ozellikler, jeton, adresler]
                 properties:
                   baslik: { type: string }
                   taslak: { $ref: "#/components/schemas/HuniTanimi" }
@@ -619,6 +619,16 @@ paths:
                   planlar: { type: array, items: { type: string } }
                   temaVarsayilan: { $ref: "#/components/schemas/HuniTemasi" }
                   yaziTipleri: { type: array, items: { type: string } }
+                  ozellikler:
+                    description: "Ç91 — koşullarda kullanılabilen özellikler (T2 sözlüğünden; cevap.<adım> düzenleyicide ekranlardan eklenir)"
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [ad, aciklama]
+                      properties:
+                        ad: { type: string }
+                        aciklama: { type: string }
                   jeton: { type: string, description: "Düzenleyici uçlarının CSRF jetonu (huni-<app>)" }
                   adresler:
                     type: object
