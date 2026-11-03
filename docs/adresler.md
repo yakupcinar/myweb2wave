@@ -12,7 +12,7 @@ güncellenir (kural 7); güncel liste:
 | Adres | Ne | Not |
 |---|---|---|
 | http://localhost:8081 | Çekirdek API + panel (Symfony / FrankenPHP) | sağlık: `/health` |
-| http://localhost:4321 | Huni (ziyaretçi sayfaları, Astro) | compose dışında `huni-dev` kabı |
+| http://localhost:4321 | Huni (ziyaretçi sayfaları, Vite + Preact) | compose dışında `huni-dev` kabı (`vite --host`) |
 | http://localhost:8025 | Mailpit — geliştirmede giden e-postalar | gerçek kutuya gitmez |
 | localhost:5435 | Postgres (`app` / `app`) | |
 | http://localhost:8081/mcp | MCP sunucusu (Claude bağlantısı) | panelden alınan kişisel anahtar ister |

@@ -2,7 +2,7 @@
 
 <!-- TODO: proje adı, tek cümlelik tanım -->
 **Proje:** _henüz adı yok_ — _ne yaptığını tek cümleyle yaz_.
-**Yığın:** Astro (statik huni, CDN) · Symfony (çekirdek API) · Postgres ·
+**Yığın:** Vite + Preact (statik huni, CDN) · Symfony (çekirdek API) · Postgres ·
 Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 
 > **Bu dosya bir YÖNLENDİRİCİ (router).** İçinde yalnızca **her oturumda
@@ -23,7 +23,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 ## 1. Yığın ve ortam
 
 <!-- TODO: yığın seçilince doldur -->
-- Dil / çatı: huni = TypeScript · Astro (+ React adacıkları); çekirdek =
+- Dil / çatı: huni = TypeScript · Vite çok sayfalı + Preact (React adları `preact/compat`); çekirdek =
   PHP · Symfony (B2) — iskelet henüz yok
 - Veri servisleri: Postgres 18.6 Docker'da, host portu **5435**; çekirdek
   FrankenPHP konteynerinde **8081**. Testler gerçek Stripe'a değil **stripe-mock**'a
@@ -141,7 +141,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§24** | `MAILER_DSN=null://null` e-postayı **sessizce atar**, uç yine 202 — geliştirmede Mailpit. |
 | **§25** | TypeScript **nesne yaymada (`...`) fazla alanı denetlemez** — yanlış alan adı tip denetiminden geçer; gövdeyi üretilen tipten kur. |
 | **§26** | Şifre özetindeki **`$` tırnaksız ortam dosyasında sessizce bozulur** (dotenv ve compose) — giriş yalnız "yanlış şifre" der; tek tırnak. |
-| **§27** | Astro bileşen **stili yuvadan (slot) gelen öğeye uygulanmaz** — derleme yeşil, düğme stilsiz; `is:global` ya da stili yuvayı dolduran dosyaya. |
+| **§27** | Astro bileşen **stili yuvadan (slot) gelen öğeye uygulanmaz** — derleme yeşil, düğme stilsiz; `is:global` ya da stili yuvayı dolduran dosyaya. _(Astro dönemi; Astro 2026-11-03 kaldırıldı)_ |
 | **§28** | Postgres **JSONB nesne anahtarlarının sırasını değiştirir** — sıraya bakan karşılaştırma geri okunan geçerli veriyi reddeder; anahtarı küme olarak karşılaştır. |
 | **§29** | Twig'e **`app` adlı değişken geçmek global `app`'i ezer** — üretimde flaşlar sessizce kaybolur (testte 500); başka ad. |
 | **§30** | **Cache-Control'süz statik dosya** tarayıcıda eski hâliyle çalışır (dağıtımdan sonra da) — adrese içerik özeti. |

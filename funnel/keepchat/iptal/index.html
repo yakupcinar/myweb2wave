@@ -1,9 +1,4 @@
----
-// Kullanıcı Stripe ödeme sayfasından vazgeçince buraya döner. Mobil görünüm
-// 5: huni görünümünde, huninin temasıyla (oturum belleğinden).
-import "../../../../huni-bilesenleri/huni.css";
----
-
+<!doctype html>
 <html lang="tr">
   <head>
     <meta charset="utf-8" />
@@ -16,16 +11,10 @@ import "../../../../huni-bilesenleri/huni.css";
         <h1>Ödeme tamamlanmadı</h1>
         <p>Ücret alınmadı. Planına istediğin zaman geri dönebilirsin.</p>
         <div class="eylem">
-          <a class="ana" href="/keepchat/">
-            Plana geri dön
-          </a>
+          <a class="ana" href="/keepchat/"> Plana geri dön </a>
         </div>
       </section>
     </main>
-    <script>
-      import { temaUygula } from "../../lib/sonuc-tema";
-
-      temaUygula(import.meta.env.PUBLIC_CORE_URL);
-    </script>
+    <script type="module" src="/src/giris/iptal.ts"></script>
   </body>
 </html>

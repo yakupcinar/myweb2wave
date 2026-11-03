@@ -162,13 +162,13 @@
   - [x] P5 · 2026-11-03, `docs/decisions/p5-kullanicilar.md`: Kullanıcılar sayfası — abonelik başına satır, kaynak/kampanya, kişi/bağlantı, maskeli e-posta, arama + durum süzgeci, istemcide sıralama (tablo kitaplığı gerekmedi). Kırma 6/6
 - [x] **Panel görünümü** (kullanıcı 2026-10-27: "basit siyah ekran, web2wave'e bak") — sol menü, özet, huni şeridi, açık/koyu tema. `docs/decisions/panel-gorunum.md`
 
-- [ ] **Astro'yu kaldır → Vite (MPA) + Preact** (kullanıcı 2026-11-03). Araştırma ve öneri: `docs/decisions/astro-kaldirma-arastirmasi.md` (Seçenek 1: 3 HTML girişi, adresler/`dist` düzeni/dağıtım aynı; ≈ 4,5 KB JS ve Astro bağımlılıkları gider). Her adım `/blok`:
-  - [ ] S1 · prototip + ölçüm (yollar, JS gzip, modulepreload/ilk JS turu, eğik çizgisiz adres)
-  - [ ] S2 · sayfaları taşı (kabuk + erken istek eklentisi, basarili/iptal betikleri)
-  - [ ] S3 · araçlar (`tsc`, prettier, `bin/kontrol` adımları, `onyukleme.ts` silinir)
-  - [ ] S4 · geliştirme ortamı (`huni-dev`, `ekran`, belgeler)
-  - [ ] S5 · tarayıcıda eşlik (H3/L20 stil farkı 0, uçtan uca)
-  - [ ] S6 · paketleri kaldır, yeniden ölç
+- [x] **Astro'yu kaldır → Vite (MPA) + Preact** (kullanıcı 2026-11-03; yapıldı aynı gün, `docs/decisions/astro-kaldirma.md`: JS −%18, node_modules 340 → 135 MB, adresler aynı, tarayıcıda üretim derlemesi; kırma 6/6). Araştırma ve öneri: `docs/decisions/astro-kaldirma-arastirmasi.md` (Seçenek 1: 3 HTML girişi, adresler/`dist` düzeni/dağıtım aynı; ≈ 4,5 KB JS ve Astro bağımlılıkları gider). Her adım `/blok`:
+  - [x] S1 · prototip + ölçüm (yollar, JS gzip, modulepreload/ilk JS turu, eğik çizgisiz adres)
+  - [x] S2 · sayfaları taşı (kabuk + erken istek eklentisi, basarili/iptal betikleri)
+  - [x] S3 · araçlar (`tsc`, prettier, `bin/kontrol` adımları, `onyukleme.ts` silinir)
+  - [x] S4 · geliştirme ortamı (`huni-dev`, `ekran`, belgeler)
+  - [x] S5 · tarayıcıda eşlik (H3/L20 stil farkı 0, uçtan uca)
+  - [x] S6 · paketleri kaldır, yeniden ölç
 
 ## 2. Backlog
 

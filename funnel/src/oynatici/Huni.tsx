@@ -39,7 +39,7 @@ import { tanimIstegi } from "./erken-istek";
 import IzinSeridi from "./IzinSeridi";
 
 type Yayin = components["schemas"]["HuniYayini"];
-type App = Govde<"/huni/ziyaretler">["app"];
+export type App = Govde<"/huni/ziyaretler">["app"];
 
 declare global {
   interface Window {

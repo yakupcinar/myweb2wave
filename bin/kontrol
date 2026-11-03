@@ -90,9 +90,9 @@ adim funnel-derle funnel 'npm run -s build'
 # Bütçe (B4/H0 (c)): huninin bütün JS'i gzip'te. L20: React (67 KB) yerine
 # Preact (compat) — 77,4 → 19,7 KB; sınır 90 → 30 KB: React geri gelirse
 # (ya da büyük bağımlılık) kırmızı.
-# Ç52 (1): ada modülleri önden yükleniyor mu (entegrasyon koştu mu).
-adim funnel-onyukleme funnel 'grep -q "rel=\"modulepreload\"" dist/keepchat/index.html'
-adim funnel-butce funnel 'b=$(cat dist/_astro/*.js | gzip -9 | wc -c); echo "JS gzip $b B"; [ "$b" -le 30720 ]'
+# Ç52 (1): giriş modüllerinin bağımlılıkları önden yükleniyor mu + erken tanım isteği sayfada mı (Vite).
+adim funnel-onyukleme funnel 'node scripts/onyukleme-denetimi.ts && grep -q "window.huniTanimi=" dist/keepchat/index.html'
+adim funnel-butce funnel 'b=$(cat dist/assets/*.js | gzip -9 | wc -c); echo "JS gzip $b B"; [ "$b" -le 30720 ]'
 # Ç23: derleme çıktısındaki her iç bağlantı bir dosyaya çözülmeli (taşınan
 # iptal sayfası "/"a — 404 — bağlanıyordu, hiçbir denetim yakalamadı).
 adim funnel-baglanti funnel 'node scripts/baglanti-denetimi.ts'

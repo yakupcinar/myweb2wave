@@ -52,15 +52,15 @@ describe("sonuç sayfaları huni görünümünde (kaynak)", () => {
   it.each(["basarili", "iptal"])(
     "%s: .huni gövde, huni.css, tema uygulanır",
     (ad) => {
-      const kaynak = readFileSync(
-        join(__dirname, `../pages/keepchat/${ad}.astro`),
+      const sayfa = readFileSync(
+        join(__dirname, `../../keepchat/${ad}/index.html`),
         "utf8",
       );
-      expect(kaynak).toContain('<body class="huni">');
-      expect(kaynak).toContain(
-        'import "../../../../huni-bilesenleri/huni.css";',
-      );
-      expect(kaynak).toContain("temaUygula(");
+      const betik = readFileSync(join(__dirname, `../giris/${ad}.ts`), "utf8");
+      expect(sayfa).toContain('<body class="huni">');
+      expect(sayfa).toContain(`src="/src/giris/${ad}.ts"`);
+      expect(betik).toContain('import "../../../huni-bilesenleri/huni.css";');
+      expect(betik).toContain("temaUygula(");
     },
   );
 });

@@ -30,9 +30,9 @@ B3). Ön koşul: Docker Desktop açık.
 | 1 | sozlesme-kur / sozlesme-guncel | `npm ci` · `openapi-typescript` → `/tmp` + `cmp` depodaki `funnel/src/sozlesme/api.ts` | farklıysa: sözleşme değişmiş, `contract npm run uret` unutulmuş |
 | 2 | core-composer | `composer validate --strict` | |
 | 2 | core-stan | `phpstan analyse` (level **max**) | |
-| 2 | funnel-tip | `astro check` | |
+| 2 | funnel-tip | `tsc --noEmit` | |
 | 3 | core-testdb / core-goc / core-test | `doctrine:database:create --env=test` · `doctrine:migrations:migrate --env=test` · `phpunit` | **passed/skipped sayısı** ayrıca basılır (tuzak §8, §20) |
-| 3 | funnel-derle | `astro build` | |
+| 3 | funnel-derle | `vite build` | |
 
 Kırmızı adımın günlüğünün **son** 40 satırı ekrana basılır (hata sonda; ilk 40 satır CI'da Composer hatasını gizledi); tamamı betiğin
 yazdığı `log:` dizininde.

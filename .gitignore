@@ -9,7 +9,6 @@
 # Huni (Astro)
 /funnel/node_modules/
 /funnel/dist/
-/funnel/.astro/
 
 .DS_Store
 

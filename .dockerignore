@@ -6,4 +6,3 @@
 !deploy/Caddyfile
 funnel/node_modules
 funnel/dist
-funnel/.astro

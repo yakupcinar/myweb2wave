@@ -217,6 +217,8 @@ değil, işe en uygun dil.
 davranışı — sessiz yanlış sonuç adayı; ilk blokta ölçülecek (risk tablosu).
 
 **B2 · Astro (statik huni, CDN) + Symfony (çekirdek API) + Postgres**
+
+> **Güncelleme 2026-11-03 (kullanıcı):** Astro kaldırıldı → **Vite çok sayfalı + Preact** (`docs/decisions/astro-kaldirma.md`). B2'nin özü aynı: sunucusuz, derlemede üretilen statik huni, aynı adresler ve `dist` düzeni.
 (2026-10-19, kullanıcı onayı; B1'in yerine). Ölçüt: profesyonel şirket
 kalitesi.
 
