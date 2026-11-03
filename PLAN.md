@@ -151,7 +151,7 @@
     - [x] A5+ · (`ai-ekran-goruntusu.md`, Ç72 (1)) `ekran_goruntusu` aracı: başsız Chrome kabı (`ekran`), önizlemede `?adim=`, MCP görüntü içeriği; gerçek MCP HTTP ile ölçüldü. Kalan: Ç72 (2)–(4), Ç73, Ç74
     - [ ] A5b · herkese açık adres (geçici Cloudflare tüneli onayla / dağıtım) + claude.ai özel bağlayıcı
     - [ ] A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa
-  - [ ] **A6** · değerlendirme: brief seti → geçerli tanım oranı, tur, maliyet (A2 sonrası, model/efor ayarı için)
+  - [x] **A6** · 2026-11-03, `docs/decisions/ai-a6-degerlendirme.md`: `app:ai-degerlendir` — 6 brieflik set, geçici huni + panelin döngüsü, geçerli oran/tur/maliyet/süre JSON, --model/--efor. Sahte Claude ile ölçüldü; gerçek koşu Ç95 (anahtar). Kırma 4/4
   - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
 - [ ] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md`
   - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)

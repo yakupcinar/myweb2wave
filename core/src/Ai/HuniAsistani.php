@@ -56,6 +56,12 @@ final readonly class HuniAsistani
     ) {
     }
 
+    /** A6: aynı asistan başka ayarla (değerlendirmede model/efor karşılaştırması). */
+    public function ayarla(AiAyarlari $ayarlar): self
+    {
+        return new self($ayarlar, $this->araclar, $this->huniler, $this->baglam, $this->db, $this->http);
+    }
+
     /**
      * @param callable(string, array<string, mixed>): void $olay panele giden olay (tür, veri)
      *
