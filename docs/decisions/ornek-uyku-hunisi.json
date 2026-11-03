@@ -6,6 +6,7 @@
       "ikinciRenk": "#251a4a"
     },
     "anaRenk": "#b7a6ff",
+    "hareket": "canli",
     "arkaPlan": "#0e1330",
     "hizalama": "orta",
     "simgeler": "renkli",
@@ -14,8 +15,7 @@
     "kartRengi": "#1a2148",
     "baslikBoyu": "buyuk",
     "metinRengi": "#eef0ff",
-    "dugmeBicimi": "hap",
-    "hareket": "canli"
+    "dugmeBicimi": "hap"
   },
   "adimlar": [
     {
@@ -360,6 +360,32 @@
       "ilerlemeGoster": true
     },
     {
+      "id": "uyanma-olcek",
+      "tur": "ekran",
+      "baslik": "Gece uyanınca tekrar uyumak zor",
+      "bloklar": [
+        {
+          "tur": "kutu",
+          "metin": "“Gece uyanıyorum, sonra saatlerce tavanı izliyorum.”",
+          "simge": "🌙"
+        },
+        {
+          "tur": "metin",
+          "metin": "Bu cümle seni ne kadar anlatıyor?"
+        },
+        {
+          "tur": "soru",
+          "olcekSag": "Tamamen katılıyorum",
+          "olcekSol": "Hiç katılmıyorum",
+          "secimTuru": "olcek"
+        },
+        {
+          "tur": "metin",
+          "metin": "Cevabın, planındaki gece uyanmaları bölümünün ağırlığını belirler."
+        }
+      ]
+    },
+    {
       "id": "sosyal",
       "tur": "ekran",
       "dugme": "Devam",
@@ -477,6 +503,11 @@
       "dugme": "Planımı aç",
       "baslik": "Uyku planın hazır",
       "bloklar": [
+        {
+          "tur": "grafik",
+          "hedef": "4. hafta",
+          "baslangic": "Bugün"
+        },
         {
           "tur": "baslik",
           "metin": "Planında neler var"

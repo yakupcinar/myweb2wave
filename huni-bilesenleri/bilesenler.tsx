@@ -174,7 +174,10 @@ export type YanitEtkilesimi = {
     izinVar?: boolean | undefined;
     onIzinDegistir?: ((izin: boolean) => void) | undefined;
 };
-type SecimTuru = "tekli" | "coklu" | "metin" | "eposta";
+type SecimTuru = "tekli" | "coklu" | "metin" | "eposta" | "olcek";
+
+/** V5: ölçek sorusunun cevap kimlikleri — çekirdekte Tanim::OLCEK_KIMLIKLERI. */
+export const OLCEK = ["1", "2", "3", "4", "5"] as const;
 
 /**
  * E1: düğmeyi açan biçim denetimi — çekirdek ayrıca FILTER_VALIDATE_EMAIL
@@ -196,6 +199,8 @@ function Yanit({
     secimTuru = "tekli",
     yanitZorunlu = false,
     izinMetni,
+    olcekSol,
+    olcekSag,
     cevapMetni = "",
     secili = [],
     duzen = "liste",
@@ -210,9 +215,39 @@ function Yanit({
     secimTuru?: SecimTuru | undefined;
     yanitZorunlu?: boolean | undefined;
     izinMetni?: string | undefined;
+    olcekSol?: string | undefined;
+    olcekSag?: string | undefined;
     duzen?: "liste" | "izgara" | undefined;
     medyaKoku: string;
 } & YanitEtkilesimi): ReactNode {
+    // V5: 1–5 katılma ölçeği — tek dokunuş geçer (tekli gibi); uç etiketleri altta.
+    if (secimTuru === "olcek")
+        return (
+            <div className="olcek">
+                <div className="olcek-dugmeler">
+                    {OLCEK.map((n, i) => (
+                        <button
+                            key={n}
+                            type="button"
+                            aria-label={
+                                i === 0 && olcekSol
+                                    ? `${n} — ${olcekSol}`
+                                    : i === OLCEK.length - 1 && olcekSag
+                                      ? `${n} — ${olcekSag}`
+                                      : n
+                            }
+                            onClick={onSecim ? () => onSecim(i) : undefined}
+                        >
+                            {n}
+                        </button>
+                    ))}
+                </div>
+                <div className="olcek-etiketler" aria-hidden="true">
+                    <span>{olcekSol}</span>
+                    <span>{olcekSag}</span>
+                </div>
+            </div>
+        );
     if (secimTuru === "eposta")
         return (
             <>
@@ -442,11 +477,26 @@ export type EkranBlogu =
     | { tur: "istatistik"; deger: string; metin: string }
     | { tur: "kutu"; metin: string; simge?: string | undefined }
     | {
+          tur: "grafik";
+          baslangic: string;
+          hedef: string;
+          egri?: "artan" | "azalan" | undefined;
+      }
+    | {
+          tur: "onceSonra";
+          once: string;
+          sonra: string;
+          onceEtiketi: string;
+          sonraEtiketi: string;
+      }
+    | {
           tur: "soru";
           secimTuru?: SecimTuru | undefined;
           duzen?: "liste" | "izgara" | undefined;
           yanitZorunlu?: boolean | undefined;
           izinMetni?: string | undefined;
+          olcekSol?: string | undefined;
+          olcekSag?: string | undefined;
           secenekler?: SoruSecenegi[] | undefined;
       };
 
@@ -469,6 +519,8 @@ export function Blok({
                     secimTuru={blok.secimTuru}
                     yanitZorunlu={blok.yanitZorunlu}
                     izinMetni={blok.izinMetni}
+                    olcekSol={blok.olcekSol}
+                    olcekSag={blok.olcekSag}
                     duzen={blok.duzen}
                     medyaKoku={medyaKoku}
                     {...yanit}
@@ -531,7 +583,79 @@ export function Blok({
                     <span>{blok.metin}</span>
                 </p>
             );
+        case "grafik":
+            return (
+                <Grafik
+                    baslangic={blok.baslangic}
+                    hedef={blok.hedef}
+                    egri={blok.egri ?? "artan"}
+                />
+            );
+        case "onceSonra":
+            return (
+                <div className="once-sonra">
+                    {(
+                        [
+                            [blok.once, blok.onceEtiketi],
+                            [blok.sonra, blok.sonraEtiketi],
+                        ] as const
+                    ).map(([gorsel, etiket], i) => (
+                        <figure key={i}>
+                            <Gorsel
+                                id={gorsel}
+                                medyaKoku={medyaKoku}
+                                sinif="once-sonra-gorseli"
+                                alt={etiket}
+                            />
+                            <figcaption>{etiket}</figcaption>
+                        </figure>
+                    ))}
+                </div>
+            );
     }
+}
+
+/**
+ * V5: projeksiyon eğrisi — ana renkte, sayısız (uydurma sonuç yazılamaz);
+ * etiketler HTML (ölçeklenen metin, ekran okuyucu). Canlı harekette eğri
+ * çizilerek gelir (huni.css).
+ */
+function Grafik({
+    baslangic,
+    hedef,
+    egri,
+}: {
+    baslangic: string;
+    hedef: string;
+    egri: "artan" | "azalan";
+}): ReactNode {
+    const [y0, y1] = egri === "artan" ? [112, 28] : [28, 112];
+    const yol = `M24 ${y0} C124 ${y0} 176 ${y1} 276 ${y1}`;
+    return (
+        <figure
+            className="grafik"
+            role="img"
+            aria-label={`${baslangic} → ${hedef}`}
+        >
+            <svg viewBox="0 0 300 140" aria-hidden="true">
+                <path className="grafik-alan" d={`${yol} L276 132 L24 132 Z`} />
+                <line
+                    className="grafik-taban"
+                    x1="24"
+                    y1="132"
+                    x2="276"
+                    y2="132"
+                />
+                <path className="grafik-egri" d={yol} pathLength={1} />
+                <circle className="grafik-bas" cx="24" cy={y0} r="6" />
+                <circle className="grafik-hedef" cx="276" cy={y1} r="9" />
+            </svg>
+            <figcaption>
+                <span>{baslangic}</span>
+                <span>{hedef}</span>
+            </figcaption>
+        </figure>
+    );
 }
 
 /**

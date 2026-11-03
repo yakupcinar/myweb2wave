@@ -446,6 +446,105 @@ html:has(> body.huni) {
     background: var(--yuzey);
     color: var(--metin);
 }
+/* V5: 1–5 ölçek — eşit genişlikte beş kare düğme, uç etiketleri altta. */
+.huni .olcek {
+    margin: 16px 0;
+}
+.huni .olcek-dugmeler {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+.huni .olcek-dugmeler button {
+    min-height: 56px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    background: var(--yuzey);
+}
+.huni .olcek-dugmeler button:hover {
+    border-color: var(--ana);
+}
+.huni .olcek-etiketler {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 8px;
+    color: var(--soluk);
+    font-size: 13px;
+}
+.huni .olcek-etiketler span:last-child {
+    text-align: right;
+}
+/* V5: projeksiyon eğrisi — ana renk, altı soluk dolgulu; etiketler HTML. */
+.huni .grafik {
+    margin: 0 0 calc(16px * var(--ara, 1));
+}
+.huni .grafik svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+.huni .grafik-alan {
+    fill: color-mix(in srgb, var(--ana) 14%, transparent);
+}
+.huni .grafik-taban {
+    stroke: var(--cizgi);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 6;
+}
+.huni .grafik-egri {
+    fill: none;
+    stroke: var(--ana);
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+.huni .grafik-bas {
+    fill: var(--arka);
+    stroke: var(--soluk);
+    stroke-width: 3;
+}
+.huni .grafik-hedef {
+    fill: var(--ana);
+    stroke: var(--arka);
+    stroke-width: 3;
+}
+.huni .grafik figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--soluk);
+}
+.huni .grafik figcaption span:last-child {
+    color: var(--metin);
+    font-weight: 700;
+    text-align: right;
+}
+/* V5: önce/sonra — iki eşit kart, etiket altta. */
+.huni .once-sonra {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0 0 calc(16px * var(--ara, 1));
+}
+.huni .once-sonra figure {
+    margin: 0;
+}
+.huni .once-sonra-gorseli {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: var(--kose);
+}
+.huni .once-sonra figcaption {
+    margin-top: 6px;
+    text-align: center;
+    font-weight: 700;
+}
 .huni .kutu .simge {
     flex: none;
     font-size: 20px;
@@ -575,6 +674,11 @@ html:has(> body.huni) {
     .huni[data-hareket="canli"] [data-gecis] > [data-sira] .eylem {
         animation-delay: 300ms;
     }
+    /* V5: projeksiyon eğrisi adım geçişinde çizilerek gelir. */
+    .huni[data-hareket="canli"] [data-gecis] > [data-sira] .grafik-egri {
+        stroke-dasharray: 1;
+        animation: huni-ciz 900ms 250ms ease-out both;
+    }
     /* Seçilen seçenek belirginleşir (çoklu seçimde basılı hâl). */
     .huni[data-hareket="canli"] .secenekler button[aria-pressed="true"] {
         animation: huni-sec 260ms ease-out;
@@ -603,6 +707,11 @@ html:has(> body.huni) {
     from {
         opacity: 0;
         transform: translateY(12px);
+    }
+}
+@keyframes huni-ciz {
+    from {
+        stroke-dashoffset: 1;
     }
 }
 @keyframes huni-sec {
@@ -837,6 +946,9 @@ html:has(> body.huni) {
 }
 /* V1: yükleme ekranında eklenecek blok yok — telefonda dikey ortada
    (ölçüm: içerik üstte, ekranın %58'i boştu). */
+/* V5: ölçek (katılma) ekranı da telefonda dikey ortada — düğmesiz,
+   tek dokunuşlu ifade ekranı; içerik üstte %37 boşluk bırakıyordu (ölçüldü). */
+.huni .adimlar > [data-sira] > section:has(.olcek),
 .huni .adimlar > [data-sira] > section.yukleme {
     justify-content: center;
     padding-bottom: 12vh;

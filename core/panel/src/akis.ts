@@ -28,8 +28,13 @@ export function ekranDugmeleri(veri: HuniVerisi): HuniVerisi | null {
             }[]
         ).find((b) => b.type === "SoruBlogu")?.props;
         const tur = soru ? (soru.secimTuru ?? "tekli") : null;
+        // V5: ölçek de tek dokunuşla geçer — düğme yok.
         const dugme =
-            tur === "tekli" ? "" : tur && !p.dugme ? "Devam" : p.dugme;
+            tur === "tekli" || tur === "olcek"
+                ? ""
+                : tur && !p.dugme
+                  ? "Devam"
+                  : p.dugme;
         const kapali =
             tur === "coklu" ||
             ((tur === "metin" || tur === "eposta") &&

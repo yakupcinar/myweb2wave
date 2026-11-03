@@ -231,6 +231,38 @@ describe("önizleme = huni: soru bloklu ekran", () => {
         expect(huni).toContain(' disabled="">Gönder');
         expect(puck).toBe(huni.replace(' disabled=""', ""));
     });
+    it("V5 ölçek, grafik ve önce/sonra: aynı DOM", () => {
+        const [puck, huni] = ciz({
+            id: "olcek",
+            tur: "ekran",
+            baslik: "Seni anlatıyor mu?",
+            bloklar: [
+                {
+                    tur: "grafik",
+                    baslangic: "Bugün",
+                    hedef: "Hedef",
+                    egri: "azalan",
+                },
+                {
+                    tur: "onceSonra",
+                    once: G1,
+                    sonra: G2,
+                    onceEtiketi: "Önce",
+                    sonraEtiketi: "Sonra",
+                },
+                {
+                    tur: "soru",
+                    secimTuru: "olcek",
+                    olcekSol: "Hiç",
+                    olcekSag: "Tamamen",
+                },
+            ],
+        });
+        expect(puck).toBe(huni);
+        expect(huni).toContain('class="grafik"');
+        expect(huni).toContain('class="once-sonra"');
+        expect(huni).toContain('class="olcek"');
+    });
     it("E1 e-posta: aynı DOM (isteğe bağlı, kapalı değil); izin kutusu iki yolda da", () => {
         const [puck, huni] = ciz({
             id: "eposta",

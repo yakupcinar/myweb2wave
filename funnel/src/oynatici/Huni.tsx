@@ -15,6 +15,7 @@ import {
   Adim,
   HareketBaglami,
   Logo,
+  OLCEK,
   SimgeBaglami,
 } from "../../../huni-bilesenleri/bilesenler";
 import {
@@ -78,7 +79,7 @@ function kisisel(adim: TanimAdimi, o: Ozellikler): TanimAdimi {
 
 function sorusu(adim: TanimAdimi): {
   id: string;
-  secimTuru?: "tekli" | "coklu" | "metin" | "eposta" | undefined;
+  secimTuru?: "tekli" | "coklu" | "metin" | "eposta" | "olcek" | undefined;
   secenekler?: Secenek[] | undefined;
   yanitZorunlu?: boolean | undefined;
 } | null {
@@ -88,7 +89,11 @@ function sorusu(adim: TanimAdimi): {
       return {
         id: adim.id,
         secimTuru: b.secimTuru,
-        secenekler: b.secenekler,
+        // V5: ölçeğin seçenekleri kendiliğinden — cevap kimliği "1"…"5".
+        secenekler:
+          b.secimTuru === "olcek"
+            ? OLCEK.map((id) => ({ id, metin: id }))
+            : b.secenekler,
         yanitZorunlu: b.yanitZorunlu,
       };
   return null;

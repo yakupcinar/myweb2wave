@@ -122,9 +122,27 @@ export type KutuBloguProps = {
     degerler?: DegerProps[];
 };
 /** T1b: soru bloğunun yanıt alanları (soru metni ekranın başlığı). */
+/** V5: projeksiyon eğrisi — yalnız etiketler. */
+export type GrafikBloguProps = {
+    baslangic: string;
+    hedef: string;
+    egri: "artan" | "azalan";
+    degerler?: DegerProps[];
+};
+/** V5: önce/sonra — iki görsel ve etiketleri. */
+export type OnceSonraBloguProps = {
+    once: string;
+    sonra: string;
+    onceEtiketi: string;
+    sonraEtiketi: string;
+    degerler?: DegerProps[];
+};
 export type SoruBloguProps = {
     secenekler: SecenekProps[];
-    secimTuru: "tekli" | "coklu" | "metin" | "eposta";
+    secimTuru: "tekli" | "coklu" | "metin" | "eposta" | "olcek";
+    /** V5: yalnız ölçekte — 1 ve 5'in etiketi. */
+    olcekSol: string;
+    olcekSag: string;
     yanitZorunlu: "istege_bagli" | "zorunlu";
     /** E1: yalnız e-postada; boş dize = kutu yok. */
     izinMetni: string;
@@ -173,6 +191,8 @@ export type Bilesenler = {
     YorumBlogu: YorumBloguProps;
     IstatistikBlogu: IstatistikBloguProps;
     KutuBlogu: KutuBloguProps;
+    GrafikBlogu: GrafikBloguProps;
+    OnceSonraBlogu: OnceSonraBloguProps;
     SoruBlogu: SoruBloguProps;
 };
 export type HuniVerisi = Data<Bilesenler, KokProps>;
@@ -254,6 +274,8 @@ export const BLOK_BILESENI = {
     yorum: "YorumBlogu",
     istatistik: "IstatistikBlogu",
     kutu: "KutuBlogu",
+    grafik: "GrafikBlogu",
+    onceSonra: "OnceSonraBlogu",
     soru: "SoruBlogu",
 } as const satisfies Record<EkranBlogu["tur"], keyof Bilesenler>;
 const BLOK_TURU = Object.fromEntries(
@@ -327,7 +349,30 @@ function bloktanPuckYalin(b: EkranBlogu, id: string) {
                         ? ("zorunlu" as const)
                         : ("istege_bagli" as const),
                     izinMetni: b.izinMetni ?? "",
+                    olcekSol: b.olcekSol ?? "",
+                    olcekSag: b.olcekSag ?? "",
                     secenekler: (b.secenekler ?? []).map(secenektenPuck),
+                },
+            };
+        case "grafik":
+            return {
+                type: "GrafikBlogu" as const,
+                props: {
+                    id,
+                    baslangic: b.baslangic,
+                    hedef: b.hedef,
+                    egri: b.egri ?? "artan",
+                },
+            };
+        case "onceSonra":
+            return {
+                type: "OnceSonraBlogu" as const,
+                props: {
+                    id,
+                    once: b.once,
+                    sonra: b.sonra,
+                    onceEtiketi: b.onceEtiketi,
+                    sonraEtiketi: b.sonraEtiketi,
                 },
             };
     }
@@ -350,6 +395,13 @@ const secenektenPuck = (
  * seçimde seçenek hedefi yok.
  */
 function yanitAlanlari(p: SoruBloguProps) {
+    // V5: ölçek seçeneksiz; yalnız uç etiketleri.
+    if (p.secimTuru === "olcek")
+        return {
+            secimTuru: "olcek" as const,
+            olcekSol: p.olcekSol,
+            olcekSag: p.olcekSag,
+        };
     return {
         ...(p.secimTuru === "coklu" ? { secimTuru: "coklu" as const } : {}),
         ...(p.secimTuru === "metin"
@@ -459,6 +511,22 @@ function puckBloktanYalin(oge: {
             return {
                 tur: "soru",
                 ...yanitAlanlari(p as unknown as SoruBloguProps),
+            };
+        case "grafik":
+            return {
+                tur: "grafik",
+                baslangic: String(p["baslangic"] ?? ""),
+                hedef: String(p["hedef"] ?? ""),
+                // Varsayılan (artan) yazılmaz.
+                ...(p["egri"] === "azalan" ? { egri: "azalan" as const } : {}),
+            };
+        case "onceSonra":
+            return {
+                tur: "onceSonra",
+                once: String(p["once"] ?? ""),
+                sonra: String(p["sonra"] ?? ""),
+                onceEtiketi: String(p["onceEtiketi"] ?? ""),
+                sonraEtiketi: String(p["sonraEtiketi"] ?? ""),
             };
         default:
             return { tur: oge.type } as unknown as EkranBlogu;

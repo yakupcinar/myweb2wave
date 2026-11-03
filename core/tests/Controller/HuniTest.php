@@ -361,6 +361,31 @@ final class HuniTest extends WebTestCase
         self::assertSame([], Tanim::hatalar($t + ['tema' => ['anaRenk' => '#111827'] + Tema::VARSAYILAN], ['monthly']));
     }
 
+    /**
+     * V5: grafik, önce/sonra ve ölçek geçerli; ölçeğin cevabı ("1"…"5") koşulda
+     * seçenek gibi; önce/sonra görselleri "yüklenmiş mi" denetimine girer;
+     * yayın sözleşmeye uyar.
+     */
+    public function testV5BloklariGecerliYayindaSozlesmeyeUyar(): void
+    {
+        [$a, $b] = [str_repeat('a', 64), str_repeat('b', 64)];
+        $tanim = self::tanim('X');
+        array_splice($tanim['adimlar'], 1, 0, [
+            self::ekran([['tur' => 'soru', 'secimTuru' => 'olcek', 'olcekSol' => 'Hiç katılmıyorum', 'olcekSag' => 'Tamamen katılıyorum']], ['id' => 'olcek', 'dugme' => null, 'yonlendirme' => [['kosullar' => [['ozellik' => 'cevap.olcek', 'islem' => 'icerir', 'deger' => '5']], 'hedef' => 'paywall']]]),
+            self::ekran([['tur' => 'grafik', 'baslangic' => 'Bugün', 'hedef' => '4. hafta', 'degerler' => [['kosullar' => [['ozellik' => 'cevap.olcek', 'islem' => 'icerir', 'deger' => '1']], 'alan' => 'hedef', 'deger' => '6. hafta']]], ['tur' => 'grafik', 'baslangic' => 'Şimdi', 'hedef' => 'Hedef', 'egri' => 'azalan'], ['tur' => 'onceSonra', 'once' => $a, 'sonra' => $b, 'onceEtiketi' => 'Önce', 'sonraEtiketi' => 'Sonra']], ['id' => 'sonuc']),
+        ]);
+        self::assertSame([], Tanim::hatalar($tanim, ['monthly']));
+        self::assertSame([$a, $b], array_values(array_intersect(Tanim::gorseller($tanim), [$a, $b])));
+        $this->medyaEkle($a);
+        $this->medyaEkle($b);
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', $tanim));
+        $this->huniler->yayinla('keepchat', 'genel');
+
+        $this->client->request('GET', '/huni/keepchat');
+
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+    }
+
     /** Mobil görünüm 4: yükleme adımı geçerli, yayında sözleşmeye uyar. */
     public function testYuklemeAdimiGecerliYayindaSozlesmeyeUyar(): void
     {
@@ -523,7 +548,7 @@ final class HuniTest extends WebTestCase
         yield 'ekran başlıksız' => ['alanlar tam olarak id, tur, baslik, bloklar', $ekr([$b], ['baslik' => null])];
         yield 'ekran başlığı boş' => ['adım 2 baslik: 1–200', $ekr([$b], ['baslik' => ' '])];
         yield 'ekran hedefi geriye' => ['hedef sonraki adımlardan', $ekr([$b], ['hedef' => 'giris'])];
-        yield 'blok türü bilinmeyen' => ['blok 2: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu ya da soru', $ekr([$b, ['tur' => 'html', 'metin' => 'x']])];
+        yield 'blok türü bilinmeyen' => ['blok 2: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu, grafik, onceSonra ya da soru', $ekr([$b, ['tur' => 'html', 'metin' => 'x']])];
         yield 'blok dizi değil' => ['blok 2: tür', $ekr([$b, 'metin'])];
         yield 'blok fazla alan' => ['blok 2: alanlar tam olarak', $ekr([$b, ['tur' => 'metin', 'metin' => 'x', 'renk' => 'kirmizi']])];
         yield 'blok eksik alan' => ['blok 2: alanlar tam olarak', $ekr([$b, ['tur' => 'istatistik', 'deger' => '%5']])];
@@ -612,7 +637,7 @@ final class HuniTest extends WebTestCase
         yield 'soru bloğu seçeneksiz' => ['blok 1: alanlar tam olarak', $ekr([['tur' => 'soru']], ['dugme' => null])];
         yield 'soru bloğu tekli zorunlu' => ['yanitZorunlu yalnız serbest yanıt', $ekr([$tekli + ['yanitZorunlu' => true]], ['dugme' => null])];
         yield 'soru bloğu serbest düzen' => ['duzen yalnız seçmeli soruda', $ekr([['tur' => 'soru', 'secimTuru' => 'metin', 'duzen' => 'izgara']])];
-        yield 'soru bloğu biçim' => ['blok 1: secimTuru tekli, coklu, metin ya da eposta', $ekr([$tekli + ['secimTuru' => 'iki']])];
+        yield 'soru bloğu biçim' => ['blok 1: secimTuru tekli, coklu, metin, eposta ya da olcek', $ekr([$tekli + ['secimTuru' => 'iki']])];
         // E1: e-posta sorusu serbest yanıt ailesinde; izin kutusu yalnız onda.
         $eposta = ['tur' => 'soru', 'secimTuru' => 'eposta'];
         yield 'e-posta sorusunda seçenek' => ['blok 1: alanlar tam olarak', $ekr([$eposta + ['secenekler' => $iki]])];
@@ -623,6 +648,20 @@ final class HuniTest extends WebTestCase
         yield 'izin metni boş' => ['blok 1 izinMetni: 1–200 karakter', $ekr([$eposta + ['izinMetni' => ' ']])];
         $epostaKosulu = self::blok(['secimTuru' => 'eposta', 'secenekler' => null], ['dugme' => 'Devam', 'yonlendirme' => [['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'var']], 'hedef' => 'paywall']]]);
         yield 'e-posta cevabı koşulda' => ['koşul 1: cevap.soru1 e-posta sorusu; e-posta cevabı koşulda kullanılmaz', $epostaKosulu];
+        // V5: grafik, önce/sonra, ölçek.
+        $olcek = ['tur' => 'soru', 'secimTuru' => 'olcek', 'olcekSol' => 'Hayır', 'olcekSag' => 'Evet'];
+        yield 'grafik hedefsiz' => ['blok 1: alanlar tam olarak tur, baslangic, hedef', $ekr([['tur' => 'grafik', 'baslangic' => 'Bugün']])];
+        yield 'grafik eğri bilinmeyen' => ['blok 1: egri artan ya da azalan olmalı', $ekr([['tur' => 'grafik', 'baslangic' => 'A', 'hedef' => 'B', 'egri' => 'yatay']])];
+        yield 'grafik etiket uzun' => ['blok 1 hedef: 1–40 karakter', $ekr([['tur' => 'grafik', 'baslangic' => 'A', 'hedef' => str_repeat('b', 41)]])];
+        yield 'önce/sonra görsel kimliği' => ['blok 1 sonra: görsel kimliği geçersiz', $ekr([['tur' => 'onceSonra', 'once' => str_repeat('a', 64), 'sonra' => 'x.png', 'onceEtiketi' => 'Önce', 'sonraEtiketi' => 'Sonra']])];
+        yield 'önce/sonra tam ekranda' => ['tam ekranda yalnız', $ekr([['tur' => 'onceSonra', 'once' => str_repeat('a', 64), 'sonra' => str_repeat('b', 64), 'onceEtiketi' => 'Ö', 'sonraEtiketi' => 'S']], ['gorsel' => str_repeat('c', 64), 'duzen' => 'tamEkran'])];
+        yield 'ölçekte seçenek' => ['ölçek sorusunda secenekler yazılmaz', $ekr([$olcek + ['secenekler' => $iki]], ['dugme' => null])];
+        yield 'ölçekte düzen' => ['ölçek sorusunda duzen olmaz', $ekr([$olcek + ['duzen' => 'izgara']], ['dugme' => null])];
+        yield 'ölçek etiketsiz' => ['blok 1: alanlar tam olarak tur, olcekSol, olcekSag', $ekr([['tur' => 'soru', 'secimTuru' => 'olcek', 'olcekSol' => 'Hayır']], ['dugme' => null])];
+        yield 'ölçek etiketi tekli soruda' => ['olcekSol ve olcekSag yalnız olcek sorusunda', $ekr([$tekli + ['olcekSol' => 'x']], ['dugme' => null])];
+        yield 'ölçekte düğme' => ['tek seçimli soru bloğu olan ekranda dugme olmaz', $ekr([$olcek])];
+        $olcekKosulu = self::blok(['secimTuru' => 'olcek', 'secenekler' => null, 'olcekSol' => 'H', 'olcekSag' => 'E'], ['yonlendirme' => [['kosullar' => [['ozellik' => 'cevap.soru1', 'islem' => 'icerir', 'deger' => '6']], 'hedef' => 'paywall']]]);
+        yield 'ölçek cevabında olmayan değer' => ['koşul 1: deger soru1 sorusunun seçeneklerinden olmalı (1, 2, 3, 4, 5)', $olcekKosulu];
         // Mobil görünüm 4: yükleme adımı.
         $yuk = static function (array $ek): array {
             $t = self::tanim('X');
@@ -639,7 +678,7 @@ final class HuniTest extends WebTestCase
         yield 'yükleme düğme' => ['adım 3', $yuk(['dugme' => 'Devam'])];
         yield 'fazla alan' => ['alanlar tam olarak', self::ile(0, 'html', '<b>x</b>')];
         yield 'ilerleme göstergesi boolean değil' => ['ilerlemeGoster true ya da false', self::ile(0, 'ilerlemeGoster', 'evet')];
-        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu, metin ya da eposta olmalı', self::blok(['secimTuru' => 'belirsiz'])];
+        yield 'soru yanıt biçimi geçersiz' => ['secimTuru tekli, coklu, metin, eposta ya da olcek olmalı', self::blok(['secimTuru' => 'belirsiz'])];
         yield 'eksik alan' => ['alanlar tam olarak', self::ile(0, 'baslik', null, sil: true)];
         yield 'uzun metin' => ['1–200 karakter', self::ile(0, 'baslik', str_repeat('a', 201))];
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];

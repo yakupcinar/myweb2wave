@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
     Adim,
+    Blok,
     Ekran,
     Logo,
     Paywall,
@@ -732,9 +733,64 @@ describe("V4 — hareket düzeyleri CSS'te", () => {
             /\.huni\[data-hareket="yok"\] \[data-gecis\] > \[data-sira\] \{\s*animation: none;/,
         );
     });
+    it("V5: ölçek ekranı telefonda dikey ortada (yükleme gibi)", () => {
+        expect(css).toMatch(
+            /\.huni \.adimlar > \[data-sira\] > section:has\(\.olcek\),\s*\.huni \.adimlar > \[data-sira\] > section\.yukleme \{\s*justify-content: center;/,
+        );
+    });
     it("Ç101: tam ekranda istatistik düzenleyicide de beyaz", () => {
         expect(css).toMatch(
             /\.huni section\[data-duzen="tamEkran"\] \.bloklar p\.istatistik \{\s*color: rgb\(255 255 255 \/ 0\.9\);/,
         );
+    });
+});
+
+// V5: yeni bloklar — sayısız grafik (etiketler HTML, erişilebilir ad),
+// önce/sonra (etiket alt metin), 1–5 ölçek (uç düğmelerin adı etiketli).
+describe("V5 — grafik, önce/sonra, ölçek", () => {
+    const blok = (b: EkranBlogu): string =>
+        renderToStaticMarkup(<Blok blok={b} medyaKoku={KOK} />);
+
+    it("grafik: artan eğri aşağıdan yukarı, etiketler ve ad; sayı yok", () => {
+        const html = blok({
+            tur: "grafik",
+            baslangic: "Bugün",
+            hedef: "4. hafta",
+        });
+        expect(html).toContain('role="img" aria-label="Bugün → 4. hafta"');
+        expect(html).toContain('d="M24 112 C124 112 176 28 276 28"');
+        expect(html).toContain(
+            "<figcaption><span>Bugün</span><span>4. hafta</span></figcaption>",
+        );
+        expect(
+            blok({ tur: "grafik", baslangic: "A", hedef: "B", egri: "azalan" }),
+        ).toContain('d="M24 28 C124 28 176 112 276 112"');
+    });
+
+    it("önce/sonra: iki görsel çekirdekten, etiket alt metin ve altyazı", () => {
+        const html = blok({
+            tur: "onceSonra",
+            once: G,
+            sonra: "b".repeat(64),
+            onceEtiketi: "Önce",
+            sonraEtiketi: "Sonra",
+        });
+        expect(html).toContain(
+            `<img class="once-sonra-gorseli" src="${KOK}/medya/${G}.webp" alt="Önce"`,
+        );
+        expect(html).toContain("<figcaption>Sonra</figcaption>");
+    });
+
+    it("ölçek: beş düğme 1–5, uçların erişilebilir adı etiketli", () => {
+        const html = blok({
+            tur: "soru",
+            secimTuru: "olcek",
+            olcekSol: "Hiç",
+            olcekSag: "Tamamen",
+        });
+        expect(html.match(/<button/g)).toHaveLength(5);
+        expect(html).toContain('aria-label="1 — Hiç"');
+        expect(html).toContain('aria-label="3"');
+        expect(html).toContain('aria-label="5 — Tamamen"');
     });
 });

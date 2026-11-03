@@ -864,7 +864,7 @@ export interface components {
             deger?: string | number;
         };
         /** @description T1 blok kataloğu; metinler düz metin */
-        EkranBlogu: components["schemas"]["BaslikBlogu"] | components["schemas"]["MetinBlogu"] | components["schemas"]["GorselBlogu"] | components["schemas"]["MaddelerBlogu"] | components["schemas"]["YorumBlogu"] | components["schemas"]["IstatistikBlogu"] | components["schemas"]["KutuBlogu"] | components["schemas"]["SoruBlogu"];
+        EkranBlogu: components["schemas"]["BaslikBlogu"] | components["schemas"]["MetinBlogu"] | components["schemas"]["GorselBlogu"] | components["schemas"]["MaddelerBlogu"] | components["schemas"]["YorumBlogu"] | components["schemas"]["IstatistikBlogu"] | components["schemas"]["KutuBlogu"] | components["schemas"]["GrafikBlogu"] | components["schemas"]["OnceSonraBlogu"] | components["schemas"]["SoruBlogu"];
         /** @description Ara başlık */
         BaslikBlogu: {
             /** @enum {string} */
@@ -910,6 +910,29 @@ export interface components {
             deger: string;
             metin: string;
         };
+        /** @description V5: projeksiyon eğrisi (ana renkte) — sayı yok, yalnız uç etiketleri; sonuç vaadi değil, yolun resmi */
+        GrafikBlogu: {
+            /** @enum {string} */
+            tur: "grafik";
+            degerler?: components["schemas"]["KosulluDegerler"];
+            baslangic: string;
+            hedef: string;
+            /**
+             * @description Yoksa artan
+             * @enum {string}
+             */
+            egri?: "artan" | "azalan";
+        };
+        /** @description V5: önce/sonra — iki yüklenmiş görsel yan yana; etiketler alt metin de olur */
+        OnceSonraBlogu: {
+            /** @enum {string} */
+            tur: "onceSonra";
+            degerler?: components["schemas"]["KosulluDegerler"];
+            once: components["schemas"]["GorselKimligi"];
+            sonra: components["schemas"]["GorselKimligi"];
+            onceEtiketi: string;
+            sonraEtiketi: string;
+        };
         /** @description Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz */
         KutuBlogu: {
             /** @enum {string} */
@@ -923,11 +946,15 @@ export interface components {
             /** @enum {string} */
             tur: "soru";
             /** @enum {string} */
-            secimTuru?: "tekli" | "coklu" | "metin" | "eposta";
+            secimTuru?: "tekli" | "coklu" | "metin" | "eposta" | "olcek";
             /** @enum {string} */
             duzen?: "liste" | "izgara";
             /** @description Yalnız metin ve eposta */
             yanitZorunlu?: boolean;
+            /** @description Yalnız olcek: 1'in etiketi (ör. Hiç katılmıyorum) */
+            olcekSol?: string;
+            /** @description Yalnız olcek: 5'in etiketi (ör. Tamamen katılıyorum) */
+            olcekSag?: string;
             /** @description Yalnız eposta: pazarlama izni kutusunun metni (yoksa kutu yok, izin alınmaz) */
             izinMetni?: string;
             /** @description Seçmelide zorunlu (2–8), serbest yanıtta yok */

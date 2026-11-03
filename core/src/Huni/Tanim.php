@@ -26,6 +26,8 @@ final class Tanim
         'blokMetni' => [1, 1000], 'satir' => [1, 120], 'deger' => [1, 12], 'kutu' => [1, 500],
         // E1: e-posta sorusunun pazarlama izni kutusu.
         'izinMetni' => [1, 200],
+        // V5: grafik uçları, önce/sonra ve ölçek etiketleri.
+        'etiket' => [1, 40],
     ];
 
     /**
@@ -33,7 +35,7 @@ final class Tanim
      * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
      */
     public const EKRAN_YONERGESI = 'İçerik adımı ekrandır (T1c: tanıtım, soru ve yorum adımı yok): baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
-        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli seçimde ekrana dugme ve hedef yazma, hedef seçenekte; coklu/metin/eposta seçimde dugme gönderir; secimTuru eposta = e-posta alanı, isteğe bağlı izinMetni pazarlama izni kutusunu açar — adres ödeme sayfasını doldurur, koşulda kullanılmaz; en iyi hunilerde kişisel sonuç ve paywall adımından hemen önce). '
+        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), grafik (projeksiyon eğrisi: baslangic ve hedef etiketi ≤ 40, ör. "Bugün" → "4. hafta", isteğe bağlı egri artan|azalan; SAYI ve sonuç vaadi yok — etiket kişiye özel olabilir, koşullu değerle), onceSonra (once, sonra: iki yüklenmiş görsel + onceEtiketi, sonraEtiketi; stok fotoğraftaki kişiyle kullanma — onay ima eder), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli ve olcek seçimde ekrana dugme ve hedef yazma, hedef seçenekte; secimTuru olcek = 1–5 katılma ölçeği (olcekSol, olcekSag uç etiketleri ≤ 40, seçenek yazılmaz, cevap kimlikleri "1"…"5" — koşulda icerir "5"); coklu/metin/eposta seçimde dugme gönderir; secimTuru eposta = e-posta alanı, isteğe bağlı izinMetni pazarlama izni kutusunu açar — adres ödeme sayfasını doldurur, koşulda kullanılmaz; en iyi hunilerde kişisel sonuç ve paywall adımından hemen önce). '
         .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
         .'Koşullu yönlendirme (isteğe bağlı, ekranda): yonlendirme: [{"kosullar": [{"ozellik": "cevap.<bu ya da önceki ekran>", "islem": "icerir", "deger": "<seçenek kimliği>"}], "hedef": "<sonraki adım>"}] — ilk tutan kural kazanır; özellikler utm.source/medium/campaign/content/term, izin.reklam, huni, huni.surum, adim.son, cevap.<adım>; seçmeli cevapta icerir/icermez, diğerlerinde esit/esit_degil, her biri için var/yok; birden çok koşulda "baglac": "herhangi" VEYA yapar. Yalnız kişiselleştirme gerçekten gerekiyorsa kullan (ör. farklı kitleye farklı ekran). '
         .'Koşullu gösterim (isteğe bağlı, ilk ekran dışında): goster: {"kosullar": [...], "baglac"?} — aynı koşul biçimi, cevap yalnız ÖNCEKİ ekranlardan; tutmazsa ekran atlanır, sıradaki adıma geçilir. '
@@ -91,8 +93,15 @@ final class Tanim
         'istatistik' => [['deger' => 'deger', 'metin' => 'satir'], []],
         'kutu' => [['metin' => 'kutu'], ['simge' => null]],
         // T1b: secenekler serbest yanıtta yok, seçmelide zorunlu (aşağıda).
-        'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null, 'izinMetni' => 'izinMetni']],
+        'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null, 'izinMetni' => 'izinMetni', 'olcekSol' => 'etiket', 'olcekSag' => 'etiket']],
+        // V5: projeksiyon grafiği — sayı yok, yalnız uç etiketleri (uydurma sonuç yazılamaz).
+        'grafik' => [['baslangic' => 'etiket', 'hedef' => 'etiket'], ['egri' => null]],
+        // V5: önce/sonra — iki yüklenmiş görsel, etiketleri alt metin de olur.
+        'onceSonra' => [['once' => null, 'sonra' => null, 'onceEtiketi' => 'etiket', 'sonraEtiketi' => 'etiket'], []],
     ];
+
+    /** V5: ölçek sorusunun kendiliğinden seçenek (cevap) kimlikleri — huni-bilesenleri OLCEK ile aynı. */
+    public const OLCEK_KIMLIKLERI = ['1', '2', '3', '4', '5'];
 
     /** Ç101: tam ekran kapak karartmasında düğmenin en az kontrastı (WCAG 1.4.11). */
     public const KAPAK_DUGME_KONTRASTI = 3.0;
@@ -164,10 +173,10 @@ final class Tanim
             foreach ($adim['bloklar'] as $b) {
                 if (\is_array($b) && 'soru' === ($b['tur'] ?? null)) {
                     // E1: e-posta cevabı koşul özelliği değil (null) — adres tanıma yazılmasın.
-                    $sorular[$id] = 'eposta' === ($b['secimTuru'] ?? null) ? null : [
+                    $sorular[$id] = 'eposta' === ($b['secimTuru'] ?? null) ? null : ('olcek' === ($b['secimTuru'] ?? null) ? [true, self::OLCEK_KIMLIKLERI] : [
                         'metin' !== ($b['secimTuru'] ?? 'tekli'),
                         array_values(array_filter(array_map(static fn (mixed $s): mixed => \is_array($s) ? ($s['id'] ?? null) : null, \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : []), \is_string(...))),
-                    ];
+                    ]);
                 }
             }
         }
@@ -350,6 +359,12 @@ final class Tanim
                 if (\is_array($b) && \is_string($b['gorsel'] ?? null)) {
                     $k[] = $b['gorsel'];
                 }
+                // V5: önce/sonra bloğunun iki görseli.
+                foreach (['once', 'sonra'] as $alan) {
+                    if (\is_array($b) && 'onceSonra' === ($b['tur'] ?? null) && \is_string($b[$alan] ?? null)) {
+                        $k[] = $b[$alan];
+                    }
+                }
                 // T1b: soru bloğunun seçenek görselleri.
                 foreach (\is_array($b) && \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : [] as $s) {
                     if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
@@ -420,7 +435,7 @@ final class Tanim
             $by = "{$yer} blok ".($j + 1);
             $tur = \is_array($b) ? ($b['tur'] ?? null) : null;
             if (!\is_array($b) || !\is_string($tur) || !isset(self::BLOKLAR[$tur])) {
-                $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu ya da soru olmalı";
+                $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu, grafik, onceSonra ya da soru olmalı";
                 continue;
             }
             // T1c: tam ekranda metin beyaz, karartmanın üstünde — yüzeyli blok
@@ -437,8 +452,10 @@ final class Tanim
             [$zorunlu, $istege] = self::BLOKLAR[$tur];
             // E1: e-posta da serbest yanıt ailesinde (seçeneksiz, düzensiz).
             $metinYaniti = 'soru' === $tur && \in_array($b['secimTuru'] ?? 'tekli', ['metin', 'eposta'], true);
+            // V5: ölçek sorusunun seçenekleri kendiliğinden (1–5); uç etiketleri zorunlu.
+            $olcek = 'soru' === $tur && 'olcek' === ($b['secimTuru'] ?? null);
             if ('soru' === $tur && !$metinYaniti) {
-                $zorunlu = ['secenekler' => null];
+                $zorunlu = $olcek ? ['olcekSol' => 'etiket', 'olcekSag' => 'etiket'] : ['secenekler' => null];
             }
             $alanlar = $zorunlu + array_intersect_key($istege, $b);
             if ($metinYaniti) {
@@ -459,6 +476,14 @@ final class Tanim
                 'soru' => self::soruBlogu($b, $metinYaniti, $sira, $i, $by, $h),
                 default => null,
             };
+            // V5: önce/sonra iki yüklenmiş görsel; eğri yönü ön ayar.
+            if ('onceSonra' === $tur) {
+                self::gorsel($b['once'], "{$by} once", $h);
+                self::gorsel($b['sonra'], "{$by} sonra", $h);
+            }
+            if ('grafik' === $tur && \array_key_exists('egri', $b) && !\in_array($b['egri'], ['artan', 'azalan'], true)) {
+                $h[] = "{$by}: egri artan ya da azalan olmalı";
+            }
             if (\array_key_exists('puan', $b) && (!\is_int($b['puan']) || $b['puan'] < 1 || $b['puan'] > 5)) {
                 $h[] = "{$by}: puan 1–5 tam sayı olmalı";
             }
@@ -478,8 +503,18 @@ final class Tanim
      */
     private static function soruBlogu(array $b, bool $metinYaniti, array $sira, int $i, string $yer, array &$h): void
     {
-        if (\array_key_exists('secimTuru', $b) && !\in_array($b['secimTuru'], ['tekli', 'coklu', 'metin', 'eposta'], true)) {
-            $h[] = "{$yer}: secimTuru tekli, coklu, metin ya da eposta olmalı";
+        if (\array_key_exists('secimTuru', $b) && !\in_array($b['secimTuru'], ['tekli', 'coklu', 'metin', 'eposta', 'olcek'], true)) {
+            $h[] = "{$yer}: secimTuru tekli, coklu, metin, eposta ya da olcek olmalı";
+        }
+        $olcek = 'olcek' === ($b['secimTuru'] ?? null);
+        if ($olcek && \array_key_exists('secenekler', $b)) {
+            $h[] = "{$yer}: ölçek sorusunda secenekler yazılmaz (1–5 kendiliğinden, cevap kimlikleri 1…5)";
+        }
+        if ($olcek && \array_key_exists('duzen', $b)) {
+            $h[] = "{$yer}: ölçek sorusunda duzen olmaz";
+        }
+        if (!$olcek && (\array_key_exists('olcekSol', $b) || \array_key_exists('olcekSag', $b))) {
+            $h[] = "{$yer}: olcekSol ve olcekSag yalnız olcek sorusunda kullanılabilir";
         }
         if (\array_key_exists('izinMetni', $b) && 'eposta' !== ($b['secimTuru'] ?? null)) {
             $h[] = "{$yer}: izinMetni yalnız eposta sorusunda kullanılabilir";
@@ -503,7 +538,8 @@ final class Tanim
     public static function tekSecimliSoru(mixed $bloklar): bool
     {
         foreach (\is_array($bloklar) ? $bloklar : [] as $b) {
-            if (\is_array($b) && 'soru' === ($b['tur'] ?? null) && 'tekli' === ($b['secimTuru'] ?? 'tekli')) {
+            // V5: ölçek de tek dokunuşla geçer.
+            if (\is_array($b) && 'soru' === ($b['tur'] ?? null) && \in_array($b['secimTuru'] ?? 'tekli', ['tekli', 'olcek'], true)) {
                 return true;
             }
         }

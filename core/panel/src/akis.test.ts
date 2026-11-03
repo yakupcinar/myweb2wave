@@ -422,6 +422,13 @@ describe("ekran düğmesi yuvadaki soruya uyar (Ç84, Ç87)", () => {
             ),
         ).toBeNull();
     });
+    it("V5: ölçek tek dokunuşla geçer — düğme boşalır, önizleme açık", () => {
+        const p = props(
+            ekranDugmeleri(veri([soru({ secimTuru: "olcek" })], "Devam")),
+        );
+        expect(p["dugme"]).toBe("");
+        expect(p["onizlemeKapali"]).toBe(false);
+    });
     it("E1: e-posta zorunluysa önizlemede kapalı, düğme korunur", () => {
         const p = props(
             ekranDugmeleri(

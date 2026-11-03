@@ -359,6 +359,36 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(veri).tema).toStrictEqual(VARSAYILAN);
     });
 
+    it("V5: grafik, önce/sonra ve ölçek gidiş-dönüş; artan eğri yazılmaz", () => {
+        const t = soruyla(
+            {
+                tur: "soru",
+                secimTuru: "olcek",
+                olcekSol: "Hiç",
+                olcekSag: "Tamamen",
+            },
+            {
+                onceki: [
+                    { tur: "grafik", baslangic: "Bugün", hedef: "4. hafta" },
+                    {
+                        tur: "grafik",
+                        baslangic: "Şimdi",
+                        hedef: "Hedef",
+                        egri: "azalan",
+                    },
+                    {
+                        tur: "onceSonra",
+                        once: "a".repeat(64),
+                        sonra: "b".repeat(64),
+                        onceEtiketi: "Önce",
+                        sonraEtiketi: "Sonra",
+                    },
+                ],
+            },
+        );
+        expect(puckTanim(tanimdanPuck(t, VARSAYILAN))).toStrictEqual(t);
+    });
+
     it("seçenek simgesi gidiş-dönüş; boş simge yazılmaz", () => {
         const simgeli = soruyla({
             tur: "soru",

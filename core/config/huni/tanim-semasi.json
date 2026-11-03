@@ -143,6 +143,12 @@
                     "$ref": "#/$defs/KutuBlogu"
                 },
                 {
+                    "$ref": "#/$defs/GrafikBlogu"
+                },
+                {
+                    "$ref": "#/$defs/OnceSonraBlogu"
+                },
+                {
                     "$ref": "#/$defs/SoruBlogu"
                 }
             ]
@@ -182,6 +188,45 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 200
+        },
+        "GrafikBlogu": {
+            "description": "V5: projeksiyon eğrisi (ana renkte) — sayı yok, yalnız uç etiketleri; sonuç vaadi değil, yolun resmi",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "baslangic",
+                "hedef"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "grafik"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "baslangic": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "hedef": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "egri": {
+                    "type": "string",
+                    "enum": [
+                        "artan",
+                        "azalan"
+                    ],
+                    "description": "Yoksa artan"
+                }
+            }
         },
         "HuniKimligi": {
             "description": "Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/)",
@@ -563,6 +608,45 @@
                 }
             }
         },
+        "OnceSonraBlogu": {
+            "description": "V5: önce/sonra — iki yüklenmiş görsel yan yana; etiketler alt metin de olur",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "once",
+                "sonra",
+                "onceEtiketi",
+                "sonraEtiketi"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "onceSonra"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "once": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "sonra": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "onceEtiketi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "sonraEtiketi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                }
+            }
+        },
         "PaywallAdimi": {
             "type": "object",
             "additionalProperties": false,
@@ -646,7 +730,8 @@
                         "tekli",
                         "coklu",
                         "metin",
-                        "eposta"
+                        "eposta",
+                        "olcek"
                     ]
                 },
                 "duzen": {
@@ -659,6 +744,18 @@
                 "yanitZorunlu": {
                     "type": "boolean",
                     "description": "Yalnız metin ve eposta"
+                },
+                "olcekSol": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "Yalnız olcek: 1'in etiketi (ör. Hiç katılmıyorum)"
+                },
+                "olcekSag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "Yalnız olcek: 5'in etiketi (ör. Tamamen katılıyorum)"
                 },
                 "izinMetni": {
                     "type": "string",

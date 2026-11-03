@@ -645,6 +645,7 @@ function soruAlanlari(ortam: Ortam) {
                 { label: "Çoklu seçim", value: "coklu" },
                 { label: "Serbest yanıt", value: "metin" },
                 { label: "E-posta", value: "eposta" },
+                { label: "Ölçek (1–5)", value: "olcek" },
             ],
         },
         yanitZorunlu: {
@@ -659,6 +660,15 @@ function soruAlanlari(ortam: Ortam) {
         izinMetni: {
             type: "text",
             label: "Pazarlama izni kutusu (boşsa yok)",
+        },
+        // V5: ölçeğin uç etiketleri (seçenekler 1–5 kendiliğinden).
+        olcekSol: {
+            type: "text",
+            label: "1'in etiketi (ör. Hiç katılmıyorum)",
+        },
+        olcekSag: {
+            type: "text",
+            label: "5'in etiketi (ör. Tamamen katılıyorum)",
         },
         // G4: kısa ya da görselli seçenekler için iki sütun.
         duzen: {
@@ -722,6 +732,7 @@ const DEGERLI_BLOKLAR = [
     "YorumBlogu",
     "IstatistikBlogu",
     "KutuBlogu",
+    "GrafikBlogu",
 ] as const;
 
 export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
@@ -1123,9 +1134,11 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     const secenekler = fields.secenekler;
                     if (secenekler.type !== "array") return fields;
                     // E1: e-posta da serbest yanıt ailesinde (seçeneksiz).
+                    // E1: e-posta, V5: ölçek de seçeneksiz.
                     const metin =
                         veri.props.secimTuru === "metin" ||
                         veri.props.secimTuru === "eposta";
+                    const olcek = veri.props.secimTuru === "olcek";
                     return {
                         ...fields,
                         yanitZorunlu: {
@@ -1136,7 +1149,9 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             ...fields.izinMetni,
                             visible: veri.props.secimTuru === "eposta",
                         },
-                        duzen: { ...fields.duzen, visible: !metin },
+                        olcekSol: { ...fields.olcekSol, visible: olcek },
+                        olcekSag: { ...fields.olcekSag, visible: olcek },
+                        duzen: { ...fields.duzen, visible: !metin && !olcek },
                         secenekler: {
                             ...secenekler,
                             visible: !metin,
@@ -1158,6 +1173,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     secimTuru: "tekli",
                     yanitZorunlu: "istege_bagli",
                     izinMetni: "",
+                    olcekSol: "Hiç katılmıyorum",
+                    olcekSag: "Tamamen katılıyorum",
                     duzen: "liste",
                     secenekler: VARSAYILAN_SECENEKLER,
                 },
@@ -1166,6 +1183,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     duzen,
                     yanitZorunlu,
                     izinMetni,
+                    olcekSol,
+                    olcekSag,
                     secenekler,
                 }) => (
                     <Blok
@@ -1178,6 +1197,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                 secimTuru === "eposta" && izinMetni?.trim()
                                     ? izinMetni
                                     : undefined,
+                            olcekSol,
+                            olcekSag,
                             secenekler: secenekler ?? [],
                         }}
                         medyaKoku=""
@@ -1341,6 +1362,76 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 render: ({ metin, simge }) => (
                     <Blok blok={{ tur: "kutu", metin, simge }} medyaKoku="" />
                 ),
+            },
+            // V5: projeksiyon eğrisi — sayı yok, uç etiketleri.
+            GrafikBlogu: {
+                label: "İlerleme grafiği",
+                fields: {
+                    degerler: degerAlani([
+                        ["baslangic", "Başlangıç"],
+                        ["hedef", "Hedef"],
+                    ]),
+                    baslangic: {
+                        type: "text",
+                        label: "Başlangıç etiketi (ör. Bugün)",
+                    },
+                    hedef: {
+                        type: "text",
+                        label: "Hedef etiketi (ör. 4. hafta)",
+                    },
+                    egri: {
+                        type: "radio",
+                        label: "Eğri",
+                        options: [
+                            { label: "Artan", value: "artan" },
+                            { label: "Azalan", value: "azalan" },
+                        ],
+                    },
+                },
+                defaultProps: {
+                    baslangic: "Bugün",
+                    hedef: "4. hafta",
+                    egri: "artan",
+                },
+                render: ({ baslangic, hedef, egri }) => (
+                    <Blok
+                        blok={{ tur: "grafik", baslangic, hedef, egri }}
+                        medyaKoku=""
+                    />
+                ),
+            },
+            // V5: önce/sonra — iki yüklenmiş görsel.
+            OnceSonraBlogu: {
+                label: "Önce / sonra",
+                fields: {
+                    once: gorselAlani(ortam, "Önce görseli"),
+                    onceEtiketi: { type: "text", label: "Önce etiketi" },
+                    sonra: gorselAlani(ortam, "Sonra görseli"),
+                    sonraEtiketi: { type: "text", label: "Sonra etiketi" },
+                },
+                defaultProps: {
+                    once: "",
+                    sonra: "",
+                    onceEtiketi: "Önce",
+                    sonraEtiketi: "Sonra",
+                },
+                render: ({ once, sonra, onceEtiketi, sonraEtiketi }) =>
+                    once && sonra ? (
+                        <Blok
+                            blok={{
+                                tur: "onceSonra",
+                                once,
+                                sonra,
+                                onceEtiketi,
+                                sonraEtiketi,
+                            }}
+                            medyaKoku=""
+                        />
+                    ) : (
+                        <p className="onizleme">
+                            Önce/sonra: iki görsel seçin.
+                        </p>
+                    ),
             },
             Paywall: {
                 label: "Ödeme (en sonda olmalı)",

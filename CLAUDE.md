@@ -175,6 +175,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzakların tam metni, ölçümü ve doğrusu |
 | [docs/adresler.md](docs/adresler.md) | Panel sayfaları, huni sayfaları, portlar ve API uçları (yerel) |
 | [docs/backend-mimarisi.md](docs/backend-mimarisi.md) | **Backend mimarisi & veri akışları**: teknoloji rolleri, şema felsefesi, uçtan uca akışlar |
+| [docs/teknik-mimari-notu.md](docs/teknik-mimari-notu.md) | **Sıralı teknik mimari notu**: 8 sıralı adım, dosya yolları, veri mekanizmaları, tuzaklar |
 | [.tours/](.tours/) | **İnteraktif kod turları** (CodeTour): 3 modüllü uçtan uca mimari, para ve AI yürüyüşleri |
 | [docs/uygulama-entegrasyonu.md](docs/uygulama-entegrasyonu.md) | Bir uygulama (KeepChat…) çekirdeğe nasıl bağlanır: anahtar, uçlar, akış, App Store kuralları |
 | [docs/yontem/](docs/yontem/README.md) | **Yöntem el kitabı** (okuyucu için, bölümlü): nasıl ve neden böyle çalışıyoruz; kayıtlara bağlantı verir, kopyalamaz |

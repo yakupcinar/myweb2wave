@@ -1381,6 +1381,8 @@ components:
         - $ref: "#/components/schemas/YorumBlogu"
         - $ref: "#/components/schemas/IstatistikBlogu"
         - $ref: "#/components/schemas/KutuBlogu"
+        - $ref: "#/components/schemas/GrafikBlogu"
+        - $ref: "#/components/schemas/OnceSonraBlogu"
         - $ref: "#/components/schemas/SoruBlogu"
     BaslikBlogu:
       description: Ara başlık
@@ -1443,6 +1445,29 @@ components:
         degerler: { $ref: "#/components/schemas/KosulluDegerler" }
         deger: { type: string, minLength: 1, maxLength: 12 }
         metin: { type: string, minLength: 1, maxLength: 120 }
+    GrafikBlogu:
+      description: "V5: projeksiyon eğrisi (ana renkte) — sayı yok, yalnız uç etiketleri; sonuç vaadi değil, yolun resmi"
+      type: object
+      additionalProperties: false
+      required: [tur, baslangic, hedef]
+      properties:
+        tur: { type: string, enum: [grafik] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
+        baslangic: { type: string, minLength: 1, maxLength: 40 }
+        hedef: { type: string, minLength: 1, maxLength: 40 }
+        egri: { type: string, enum: [artan, azalan], description: "Yoksa artan" }
+    OnceSonraBlogu:
+      description: "V5: önce/sonra — iki yüklenmiş görsel yan yana; etiketler alt metin de olur"
+      type: object
+      additionalProperties: false
+      required: [tur, once, sonra, onceEtiketi, sonraEtiketi]
+      properties:
+        tur: { type: string, enum: [onceSonra] }
+        degerler: { $ref: "#/components/schemas/KosulluDegerler" }
+        once: { $ref: "#/components/schemas/GorselKimligi" }
+        sonra: { $ref: "#/components/schemas/GorselKimligi" }
+        onceEtiketi: { type: string, minLength: 1, maxLength: 40 }
+        sonraEtiketi: { type: string, minLength: 1, maxLength: 40 }
     KutuBlogu:
       description: "Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz"
       type: object
@@ -1463,9 +1488,11 @@ components:
       required: [tur]
       properties:
         tur: { type: string, enum: [soru] }
-        secimTuru: { type: string, enum: [tekli, coklu, metin, eposta] }
+        secimTuru: { type: string, enum: [tekli, coklu, metin, eposta, olcek] }
         duzen: { type: string, enum: [liste, izgara] }
         yanitZorunlu: { type: boolean, description: "Yalnız metin ve eposta" }
+        olcekSol: { type: string, minLength: 1, maxLength: 40, description: "Yalnız olcek: 1'in etiketi (ör. Hiç katılmıyorum)" }
+        olcekSag: { type: string, minLength: 1, maxLength: 40, description: "Yalnız olcek: 5'in etiketi (ör. Tamamen katılıyorum)" }
         izinMetni:
           type: string
           minLength: 1

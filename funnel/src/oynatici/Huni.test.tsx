@@ -584,6 +584,49 @@ describe("D1 · D2 · D6 · D8 — çizim", () => {
     expect(epostalar()).toHaveLength(0);
   });
 
+  it("V5: ölçekte dokunulan sayı cevap kimliği olarak gider, sonraki adıma geçer", async () => {
+    const temel = yayin();
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((adim) =>
+            adim.id === "kiminle"
+              ? {
+                  id: "kiminle",
+                  tur: "ekran" as const,
+                  baslik: "Kiminle?",
+                  bloklar: [
+                    {
+                      tur: "soru" as const,
+                      secimTuru: "olcek" as const,
+                      olcekSol: "Hiç",
+                      olcekSag: "Tamamen",
+                    },
+                  ],
+                }
+              : adim,
+          ),
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    fireEvent.click(screen.getByRole("button", { name: "4" }));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    await waitFor(() =>
+      expect(ilerlemeler()).toContainEqual({
+        sira: 1,
+        adim: "kiminle",
+        cevap: "4",
+      }),
+    );
+  });
+
   it("yorum bloklu ekran alıntıyı gösterir ve düğmeyle sonraki adıma ilerler", async () => {
     const temel = yayin();
     tanim = {
