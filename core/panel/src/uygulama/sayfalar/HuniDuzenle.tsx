@@ -93,6 +93,7 @@ export function HuniDuzenle(): ReactNode {
                     ortam={{
                         planlar: acilis.data.planlar,
                         yaziTipleri: acilis.data.yaziTipleri,
+                        hazirTemalar: acilis.data.hazirTemalar,
                         ozellikler: acilis.data.ozellikler,
                         medyaAdresi: acilis.data.adresler.medya,
                         jeton: acilis.data.jeton,

@@ -38,13 +38,24 @@ final class Tema
     /** G3: görsel zeminde karartma katmanının üst sınırı (%100 görseli tamamen örterdi). */
     public const AZAMI_KARARTMA = 95;
 
-    /** Ç71: AI'a yön veren örnekler (kopya değil) — her biri yayından geçer (TemaTest). */
-    public const AI_ORNEKLERI = [
-        'sağlık / sakinlik' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah', 'dugmeBicimi' => 'hap'],
-        'teknoloji / üretkenlik' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b']],
-        'finans / ciddi' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff'],
-        'eğlence / çocuk' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta'],
-        'iletişim / sosyal' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'modern', 'kose' => 16],
+    /**
+     * V2: hazır temalar — tek kaynak: AI istemi adlarıyla görür, panel
+     * düzenleyici API'den alır (tek tıkla doldurur). Ç71'in AI örneklerinin
+     * yerine; her biri yayından geçer (TemaTest).
+     */
+    public const HAZIR_TEMALAR = [
+        'gece' => ['ad' => 'Gece', 'uygun' => 'uyku, rahatlama, meditasyon', 'tema' => ['anaRenk' => '#b7a6ff', 'arkaPlan' => '#0e1330', 'metinRengi' => '#eef0ff', 'yaziTipi' => 'modern', 'kose' => 20, 'kartRengi' => '#1a2148', 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#251a4a'], 'baslikBoyu' => 'buyuk', 'yogunluk' => 'ferah', 'hizalama' => 'orta', 'dugmeBicimi' => 'hap']],
+        'nane' => ['ad' => 'Nane', 'uygun' => 'sağlık, sakinlik, beslenme', 'tema' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah', 'dugmeBicimi' => 'hap']],
+        'kod' => ['ad' => 'Kod', 'uygun' => 'teknoloji, üretkenlik, yapay zekâ', 'tema' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b']]],
+        'lacivert' => ['ad' => 'Lacivert', 'uygun' => 'finans, hukuk, ciddi ürünler', 'tema' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff']],
+        'seker' => ['ad' => 'Şeker', 'uygun' => 'eğlence, çocuk, oyun', 'tema' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta']],
+        'lavanta' => ['ad' => 'Lavanta', 'uygun' => 'iletişim, sosyal, ilişki', 'tema' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'modern', 'kose' => 16]],
+        'enerji' => ['ad' => 'Enerji', 'uygun' => 'fitness, spor, kilo verme', 'tema' => ['anaRenk' => '#f97316', 'arkaPlan' => '#111111', 'metinRengi' => '#f5f5f5', 'yaziTipi' => 'geometrik', 'kose' => 12, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1c1917'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta']],
+        'kum' => ['ad' => 'Kum', 'uygun' => 'yaşam tarzı, yemek, kişisel gelişim', 'tema' => ['anaRenk' => '#b45309', 'arkaPlan' => '#f5ede1', 'metinRengi' => '#292524', 'yaziTipi' => 'serif', 'kose' => 14, 'kartRengi' => '#fffdf9', 'yogunluk' => 'ferah']],
+        'okyanus' => ['ad' => 'Okyanus', 'uygun' => 'dil öğrenme, eğitim, seyahat', 'tema' => ['anaRenk' => '#0284c7', 'arkaPlan' => '#f0f9ff', 'metinRengi' => '#0c4a6e', 'yaziTipi' => 'yuvarlak', 'kose' => 18, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#e0f2fe'], 'dugmeBicimi' => 'hap']],
+        'gul' => ['ad' => 'Gül', 'uygun' => 'güzellik, cilt bakımı, kadın sağlığı', 'tema' => ['anaRenk' => '#be185d', 'arkaPlan' => '#fff1f2', 'metinRengi' => '#4c0519', 'yaziTipi' => 'modern', 'kose' => 22, 'kartRengi' => '#ffffff', 'baslikBoyu' => 'buyuk', 'dugmeBicimi' => 'hap']],
+        'orman' => ['ad' => 'Orman', 'uygun' => 'zihin sağlığı, doğa, alışkanlık', 'tema' => ['anaRenk' => '#86efac', 'arkaPlan' => '#052e16', 'metinRengi' => '#ecfdf5', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#14532d'], 'yogunluk' => 'ferah', 'hizalama' => 'orta']],
+        'sade' => ['ad' => 'Sade', 'uygun' => 'her ürün; markasız, tarafsız', 'tema' => ['anaRenk' => '#111827', 'arkaPlan' => '#ffffff', 'metinRengi' => '#111827', 'yaziTipi' => 'sistem', 'kose' => 8, 'yogunluk' => 'normal']],
     ];
 
     /**
@@ -55,8 +66,8 @@ final class Tema
     {
         $v = self::VARSAYILAN;
         $ornekler = '';
-        foreach (self::AI_ORNEKLERI as $tur => $tema) {
-            $ornekler .= "\n- {$tur}: ".json_encode($tema, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
+        foreach (self::HAZIR_TEMALAR as $anahtar => $h) {
+            $ornekler .= "\n- {$anahtar} ({$h['ad']}; {$h['uygun']}): ".json_encode($h['tema'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
         }
 
         return 'Görünüm (tema): taslakta tema yoksa ya da varsayılan görünümse '
@@ -76,7 +87,7 @@ final class Tema
             .'Ekranın kapak görseli (gorsel) varsa duzen: kahraman (görsel ekranın üst yarısı) ya da tamEkran (görsel bütün ekran, metin altta beyaz; yalnız baslik, metin, maddeler, istatistik blokları) boş ekranı doldurur; görselsiz yalnız ust. '
             // G6
             .'İsteğe bağlı kartRengi ("#rrggbb"): içerik zeminin üstünde bu renkte kartta durur; o zaman metin kartın üstündedir — okunurluk metinRengi ↔ kartRengi ölçülür, zemin (arkaPlan/geçiş/görsel) yalnız çevrede kalır ve koyu olabilir. '
-            .'Örnekler (aynen kopyalama, ürüne uyarla):'.$ornekler
+            .'Hazır temalar (yönetici panelde de seçebilir; ürüne en uyanı başlangıç al, ana rengi ve gerekirse zemini ürüne uyarla — yazı tipi ve ön ayarlar temanın karakteri):'.$ornekler
             // Ç72: üretilen görünümü görmeden düzeltemez.
             ."\nKaydettikten sonra ekran_goruntusu ile en az ilk adımı ve ödeme ekranını gör; okunmayan, taşan ya da sıkışık bir şey varsa düzeltip yeniden kaydet.";
     }

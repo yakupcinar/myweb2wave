@@ -5,6 +5,7 @@ import { yapilandirma, type Ortam } from "./yapilandirma";
 const ortam: Ortam = {
     planlar: ["monthly"],
     yaziTipleri: ["sistem", "serif", "yuvarlak", "mono"],
+    hazirTemalar: [],
     medyaAdresi: "",
     jeton: "",
     ozellikler: [
@@ -260,4 +261,73 @@ describe("adım menüsü (T1c)", () => {
             );
         },
     );
+});
+
+// V2: hazır tema — seçim kök alanlarını açılıştaki eşlemeyle doldurur, tema
+// özel olur, seçim alanı boşalır; bilinmeyen anahtar hiçbir şeyi değiştirmez.
+describe("V2: hazır tema seçimi", () => {
+    const tema = {
+        anaRenk: "#b7a6ff",
+        arkaPlan: "#0e1330",
+        metinRengi: "#eef0ff",
+        yaziTipi: "modern" as const,
+        kose: 20,
+        kartRengi: "#1a2148",
+        zemin: { tur: "gecis" as const, ikinciRenk: "#251a4a" },
+        baslikBoyu: "buyuk" as const,
+        hizalama: "orta" as const,
+    };
+    const coz = (hazirTema: string) => {
+        const kok = yapilandirma({
+            ...ortam,
+            hazirTemalar: [
+                { anahtar: "gece", ad: "Gece", uygun: "uyku", tema },
+            ],
+        }).root;
+        const resolve = kok?.resolveData as unknown as (v: {
+            props: Record<string, unknown>;
+        }) => { props: Record<string, unknown> };
+        return resolve({
+            props: {
+                sayfaBasligi: "X",
+                ozelTema: "hayir",
+                anaRenk: "#2563eb",
+                yogunluk: "sik",
+                hazirTema,
+            },
+        }).props;
+    };
+
+    it("seçilen temanın alanları yazılır, ön ayar varsayılana döner, seçim boşalır", () => {
+        // Beklenen elle (§3): zemin geçiş → zeminTuru/ikinciRenk, kart var.
+        expect(coz("gece")).toMatchObject({
+            sayfaBasligi: "X",
+            ozelTema: "evet",
+            hazirTema: "",
+            anaRenk: "#b7a6ff",
+            arkaPlan: "#0e1330",
+            metinRengi: "#eef0ff",
+            yaziTipi: "modern",
+            kose: 20,
+            zeminTuru: "gecis",
+            ikinciRenk: "#251a4a",
+            kart: "var",
+            kartRengi: "#1a2148",
+            baslikBoyu: "buyuk",
+            hizalama: "orta",
+            yogunluk: "normal",
+            dugmeBicimi: "dolu",
+        });
+    });
+
+    it("bilinmeyen ya da boş seçim veriyi değiştirmez", () => {
+        expect(coz("")).toMatchObject({
+            ozelTema: "hayir",
+            anaRenk: "#2563eb",
+        });
+        expect(coz("yok")).toMatchObject({
+            ozelTema: "hayir",
+            anaRenk: "#2563eb",
+        });
+    });
 });

@@ -2073,6 +2073,14 @@ export interface operations {
                         imza: string;
                         planlar: string[];
                         temaVarsayilan: components["schemas"]["HuniTemasi"];
+                        /** @description V2 — hazır temalar (tek kaynak Tema::HAZIR_TEMALAR; AI istemi de aynı listeyi görür) */
+                        hazirTemalar: {
+                            anahtar: string;
+                            ad: string;
+                            /** @description Uygun ürün türleri */
+                            uygun: string;
+                            tema: components["schemas"]["HuniTemasi"];
+                        }[];
                         yaziTipleri: string[];
                         /** @description Ç91 — koşullarda kullanılabilen özellikler (T2 sözlüğünden; cevap.<adım> düzenleyicide ekranlardan eklenir) */
                         ozellikler: {

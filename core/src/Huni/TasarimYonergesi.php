@@ -23,7 +23,7 @@ final class TasarimYonergesi
         - Dürüst içerik: verilmeyen sayı, oran, kullanıcı sayısı, rozet ya da yorum ekleme; sayaç ya da "sınırlı teklif" yazma.
 
         Görsel döngü (ekran_goruntusu varsa ZORUNLU):
-        - Kaydettikten sonra değiştirdiğin her ekranın görüntüsünü al (yeni huni kurduysan en az: ilk ekran, bir soru ekranı, özet, paywall).
+        - Kaydettikten sonra değiştirdiğin her ekranın görüntüsünü al (yeni huni kurduysan en az: ilk ekran, bir soru ekranı, özet, paywall). Temayı değiştirdiysen bütün ekranlara yeniden bak: yazı tipi ve boşluk satır kırılmasını ve yüksekliği değiştirir (aynı içerik bir temada uyarısız, ötekinde uyarılı çıkar).
         - Dönen "uyarilar" listesini düzelt (boşluk, yetim satır, kaydırmada kalan düğme, taşan metin), yeniden kaydet ve yeniden bak; uyarısız olunca bitir. Düzeltemediğin uyarıyı (ör. görsel yok) yöneticiye söyle.
         - Görüntüye bakmadığın ekranın nasıl göründüğünü anlatma.
         METIN;

@@ -126,6 +126,8 @@ export type SoruBloguProps = {
 };
 export type KokProps = {
     sayfaBasligi: string;
+    /** V2: seçilen hazır temanın anahtarı — resolveData alanlara yazıp boşaltır. */
+    hazirTema: string;
     /** Ç61 (5): boş dize = logo yok. */
     logo: string;
     ozelTema: "evet" | "hayir";
@@ -470,34 +472,43 @@ const hedefli = <T extends object>(
     hedef: string,
 ): T & { hedef?: string } => (hedef ? { ...nesne, hedef } : nesne);
 
+/**
+ * Temanın kök alanları — açılışta ve V2 hazır tema seçiminde aynı yol
+ * (ikinci bir eşleme sessizce ayrışırdı).
+ */
+export function kokTemasi(
+    tema: Tema,
+): Omit<KokProps, "sayfaBasligi" | "logo" | "ozelTema" | "hazirTema"> {
+    return {
+        anaRenk: tema.anaRenk,
+        arkaPlan: tema.arkaPlan,
+        metinRengi: tema.metinRengi,
+        yaziTipi: tema.yaziTipi,
+        kose: tema.kose,
+        zeminTuru: tema.zemin?.tur ?? "yok",
+        ikinciRenk:
+            tema.zemin?.tur === "gecis" ? tema.zemin.ikinciRenk : tema.arkaPlan,
+        zeminGorseli: tema.zemin?.tur === "gorsel" ? tema.zemin.gorsel : "",
+        karartma: tema.zemin?.tur === "gorsel" ? tema.zemin.karartma : 70,
+        kart: tema.kartRengi ? "var" : "yok",
+        kartRengi: tema.kartRengi ?? "#ffffff",
+        baslikBoyu: tema.baslikBoyu ?? "normal",
+        yogunluk: tema.yogunluk ?? "normal",
+        hizalama: tema.hizalama ?? "sol",
+        dugmeBicimi: tema.dugmeBicimi ?? "dolu",
+    };
+}
+
 export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
-    const tema = tanim.tema ?? varsayilanTema;
     return {
         root: {
             props: {
                 sayfaBasligi: tanim.sayfaBasligi,
                 logo: tanim.logo ?? "",
                 ozelTema: tanim.tema ? "evet" : "hayir",
-                anaRenk: tema.anaRenk,
-                arkaPlan: tema.arkaPlan,
-                metinRengi: tema.metinRengi,
-                yaziTipi: tema.yaziTipi,
-                kose: tema.kose,
-                zeminTuru: tema.zemin?.tur ?? "yok",
-                ikinciRenk:
-                    tema.zemin?.tur === "gecis"
-                        ? tema.zemin.ikinciRenk
-                        : tema.arkaPlan,
-                zeminGorseli:
-                    tema.zemin?.tur === "gorsel" ? tema.zemin.gorsel : "",
-                karartma:
-                    tema.zemin?.tur === "gorsel" ? tema.zemin.karartma : 70,
-                kart: tema.kartRengi ? "var" : "yok",
-                kartRengi: tema.kartRengi ?? "#ffffff",
-                baslikBoyu: tema.baslikBoyu ?? "normal",
-                yogunluk: tema.yogunluk ?? "normal",
-                hizalama: tema.hizalama ?? "sol",
-                dugmeBicimi: tema.dugmeBicimi ?? "dolu",
+                // V2: seçim anlık; tanıma yazılmaz.
+                hazirTema: "",
+                ...kokTemasi(tanim.tema ?? varsayilanTema),
             },
         },
         content: tanim.adimlar.map((adim: Adim, i: number) => {

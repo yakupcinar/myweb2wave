@@ -100,6 +100,7 @@ const tanim: Tanim = {
 const yap = yapilandirma({
     planlar: ["monthly"],
     yaziTipleri: ["sistem", "serif", "yuvarlak", "mono"],
+    hazirTemalar: [],
     medyaAdresi: "",
     jeton: "",
     ozellikler: [],

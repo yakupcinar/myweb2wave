@@ -23,6 +23,15 @@ const ACILIS = {
     imza: "a".repeat(64),
     planlar: ["monthly"],
     temaVarsayilan: { anaRenk: "#000000" },
+    // V2: hazır temalar düzenleyiciye aynen geçer.
+    hazirTemalar: [
+        {
+            anahtar: "gece",
+            ad: "Gece",
+            uygun: "uyku",
+            tema: { anaRenk: "#b7a6ff" },
+        },
+    ],
     yaziTipleri: ["sistem"],
     jeton: "jeton-duzenleyici",
     adresler: {
@@ -83,6 +92,7 @@ describe("P3: düzenleyici sayfası", () => {
             ortam: {
                 planlar: ["monthly"],
                 yaziTipleri: ["sistem"],
+                hazirTemalar: ACILIS.hazirTemalar,
                 medyaAdresi: "/panel/medya/keepchat",
                 jeton: "jeton-duzenleyici",
             },

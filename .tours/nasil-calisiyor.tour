@@ -1,0 +1,41 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "MyWeb2Wave — Uçtan Uca Nasıl Çalışıyor?",
+  "steps": [
+    {
+      "file": "contract/openapi.yaml",
+      "line": 1,
+      "description": "### 📍 1. DURAK: Anayasa ve Sözleşme (Contract-First)\nHer şey burada başlar!\n\nBackend (PHP/Symfony) ile Frontend (TypeScript/React/Astro) arasındaki tek ve değişmez sözleşme bu dosyadır.\n- Bu dosyada `HuniTanimi` şemasını tanımladık.\n- `npm run uret` dediğimizde, hem PHP tarafı hem de React tarafı bu dosyadan otomatik TypeScript ve PHP tipleri üretir.\n- Kural: Sözleşmede olmayan hiçbir alan kodda uydurulamaz!"
+    },
+    {
+      "file": "core/panel/src/duzenleyici.tsx",
+      "line": 45,
+      "description": "### 📍 2. DURAK: Puck Sürükle-Bırak Düzenleyicisi\nAdmin panelindeki huni editörünün kalbi burasıdır.\n\n- Sol menüden bir soru, puanlama veya görsel bloğu sürükleyip bıraktığında Puck bunu hafızada bir JSON nesnesine dönüştürür.\n- Sağ tarafta aynı `huni-bilesenleri` ve `huni.css` yüklü olduğu için gördüğün önizleme, canlıdaki telefon ekranıyla birebir aynıdır (0 stil farkı).\n- Üstteki 'Kaydet'e bastığında bu JSON, Symfony API'sine `PUT` isteği olarak fırlatılır."
+    },
+    {
+      "file": "core/src/Huni/Tanim.php",
+      "line": 25,
+      "description": "### 📍 3. DURAK: Güvenlik Bekçisi (Backend Doğrulama)\nPanelden gelen JSON veritabanına girmeden önce mutlaka bu sınıfa uğrar.\n\n- `Tanim.php` gelen veriyi satır satır inceler.\n- HTML kodu veya `<script>` enjeksiyonu var mı? (XSS engeli)\n- Başlık çok mu uzun? Şıklar eksik mi?\n- Sözleşmeye aykırı uydurma bir alan var mı?\nEğer JSON temizse onay verir, değilse anında 400 hatasıyla geri çevirir."
+    },
+    {
+      "file": "core/src/Controller/PanelHuniApiController.php",
+      "line": 50,
+      "description": "### 📍 4. DURAK: Veritabanına Kayıt (Hibrit JSONB)\nOnaylanan huni taslağı burada PostgreSQL'e mühürlenir.\n\n- Dikkat ederseniz sorular için ayrı tablo, şıklar için ayrı tablo açmadık.\n- `huniler` tablosundaki tek bir `taslak: jsonb` hücresine bütün anket yapısı tek parça olarak yazılır.\n- 'Yayınla' butonuna basıldığında ise bu taslak dondurularak `huni_surumleri` tablosuna (v1, v2...) arşivlenir."
+    },
+    {
+      "file": "funnel/src/oynatici/Huni.tsx",
+      "line": 91,
+      "description": "### 📍 5. DURAK: Canlı Huni Oynatıcısı (Preact / <20KB)\nMüşteri Instagram veya TikTok reklamına tıklayıp sayfaya girdiğinde burası uyanır.\n\n- İlk yaptığı iş: Symfony'den az önce veritabanına yazdığımız JSON'ı çekmektir (`GET /huni/keepchat`).\n- JSON geldikten sonra ekranda sihir yok; `adimlar.map(...)` ile adımları ve butonları sırayla ekrana çizer.\n- `kosul.ts` sayesinde kullanıcının verdiği cevaplara göre bir sonraki adımı dinamik olarak hesaplar veya atlar.\n- Bütçe: Toplam JavaScript boyutu 20 KB'ın altındadır, mobilde anında açılır!"
+    },
+    {
+      "file": "core/src/Billing/SubscriptionSync.php",
+      "line": 38,
+      "description": "### 📍 6. DURAK: Para Tahsilatı ve Stripe Webhook'u\nMüşteri anketin sonundaki Paywall ekranında 'Abone Ol' butonuna basıp kartını ödediğinde Stripe bu metoda webhook atar.\n\n- `processed_webhook_events`: Stripe aynı webhook'u yanlışlıkla 2 kere gönderirse ikinci kopya veritabanına zarar veremez (Idempotency).\n- `status_event_created`: Sırasız gelen eski bir webhook asla daha yeni bir durumu ezemez.\n- `past_due` toleransı: Kart limiti bittiğinde kullanıcı hemen sistemden atılmaz, Stripe denerken erişimi sürer."
+    },
+    {
+      "file": "core/src/Kimlik/Hak.php",
+      "line": 24,
+      "description": "### 📍 7. DURAK: Mobil Uygulama Hak Doğrulama (KeepChat)\nMüşteri webden parasını ödedi, şimdi KeepChat iOS uygulamasını açtı.\n\n- Müşteri uygulamada 'Aboneliğimi Bağla' diyerek e-postasını girer ve gelen 6 haneli kodu onaylar.\n- `baglantilar` tablosuna `keepchat + ahmet123 <-> kisi_id` kaydı atılır.\n- KeepChat sunucusu bu `Hak::sorgula()` metoduna sorar: 'Bu kullanıcının aktif aboneliği var mı?'.\n- Çekirdek `subscriptions` tablosuna bakar; 'active', 'trialing' veya 'past_due' ise `{\"aktif\": true}` döner ve mobil uygulamadaki tüm kilitler açılır!"
+    }
+  ]
+}

@@ -639,13 +639,25 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [baslik, taslak, imza, planlar, temaVarsayilan, yaziTipleri, ozellikler, jeton, adresler]
+                required: [baslik, taslak, imza, planlar, temaVarsayilan, hazirTemalar, yaziTipleri, ozellikler, jeton, adresler]
                 properties:
                   baslik: { type: string }
                   taslak: { $ref: "#/components/schemas/HuniTanimi" }
                   imza: { type: string, description: "Ç39: taslak imzası; kayıtta geri yollanır (eşleşmezse 409)" }
                   planlar: { type: array, items: { type: string } }
                   temaVarsayilan: { $ref: "#/components/schemas/HuniTemasi" }
+                  hazirTemalar:
+                    description: "V2 — hazır temalar (tek kaynak Tema::HAZIR_TEMALAR; AI istemi de aynı listeyi görür)"
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [anahtar, ad, uygun, tema]
+                      properties:
+                        anahtar: { type: string }
+                        ad: { type: string }
+                        uygun: { type: string, description: "Uygun ürün türleri" }
+                        tema: { $ref: "#/components/schemas/HuniTemasi" }
                   yaziTipleri: { type: array, items: { type: string } }
                   ozellikler:
                     description: "Ç91 — koşullarda kullanılabilen özellikler (T2 sözlüğünden; cevap.<adım> düzenleyicide ekranlardan eklenir)"

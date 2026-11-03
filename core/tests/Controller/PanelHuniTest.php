@@ -237,6 +237,11 @@ final class PanelHuniTest extends WebTestCase
             ['huni', 'huni.surum', 'utm.source', 'utm.medium', 'utm.campaign', 'utm.content', 'utm.term', 'izin.reklam', 'adim.son'],
             array_column(\is_array($acilis['ozellikler']) ? $acilis['ozellikler'] : [], 'ad'),
         );
+        // V2: hazır temalar tek kaynaktan, anahtarıyla; tema nesnesi aynen (sözleşme şeması yukarıda ölçtü).
+        $hazir = \is_array($acilis['hazirTemalar']) ? $acilis['hazirTemalar'] : [];
+        self::assertSame(array_keys(\App\Huni\Tema::HAZIR_TEMALAR), array_column($hazir, 'anahtar'));
+        self::assertIsArray($hazir[0]);
+        self::assertSame(\App\Huni\Tema::HAZIR_TEMALAR['gece']['tema'], $hazir[0]['tema'] ?? null);
         // Açılıştaki jeton düzenleyici uçlarında geçer (kayıt 200).
         $this->kaydet(self::tanim('Yeni'), \is_string($acilis['jeton']) ? $acilis['jeton'] : '');
         self::assertResponseStatusCodeSame(200);

@@ -23,7 +23,13 @@ import {
     temaDegiskenleri,
     VARSAYILAN_TEMA,
 } from "../../../huni-bilesenleri/tema";
-import { BLOK_BILESENLERI, kokOnAyarlari, kokZemini } from "./donustur";
+import {
+    BLOK_BILESENLERI,
+    kokOnAyarlari,
+    kokTemasi,
+    kokZemini,
+    type Tema,
+} from "./donustur";
 import type {
     Bilesenler,
     KokProps,
@@ -39,7 +45,65 @@ export type Ortam = {
     jeton: string;
     /** Ç91: koşul özellikleri sunucudan (T2 sözlüğü) — elle kopya yok. */
     ozellikler: { ad: string; aciklama: string }[];
+    /** V2: hazır temalar sunucudan (Tema::HAZIR_TEMALAR) — elle kopya yok. */
+    hazirTemalar: { anahtar: string; ad: string; uygun: string; tema: Tema }[];
 };
+
+/**
+ * V2: hazır tema seçici — her düğme temanın kendi zemini ve ana rengiyle
+ * çizilir; tıklanınca anahtar yazılır, kökün resolveData'sı alanları doldurur.
+ */
+const hazirTemaAlani = (
+    temalar: Ortam["hazirTemalar"],
+): CustomField<string> => ({
+    type: "custom",
+    label: "Hazır tema",
+    render: ({ onChange }) => (
+        <FieldLabel label="Hazır tema (tıkla: alanları doldurur)" el="div">
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: 6,
+                }}
+            >
+                {temalar.map((h) => (
+                    <button
+                        key={h.anahtar}
+                        type="button"
+                        title={h.uygun}
+                        onClick={() => onChange(h.anahtar)}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 8px",
+                            borderRadius: 8,
+                            border: "1px solid #d4d4d8",
+                            background: h.tema.arkaPlan,
+                            color: h.tema.metinRengi,
+                            font: "inherit",
+                            fontSize: 12,
+                            cursor: "pointer",
+                        }}
+                    >
+                        <span
+                            aria-hidden="true"
+                            style={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: 99,
+                                flex: "none",
+                                background: h.tema.anaRenk,
+                            }}
+                        />
+                        {h.ad}
+                    </button>
+                ))}
+            </div>
+        </FieldLabel>
+    ),
+});
 
 type Gorsel = {
     id: string;
@@ -522,6 +586,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     label: "Sayfa başlığı (tarayıcı sekmesi)",
                 },
                 logo: gorselAlani(ortam, "Logo (isteğe bağlı)"),
+                hazirTema: hazirTemaAlani(ortam.hazirTemalar),
                 ozelTema: {
                     type: "radio",
                     label: "Bu huniye özel renk ve yazı tipi",
@@ -606,6 +671,23 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         { label: "Hap", value: "hap" },
                     ],
                 },
+            },
+            // V2: hazır tema seçilince alanlar açılıştaki eşlemeyle dolar,
+            // tema özel olur; seçim alanı boşalır (tanıma yazılmaz).
+            resolveData: (veri) => {
+                const h = ortam.hazirTemalar.find(
+                    (t) => t.anahtar === veri.props?.hazirTema,
+                );
+                return h
+                    ? {
+                          props: {
+                              ...veri.props,
+                              ...kokTemasi(h.tema),
+                              ozelTema: "evet" as const,
+                              hazirTema: "",
+                          },
+                      }
+                    : veri;
             },
             render: ({
                 children,

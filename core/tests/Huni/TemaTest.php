@@ -20,28 +20,28 @@ final class TemaTest extends TestCase
     /** Ç71: AI'a gösterilen örnek temalar yayından geçmeli ve birbirinden, varsayılandan farklı olmalı. */
     public function testAiOrnekTemalariGecerliVeFarkli(): void
     {
-        self::assertGreaterThanOrEqual(4, \count(Tema::AI_ORNEKLERI));
-        foreach (Tema::AI_ORNEKLERI as $tur => $tema) {
+        self::assertGreaterThanOrEqual(4, \count(Tema::HAZIR_TEMALAR));
+        foreach (array_map(static fn (array $h): array => $h['tema'], Tema::HAZIR_TEMALAR) as $tur => $tema) {
             self::assertSame([], Tema::hatalar($tema), $tur);
         }
-        self::assertGreaterThanOrEqual(3, \count(array_unique(array_column(Tema::AI_ORNEKLERI, 'yaziTipi'))));
+        self::assertGreaterThanOrEqual(3, \count(array_unique(array_column(array_column(Tema::HAZIR_TEMALAR, 'tema'), 'yaziTipi'))));
         // G3: zemin örneği de gösterilir (G1: görünümü en çok zemin değiştirir).
-        self::assertGreaterThanOrEqual(2, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['zemin']))));
+        self::assertGreaterThanOrEqual(2, \count(array_filter(array_column(Tema::HAZIR_TEMALAR, 'tema'), static fn (array $t): bool => isset($t['zemin']))));
         // G6: kartlı örnek de (koyu zemin + açık kart — kartsız geçersiz olurdu).
-        self::assertGreaterThanOrEqual(1, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => isset($t['kartRengi']))));
+        self::assertGreaterThanOrEqual(1, \count(array_filter(array_column(Tema::HAZIR_TEMALAR, 'tema'), static fn (array $t): bool => isset($t['kartRengi']))));
         // G7: yerleşim ön ayarı kullanan örnekler de (G1: başlık ve boşluk düzeni en çok değiştiriyor).
-        self::assertGreaterThanOrEqual(2, \count(array_filter(Tema::AI_ORNEKLERI, static fn (array $t): bool => [] !== array_intersect_key($t, Tema::ON_AYARLAR))));
+        self::assertGreaterThanOrEqual(2, \count(array_filter(array_column(Tema::HAZIR_TEMALAR, 'tema'), static fn (array $t): bool => [] !== array_intersect_key($t, Tema::ON_AYARLAR))));
         // G2: huniyle gelen yeni yazı tiplerinden en az biri örnekte.
-        self::assertNotSame([], array_intersect(['modern', 'geometrik'], array_column(Tema::AI_ORNEKLERI, 'yaziTipi')));
+        self::assertNotSame([], array_intersect(['modern', 'geometrik'], array_column(array_column(Tema::HAZIR_TEMALAR, 'tema'), 'yaziTipi')));
         // Ana renkler birbirinden ve varsayılandan farklı.
-        self::assertCount(\count(Tema::AI_ORNEKLERI) + 1, array_unique([...array_column(Tema::AI_ORNEKLERI, 'anaRenk'), Tema::VARSAYILAN['anaRenk']]));
+        self::assertCount(\count(Tema::HAZIR_TEMALAR) + 1, array_unique([...array_column(array_column(Tema::HAZIR_TEMALAR, 'tema'), 'anaRenk'), Tema::VARSAYILAN['anaRenk']]));
 
         $y = Tema::aiYonergesi();
         // Bağımsız beklenti (§3): alanlar ve sınırlar elle yazıldı.
         foreach (['sistem, serif, yuvarlak, mono', '0–32', '4.5:1', 'tema yoksa', 'varsayılan görünüm', 'ekran_goruntusu', 'zemin', 'gecis', 'karartma', 'kartRengi', 'baslikBoyu', 'yogunluk', 'hizalama', 'tamEkran', 'dugmeBicimi', 'izgara', 'simge'] as $parca) {
             self::assertStringContainsString($parca, $y);
         }
-        foreach (Tema::AI_ORNEKLERI as $tema) {
+        foreach (array_column(Tema::HAZIR_TEMALAR, 'tema') as $tema) {
             self::assertStringContainsString($tema['anaRenk'], $y);
         }
     }

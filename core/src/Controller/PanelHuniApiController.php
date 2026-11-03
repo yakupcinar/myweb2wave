@@ -108,6 +108,7 @@ final class PanelHuniApiController extends AbstractController
             'imza' => $this->huniler->taslakImzasi($app, $ad),
             'planlar' => array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))),
             'temaVarsayilan' => Tema::VARSAYILAN,
+            'hazirTemalar' => array_map(static fn (string $anahtar, array $h): array => ['anahtar' => $anahtar] + $h, array_keys(Tema::HAZIR_TEMALAR), Tema::HAZIR_TEMALAR),
             'yaziTipleri' => Tema::YAZI_TIPLERI,
             'ozellikler' => Tanim::kosulOzellikleri(),
             'jeton' => $this->jetonlar->getToken('huni-'.$app)->getValue(),
