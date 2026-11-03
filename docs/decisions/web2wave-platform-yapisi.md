@@ -112,3 +112,39 @@ Kullanıcı: "web2wave quiz builder'ı hem AI hem araç açısından nasıl yön
 4. **Süre.** web2wave yıllardır; bu depo 2026-10-19'da başladı.
 
 Yakın olduğumuz yerler: sürüm/geri yükleme/önizleme, yalnız-taslak güvenlik modeli, sunucuda tam doğrulama + Türkçe hata ile AI düzeltme döngüsü, ürün bağlamı. Öneri ve sıra: Ç72.
+
+## Ek 2026-11-03 — quiz builder sonrası: kalan modüller ve sıra
+
+Kullanıcı: "ana özellik eklendi ve test edildi (sunucu hazır değil, dış işler sonra); web2wave'in başka özelliklerine bakıp sırayla eklemek için plan yap". Kaynak: `docs.web2wave.com/llms.txt` (2026-11-03, 392 satır) + yeni/değişen sayfalar `support-desk`, `ltv-predictions`, `meta-ad-account-spend-and-roas`, `web2wave-js-sdk`, `multicurrency-auto-currency-switching`, `managing-subscription`, `experiments`, `plans-prices`, `email-sequences`. Üretici beyanı; kod alınmadı (kural 12).
+
+**10-27'den beri web2wave'de yeni:** Support Desk (gelen kutusu + kullanıcı kartı + AI yanıt taslağı + otomatik yanıt; ayrı ücretli), LTV tahmini (kohort başına 1/3/6/9/12 ay; az veride platform geneli anonim veri), Meta reklam hesabı → harcama + ROAS sütunu (TikTok/Google "yakında"), dış siteler için JS SDK (dış ödeme sayfasından CAPI olayı), rol `Support Manager`.
+
+**Bizde durum (10-27 tablosuna göre değişen):** temel 1–4 (T1 blok kataloğu, T2 özellik deposu, T3 koşul motoru, T4 olay deposu) ✅; panel React + grafik (P4) + kullanıcılar listesi (P5) ✅; MCP (A5a) ✅. Quiz builder tarafında yapısal açık kalmadı; kalan fark **para ve büyüme modülleri**.
+
+### Kapsam dışı (bilinçli — değiştirmek ayrı karar)
+
+| web2wave | Neden yok |
+|---|---|
+| Çok ödeme sağlayıcısı (Paddle, Primer, Solidgate…) | Ç10: canlıda da Stripe |
+| Özel JS / `window.w2w` / dış JS SDK | D1 (tanım JS taşımaz); ödeme dış sitede değil, Stripe webhook'u zaten çekirdekte |
+| Mobil SDK + olasılıksal derin bağlantı | A10: kesin giriş bağlantısı |
+| LTV'de platform geneli veri | A1 tek kiracı — paylaşılan veri yok; yalnız kendi kohortlarımız (M5c) |
+| Support Desk'in faturalı ürün hâli, çok proje, ekip davet akışı | A1: tek şirket; ekip gerekirse M9 |
+
+### Sıra — her biri ayrı `/blok`, bağımlılık + gelire etki
+
+| # | Modül | İçerik | Bağımlı | Dış girdi |
+|---|---|---|---|---|
+| **M1** | Fiyat kataloğu | `fiyatlar` tablosu (uygulama başına çok plan: hafta/ay/yıl), Stripe ile eşleme (lookup_key), **giriş teklifi + deneme** (Subscription Schedule, en çok 2 evre), **çok para birimi** (Stripe `currency_options`; ülkeden seçim, ziyaretçi seçmez) | L10 | yok (test modu) |
+| **M2** | Paywall ayrı varlık | huniden bağımsız paywall + T1 kataloğuna paywall blokları: **plan seçici**, dinamik ödeme koşulları (seçili plana göre), sayaç (yapışık), indirim+sayaç, güven rozetleri, şart onayı; huni → paywall yönlendirmesi T3 kuralıyla (cevaba göre farklı paywall); sayfada Stripe gömülü ödeme (Embedded Checkout) + Apple/Google Pay — ayrı alt blok | M1, T1, T3 | Apple Pay alan adı doğrulaması sunucu ister |
+| **M3** | Downsell + upsell | kapatma/geri tuşunda downsell penceresi (indirimli plan), ödeme sonrası **tek tık upsell** (kayıtlı kartla `off_session`), "ödeme sonrası" sayfası = ekran | M2 | yok |
+| **M4** | Deneyler | **yönlendirme** (huni/paywall varyantına %) + **içerik** (`deney.<id>` özelliği T2'ye, T3 koşulunda); yapışık atama, durumlar (Taslak→Aktif→Durdur/Bitti, Taslağa dönüş yok, başlayınca kilit), sonuç: hacim, adım dönüşümü, ödeme oranı, ARPU — T4 olaylarından | M2 (paywall testi için), T2–T4 | yok |
+| **M5** | Analitik | (a) **cevap dağılımı** raporu (soru başına; serbest metin hariç, Ç90) (b) **UTM raporu** (kaynak/kampanya → ziyaret, ödeme, gelir) (c) **kohort geliri** (başlangıç haftası × ay) — LTV tahmini yalnız kendi verimizle, sonra (d) Meta harcama içe aktarma → ROAS | T4, P4 | (d) Meta uygulaması + OAuth dönüş adresi = sunucu |
+| **M6** | Abonelik yönetimi | panelden iptal (hemen / dönem sonu), iade, duraklat; **müşteri portalı** = e-posta koduyla giriş (var) + abonelik listesi + iptal + iptalde downsell; ücretli trafikten ÖNCE (AB'de kolay iptal beklentisi, Ç12 hukuk) | M1, kimlik | hukuk metni Ç12/Ç56 |
+| **M7** | Giden webhook + yönetim API | birden çok hedef, `subscription` / `event` / `user_property` türleri, imzalı başlık, teslim günlüğü + yeniden deneme (H6b kuyruk deseni); MCP araç seti genişler (rapor, deney, abonelik okuma) | T4, M6 | yok |
+| **M8** | E-posta | işlem e-postaları (abonelik başladı, ödeme düştü, iptal) + **dizi**: T4 olayı tetikler (ör. "quiz bitti, ödemedi"), gecikme, durdurma koşulu; şablon yer tutucuları; AI ile dizi taslağı (A2 döngüsü) | T4, M6 | **e-posta sağlayıcısı Ç30**, alan adı SPF/DKIM = sunucu |
+| **M9** | Proje ayarları + roller | panelde uygulama ayarları (yasal veri → şartlar/gizlilik metni, varsayılan paywall/tema, alan adları, dil/ülke yönlendirmesi); gerekirse ikinci panel kullanıcısı + 2–3 rol | — | alan adları = sunucu |
+| **M10** | Destek kutusu (isteğe bağlı) | gelen e-posta → konuşma + kullanıcı kartı (P5 + abonelik), AI yanıt taslağı | M8 | gelen e-posta yolu |
+| **M11** | Çeviri (isteğe bağlı) | huni metinlerinin dil sürümleri + tarayıcı diline göre seçim (T3 koşulu) | — | — |
+
+**Neden bu sıra:** M1–M3 doğrudan dönüşüm/gelir (web2wave'in paywall ağırlığı bunu gösteriyor: ~20 paywall bloğu, downsell, upsell, çok para birimi); M4 bunları **ölçerek** iyileştirmenin aracı ve paywall varlığı olmadan yarım kalır; M5 ücretli trafikte karar verdiren rapor; M6 canlı ödemenin ön koşulu; M7–M11 sunucu/dış girdiye bağlı ya da tek şirkette düşük öncelik. Sunucu gelmeden yapılabilen: M1–M4, M5 (a)–(c), M6 (hukuk metni hariç), M7.

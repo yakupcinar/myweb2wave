@@ -152,7 +152,7 @@
     - [ ] ⏸ A5b · herkese açık adres + claude.ai özel bağlayıcı — **sunucuya ertelendi** (kullanıcı 2026-11-03: Oracle Cloud sunucusunu sonra kuracak; geçici tünel yerine kalıcı adres dağıtımla gelir. Not: geçici Cloudflare tüneli ve DuckDNS ücretsiz — maliyet engel değil)
     - [ ] ⏸ A5c · claude.ai OAuth (web2wave gibi: yetki sayfası anahtar ister) — "Request headers" hesapta yoksa; A5b ile birlikte sunucuya ertelendi (2026-11-03)
   - [x] **A6** · 2026-11-03, `docs/decisions/ai-a6-degerlendirme.md`: `app:ai-degerlendir` — 6 brieflik set, geçici huni + panelin döngüsü, geçerli oran/tur/maliyet/süre JSON, --model/--efor. Sahte Claude ile ölçüldü; gerçek koşu Ç95 (anahtar). Kırma 4/4
-  - Sonra: P2 Huniler, P4 grafik, P5 CRM, fiyat kataloğu, ayrı paywall, deneyler (`web2wave-platform-yapisi.md` sırası)
+  - Sonra: P2/P4/P5 ✅ yapıldı; kalan modüller aşağıda "YOL HARİTASI — para ve büyüme modülleri"
 - [x] **Panel React (B5)** — kullanıcı 2026-10-27; `docs/pre-setup.md` B5, `docs/decisions/panel-mimari-arastirmasi.md` — ✅ P0–P5 tamam (2026-11-03)
   - [x] P0 · `core/editor` → `core/panel` (yalnız taşıma; davranış aynı)
   - [x] P1 · iskelet: Router + Tailwind + Radix + Query; `/panel/*` SPA kabuğu; `/panel/api/rapor` (OpenAPI) + Rapor sayfası; Twig rapor silinir
@@ -169,6 +169,17 @@
   - [x] S4 · geliştirme ortamı (`huni-dev`, `ekran`, belgeler)
   - [x] S5 · tarayıcıda eşlik (H3/L20 stil farkı 0, uçtan uca)
   - [x] S6 · paketleri kaldır, yeniden ölç
+
+- [ ] **YOL HARİTASI — para ve büyüme modülleri** (kullanıcı 2026-11-03: "quiz builder bitti, web2wave'in diğer özelliklerini sırayla planla"; gerekçe, kapsam dışı liste ve dış girdiler `docs/decisions/web2wave-platform-yapisi.md` § Ek 2026-11-03). **Sıra öneri — kullanıcı onayı bekliyor.** Her biri `/blok`:
+  - [ ] M1 · fiyat kataloğu: çok plan, giriş teklifi + deneme, çok para birimi
+  - [ ] M2 · paywall ayrı varlık + paywall blokları (plan seçici, sayaç, dinamik koşullar…), cevaba göre paywall; gömülü ödeme + Apple/Google Pay alt blok
+  - [ ] M3 · downsell penceresi + ödeme sonrası tek tık upsell
+  - [ ] M4 · deneyler: yönlendirme + içerik (`deney.<id>`), yapışık atama, sonuçlar
+  - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla
+  - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)
+  - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi
+  - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
+  - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
 
 ## 2. Backlog
 
