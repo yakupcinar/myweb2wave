@@ -1131,3 +1131,44 @@ html:has(> body.huni) {
     line-height: 1;
     cursor: pointer;
 }
+/* M3a: downsell penceresi — ödeme paneliyle aynı katman, tema renkleriyle. */
+.huni .downsell {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 480px;
+    padding: 28px 20px 20px;
+    border-radius: 16px 16px 0 0;
+    background: var(--arka);
+    color: var(--metin);
+    text-align: center;
+}
+@media (min-width: 640px) {
+    .huni .downsell {
+        border-radius: 16px;
+    }
+}
+.huni .downsell h2 {
+    margin: 0 0 8px;
+    font-size: calc(var(--baslik-boyu, 28px) * 0.8);
+    outline: none;
+}
+.huni .downsell p {
+    margin: 0 0 14px;
+    color: var(--soluk);
+}
+.huni .downsell p.fiyat {
+    color: var(--metin);
+}
+.huni .downsell button.ana {
+    width: 100%;
+}
+.huni .downsell .downsell-red {
+    margin-top: 12px;
+    padding: 8px;
+    border: 0;
+    background: none;
+    color: var(--soluk);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}

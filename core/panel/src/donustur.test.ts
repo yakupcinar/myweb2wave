@@ -152,6 +152,46 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(sonuc).not.toHaveProperty("sartOnayi");
     });
 
+    it("M3a: downsell gidiş-dönüş; plan ya da başlık/düğme boşsa yazılmaz, boş metin yazılmaz", () => {
+        const dsli: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim) =>
+                adim.tur === "paywall"
+                    ? {
+                          ...adim,
+                          downsell: {
+                              plan: "yearly",
+                              baslik: "Bir saniye",
+                              metin: "Yıllıkla daha uygun",
+                              dugme: "Yıllığı al",
+                          },
+                      }
+                    : adim,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(dsli, VARSAYILAN))).toStrictEqual(dsli);
+        const odeme = (degis: object) => {
+            const puck = tanimdanPuck(dsli, VARSAYILAN);
+            Object.assign(
+                puck.content.find((o) => o.type === "Paywall")!.props,
+                degis,
+            );
+            return puckTanim(puck).adimlar.find((a) => a.tur === "paywall");
+        };
+        expect(odeme({ downsellPlan: "" })).not.toHaveProperty("downsell");
+        expect(odeme({ downsellDugme: "" })).not.toHaveProperty("downsell");
+        expect(odeme({ downsellMetin: "" })).toMatchObject({
+            downsell: {
+                plan: "yearly",
+                baslik: "Bir saniye",
+                dugme: "Yıllığı al",
+            },
+        });
+        expect(
+            (odeme({ downsellMetin: "" }) as { downsell: object }).downsell,
+        ).not.toHaveProperty("metin");
+    });
+
     it("ilerleme çubuğu kapatma ayarı tanıma yazılır; varsayılan ayar eklenmez", () => {
         const kapali: Tanim = {
             ...temel,

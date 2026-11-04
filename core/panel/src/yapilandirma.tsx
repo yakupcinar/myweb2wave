@@ -1494,6 +1494,24 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             },
                         },
                     },
+                    // M3a: geri tuşu / ödeme panelini kapatınca bir kez sunulan plan.
+                    downsellPlan: {
+                        type: "select",
+                        label: "Downsell planı (geri dönünce bir kez)",
+                        options: [
+                            { label: "yok", value: "" },
+                            ...ortam.planlar.map((p) => ({
+                                label: p,
+                                value: p,
+                            })),
+                        ],
+                    },
+                    downsellBaslik: { type: "text", label: "Downsell başlığı" },
+                    downsellMetin: {
+                        type: "text",
+                        label: "Downsell metni (isteğe bağlı)",
+                    },
+                    downsellDugme: { type: "text", label: "Downsell düğmesi" },
                     sartOnayi: {
                         type: "radio",
                         label: "Şart onay kutusu (kullanım şartları adresi gerekir)",
@@ -1548,6 +1566,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     onerilen: "",
                     guvenceler: [],
                     sartOnayi: "hayir",
+                    downsellPlan: "",
+                    downsellBaslik: "",
+                    downsellMetin: "",
+                    downsellDugme: "",
                     faydalar: [],
                     sartlar: "",
                     gizlilik: "",

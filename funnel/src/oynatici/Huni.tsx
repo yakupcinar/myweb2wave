@@ -5,6 +5,7 @@
 // tanımda ne olursa olsun otomatik. Önizlemede hiçbir şey kaydedilmez,
 // ödeme kapalı. D1–D15: docs/decisions/huni-oynatici-h0.md (b).
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -44,6 +45,7 @@ import {
 } from "../lib/ziyaret";
 import type { components } from "../sozlesme/api";
 import { stripeYukle, type StripeYapici } from "../lib/stripe";
+import DownsellPenceresi from "./DownsellPenceresi";
 import GomuluOdeme from "./GomuluOdeme";
 import { tanimIstegi } from "./erken-istek";
 import IzinSeridi from "./IzinSeridi";
@@ -165,6 +167,30 @@ function Oynatici({
     );
   });
   const [mevcut, setMevcut] = useState(ilkSira);
+  // M3a: geri tuşu işleyicisi ilk çizimde bağlanır — güncel adımı ref'ten okur.
+  const mevcutRef = useRef(mevcut);
+  mevcutRef.current = mevcut;
+  // M3a (A16): açık downsell penceresinin paywall kimliği. Ziyaretçi başına
+  // paywall başına BİR KEZ (sekme oturumunda, yenilemede de); depo yoksa bellek.
+  const [downsell, setDownsell] = useState<string | null>(null);
+  const gosterilenDownsell = useRef(new Set<string>());
+  const downsellDene = (
+    adim: (typeof tanim.adimlar)[number] | undefined,
+  ): boolean => {
+    if (adim?.tur !== "paywall" || !adim.downsell) return false;
+    const anahtar = `downsell:${app}:${yayin.huni}:${adim.id}`;
+    if (gosterilenDownsell.current.has(anahtar)) return false;
+    gosterilenDownsell.current.add(anahtar);
+    try {
+      if (sessionStorage.getItem(anahtar)) return false;
+      sessionStorage.setItem(anahtar, "1");
+    } catch {
+      // Depo kapalı: bellekteki işaret yeter.
+    }
+    setDownsell(adim.id);
+    return true;
+  };
+  const downsellKapat = useCallback(() => setDownsell(null), []);
   // Ç75: AI'ın ekran görüntüsü ziyaretçinin gördüğünü göstersin — şerit yok,
   // ödeme düğmesi soluk değil (önizlemede yine ödeme başlamaz, aşağıda).
   const [ekranCekimi] = useState(
@@ -271,6 +297,11 @@ function Oynatici({
   useEffect(() => {
     history.replaceState({ adim: ilkSira }, "");
     const geri = (e: PopStateEvent): void => {
+      // M3a: paywall'dan ilk geri denemesi downsell'i açar, sayfada kalınır.
+      if (downsellDene(tanim.adimlar[mevcutRef.current])) {
+        history.pushState({ adim: mevcutRef.current }, "");
+        return;
+      }
       setGecis("geri");
       setMevcut((e.state as { adim?: number } | null)?.adim ?? 0);
     };
@@ -616,9 +647,45 @@ function Oynatici({
             yapici={gomulu.yapici}
             anahtar={gomulu.anahtar}
             sir={gomulu.sir}
-            onKapat={() => setGomulu(null)}
+            onKapat={() => {
+              setGomulu(null);
+              // M3a: ödemeden kapatılan panel → downsell (gösterildiyse bir daha değil).
+              downsellDene(tanim.adimlar[mevcut]);
+            }}
           />
         ) : null}
+        {(() => {
+          const a = tanim.adimlar.find((x) => x.id === downsell);
+          if (gomulu || a?.tur !== "paywall" || !a.downsell) return null;
+          const d = a.downsell;
+          const onayli = Boolean(a.sartOnayi && sartOnaylari[a.id]);
+          return (
+            <DownsellPenceresi
+              baslik={d.baslik}
+              metin={d.metin}
+              dugme={d.dugme}
+              fiyat={fiyatMetni(etkin(d.plan))}
+              kosul={kosulMetni(etkin(d.plan))}
+              sartOnayi={
+                a.sartOnayi && a.sartlar
+                  ? {
+                      adres: a.sartlar,
+                      onay: sartOnaylari[a.id] ?? false,
+                      onDegistir: (onay: boolean) =>
+                        setSartOnaylari((s) => ({ ...s, [a.id]: onay })),
+                    }
+                  : undefined
+              }
+              kapali={(onizleme && !ekranCekimi) || odeme.suruyor}
+              onKabul={() => {
+                setDownsell(null);
+                if (onizleme) return;
+                void aboneOl(d.plan, onayli);
+              }}
+              onRed={downsellKapat}
+            />
+          );
+        })()}
         {!onizleme && izin !== null ? (
           <button
             className="izin-ayarlari"

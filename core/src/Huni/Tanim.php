@@ -47,6 +47,8 @@ final class Tanim
         .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar. '
         // M2c
         .'Cevaba göre farklı paywall: huni birden çok paywall adımı içerebilir; son adım paywall olmalı, öndeki paywall\'a yonlendirme ya da hedef ile gidilir (paywall\'dan sonra sıradaki adıma geçilmez). '
+        // M3a
+        .'İsteğe bağlı downsell: {"plan", "baslik", "dugme", "metin"?} — ziyaretçi paywall\'dan geri dönmeye çalışınca ya da ödeme panelini kapatınca BİR KEZ sunulan daha uygun plan (genelde indirim teklifli); fiyatı ve koşulu pencere yazar, "son şans" gibi sahte aciliyet yazma. '
         // M2b
         .'İsteğe bağlı guvenceler: ["guvenli-odeme", "kart-saklanmaz"] (yalnız bunlar; iptal/iade rozeti yok). sartOnayi: true ödeme düğmesinden önce şart onay kutusu ister (sartlar adresi şart). Sayaç/aciliyet metni yazma: teklifin gerçek bitişi varsa ekran sayacı kendisi gösterir.';
 
@@ -271,6 +273,11 @@ final class Tanim
                 if (!\is_array($g) || !array_is_list($g) || [] === $g || \count(array_unique(array_filter($g, \is_string(...)))) !== \count($g) || [] !== array_diff(array_filter($g, \is_string(...)), self::GUVENCELER)) {
                     $h[] = "{$yer}: guvenceler şunlardan 1–".\count(self::GUVENCELER).' farklı rozet olmalı: '.implode(', ', self::GUVENCELER);
                 }
+            }
+            // M3a (A16): downsell — geri tuşu ya da ödeme panelini kapatınca bir kez sunulan plan.
+            if ('paywall' === $tur && \array_key_exists('downsell', $adim)) {
+                $beklenen[] = 'downsell';
+                self::downsell($adim['downsell'], $planlar, $yer, $h);
             }
             if ('paywall' === $tur && \array_key_exists('sartOnayi', $adim)) {
                 $beklenen[] = 'sartOnayi';
@@ -662,6 +669,32 @@ final class Tanim
                 'simge' => self::emoji($deger) ? null : $h[] = "{$ky} simge: tek emoji olmalı",
                 default => self::metin($deger, (string) $alanlar[$alan], "{$ky} {$alan}", $h),
             };
+        }
+    }
+
+    /**
+     * M3a: downsell penceresi — plan bu uygulamanın kataloğundan, başlık ve
+     * düğme zorunlu, metin isteğe bağlı. Fiyat ve koşulu pencere kendisi
+     * yazar (metne yazılmaz).
+     *
+     * @param list<string> $planlar
+     * @param list<string> $h
+     */
+    private static function downsell(mixed $d, array $planlar, string $yer, array &$h): void
+    {
+        $istege = \is_array($d) && \array_key_exists('metin', $d) ? ['metin'] : [];
+        if (!\is_array($d) || !self::anahtarlar($d, ['plan', 'baslik', 'dugme', ...$istege])) {
+            $h[] = "{$yer} downsell: alanlar tam olarak plan, baslik, dugme ve (isteğe bağlı) metin olmalı";
+
+            return;
+        }
+        if (!\is_string($d['plan']) || !\in_array($d['plan'], $planlar, true)) {
+            $h[] = "{$yer} downsell: plan '".(\is_string($d['plan']) ? $d['plan'] : '?')."' bu uygulamada yok (planlar: ".implode(', ', $planlar).')';
+        }
+        self::metin($d['baslik'], 'baslik', "{$yer} downsell baslik", $h);
+        self::metin($d['dugme'], 'dugme', "{$yer} downsell dugme", $h);
+        if ([] !== $istege) {
+            self::metin($d['metin'], 'blokMetni', "{$yer} downsell metin", $h);
         }
     }
 

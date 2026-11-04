@@ -1102,6 +1102,118 @@ describe("M2a — plan seçici", () => {
   });
 });
 
+describe("M3a — downsell", () => {
+  const downselli = (): Yayin => {
+    const t = yayin();
+    return {
+      ...t,
+      tanim: {
+        ...t.tanim,
+        adimlar: t.tanim.adimlar.map((a) =>
+          a.tur === "paywall"
+            ? {
+                ...a,
+                downsell: {
+                  plan: "yearly",
+                  baslik: "Yıllıkla daha uygun",
+                  dugme: "Yıllığı başlat",
+                },
+              }
+            : a,
+        ),
+      },
+      fiyatlar: {
+        monthly: { tutar: 9.99, paraBirimi: "EUR", aralik: "month" },
+        yearly: { tutar: 59.99, paraBirimi: "EUR", aralik: "year" },
+      },
+    };
+  };
+  const paywallda = async () => {
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+  };
+  const geri = () =>
+    fireEvent(window, new PopStateEvent("popstate", { state: { adim: 1 } }));
+  beforeEach(() => sessionStorage.clear());
+  it("paywall'da ilk geri: pencere açılır, paywall'da kalınır; ret → ikinci geri önceki adıma döner, pencere bir daha yok", async () => {
+    tanim = { durum: 200, govde: downselli() };
+    await paywallda();
+    geri();
+    const pencere = await screen.findByRole("dialog", { name: "Teklif" });
+    expect(gorunenBaslik()).toBe("Pro");
+    // Fiyat ve koşul Stripe fiyatından (elle, fiyat.ts biçimi).
+    expect(pencere.textContent).toContain("€59,99\u00a0/\u00a0yıl");
+    expect(pencere.textContent).toContain(
+      "Bugün €59,99 ödenir; abonelik her\u00a0yıl €59,99 ile yenilenir.",
+    );
+    fireEvent.click(screen.getByText("Hayır, teşekkürler"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    geri();
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("kabul: downsell planıyla ödeme açılır", async () => {
+    tanim = { durum: 200, govde: downselli() };
+    ziyaret = { durum: 500 };
+    const git = vi
+      .spyOn(window.location, "assign")
+      .mockImplementation(() => {});
+    await paywallda();
+    geri();
+    fireEvent.click(await screen.findByText("Yıllığı başlat"));
+    await waitFor(() => expect(git).toHaveBeenCalled());
+    expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
+      app: "keepchat",
+      plan: "yearly",
+    });
+  });
+  it("ödeme panelini ödemeden kapatmak pencereyi açar", async () => {
+    vi.mocked(stripeYukle).mockResolvedValue(() => ({
+      createEmbeddedCheckoutPage: async () => ({
+        mount: () => {},
+        destroy: () => {},
+      }),
+    }));
+    odeme = { durum: 201, govde: { clientSecret: "s", anahtar: "pk" } };
+    tanim = { durum: 200, govde: downselli() };
+    await paywallda();
+    fireEvent.click(screen.getByText("Abone ol"));
+    await screen.findByRole("dialog", { name: "Ödeme" });
+    fireEvent.click(screen.getByRole("button", { name: "Kapat" }));
+    expect(await screen.findByRole("dialog", { name: "Teklif" })).toBeTruthy();
+  });
+  it("depo kapalıyken (gizli sekme) de bir kez: ret → paywall'a dönülüp yeniden geri → pencere yok", async () => {
+    // happy-dom Storage.prototype'u kullanmıyor (ilk deneme sahte hatayı hiç
+    // tetiklemedi — kırma K6 yeşil kaldı); erişimin kendisi hata versin.
+    vi.spyOn(window, "sessionStorage", "get").mockImplementation(() => {
+      throw new Error("depo kapalı");
+    });
+    tanim = { durum: 200, govde: downselli() };
+    await paywallda();
+    geri();
+    fireEvent.click(await screen.findByText("Hayır, teşekkürler"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    geri();
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    await waitFor(() => expect(gorunenBaslik()).toBe("Pro"));
+    geri();
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("aynı sekmede daha önce gösterildiyse (yenileme) açılmaz; downsell'siz paywall'da geri normal", async () => {
+    sessionStorage.setItem("downsell:keepchat:varsayilan:paywall", "1");
+    tanim = { durum: 200, govde: downselli() };
+    await paywallda();
+    geri();
+    await waitFor(() => expect(gorunenBaslik()).toBe("Kiminle?"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
 describe("M2d — gömülü ödeme", () => {
   it("Stripe.js yüklendiyse gomulu istenir, form sayfada açılır; kapatınca yok edilir, paywall'da kalınır", async () => {
     const takilan: HTMLElement[] = [];

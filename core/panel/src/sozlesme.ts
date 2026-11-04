@@ -1054,6 +1054,13 @@ export interface components {
             onerilen?: components["schemas"]["PlanAnahtari"];
             /** @description M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar */
             guvenceler?: ("guvenli-odeme" | "kart-saklanmaz")[];
+            /** @description M3a: paywall'dan geri dönmeye çalışınca ya da ödeme panelini kapatınca ziyaretçiye bir kez sunulan plan; fiyat ve koşulu pencere yazar */
+            downsell?: {
+                plan: components["schemas"]["PlanAnahtari"];
+                baslik: string;
+                metin?: string;
+                dugme: string;
+            };
             /**
              * @description M2b: ödeme düğmesi şart onay kutusu işaretlenince açılır (sartlar adresi şart)
              * @enum {boolean}

@@ -218,6 +218,15 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   rozetleri, şart onayı → M2c birden çok paywall → M2d gömülü ödeme + Apple/Google
   Pay. Reddedilen: önce gömülü ödeme (Apple Pay sunucusuz ölçülemez).
 
+**A16 · M3 downsell / upsell** (2026-11-04, kullanıcı).
+- **Downsell tetiği:** paywall'da geri tuşu + gömülü ödeme panelini ödemeden kapatma;
+  ziyaretçi başına bir kez. Reddedilen: masaüstü çıkış niyeti (mobil trafikte yok), yalnız panel.
+- **Upsell:** ödeme sonrası **tek seferlik ek ürün** (panelde ek ürün kataloğu), kayıtlı kartla
+  tek tık; tutar düğmede açık, banka isterse 3D Secure. Reddedilen: üst plana geçiş
+  (abonelik değişikliği, M6 ile çakışır), upsell'siz.
+- **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
+- **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

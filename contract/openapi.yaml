@@ -1654,6 +1654,16 @@ components:
           maxItems: 2
           uniqueItems: true
           items: { type: string, enum: [guvenli-odeme, kart-saklanmaz] }
+        downsell:
+          description: "M3a: paywall'dan geri dönmeye çalışınca ya da ödeme panelini kapatınca ziyaretçiye bir kez sunulan plan; fiyat ve koşulu pencere yazar"
+          type: object
+          additionalProperties: false
+          required: [plan, baslik, dugme]
+          properties:
+            plan: { $ref: "#/components/schemas/PlanAnahtari" }
+            baslik: { type: string, minLength: 1, maxLength: 200 }
+            metin: { type: string, minLength: 1, maxLength: 1000 }
+            dugme: { type: string, minLength: 1, maxLength: 60 }
         sartOnayi:
           description: "M2b: ödeme düğmesi şart onay kutusu işaretlenince açılır (sartlar adresi şart)"
           type: boolean

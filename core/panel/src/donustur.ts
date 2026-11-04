@@ -46,6 +46,11 @@ export type PaywallProps = {
     planlar: { plan: string }[];
     /** M2a: "" = önerilen yok. */
     onerilen: string;
+    /** M3a: downsell — plan "" = yok; başlık + düğme doluysa yazılır. */
+    downsellPlan: string;
+    downsellBaslik: string;
+    downsellMetin: string;
+    downsellDugme: string;
     /** M2b: rozet satırları (boş yazılmaz) ve şart onayı ("evet" → true). */
     guvenceler: { rozet: string }[];
     sartOnayi: "evet" | "hayir";
@@ -663,6 +668,10 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 (rozet) => ({ rozet }),
                             ),
                             sartOnayi: adim.sartOnayi ? "evet" : "hayir",
+                            downsellPlan: adim.downsell?.plan ?? "",
+                            downsellBaslik: adim.downsell?.baslik ?? "",
+                            downsellMetin: adim.downsell?.metin ?? "",
+                            downsellDugme: adim.downsell?.dugme ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                             faydalar: (adim.faydalar ?? []).map((metin) => ({
                                 metin,
@@ -682,6 +691,19 @@ function planSecici(p: PaywallProps) {
     const planlar = (p.planlar ?? []).map((x) => x.plan).filter(Boolean);
     if (planlar.length < 2) return {};
     return { planlar, ...(p.onerilen ? { onerilen: p.onerilen } : {}) };
+}
+
+/** M3a: plan seçili ve başlık + düğme doluysa downsell; boş metin yazılmaz. */
+function downsell(p: PaywallProps) {
+    if (!p.downsellPlan || !p.downsellBaslik || !p.downsellDugme) return {};
+    return {
+        downsell: {
+            plan: p.downsellPlan,
+            baslik: p.downsellBaslik,
+            ...(p.downsellMetin ? { metin: p.downsellMetin } : {}),
+            dugme: p.downsellDugme,
+        },
+    };
 }
 
 /** M2b: dolu, tekrarsız rozetler; şart onayı yalnız true yazılır (çekirdek false'u reddeder). */
@@ -768,6 +790,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     plan: p.plan,
                     ...planSecici(p),
                     ...guvence(p),
+                    ...downsell(p),
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),
