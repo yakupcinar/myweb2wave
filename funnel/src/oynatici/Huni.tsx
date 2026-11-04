@@ -43,6 +43,8 @@ import {
   type Govde,
 } from "../lib/ziyaret";
 import type { components } from "../sozlesme/api";
+import { stripeYukle, type StripeYapici } from "../lib/stripe";
+import GomuluOdeme from "./GomuluOdeme";
 import { tanimIstegi } from "./erken-istek";
 import IzinSeridi from "./IzinSeridi";
 
@@ -218,6 +220,12 @@ function Oynatici({
   const [odeme, setOdeme] = useState({ suruyor: false, hata: "" });
   // M2a: plan seçicide seçilen plan (paywall kimliği → plan); yoksa adımın varsayılanı.
   const [secilenPlan, setSecilenPlan] = useState<Record<string, string>>({});
+  // M2d: açık gömülü ödeme paneli (Stripe.js yüklendiyse).
+  const [gomulu, setGomulu] = useState<{
+    yapici: StripeYapici;
+    anahtar: string;
+    sir: string;
+  } | null>(null);
   // M2b: paywall kimliği → şart onay kutusu.
   const [sartOnaylari, setSartOnaylari] = useState<Record<string, boolean>>({});
   // M2b: saniyelik saat — yalnız bitişli teklif varken (sayaç + sürenin
@@ -321,6 +329,9 @@ function Oynatici({
     try {
       const govde: Govde<"/checkout/sessions"> = { app, plan };
       if (sartOnayi) govde.sartOnayi = true;
+      // M2d: Stripe.js yüklenebildiyse ödeme sayfada; yoksa barındırılan sayfa.
+      const yapici = await stripeYukle();
+      if (yapici) govde.gomulu = true;
       // M1c: paywall'daki para birimini seçen ülke testi ödemeye de gider.
       const ulke = new URLSearchParams(window.location.search).get("ulke");
       if (ulke && /^[A-Z]{2}$/.test(ulke)) govde.ulke = ulke;
@@ -330,7 +341,12 @@ function Oynatici({
         "/checkout/sessions",
         { body: govde },
       );
-      if (data) {
+      if (data && "clientSecret" in data && yapici) {
+        setGomulu({ yapici, anahtar: data.anahtar, sir: data.clientSecret });
+        setOdeme({ suruyor: false, hata: "" });
+        return;
+      }
+      if (data && "url" in data) {
         window.location.assign(data.url);
         return;
       }
@@ -595,6 +611,14 @@ function Oynatici({
             );
           })}
         </div>
+        {gomulu ? (
+          <GomuluOdeme
+            yapici={gomulu.yapici}
+            anahtar={gomulu.anahtar}
+            sir={gomulu.sir}
+            onKapat={() => setGomulu(null)}
+          />
+        ) : null}
         {!onizleme && izin !== null ? (
           <button
             className="izin-ayarlari"

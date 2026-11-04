@@ -174,8 +174,8 @@ final class ParaBirimiTest extends WebTestCase
 
     /**
      * Ödeme: paywall'daki seçimin aynısı zorlanır (TR → try), Adaptive
-     * Pricing her oturumda kapalı; ülkenin para birimi desteklenmiyorsa
-     * para birimi verilmez ve fiyat okunmaz (Stripe ana birimi açar).
+     * Pricing her oturumda kapalı; ülke desteklenmiyor ya da bilinmiyorsa
+     * planın ana birimi zorlanır (M2d ölçümü, aşağıda).
      */
     public function testOdemeParaBiriminiZorlarAdaptiveKapali(): void
     {
@@ -189,12 +189,14 @@ final class ParaBirimiTest extends WebTestCase
         $de = $this->odeme(['ulke' => 'DE']);
         self::assertSame('usd', $de['currency'], 'EUR planda yok → ana birim zorlanır');
 
+        // M2d ölçümü: desteklenmeyen ülkede de ana birim ZORLANIR — zorlanmazsa
+        // Stripe çok para birimli fiyatı kendi konum tahminiyle yerelleştiriyor.
         $this->stripe->istekler = [];
         $jp = $this->odeme(['ulke' => 'JP']);
-        self::assertArrayNotHasKey('currency', $jp);
+        self::assertSame('usd', $jp['currency']);
         self::assertSame(['enabled' => 'false'], $jp['adaptive_pricing']);
-        // Yalnız oturum isteği; özellik doğrudan okunsa PHPStan az önceki [] atamasından boş sanıyor.
-        self::assertSame(['post'], array_column($this->kayit(), 'method'), 'fiyat okunmadı');
+        $this->stripe->istekler = [];
+        self::assertSame('usd', $this->odeme([])['currency'], 'ülke bilinmiyor → ana birim');
     }
 
     private function sifirla(): void
@@ -248,12 +250,6 @@ final class ParaBirimiTest extends WebTestCase
         self::assertIsArray($h);
 
         return implode(' ', array_map(static fn (mixed $x): string => \is_string($x) ? $x : '', $h));
-    }
-
-    /** @return list<array{method: string, url: string, params: array<mixed>}> */
-    private function kayit(): array
-    {
-        return $this->stripe->istekler;
     }
 
     /** @return list<array{method: string, url: string, params: array<mixed>}> */

@@ -43,7 +43,7 @@ funnelfox.com/docs/editor/pricing-localization.md.
 | 9 | Ana tutar değişince (`Fiyatı değiştir`) ek para birimleri yeni fiyata aynen geçer | sıfırlamak | Yönetici yerel fiyatları sessizce kaybetmesin |
 | 10 | **Ücretli giriş + çok para birimi birlikte yok** (iki yönden reddedilir) | giriş ücretine de `currency_options` | Giriş ücreti her para biriminde ayrı tutar ister; panel/sözleşme büyür → Ç109. Deneme ve yüzde indirim para biriminden bağımsız, çalışıyor |
 | 11 | `GET /huni/{app}` **`private, max-age=60`** | `Vary` ile ortak önbellek | Ülkeyi taşıyan bir istek başlığı yok; bugün CDN de yok (A7'deki "CDN önbelleği" notu değişti) |
-| 12 | Ülke desteklenen birime denk gelmiyorsa ödemede fiyat **okunmaz**, para birimi verilmez (Stripe ana birimi açar) | her ödemede okumak | Gereksiz Stripe isteği yok; sonuç aynı |
+| 12 | ~~Ülke desteklenen birime denk gelmiyorsa ödemede fiyat **okunmaz**, para birimi verilmez (Stripe ana birimi açar)~~ → **2026-11-04 M2d'de değişti: her zaman zorlanır** — varsayım yanlıştı, Stripe zorlanmayanı kendi konum tahminiyle yerelleştiriyor (ölçüldü, tuzak §50, `m2d-gomulu-odeme.md`) | her ödemede okumak | ~~Gereksiz Stripe isteği yok; sonuç aynı~~ |
 | 13 | DB-IP dosyası depoda değil: `app:ulke-verisi` indirir (bu ay, yoksa geçen ay), açar, **okuyup** yerine koyar; dağıtımda + ayın 3'ünde cron; dosya yoksa ana birim + günlükte uyarı | dosyayı depoya koymak (8 MB, aylık) | Lisans/atıf aynı; veri tazesi |
 
 ## Test

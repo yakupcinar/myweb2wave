@@ -37,6 +37,9 @@ final readonly class CheckoutController
         private array $uygulamalar,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private string $funnelBaseUrl,
+        // M2d: boşsa gömülü ödeme kapalı — istek ne derse desin Stripe sayfasına yönlendirme.
+        #[Autowire('%env(STRIPE_PUBLISHABLE_KEY)%')]
+        private string $yayimlanabilirAnahtar,
     ) {
     }
 
@@ -72,11 +75,17 @@ final readonly class CheckoutController
         // M1c: para birimi paywall'daki seçimin aynısı (ülke → planın ek para
         // birimi, yoksa ana). Zorlanır: Stripe kendi konum tahminine göre başka
         // para birimi açmasın; fiyat okunamadıysa Stripe'ın ana para birimi.
-        // Ülke desteklenen bir para birimine denk gelmiyorsa okuma yok: Stripe ana birimi açar.
+        // M2d ölçümü: ülke bilinmese de ZORLANIR — zorlanmayan çok para birimli
+        // fiyatı Stripe kendi konum tahminiyle yerelleştiriyor (test e-postası
+        // +location_TR ile TRY açtı, paywall EUR diyordu). M1c'deki "okuma yok,
+        // Stripe ana birimi açar" varsayımı yanlıştı.
         $ulkeninki = ParaBirimi::ulkeninki($this->ulkeler->ulke($request->getClientIp(), $govde['ulke'] ?? null));
-        $paraBirimi = null === $ulkeninki ? null : ($this->fiyatlar->uygulama($app, $ulkeninki)[$plan]['paraBirimi'] ?? null);
+        $paraBirimi = $this->fiyatlar->uygulama($app, $ulkeninki)[$plan]['paraBirimi'] ?? null;
 
         $onay = true === ($govde['sartOnayi'] ?? null) ? ['sart_onayi' => '1'] : [];
+        // M2d: ödeme paywall sayfasında, gömülü (A14); Stripe.js yüklenemezse istemci gomulu'suz ister.
+        $gomulu = true === ($govde['gomulu'] ?? null) && '' !== $this->yayimlanabilirAnahtar;
+        $donus = $this->funnelBaseUrl.'/'.$app.'/basarili?session_id={CHECKOUT_SESSION_ID}';
 
         // E1: huninin e-posta adımında yazılan adres ödeme sayfasında hazır.
         $ziyaret = $govde['ziyaret'] ?? null;
@@ -93,8 +102,10 @@ final readonly class CheckoutController
                 ...(isset($teklifAlanlari['discounts']) ? ['discounts' => $teklifAlanlari['discounts']] : []),
                 // Deneme kartlıdır: kart ilk günden alınır, süre bitince ücret kendiliğinden çekilir.
                 'payment_method_collection' => 'always',
-                'success_url' => $this->funnelBaseUrl.'/'.$app.'/basarili?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => $this->funnelBaseUrl.'/'.$app.'/iptal',
+                // Gömülüde iptal sayfası yok: ziyaretçi paneli kapatıp paywall'da kalır.
+                ...($gomulu
+                    ? ['ui_mode' => 'embedded_page', 'return_url' => $donus]
+                    : ['success_url' => $donus, 'cancel_url' => $this->funnelBaseUrl.'/'.$app.'/iptal']),
                 // Webhook aboneliğin uygulamasını buradan okur (A4); oturuma
                 // ve aboneliğe ayrı ayrı yazılmalı — olaylar ikisinden de gelir.
                 // M2b: paywall şart onay kutusu işaretlendiyse kanıtı Stripe'ta (oturum + abonelik).
@@ -113,6 +124,16 @@ final readonly class CheckoutController
         // yoksa ya da tanınmazsa ödeme yine açılır.
         if (\is_string($ziyaret)) {
             $this->ziyaretler->oturumBagla($ziyaret, $app, $session->id, $request->getClientIp(), $request->headers->get('User-Agent'));
+        }
+
+        if ($gomulu) {
+            if (!\is_string($session->client_secret) || '' === $session->client_secret) {
+                $this->logger->error('Gömülü Stripe oturumunda client_secret yok', ['oturum' => $session->id]);
+
+                return new JsonResponse(['error' => 'payment_provider_unavailable'], 502);
+            }
+
+            return new JsonResponse(['clientSecret' => $session->client_secret, 'anahtar' => $this->yayimlanabilirAnahtar], 201);
         }
 
         return new JsonResponse(['url' => $session->url], 201);

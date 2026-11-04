@@ -1127,6 +1127,8 @@ export interface operations {
                     ulke?: string;
                     /** @description M2b: paywall şart onay kutusu işaretlendi — Stripe oturum/abonelik metadata.sart_onayi */
                     sartOnayi?: boolean;
+                    /** @description M2d: ödeme paywall sayfasında gömülü (Stripe.js yüklendiyse); sunucuda yayımlanabilir anahtar yoksa yok sayılır */
+                    gomulu?: boolean;
                     /**
                      * Format: uuid
                      * @description /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
@@ -1136,7 +1138,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Oturum açıldı; istemci url'ye yönlenir */
+            /** @description Oturum açıldı: gömülüde istemci Stripe.js ile sayfada açar (clientSecret + anahtar), değilse url'ye yönlenir (M2d) */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1145,6 +1147,11 @@ export interface operations {
                     "application/json": {
                         /** Format: uri */
                         url: string;
+                    } | {
+                        /** @description Stripe gömülü ödeme oturumunun istemci sırrı */
+                        clientSecret: string;
+                        /** @description Stripe yayımlanabilir anahtarı (pk_…) */
+                        anahtar: string;
                     };
                 };
             };

@@ -27,23 +27,31 @@ paths:
                 plan: { $ref: "#/components/schemas/PlanAnahtari" }
                 ulke: { type: string, pattern: "^[A-Z]{2}$", description: "M1c: huni adresindeki ülke testi (paywall'daki para birimiyle aynı seçim)" }
                 sartOnayi: { type: boolean, description: "M2b: paywall şart onay kutusu işaretlendi — Stripe oturum/abonelik metadata.sart_onayi" }
+                gomulu: { type: boolean, description: "M2d: ödeme paywall sayfasında gömülü (Stripe.js yüklendiyse); sunucuda yayımlanabilir anahtar yoksa yok sayılır" }
                 ziyaret:
                   description: /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
                   type: string
                   format: uuid
       responses:
         "201":
-          description: Oturum açıldı; istemci url'ye yönlenir
+          description: "Oturum açıldı: gömülüde istemci Stripe.js ile sayfada açar (clientSecret + anahtar), değilse url'ye yönlenir (M2d)"
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [url]
-                properties:
-                  url:
-                    type: string
-                    format: uri
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    required: [url]
+                    properties:
+                      url:
+                        type: string
+                        format: uri
+                  - type: object
+                    additionalProperties: false
+                    required: [clientSecret, anahtar]
+                    properties:
+                      clientSecret: { type: string, description: "Stripe gömülü ödeme oturumunun istemci sırrı" }
+                      anahtar: { type: string, description: "Stripe yayımlanabilir anahtarı (pk_…)" }
         "400":
           description: Gövde JSON değil
         "422":

@@ -322,3 +322,9 @@ birden çok çekimle ölç.
 **Sebep:** `python3 -c '…'` içindeki her şey kabuk için tek tırnaklı dizgedir; içerdeki `#` Python'un yorumudur, kabuğun değil. "`$'ı`" ya da "bash'te" gibi bir kesme işareti dizgeyi bitirir.
 **Ölçüm (2026-11-04, `m1c-cok-para-birimi.md`):** `bash -n` macOS bash 3.2 ve bash 5.2'de 36. satırda hata (2026-10-20'den beri, `028f150`). Düzeltirken iki kesme işareti daha eklendi → `bash -n` 0 döndü; gömülü blok çıkarılıp `compile` edilince eksik olduğu görüldü.
 **Doğrusu:** gömülü kodda kesme işareti kullanma (ya da `<<'EOF'` heredoc'a taşı); ölçüt `bash -n` değil — gömülü bloğu çıkar ve kendi diliyle derle/çalıştır.
+
+## §50 — Para birimi verilmeyen çok para birimli Stripe fiyatı ödemede kendiliğinden yerelleşir
+**Belirti:** paywall ana birimi gösterir (€9,99), ödeme sayfası başka birimde açılır (TRY 349,99); hata yok, testler yeşil.
+**Sebep:** fiyatta `currency_options` varsa ve oturumda `currency` verilmezse Checkout müşterinin konumunu kendisi tahmin edip o para birimini seçer (belgede "You didn't specify a currency" koşulu). Bizim IP tahminimiz bilinmiyor/desteklenmiyor dediğinde Stripe'ınki başka bir şey diyebilir. Testte stripe-mock bunu hiç yapmaz.
+**Ölçüm (2026-11-04, `m2d-gomulu-odeme.md`):** yerel IP (ülke yok) + test e-postası `test+location_TR@…` → oturum `try 34999`; paywall €9,99. `currency` zorlanınca aynı e-postayla `eur 999`.
+**Doğrusu:** paywall'da gösterilen para birimini ödeme oturumunda HER ZAMAN `currency` ile zorla (bilinmeyen ülkede ana birim); "Stripe ana birimi açar" diye varsayma. Stripe'ın `+location_XX` test e-postasıyla gerçek API'de ölç.

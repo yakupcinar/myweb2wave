@@ -16,8 +16,13 @@ import {
   onTestFinished,
   vi,
 } from "vitest";
+import { stripeYukle } from "../lib/stripe";
 import type { components } from "../sozlesme/api";
 import Huni from "./Huni";
+
+// M2d: Stripe.js dışarıdan yüklenir — testte yükleyici sahte; varsayılan
+// "yüklenemedi" (eski yol: barındırılan sayfaya yönlendirme).
+vi.mock("../lib/stripe", () => ({ stripeYukle: vi.fn() }));
 
 type Yayin = components["schemas"]["HuniYayini"];
 type Istek = { yontem: string; yol: string; sorgu: string; govde: unknown };
@@ -141,6 +146,7 @@ beforeEach(() => {
   tanim = { durum: 200, govde: yayin() };
   ziyaret = { durum: 201, govde: { ziyaret: Z } };
   odeme = { durum: 201, govde: { url: "https://odeme.ornek/x" } };
+  vi.mocked(stripeYukle).mockResolvedValue(null);
   ag.yanitla = (i) => {
     if (i.yontem === "GET" && i.yol.startsWith("/huni/keepchat")) return tanim;
     if (i.yol === "/huni/ziyaretler") return ziyaret;
@@ -1093,6 +1099,88 @@ describe("M2a — plan seçici", () => {
       app: "keepchat",
       plan: "yearly",
     });
+  });
+});
+
+describe("M2d — gömülü ödeme", () => {
+  it("Stripe.js yüklendiyse gomulu istenir, form sayfada açılır; kapatınca yok edilir, paywall'da kalınır", async () => {
+    const takilan: HTMLElement[] = [];
+    const yokEt = vi.fn();
+    const sirlar: string[] = [];
+    const anahtarlar: string[] = [];
+    vi.mocked(stripeYukle).mockResolvedValue((anahtar: string) => {
+      anahtarlar.push(anahtar);
+      return {
+        createEmbeddedCheckoutPage: async ({ fetchClientSecret }) => {
+          sirlar.push(await fetchClientSecret());
+          return { mount: (k: HTMLElement) => takilan.push(k), destroy: yokEt };
+        },
+      };
+    });
+    odeme = {
+      durum: 201,
+      govde: { clientSecret: "cs_sir", anahtar: "pk_test_x" },
+    };
+    ziyaret = { durum: 500 };
+    const git = vi.spyOn(window.location, "assign");
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    fireEvent.click(screen.getByText("Abone ol"));
+    const panel = await screen.findByRole("dialog", { name: "Ödeme" });
+    await waitFor(() => expect(takilan).toHaveLength(1));
+    expect(panel.contains(takilan[0]!)).toBe(true);
+    expect([anahtarlar, sirlar]).toEqual([["pk_test_x"], ["cs_sir"]]);
+    expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
+      app: "keepchat",
+      plan: "monthly",
+      gomulu: true,
+    });
+    expect(git).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Kapat" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(yokEt).toHaveBeenCalledTimes(1);
+    expect(gorunenBaslik()).toBe("Pro");
+  });
+  it("Escape paneli kapatır", async () => {
+    vi.mocked(stripeYukle).mockResolvedValue(() => ({
+      createEmbeddedCheckoutPage: async () => ({
+        mount: () => {},
+        destroy: () => {},
+      }),
+    }));
+    odeme = { durum: 201, govde: { clientSecret: "s", anahtar: "pk" } };
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    fireEvent.click(screen.getByText("Abone ol"));
+    await screen.findByRole("dialog", { name: "Ödeme" });
+    // §33: efekt (dinleyici + odak) boyamadan sonra koşar — önce odak kapatta.
+    await waitFor(() =>
+      expect(document.activeElement?.getAttribute("aria-label")).toBe("Kapat"),
+    );
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+  it("Stripe.js yüklenemezse gomulu istenmez, barındırılan sayfaya gidilir", async () => {
+    ziyaret = { durum: 500 };
+    const git = vi
+      .spyOn(window.location, "assign")
+      .mockImplementation(() => {});
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    fireEvent.click(screen.getByText("Abone ol"));
+    await waitFor(() =>
+      expect(git).toHaveBeenCalledWith("https://odeme.ornek/x"),
+    );
+    expect(istekler("POST", "/checkout/sessions")[0]?.govde).not.toHaveProperty(
+      "gomulu",
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
 

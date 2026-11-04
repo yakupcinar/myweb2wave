@@ -1086,3 +1086,48 @@ html:has(> body.huni) {
         background: none;
     }
 }
+/* M2d: gömülü ödeme paneli — telefonda alttan açılan sayfa, genişte ortada.
+   Stripe formu beyaz zeminle çiziliyor (Stripe marka ayarı); panel de beyaz. */
+.huni .odeme-katmani {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgb(0 0 0 / 55%);
+}
+.huni .odeme-paneli {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 560px;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 48px 12px 16px;
+    border-radius: 16px 16px 0 0;
+    background: #ffffff;
+    color: #111111;
+}
+@media (min-width: 640px) {
+    .huni .odeme-katmani {
+        align-items: center;
+    }
+    .huni .odeme-paneli {
+        border-radius: 16px;
+    }
+}
+.huni .odeme-kapat {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f1f1;
+    color: #111111;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
