@@ -45,6 +45,8 @@ final class Tanim
         .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz. '
         // M2a: plan seçici; ödeme koşulunu ekran kendisi yazar.
         .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar. '
+        // M2c
+        .'Cevaba göre farklı paywall: huni birden çok paywall adımı içerebilir; son adım paywall olmalı, öndeki paywall\'a yonlendirme ya da hedef ile gidilir (paywall\'dan sonra sıradaki adıma geçilmez). '
         // M2b
         .'İsteğe bağlı guvenceler: ["guvenli-odeme", "kart-saklanmaz"] (yalnız bunlar; iptal/iade rozeti yok). sartOnayi: true ödeme düğmesinden önce şart onay kutusu ister (sartlar adresi şart). Sayaç/aciliyet metni yazma: teklifin gerçek bitişi varsa ekran sayacı kendisi gösterir.';
 
@@ -342,8 +344,11 @@ final class Tanim
             if ('paywall' === $tur) {
                 self::paywallPlanlari($adim, $planlar, $yer, $h);
             }
-            if (('paywall' === $tur) !== ($i === \count($adimlar) - 1)) {
-                $h[] = "{$yer}: paywall tam bir kez ve EN SONDA olmalı";
+            // M2c (A15): birden çok paywall olabilir (cevaba göre farklı paywall,
+            // T3 yönlendirmesiyle); SON adım paywall olmalı — oynatıcının gösterim
+            // koşuluyla ekran atlaması huninin sonunda durabileceği bir adım bulsun.
+            if ($i === \count($adimlar) - 1 && 'paywall' !== $tur) {
+                $h[] = "{$yer}: son adım paywall olmalı (başka paywall'lar öne konup yönlendirmeyle açılabilir)";
             }
         }
 

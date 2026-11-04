@@ -28,6 +28,41 @@ const paywall = {
 // sıradakine; çoklu/metin soru ve yorum hep sıradakine. Beklenen listeler
 // elle çizilmiş akıştan (tuzak §3).
 describe("ulaşılamayan adım", () => {
+    it("M2c: paywall'dan sonra sıradakine geçilmez — yönlendirilmeyen sondaki paywall ulaşılamaz, yönlendirilen ulaşılır", () => {
+        const iki = (yonlendir: boolean): Tanim => ({
+            sayfaBasligi: "x",
+            adimlar: [
+                {
+                    id: "giris",
+                    tur: "ekran",
+                    baslik: "A",
+                    bloklar: [],
+                    dugme: "B",
+                    ...(yonlendir
+                        ? {
+                              yonlendirme: [
+                                  {
+                                      kosullar: [
+                                          {
+                                              ozellik: "utm.source",
+                                              islem: "esit",
+                                              deger: "meta",
+                                          },
+                                      ],
+                                      hedef: "pw-son",
+                                  },
+                              ],
+                          }
+                        : {}),
+                },
+                { ...paywall, id: "pw-on" },
+                { ...paywall, id: "pw-son" },
+            ],
+        });
+        expect(ulasilamayanlar(iki(false))).toEqual(["pw-son"]);
+        expect(ulasilamayanlar(iki(true))).toEqual([]);
+    });
+
     it("tanıtım hedefi aradaki adımı atlarsa o adıma yol yok", () => {
         const tanim: Tanim = {
             sayfaBasligi: "x",

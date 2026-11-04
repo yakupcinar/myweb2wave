@@ -54,7 +54,7 @@ final class PanelHuniTest extends WebTestCase
         $bozuk['adimlar'] = array_reverse($bozuk['adimlar']);
         $this->kaydet($bozuk, $jeton);
         self::assertResponseStatusCodeSame(422);
-        self::assertStringContainsString('EN SONDA', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('paywall olmal', (string) $this->client->getResponse()->getContent());
         self::assertSame('Yeni', $this->huniler->taslak('keepchat', 'genel')['sayfaBasligi'] ?? null);
     }
 

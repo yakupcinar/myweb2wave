@@ -1096,6 +1096,79 @@ describe("M2a — plan seçici", () => {
   });
 });
 
+describe("M2c — cevaba göre paywall", () => {
+  // kiminle ─aile→ pw-yillik (sonda) · ─is→ sıradaki pw-aylik (önde).
+  const iki = (): Yayin => {
+    const t = yayin();
+    const [karsilama, kiminle] = t.tanim.adimlar;
+    return {
+      ...t,
+      tanim: {
+        ...t.tanim,
+        adimlar: [
+          karsilama!,
+          {
+            ...kiminle!,
+            bloklar: [
+              {
+                tur: "soru",
+                secenekler: [
+                  { id: "aile", metin: "Ailemle", hedef: "pw-yillik" },
+                  { id: "is", metin: "İş" },
+                ],
+              },
+            ],
+          } as Yayin["tanim"]["adimlar"][number],
+          {
+            id: "pw-aylik",
+            tur: "paywall",
+            baslik: "Aylık plan",
+            metin: "",
+            dugme: "Aylık al",
+            plan: "monthly",
+          },
+          {
+            id: "pw-yillik",
+            tur: "paywall",
+            baslik: "Yıllık plan",
+            metin: "",
+            dugme: "Yıllık al",
+            plan: "yearly",
+          },
+        ],
+      },
+    };
+  };
+  const dolu = () =>
+    (document.querySelector("progress") as HTMLProgressElement | null)?.value;
+  it.each([
+    ["Ailemle", "Yıllık plan", "Yıllık al", "yearly"],
+    ["İş", "Aylık plan", "Aylık al", "monthly"],
+  ])(
+    "%s → %s; o paywall'ın planı ödenir, çubuk dolu",
+    async (secenek, baslik, dugme, plan) => {
+      tanim = { durum: 200, govde: iki() };
+      ziyaret = { durum: 500 };
+      const git = vi
+        .spyOn(window.location, "assign")
+        .mockImplementation(() => {});
+      kur();
+      await yuklendi();
+      fireEvent.click(screen.getByText("Başla"));
+      fireEvent.click(screen.getByText(secenek));
+      await waitFor(() => expect(gorunenBaslik()).toBe(baslik));
+      // Öndeki paywall'da (3/4) da çubuk sonda: her paywall huninin sonu.
+      expect(dolu()).toBe(4);
+      fireEvent.click(screen.getByText(dugme));
+      await waitFor(() => expect(git).toHaveBeenCalled());
+      expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
+        app: "keepchat",
+        plan,
+      });
+    },
+  );
+});
+
 describe("M2b — sayaç, şart onayı, güven rozetleri", () => {
   const paywallli = (
     ek: Record<string, unknown>,

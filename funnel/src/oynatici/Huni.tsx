@@ -298,7 +298,7 @@ function Oynatici({
       ? tanim.adimlar.findIndex((a) => a.id === hedef)
       : mevcut + 1;
     if (sira <= mevcut || sira >= tanim.adimlar.length) return;
-    // T3b: koşulu tutmayan ekran atlanır; paywall (son adım) koşulsuz.
+    // T3b: koşulu tutmayan ekran atlanır; paywall koşulsuz (M2c: son adım hep paywall — döngü orada durur).
     const o = simdikiOzellikler();
     for (
       let a = tanim.adimlar[sira];
@@ -425,12 +425,20 @@ function Oynatici({
               // L19 / Ç54 (3): yerel progress geçiş desteklemiyor (atlıyordu) —
               // ekran okuyucu için yerinde ama görünmez; görünen dolgu yumuşak.
               <div className="ilerleme">
-                <progress max={tanim.adimlar.length} value={mevcut + 1} />
+                {/* M2c: her paywall huninin sonu — öndeki paywall'da da çubuk dolu. */}
+                <progress
+                  max={tanim.adimlar.length}
+                  value={
+                    tanim.adimlar[mevcut]?.tur === "paywall"
+                      ? tanim.adimlar.length
+                      : mevcut + 1
+                  }
+                />
                 <span
                   className="ilerleme-dolum"
                   aria-hidden="true"
                   style={{
-                    width: `${((mevcut + 1) / tanim.adimlar.length) * 100}%`,
+                    width: `${tanim.adimlar[mevcut]?.tur === "paywall" ? 100 : ((mevcut + 1) / tanim.adimlar.length) * 100}%`,
                   }}
                 />
               </div>

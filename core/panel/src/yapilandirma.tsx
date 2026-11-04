@@ -1434,7 +1434,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     ),
             },
             Paywall: {
-                label: "Ödeme (en sonda olmalı)",
+                // M2c: birden çok olabilir; son adım ödeme olmalı, öndekine yönlendirmeyle gidilir.
+                label: "Ödeme (son adım ödeme olmalı)",
                 fields: {
                     kimlik: kimlikAlani,
                     baslik: { type: "text", label: "Başlık" },
@@ -1597,7 +1598,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 ),
             },
             // Mobil görünüm 4: düğmesiz; süre dolunca huni sıradakine geçer
-            // (önizlemede beklemez). Ödeme adımı en sonda olduğu için son olamaz.
+            // (önizlemede beklemez). Son adım ödeme olmalı (M2c), yükleme son olamaz.
             Yukleme: {
                 label: "Plan hazırlanıyor (yükleme)",
                 resolveData: eklenince,
