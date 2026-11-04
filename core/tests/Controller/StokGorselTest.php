@@ -152,7 +152,9 @@ final class StokGorselTest extends WebTestCase
         $acik = $c->get(HuniAraclari::class);
         self::assertInstanceOf(HuniAraclari::class, $acik);
         self::assertContains('stok_gorsel_ara', array_column($acik->tanimlar(new AracKapsami('keepchat')), 'name'));
-        $kapaliAraclar = new HuniAraclari($huniler, \dirname(__DIR__, 2).'/config/huni/tanim-semasi.json', 'https://huni.test', $ekran, $kapali);
+        $sablonlar = $c->get(\App\Huni\Sablonlar::class);
+        self::assertInstanceOf(\App\Huni\Sablonlar::class, $sablonlar);
+        $kapaliAraclar = new HuniAraclari($huniler, \dirname(__DIR__, 2).'/config/huni/tanim-semasi.json', 'https://huni.test', $ekran, $kapali, $sablonlar);
         self::assertNotContains('stok_gorsel_ara', array_column($kapaliAraclar->tanimlar(new AracKapsami('keepchat')), 'name'));
     }
 

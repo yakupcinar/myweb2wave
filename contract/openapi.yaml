@@ -572,7 +572,7 @@ paths:
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
     post:
       operationId: panelApiHuniYeni
-      summary: Yeni huni (boş ya da bir hunin taslağından kopya); ilk huni varsayılan olur
+      summary: Yeni huni (boş, bir hunin taslağından kopya ya da niş şablonundan — V6); ilk huni varsayılan olur
       parameters:
         - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
       requestBody:
@@ -586,6 +586,7 @@ paths:
               properties:
                 ad: { type: string, minLength: 1, maxLength: 64 }
                 kaynak: { type: string, minLength: 1, maxLength: 64 }
+                sablon: { type: string, minLength: 1, maxLength: 64, description: "V6: şablon anahtarı (kaynak ile birlikte olmaz)" }
       responses:
         "201":
           description: Açıldı
@@ -1287,7 +1288,7 @@ components:
     PanelHunileri:
       type: object
       additionalProperties: false
-      required: [adres, parametreler, huniler, kurallar]
+      required: [adres, parametreler, huniler, kurallar, sablonlar]
       properties:
         adres: { type: string, description: Uygulamanın tek reklam adresi }
         parametreler: { type: array, items: { type: string }, description: Kuralda kullanılabilen adres parametreleri }
@@ -1317,6 +1318,17 @@ components:
               parametre: { type: string }
               deger: { type: string }
               huni: { type: string }
+        sablonlar:
+          type: array
+          description: "V6: niş şablonları (core/config/huni/sablonlar) — yeni huninin başlangıcı"
+          items:
+            type: object
+            additionalProperties: false
+            required: [anahtar, ad, aciklama]
+            properties:
+              anahtar: { type: string }
+              ad: { type: string }
+              aciklama: { type: string }
     KosulluDegerler:
       description: >-
         T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan

@@ -158,6 +158,25 @@ final class HuniAraclariTest extends KernelTestCase
         self::assertTrue($this->huniler->anahtarGecerli('keepchat', 'fitness', $q['onizleme'], time()));
     }
 
+    /** V6: şablonlar aracın şemasında (enum + açıklama); şablondan açılan huni okunabilir, kaynakla birlikte reddedilir. */
+    public function testYeniHuniSablondan(): void
+    {
+        $k = new AracKapsami('keepchat');
+        $sema = array_column($this->araclarTanimi(null), 'input_schema', 'name')['yeni_huni'];
+        $sablon = ((array) $sema['properties'])['sablon'];
+        self::assertIsArray($sablon);
+        self::assertSame(['dil', 'finans', 'fitness', 'uyku'], $sablon['enum']);
+        self::assertIsString($sablon['description']);
+        self::assertStringContainsString('uyku — Uyku düzeni testi', $sablon['description']);
+
+        self::assertFalse($this->araclar->calistir('yeni_huni', ['huni' => 'ders', 'sablon' => 'dil'], $k)->hata);
+        $oku = $this->araclar->calistir('huni_oku', ['huni' => 'ders'], $k);
+        self::assertIsArray($oku->icerik['tanim']);
+        self::assertSame('Sana özel dil planı', $oku->icerik['tanim']['sayfaBasligi']);
+        self::assertSame(['kaynak huni ya da şablon — ikisi birden olmaz'], $this->araclar->calistir('yeni_huni', ['huni' => 'iki', 'kaynak' => 'genel', 'sablon' => 'dil'], $k)->icerik['hatalar']);
+        self::assertSame(['sablon: küçük harf, rakam, - ve _ (1–64)'], $this->araclar->calistir('yeni_huni', ['huni' => 'uc', 'sablon' => '../x'], $k)->icerik['hatalar']);
+    }
+
     /** Ç72: adımın önizlemesi tarayıcıda çekilir; adım ve sürüm adrese, görüntü sonuca. */
     public function testEkranGoruntusuAdimVeSurumleOnizlemeyiCeker(): void
     {

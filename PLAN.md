@@ -34,6 +34,7 @@
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
+| Niş şablonları (V6) | ✅ 4 şablon, 503 çekirdek testi, kırma 15/15, 57 adım ekranda; 17 boşluk uyarısı (Ç107) | `docs/decisions/v6-nis-sablonlari.md` |
 | Yeni bloklar (V5) | ✅ 495 çekirdek testi, kırma 13/13, ekran + Chrome ölçümü; JS 18,6 KB / 30 | `docs/decisions/v5-yeni-bloklar.md` |
 | Hareket (V4) | ✅ 483 çekirdek testi, kırma 12/12, Chrome'da ölçüldü; Ç101 kapandı | `docs/decisions/v4-hareket.md` |
 | Stok fotoğraf (V3b) | ✅ testlerle (sahte Pexels); gerçek Pexels anahtar bekliyor (Ç103); kırma 12/12 | `docs/decisions/v3b-stok-fotograf.md` |
@@ -188,7 +189,7 @@
     - [x] V3b · 2026-11-03, `docs/decisions/v3b-stok-fotograf.md`: Pexels (lisans + API kuralları ölçüldü; Unsplash/Openverse elendi), içe alma yeniden kodlar, kaynak/fotoğrafçı/lisans saklanır, panel arama + AI araçları. Kırma 12/12. **Gerçek Pexels anahtar bekliyor (Ç103)**
     - [x] V4 · 2026-11-03, `docs/decisions/v4-hareket.md`: tema `hareket` (yok/sakin/canlı) — sırayla giriş, seçim efekti, sayan istatistik; Ç101 kapandı. Gerçek tarayıcıda `getAnimations` ile ölçüldü. Kırma 12/12
     - [x] V5 · 2026-11-03, `docs/decisions/v5-yeni-bloklar.md`: grafik (sayısız projeksiyon), ölçek 1–5 (tekli hattı), önce/sonra; Lottie bütçe yüzünden elendi, sayısal kaydırıcı ertelendi (Ç106). Kırma 13/13
-    - [ ] V6 · niş şablonları
+    - [x] V6 · 2026-11-04, `docs/decisions/v6-nis-sablonlari.md`: uyku/fitness/dil/finans şablonları (`config/huni/sablonlar`), panel Başlangıç seçicisi + API + AI `yeni_huni` `sablon`; tema hazır temadan, plan uygulamadan, görsel/yorum yok. Kırma 15/15. Açık Ç107
   - [ ] M1 · fiyat kataloğu — üç blok:
     - [x] M1a · 2026-11-03, `docs/decisions/m1a-fiyat-katalogu.md`: `planlar` tablosu, panel → Planlar (Stripe'ta ürün + fiyat; fiyat değişimi yeni fiyat), ödeme/huni/Puck/AI katalogdan, ortam değişkeni → `app:plan-ice-aktar`. Gerçek Stripe test API. Kırma 15/15 (K11 testi buldu). Açık Ç96
     - [ ] M1b · teklifler: kartlı deneme + ücretli giriş dönemi + ilk dönem indirimi

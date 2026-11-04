@@ -27,6 +27,7 @@ final readonly class Huniler
         private Connection $db,
         private Medyalar $medyalar,
         private Planlar $planlar,
+        private Sablonlar $sablonlar,
         /** @var array<string, array<string, string>> uygulama kaydı (A4); planlar veritabanında (M1a) */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
@@ -109,12 +110,13 @@ final readonly class Huniler
     }
 
     /**
-     * Yeni huni: taslak, varsa `kaynak` hunisinin taslağından kopya, yoksa boş
-     * şablon. Uygulamanın ilk hunisi varsayılan olur.
+     * Yeni huni: taslak, varsa `kaynak` hunisinin taslağından kopya, `sablon`
+     * verildiyse niş şablonundan (V6), yoksa boş şablon. Uygulamanın ilk
+     * hunisi varsayılan olur.
      *
      * @return list<string> hatalar
      */
-    public function yeniHuni(string $app, string $ad, ?string $kaynak): array
+    public function yeniHuni(string $app, string $ad, ?string $kaynak, ?string $sablon = null): array
     {
         if (!isset($this->uygulamalar[$app])) {
             return ['bilinmeyen uygulama'];
@@ -122,9 +124,19 @@ final readonly class Huniler
         if (1 !== preg_match(Tanim::KIMLIK, $ad)) {
             return ['huni adı küçük harf, rakam, - ve _ (1–64)'];
         }
-        $taslak = null === $kaynak ? $this->bosTaslak($app) : $this->taslak($app, $kaynak);
-        if (null === $taslak) {
-            return ["kaynak huni '{$kaynak}' yok"];
+        if (null !== $kaynak && null !== $sablon) {
+            return ['kaynak huni ya da şablon — ikisi birden olmaz'];
+        }
+        if (null !== $sablon) {
+            $taslak = $this->sablonlar->tanim($sablon, $this->ilkPlan($app));
+            if (null === $taslak) {
+                return ["şablon '{$sablon}' yok"];
+            }
+        } else {
+            $taslak = null === $kaynak ? $this->bosTaslak($app) : $this->taslak($app, $kaynak);
+            if (null === $taslak) {
+                return ["kaynak huni '{$kaynak}' yok"];
+            }
         }
         try {
             $this->db->executeStatement(
@@ -386,12 +398,17 @@ final readonly class Huniler
      */
     public function bosTaslak(string $app): array
     {
-        $plan = (string) (array_key_first($this->planlar->fiyatKimlikleri($app)) ?? '');
+        $plan = $this->ilkPlan($app);
 
         return ['sayfaBasligi' => '', 'adimlar' => [
             ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => '', 'bloklar' => [], 'dugme' => 'Başla'],
             ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => '', 'metin' => '', 'dugme' => 'Abone ol', 'plan' => $plan],
         ]];
+    }
+
+    private function ilkPlan(string $app): string
+    {
+        return (string) (array_key_first($this->planlar->fiyatKimlikleri($app)) ?? '');
     }
 
     private function yayinlanmis(string $app, string $ad): bool

@@ -63,6 +63,9 @@ function kur() {
                 huni: "eski",
             },
         ],
+        sablonlar: [
+            { anahtar: "uyku", ad: "Uyku", aciklama: "Uyku düzeni testi" },
+        ],
     };
     const istekler: Istek[] = [];
     vi.stubGlobal(
@@ -251,8 +254,8 @@ describe("P2: Huniler sayfası", () => {
         fireEvent.change(form.getByLabelText("Yeni huni adı"), {
             target: { value: "fitness" },
         });
-        fireEvent.change(form.getByLabelText("Kopyala"), {
-            target: { value: "genel" },
+        fireEvent.change(form.getByLabelText("Başlangıç"), {
+            target: { value: "huni:genel" },
         });
         fireEvent.click(form.getByRole("button", { name: "Huni aç" }));
         await waitFor(() =>
@@ -268,6 +271,37 @@ describe("P2: Huniler sayfası", () => {
         ]);
     });
 
+    it("V6: yeni huni şablondan açılır — şablon adıyla seçilir, istekte kaynak yok", async () => {
+        const istekler = kur();
+        await waitFor(() =>
+            expect(
+                document.querySelector('tr[data-huni="genel"]'),
+            ).not.toBeNull(),
+        );
+        const form = within(screen.getByRole("form", { name: "Yeni huni" }));
+        fireEvent.change(form.getByLabelText("Yeni huni adı"), {
+            target: { value: "gece" },
+        });
+        const secim = form.getByLabelText<HTMLSelectElement>("Başlangıç");
+        const secenek = within(secim).getByRole<HTMLOptionElement>("option", {
+            name: "Uyku",
+        });
+        expect(secenek.closest("optgroup")?.label).toBe("Şablon");
+        fireEvent.change(secim, { target: { value: secenek.value } });
+        fireEvent.click(form.getByRole("button", { name: "Huni aç" }));
+        await waitFor(() =>
+            expect(konum()).toBe("/panel/huniler/keepchat/gece"),
+        );
+        expect(yazmalar(istekler)).toEqual([
+            {
+                yontem: "POST",
+                adres: "/panel/api/uygulamalar/keepchat/huniler",
+                jeton: "jeton-kabuk",
+                govde: { ad: "gece", sablon: "uyku" },
+            },
+        ]);
+    });
+
     it("yeni huni hatası gösterilir, sayfa değişmez", async () => {
         const istekler = kur();
         await waitFor(() =>
@@ -279,7 +313,7 @@ describe("P2: Huniler sayfası", () => {
         fireEvent.change(form.getByLabelText("Yeni huni adı"), {
             target: { value: "genel" },
         });
-        fireEvent.change(form.getByLabelText("Kopyala"), {
+        fireEvent.change(form.getByLabelText("Başlangıç"), {
             target: { value: "" },
         });
         fireEvent.click(form.getByRole("button", { name: "Huni aç" }));

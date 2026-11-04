@@ -43,3 +43,4 @@
 | 36 | H4: adım geçişleri yalnız CSS, ilk adımda yok | ilk ölçüm kendi kararımızı bozdu (ilk adım da 0'dan başlıyordu → ilk boyama gecikirdi); gizli sekme animasyon ölçümünü yalan söyletti (§34) | `huni-gecisler-h4.md` |
 | 37 | H5: dallanma — seçenek/tanıtım → ileri hedef (A11), skor yok | kullanıcıya rakip modelleriyle soruldu; bir 'düzeltme' kendi ölçüm hatama dayanıyordu (sentetik olay Puck'a ulaşmamıştı) — geri alındı | `huni-dallanma-h5.md` |
 | 38 | H6a: reklam ölçümü onay şeridi; tıklama kimlikleri yalnız izinle (A12) | yeşil süite rağmen tarayıcıda iki kusur: göçsüz geliştirme DB'si (500) ve CORS'a eklenmeyen uç (durum 0, §36) — ikisini de huni sessizce yuttu | `huni-izin-h6a.md` |
+| 39 | V6: niş şablonları — yeni huni boş değil iyi bir örnekten başlar | yayın denetimi uydurma yorumu geçirdi (K6c yeşil): içerik kuralı ancak dosyayı okuyan testte ölçülür; uyarı sayısı temaya bağlı (aynı içerik Gece'de 0, Okyanus'ta uyarılı) | `v6-nis-sablonlari.md` |

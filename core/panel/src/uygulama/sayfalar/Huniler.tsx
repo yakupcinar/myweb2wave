@@ -139,14 +139,23 @@ function HuniTablosu({
     const git = useNavigate();
     const [kaldirSor, setKaldirSor] = useState<string | null>(null);
     const [ad, setAd] = useState("");
-    const [kaynak, setKaynak] = useState("");
+    // V6: "huni:<ad>" kopya, "sablon:<anahtar>" niş şablonu, "" boş.
+    const [baslangic, setBaslangic] = useState("");
     const yeni = useMutation({
         mutationFn: async () => {
             const { data, error } = await api.POST(
                 "/panel/api/uygulamalar/{app}/huniler",
                 {
                     params: { path: { app }, header: JETON },
-                    body: { ad: ad.trim(), ...(kaynak ? { kaynak } : {}) },
+                    body: {
+                        ad: ad.trim(),
+                        ...(baslangic.startsWith("huni:")
+                            ? { kaynak: baslangic.slice(5) }
+                            : {}),
+                        ...(baslangic.startsWith("sablon:")
+                            ? { sablon: baslangic.slice(7) }
+                            : {}),
+                    },
                 },
             );
             if (!data)
@@ -319,18 +328,31 @@ function HuniTablosu({
                     />
                 </label>
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Kopyala</span>
+                    <span className="font-semibold">Başlangıç</span>
                     <select
-                        value={kaynak}
-                        onChange={(e) => setKaynak(e.currentTarget.value)}
+                        value={baslangic}
+                        onChange={(e) => setBaslangic(e.currentTarget.value)}
                         className={girdi}
                     >
                         <option value="">boş başla</option>
-                        {veri.huniler.map((h) => (
-                            <option key={h.ad} value={h.ad}>
-                                {h.ad}
-                            </option>
-                        ))}
+                        <optgroup label="Şablon">
+                            {veri.sablonlar.map((s) => (
+                                <option
+                                    key={s.anahtar}
+                                    value={`sablon:${s.anahtar}`}
+                                    title={s.aciklama}
+                                >
+                                    {s.ad}
+                                </option>
+                            ))}
+                        </optgroup>
+                        <optgroup label="Kopyala">
+                            {veri.huniler.map((h) => (
+                                <option key={h.ad} value={`huni:${h.ad}`}>
+                                    {h.ad}
+                                </option>
+                            ))}
+                        </optgroup>
                     </select>
                 </label>
                 <Dugme

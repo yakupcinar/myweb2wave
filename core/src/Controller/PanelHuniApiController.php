@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Billing\Planlar;
 use App\Huni\Huniler;
+use App\Huni\Sablonlar;
 use App\Huni\Tanim;
 use App\Huni\Tema;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +29,7 @@ final class PanelHuniApiController extends AbstractController
     public function __construct(
         private readonly Huniler $huniler,
         private readonly Planlar $planlar,
+        private readonly Sablonlar $sablonlar,
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private readonly array $uygulamalar,
@@ -54,6 +56,8 @@ final class PanelHuniApiController extends AbstractController
                 'duzenle' => $this->generateUrl('panel_huni', ['app' => $app, 'ad' => $h['ad']]),
             ], $this->huniler->huniler($app)),
             'kurallar' => $this->huniler->kurallar($app),
+            // V6: yeni huninin başlangıcı olabilecek niş şablonları.
+            'sablonlar' => $this->sablonlar->liste(),
         ]));
     }
 
@@ -63,10 +67,11 @@ final class PanelHuniApiController extends AbstractController
         return $this->yaz($request, $app, function (array $g) use ($app): JsonResponse {
             $ad = \is_string($g['ad'] ?? null) ? trim($g['ad']) : null;
             $kaynak = $g['kaynak'] ?? null;
-            if (null === $ad || (null !== $kaynak && !\is_string($kaynak))) {
-                return self::hata('ad (ve isteğe bağlı kaynak) metin olmalı', 422);
+            $sablon = $g['sablon'] ?? null;
+            if (null === $ad || (null !== $kaynak && !\is_string($kaynak)) || (null !== $sablon && !\is_string($sablon))) {
+                return self::hata('ad (ve isteğe bağlı kaynak ya da sablon) metin olmalı', 422);
             }
-            $hatalar = $this->huniler->yeniHuni($app, $ad, $kaynak);
+            $hatalar = $this->huniler->yeniHuni($app, $ad, $kaynak, $sablon);
 
             return [] === $hatalar
                 ? self::korumali(new JsonResponse(['ad' => $ad, 'duzenle' => $this->generateUrl('panel_huni', ['app' => $app, 'ad' => $ad])], 201))

@@ -329,7 +329,7 @@ export interface paths {
         /** P2 — uygulamanın hunileri ve yönlendirme kuralları (A8) */
         get: operations["panelApiHuniler"];
         put?: never;
-        /** Yeni huni (boş ya da bir hunin taslağından kopya); ilk huni varsayılan olur */
+        /** Yeni huni (boş, bir hunin taslağından kopya ya da niş şablonundan — V6); ilk huni varsayılan olur */
         post: operations["panelApiHuniYeni"];
         delete?: never;
         options?: never;
@@ -838,6 +838,12 @@ export interface components {
                 parametre: string;
                 deger: string;
                 huni: string;
+            }[];
+            /** @description V6: niş şablonları (core/config/huni/sablonlar) — yeni huninin başlangıcı */
+            sablonlar: {
+                anahtar: string;
+                ad: string;
+                aciklama: string;
             }[];
         };
         /** @description T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan kural kazanır, hiçbiri tutmazsa alanın kendi değeri. Gösterimde hesaplanır: cevap yalnız önceki adımlardan. Soru ve maddeler bloğunda yok. */
@@ -1984,6 +1990,8 @@ export interface operations {
                 "application/json": {
                     ad: string;
                     kaynak?: string;
+                    /** @description V6: şablon anahtarı (kaynak ile birlikte olmaz) */
+                    sablon?: string;
                 };
             };
         };

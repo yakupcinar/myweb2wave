@@ -6,6 +6,7 @@ namespace App\Huni\Arac;
 
 use App\Huni\Ekran\EkranCekici;
 use App\Huni\Huniler;
+use App\Huni\Sablonlar;
 use App\Huni\Tanim;
 use App\Medya\StokGorseller;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -29,6 +30,7 @@ final readonly class HuniAraclari
         private string $funnelBaseUrl,
         private EkranCekici $ekran,
         private StokGorseller $stok,
+        private Sablonlar $sablonlar,
     ) {
     }
 
@@ -68,7 +70,13 @@ final readonly class HuniAraclari
             ], ['kimlik'])];
         }
         if (null === $kapsam->huni) {
-            $araclar[] = ['name' => 'yeni_huni', 'description' => "'{$kapsam->app}' uygulamasında yeni huni açar (boş şablon ya da kaynak huninin taslağından kopya); taslağı sonra taslak_kaydet ile doldur.", 'input_schema' => $nesne(['huni' => $huni, 'kaynak' => ['description' => 'kopyalanacak huni (isteğe bağlı)'] + $huni], ['huni'])];
+            // V6: şablonlar listesi araç tanımında — model ayrı bir listeleme çağrısı harcamasın.
+            $sablonlar = $this->sablonlar->liste();
+            $araclar[] = ['name' => 'yeni_huni', 'description' => "'{$kapsam->app}' uygulamasında yeni huni açar: boş, kaynak huninin taslağından kopya ya da niş şablonundan (tam bir örnek huni; metni ürüne göre yeniden yaz, görsel ekle); taslağı sonra huni_oku ve taslak_kaydet ile düzenle.", 'input_schema' => $nesne([
+                'huni' => $huni,
+                'kaynak' => ['description' => 'kopyalanacak huni (isteğe bağlı; sablon ile birlikte olmaz)'] + $huni,
+                'sablon' => ['type' => 'string', 'enum' => array_column($sablonlar, 'anahtar'), 'description' => 'niş şablonu (isteğe bağlı): '.implode('; ', array_map(static fn (array $s): string => "{$s['anahtar']} — {$s['aciklama']}", $sablonlar))],
+            ], ['huni'])];
         }
 
         return $araclar;
@@ -93,7 +101,7 @@ final readonly class HuniAraclari
         if ([] !== $eksik = array_diff($zorunlu, array_map(strval(...), array_keys($girdi)))) {
             return AracSonucu::hata('eksik alan: '.implode(', ', $eksik));
         }
-        foreach (['huni', 'kaynak'] as $alan) {
+        foreach (['huni', 'kaynak', 'sablon'] as $alan) {
             if (isset($girdi[$alan]) && (!\is_string($girdi[$alan]) || 1 !== preg_match(Tanim::KIMLIK, $girdi[$alan]))) {
                 return AracSonucu::hata("{$alan}: küçük harf, rakam, - ve _ (1–64)");
             }
@@ -125,7 +133,7 @@ final readonly class HuniAraclari
             'stok_gorsel_al' => isset(($s = $this->stok->al($app, $girdi['kimlik']))['id'])
                 ? new AracSonucu(['gorsel' => $s['id'], 'lisans' => StokGorseller::LISANS])
                 : AracSonucu::hata(...$s),
-            'yeni_huni' => [] === ($h = $this->huniler->yeniHuni($app, $huni, isset($girdi['kaynak']) && \is_string($girdi['kaynak']) ? $girdi['kaynak'] : null))
+            'yeni_huni' => [] === ($h = $this->huniler->yeniHuni($app, $huni, isset($girdi['kaynak']) && \is_string($girdi['kaynak']) ? $girdi['kaynak'] : null, isset($girdi['sablon']) && \is_string($girdi['sablon']) ? $girdi['sablon'] : null))
                 ? new AracSonucu(['huni' => $huni, 'imza' => $this->huniler->taslakImzasi($app, $huni)])
                 : AracSonucu::hata(...$h),
             default => AracSonucu::hata("bilinmeyen araç: {$ad}"),

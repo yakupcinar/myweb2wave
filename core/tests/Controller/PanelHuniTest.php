@@ -132,6 +132,35 @@ final class PanelHuniTest extends WebTestCase
         self::assertSame(404, $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler/olmayan/varsayilan', $jeton)[0]);
     }
 
+    /** V6: liste şablonları taşır; şablondan açılan huninin taslağı şablonun tanımı + uygulamanın planı. */
+    public function testApiSablonListesiVeSablondanYeniHuni(): void
+    {
+        $this->girisYap();
+        $jeton = $this->kabukJetonu();
+
+        [$durum, $liste] = $this->api('GET', '/panel/api/uygulamalar/keepchat/huniler');
+        self::assertSame(200, $durum);
+        Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/huniler', $this->client->getResponse());
+        self::assertIsArray($liste);
+        self::assertIsArray($liste['sablonlar']);
+        self::assertSame(['dil', 'finans', 'fitness', 'uyku'], array_column($liste['sablonlar'], 'anahtar'));
+
+        [$durum, $yeni] = $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler', $jeton, ['ad' => 'antrenman', 'sablon' => 'fitness']);
+        self::assertSame(201, $durum);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/huniler', $this->client->getResponse());
+        self::assertSame(['ad' => 'antrenman', 'duzenle' => '/panel/huniler/keepchat/antrenman'], $yeni);
+        $taslak = $this->huniler->taslak('keepchat', 'antrenman');
+        self::assertIsArray($taslak);
+        self::assertSame('Sana özel antrenman planı', $taslak['sayfaBasligi']);
+        self::assertIsArray($taslak['tema']);
+        self::assertSame('#f97316', $taslak['tema']['anaRenk']);
+
+        [$durum, $hata] = $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler', $jeton, ['ad' => 'x', 'sablon' => 'olmayan']);
+        self::assertSame(422, $durum);
+        self::assertSame(['hatalar' => ["şablon 'olmayan' yok"]], $hata);
+        self::assertSame(422, $this->api('POST', '/panel/api/uygulamalar/keepchat/huniler', $jeton, ['ad' => 'y', 'sablon' => 5])[0]);
+    }
+
     public function testApiHatalari422VeBilinmeyenUygulama404(): void
     {
         $this->girisYap();
