@@ -1443,11 +1443,41 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     ilerlemeGoster: ilerlemeAlani,
                     plan: {
                         type: "select",
-                        label: "Plan",
+                        label: "Plan (seçicide varsayılan seçili)",
                         options: ortam.planlar.map((p) => ({
                             label: p,
                             value: p,
                         })),
+                    },
+                    // M2a: 2–3 plan → seçici; varsayılan plan da listede olmalı (çekirdek doğrular).
+                    planlar: {
+                        type: "array",
+                        label: "Plan seçici (2–3 plan, isteğe bağlı)",
+                        max: 3,
+                        getItemSummary: (p: { plan: string }) =>
+                            p.plan || "plan",
+                        defaultItemProps: { plan: ortam.planlar[0] ?? "" },
+                        arrayFields: {
+                            plan: {
+                                type: "select",
+                                label: "Plan",
+                                options: ortam.planlar.map((p) => ({
+                                    label: p,
+                                    value: p,
+                                })),
+                            },
+                        },
+                    },
+                    onerilen: {
+                        type: "select",
+                        label: "Önerilen (seçicide)",
+                        options: [
+                            { label: "yok", value: "" },
+                            ...ortam.planlar.map((p) => ({
+                                label: p,
+                                value: p,
+                            })),
+                        ],
                     },
                     faydalar: {
                         type: "array",
@@ -1480,6 +1510,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     dugme: "Abone ol",
                     ilerlemeGoster: true,
                     plan: "monthly",
+                    planlar: [],
+                    onerilen: "",
                     faydalar: [],
                     sartlar: "",
                     gizlilik: "",
@@ -1489,6 +1521,9 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     baslik,
                     metin,
                     dugme,
+                    plan,
+                    planlar,
+                    onerilen,
                     faydalar,
                     sartlar,
                     gizlilik,
@@ -1499,6 +1534,15 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             baslik={baslik}
                             metin={metin}
                             dugme={dugme}
+                            // M2a: önizlemede fiyat yok (Stripe'tan huni okur); kartlar plan anahtarıyla.
+                            planlar={(planlar ?? [])
+                                .filter((p) => p.plan)
+                                .map((p) => ({
+                                    anahtar: p.plan,
+                                    ad: p.plan,
+                                    onerilen: p.plan === onerilen,
+                                }))}
+                            secili={plan}
                             faydalar={(faydalar ?? [])
                                 .map((f) => f.metin)
                                 .filter(Boolean)}

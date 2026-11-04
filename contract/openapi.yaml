@@ -1164,6 +1164,7 @@ components:
         tutar: { type: number, description: Ana birimde (9.99) }
         paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
         aralik: { type: string, enum: [day, week, month, year] }
+        ad: { type: string, description: "M2a: planın paneldeki adı (plan seçicide kart başlığı)" }
         teklif: { $ref: "#/components/schemas/PlanTeklifi" }
         ekler:
           description: "M1c, yalnız panel: ana para birimi dışındaki sabit tutarlar (para birimi → ana birimde tutar)"
@@ -1619,6 +1620,16 @@ components:
         dugme: { type: string }
         ilerlemeGoster: { type: boolean }
         plan: { $ref: "#/components/schemas/PlanAnahtari" }
+        planlar:
+          description: "M2a: plan seçici — 2–3 farklı plan; plan (varsayılan seçili) bunların içinde. Yoksa tek plan"
+          type: array
+          minItems: 2
+          maxItems: 3
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/PlanAnahtari" }
+        onerilen:
+          description: "M2a: seçicide 'Önerilen' etiketli plan (planlardan biri)"
+          allOf: [{ $ref: "#/components/schemas/PlanAnahtari" }]
         faydalar:
           description: "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)"
           type: array

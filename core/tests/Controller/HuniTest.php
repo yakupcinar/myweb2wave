@@ -685,7 +685,8 @@ final class HuniTest extends WebTestCase
         yield 'boş başlık' => ['1–200 karakter', self::ile(0, 'baslik', '   ')];
         yield 'paywall sonda değil' => ['EN SONDA', ['sayfaBasligi' => 'X', 'adimlar' => array_reverse($t['adimlar'])]];
         yield 'paywall yok' => ['EN SONDA', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][0], $t['adimlar'][1]]]];
-        yield 'bilinmeyen plan' => ['plan bu uygulamada yok', self::ile(2, 'plan', 'yillik')];
+        // M2a: hata uygulamanın planlarını sayar (yönetici ve AI anahtarı tahmin etmesin).
+        yield 'bilinmeyen plan' => ["plan 'yillik' bu uygulamada yok (planlar: monthly)", self::ile(2, 'plan', 'yillik')];
         yield 'tek seçenek' => ['2–8 seçenek', self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A']]])];
         yield 'tekrar eden seçenek' => ['geçersiz ya da tekrar ediyor', self::blok(['secenekler' => [['id' => 'a', 'metin' => 'A'], ['id' => 'a', 'metin' => 'B']]])];
         yield 'tek adım' => ['2–50', ['sayfaBasligi' => 'X', 'adimlar' => [$t['adimlar'][2]]]];

@@ -731,6 +731,8 @@ export interface components {
             paraBirimi: string;
             /** @enum {string} */
             aralik: "day" | "week" | "month" | "year";
+            /** @description M2a: planın paneldeki adı (plan seçicide kart başlığı) */
+            ad?: string;
             teklif?: components["schemas"]["PlanTeklifi"];
             /** @description M1c, yalnız panel: ana para birimi dışındaki sabit tutarlar (para birimi → ana birimde tutar) */
             ekler?: {
@@ -1038,6 +1040,10 @@ export interface components {
             dugme: string;
             ilerlemeGoster?: boolean;
             plan: components["schemas"]["PlanAnahtari"];
+            /** @description M2a: plan seçici — 2–3 farklı plan; plan (varsayılan seçili) bunların içinde. Yoksa tek plan */
+            planlar?: components["schemas"]["PlanAnahtari"][];
+            /** @description M2a: seçicide 'Önerilen' etiketli plan (planlardan biri) */
+            onerilen?: components["schemas"]["PlanAnahtari"];
             /** @description Ç61: paywall'da madde madde fayda listesi (isteğe bağlı) */
             faydalar?: string[];
             sartlar?: components["schemas"]["YasalAdres"];

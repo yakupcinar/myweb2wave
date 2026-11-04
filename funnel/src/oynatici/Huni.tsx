@@ -30,7 +30,7 @@ import {
 } from "../../../huni-bilesenleri/ozellikler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
-import { fiyatMetni } from "../lib/fiyat";
+import { fiyatMetni, kosulMetni } from "../lib/fiyat";
 import { izinOku, izinYaz, type Izin } from "../lib/izin";
 import { temaKaydet } from "../lib/sonuc-tema";
 import {
@@ -215,6 +215,8 @@ function Oynatici({
   // L19: yön de taşınır — ileri sağdan, geri soldan kayar.
   const [gecis, setGecis] = useState<"ileri" | "geri">();
   const [odeme, setOdeme] = useState({ suruyor: false, hata: "" });
+  // M2a: plan seçicide seçilen plan (paywall kimliği → plan); yoksa adımın varsayılanı.
+  const [secilenPlan, setSecilenPlan] = useState<Record<string, string>>({});
   const kutu = useRef<HTMLDivElement>(null);
   const ilkAdim = useRef(true);
 
@@ -509,11 +511,30 @@ function Oynatici({
                     // M1c: fiyat varsa para birimi IP'den bulunan ülkeyle seçildi (DB-IP lisansı).
                     konumAtfi:
                       adim.tur === "paywall" &&
-                      Boolean(yayin.fiyatlar?.[adim.plan]),
+                      (adim.planlar ?? [adim.plan]).some((p) =>
+                        Boolean(yayin.fiyatlar?.[p]),
+                      ),
+                    ...(adim.tur === "paywall"
+                      ? {
+                          planlar: (adim.planlar ?? []).map((p) => ({
+                            anahtar: p,
+                            ad: yayin.fiyatlar?.[p]?.ad ?? p,
+                            fiyat: fiyatMetni(yayin.fiyatlar?.[p]),
+                            onerilen: p === adim.onerilen,
+                          })),
+                          secili: secilenPlan[adim.id] ?? adim.plan,
+                          onPlanSec: (p: string) =>
+                            setSecilenPlan((s) => ({ ...s, [adim.id]: p })),
+                          kosul: kosulMetni(
+                            yayin.fiyatlar?.[secilenPlan[adim.id] ?? adim.plan],
+                          ),
+                        }
+                      : {}),
                     onDugme: () => {
                       // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
                       if (onizleme) return;
-                      if (adim.tur === "paywall") void aboneOl(adim.plan);
+                      if (adim.tur === "paywall")
+                        void aboneOl(secilenPlan[adim.id] ?? adim.plan);
                     },
                   }}
                 />

@@ -877,6 +877,65 @@ html:has(> body.huni) {
     font-weight: 750;
     color: var(--metin);
 }
+/* M2a: plan seçici — seçili kart tek plan kartının görünümünde, ötekiler
+   çizgili; "Önerilen" kartın üst kenarında. */
+.huni .plan-secici {
+    display: grid;
+    gap: 14px;
+    margin: 0 0 20px;
+}
+.huni .plan-secici .plan-karti {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    border-color: var(--cizgi);
+    background: var(--arka);
+}
+.huni .plan-secici .plan-karti[aria-checked="true"] {
+    border-color: var(--ana);
+    background: color-mix(in srgb, var(--ana) 8%, var(--arka));
+}
+.huni .plan-secici .plan-karti[aria-checked="false"] .isaret {
+    border-color: var(--cizgi);
+    background: transparent;
+}
+.huni .plan-secici .plan-karti[aria-checked="false"] .isaret::after {
+    display: none;
+}
+.huni .plan-bilgi {
+    display: grid;
+    gap: 2px;
+    flex: 1;
+}
+.huni .plan-adi {
+    font-weight: 700;
+}
+.huni .plan-secici .fiyat {
+    font-size: 15px;
+    color: var(--soluk);
+}
+.huni .onerilen {
+    position: absolute;
+    top: -11px;
+    right: 14px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--ana);
+    color: var(--ana-yazi);
+    font-size: 12px;
+    font-weight: 700;
+}
+.huni p.kosul {
+    margin: 10px 0 0;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--soluk);
+}
 .huni ul.faydalar {
     display: grid;
     gap: 10px;

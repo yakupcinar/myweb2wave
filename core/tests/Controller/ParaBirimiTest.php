@@ -160,7 +160,7 @@ final class ParaBirimiTest extends WebTestCase
             Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
             /** @var array{fiyatlar: array{monthly: array<string, mixed>}} $j */
             $j = $this->json();
-            self::assertSame(['tutar' => $tutar, 'paraBirimi' => $para, 'aralik' => 'month'], $j['fiyatlar']['monthly'], "ülke {$ulke}");
+            self::assertSame(['tutar' => $tutar, 'paraBirimi' => $para, 'aralik' => 'month', 'ad' => 'Aylık'], $j['fiyatlar']['monthly'], "ülke {$ulke}");
             self::assertResponseHeaderSame('Cache-Control', 'max-age=60, private');
         }
 

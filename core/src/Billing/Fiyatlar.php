@@ -64,6 +64,7 @@ final readonly class Fiyatlar
     {
         $fiyatlar = [];
         $teklifler = $this->planlar->teklifler($app);
+        $adlar = array_column($this->planlar->liste($app), 'ad', 'anahtar');
         foreach ($this->planlar->fiyatKimlikleri($app) as $plan => $fiyatKimligi) {
             try {
                 // M1c: önbellek anahtarı 'fiyat2_' — eski biçim (eksiz) önbellekte kalmasın.
@@ -92,7 +93,8 @@ final readonly class Fiyatlar
                 }
                 $fiyat['teklif'] = $teklif;
             }
-            $fiyatlar[(string) $plan] = $fiyat;
+            // M2a: plan seçicinin kart başlığı.
+            $fiyatlar[(string) $plan] = $fiyat + ['ad' => $adlar[(string) $plan] ?? (string) $plan];
         }
 
         return $fiyatlar;

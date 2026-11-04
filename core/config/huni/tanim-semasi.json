@@ -683,6 +683,24 @@
                 "plan": {
                     "$ref": "#/$defs/PlanAnahtari"
                 },
+                "planlar": {
+                    "description": "M2a: plan seçici — 2–3 farklı plan; plan (varsayılan seçili) bunların içinde. Yoksa tek plan",
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 3,
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/$defs/PlanAnahtari"
+                    }
+                },
+                "onerilen": {
+                    "description": "M2a: seçicide 'Önerilen' etiketli plan (planlardan biri)",
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/PlanAnahtari"
+                        }
+                    ]
+                },
                 "faydalar": {
                     "description": "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)",
                     "type": "array",

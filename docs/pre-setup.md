@@ -206,6 +206,18 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   kurulur, kurulamazsa müşteri süresiz giriş fiyatında kalırdı. Reddedilen:
   Subscription Schedule. Kayıt `m1b-teklifler.md`.
 
+**A15 · M2 paywall: bölünme, sayaç, cevaba göre paywall** (2026-11-04, kullanıcı).
+- **Sayaç yalnız gerçek bitiş tarihine** (herkes için aynı, yöneticinin girdiği an;
+  süre dolunca teklif gerçekten kalkar → bitiş teklifin kendisinde, ödeme de uyar).
+  Reddedilen: ziyaretçi başına süre (rakiplerde yaygın; gerçek süreye bağlı değilse
+  yanıltıcı ticari uygulama riski, yönergemiz de yasaklıyor) · sayaçsız.
+- **Cevaba göre paywall = hunide birden çok paywall adımı** + mevcut koşullu
+  yönlendirme (T3); "tam bir kez, en sonda" kuralı kalkar. Reddedilen: ayrı paywall
+  varlığı (yeni tablo, sürümleme, panel sayfası — M3/M4 isterse yeniden bakılır).
+- **Sıra:** M2a plan seçici + ödeme koşulu → M2b teklif bitişi + sayaç, güven
+  rozetleri, şart onayı → M2c birden çok paywall → M2d gömülü ödeme + Apple/Google
+  Pay. Reddedilen: önce gömülü ödeme (Apple Pay sunucusuz ölçülemez).
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

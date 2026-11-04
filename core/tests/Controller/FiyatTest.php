@@ -65,7 +65,7 @@ final class FiyatTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
         self::assertSame(
-            ['monthly' => ['tutar' => 20, 'paraBirimi' => 'USD', 'aralik' => 'month']],
+            ['monthly' => ['tutar' => 20, 'paraBirimi' => 'USD', 'aralik' => 'month', 'ad' => 'Aylık']],
             $this->fiyatlar(),
         );
         self::assertSame(1, $this->istekSayisi());

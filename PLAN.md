@@ -34,6 +34,7 @@
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
+| Plan seçici (M2a) | ✅ 549 çekirdek testi, kırma 15/15, ekran + Chrome + gerçek yıllık ödeme; Puck alanları tarayıcıda bekliyor (Ç110) | `docs/decisions/m2a-plan-secici.md` |
 | Çok para birimi (M1c) | ✅ 537 çekirdek testi, kırma 20/20 (K21 testi buldu), gerçek Stripe'ta 6 ülke paywall = ödeme, Adaptive kapalı; dağıtım betiği düzeltildi (§49) | `docs/decisions/m1c-cok-para-birimi.md` |
 | Teklifler (M1b) | ✅ 523 çekirdek testi, kırma 20/20, gerçek Stripe'ta üç teklif (0 € / 0,99 € / 4,99 bugün); panel formu tarayıcıda bekliyor (Ç108) | `docs/decisions/m1b-teklifler.md` |
 | Niş şablonları (V6) | ✅ 4 şablon, 503 çekirdek testi, kırma 15/15, 57 adım ekranda; 17 boşluk uyarısı (Ç107) | `docs/decisions/v6-nis-sablonlari.md` |
@@ -196,7 +197,11 @@
     - [x] M1a · 2026-11-03, `docs/decisions/m1a-fiyat-katalogu.md`: `planlar` tablosu, panel → Planlar (Stripe'ta ürün + fiyat; fiyat değişimi yeni fiyat), ödeme/huni/Puck/AI katalogdan, ortam değişkeni → `app:plan-ice-aktar`. Gerçek Stripe test API. Kırma 15/15 (K11 testi buldu). Açık Ç96
     - [x] M1b · 2026-11-04, `docs/decisions/m1b-teklifler.md`: plan başına bir teklif (katalogda); deneme kartlı, ücretli giriş = deneme + tek seferlik ücret (kullanıcı kararı, schedule reddedildi), indirim tek dönemlik yüzde kuponu; paywall metni teklifle. Kırma 20/20. Açık Ç108
     - [x] M1c · 2026-11-04, `docs/decisions/m1c-cok-para-birimi.md`: ülke IP'den (DB-IP Lite, kullanıcı kararı + rakip araştırması), `?ulke=` testi, ülke → EUR/GBP/TRY/USD yoksa ana birim; paywall ve ödeme aynı seçim (`currency` zorlanır), Adaptive Pricing kapalı; ek birim = yeni Stripe fiyatı; giriş ücreti tek birimli. Kırma 20/20. Açık Ç109
-  - [ ] M2 · paywall ayrı varlık + paywall blokları (plan seçici, sayaç, dinamik koşullar…), cevaba göre paywall; **gömülü ödeme** + Apple/Google Pay alt blok
+  - [ ] M2 · paywall (bölünme ve kararlar `pre-setup.md` A15, kullanıcı 2026-11-04):
+    - [x] M2a · 2026-11-04, `docs/decisions/m2a-plan-secici.md`: `planlar` (2–3) + `onerilen`, kart başlığı plan adı, seçili plana göre ödeme koşulu (iptal sözü yok); plan hatası planları sayar. Kırma 15/15. Açık Ç110
+    - [ ] M2b · teklif bitiş tarihi + sayaç (yalnız gerçek bitiş), güven rozetleri, şart onayı
+    - [ ] M2c · birden çok paywall adımı, cevaba göre paywall (T3 yönlendirme)
+    - [ ] M2d · gömülü ödeme (Embedded Checkout) + Apple/Google Pay (alan adı doğrulaması sunucuyla)
   - [ ] M3 · downsell penceresi + ödeme sonrası tek tık upsell
   - [ ] M4 · deneyler: yönlendirme + içerik (`deney.<id>`), yapışık atama, sonuçlar
   - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla

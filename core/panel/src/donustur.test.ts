@@ -94,6 +94,32 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
+    it("M2a: plan seçici ve önerilen gidiş-dönüş (sıra korunur); tek dolu plan seçici sayılmaz, önerilen de düşer", () => {
+        const secici: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim) =>
+                adim.tur === "paywall"
+                    ? {
+                          ...adim,
+                          planlar: ["yearly", adim.plan],
+                          onerilen: "yearly",
+                      }
+                    : adim,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(secici, VARSAYILAN))).toStrictEqual(
+            secici,
+        );
+        const puck = tanimdanPuck(secici, VARSAYILAN);
+        const odeme = puck.content.find((o) => o.type === "Paywall")!;
+        // Panelde yalnız bir satır dolu bırakıldı: seçici değil, önerilen de yazılmaz.
+        (odeme.props as { planlar: { plan: string }[] }).planlar = [
+            { plan: "yearly" },
+            { plan: "" },
+        ];
+        expect(puckTanim(puck)).toStrictEqual(temel);
+    });
+
     it("ilerleme çubuğu kapatma ayarı tanıma yazılır; varsayılan ayar eklenmez", () => {
         const kapali: Tanim = {
             ...temel,

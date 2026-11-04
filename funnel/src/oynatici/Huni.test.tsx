@@ -1018,6 +1018,84 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
   });
 });
 
+describe("M2a — plan seçici", () => {
+  it("varsayılan seçili, Önerilen etiketi; seçim değişince koşul değişir, ödemeye seçili plan gider", async () => {
+    const temel = yayin();
+    const adimlar = temel.tanim.adimlar.map((a) =>
+      a.tur === "paywall"
+        ? {
+            ...a,
+            plan: "monthly",
+            planlar: ["yearly", "monthly"],
+            onerilen: "yearly",
+          }
+        : a,
+    );
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: { ...temel.tanim, adimlar },
+        fiyatlar: {
+          monthly: {
+            tutar: 9.99,
+            paraBirimi: "EUR",
+            aralik: "month",
+            ad: "Aylık",
+            teklif: { tur: "deneme", gun: 7 },
+          },
+          yearly: {
+            tutar: 59.99,
+            paraBirimi: "EUR",
+            aralik: "year",
+            ad: "Yıllık",
+          },
+        },
+      },
+    };
+    ziyaret = { durum: 500 };
+    const git = vi
+      .spyOn(window.location, "assign")
+      .mockImplementation(() => {});
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    const kart = (plan: string) =>
+      document.querySelector<HTMLButtonElement>(
+        `[data-adim="paywall"] [role="radio"][data-plan="${plan}"]`,
+      )!;
+    const kosul = () =>
+      document.querySelector('[data-adim="paywall"] p.kosul')?.textContent;
+    // Sıra tanımdaki gibi; varsayılan plan seçili; önerilen yalnız yıllıkta.
+    expect(
+      [
+        ...document.querySelectorAll('[data-adim="paywall"] [role="radio"]'),
+      ].map((b) => b.getAttribute("data-plan")),
+    ).toEqual(["yearly", "monthly"]);
+    expect(kart("monthly").getAttribute("aria-checked")).toBe("true");
+    expect(kart("yearly").textContent).toContain("Önerilen");
+    expect(kart("monthly").textContent).not.toContain("Önerilen");
+    expect(kart("yearly").textContent).toContain("Yıllık");
+    // Elle (fiyat.ts biçimi): aylık deneme koşulu.
+    expect(kosul()).toBe(
+      "Bugün ödeme yok. 7\u00a0gün sonra ilk ödeme alınır; abonelik her\u00a0ay €9,99 ile yenilenir.",
+    );
+    fireEvent.click(kart("yearly"));
+    expect(kart("yearly").getAttribute("aria-checked")).toBe("true");
+    expect(kart("monthly").getAttribute("aria-checked")).toBe("false");
+    expect(kosul()).toBe(
+      "Bugün €59,99 ödenir; abonelik her\u00a0yıl €59,99 ile yenilenir.",
+    );
+    fireEvent.click(screen.getByText("Abone ol"));
+    await waitFor(() => expect(git).toHaveBeenCalled());
+    expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
+      app: "keepchat",
+      plan: "yearly",
+    });
+  });
+});
+
 describe("M1c — ülke testi ödemeye de gider", () => {
   it("?ulke=TR ödeme gövdesinde: paywall'daki para birimiyle aynı seçim", async () => {
     ziyaret = { durum: 500 };

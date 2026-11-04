@@ -42,7 +42,9 @@ final class Tanim
         .'Koşullu değer (isteğe bağlı, ekranda ve soru/maddeler dışı blokta): degerler: [{"kosullar": [...], "alan": "baslik", "deger": "<yeni metin>"}] — alan öğede VAR olmalı (ekran: baslik, dugme, gorsel, gorselMetni; blok: kendi metin alanları, gorsel, simge); alan başına ilk tutan kural, tutmazsa alanın kendi değeri; cevap yalnız önceki ekranlardan. Aynı ekranı kitleye göre kişiselleştirmek için (ör. kiminle cevabına göre başlık). '
         .'Karşılama, neden bu ürün, nasıl çalışır, güvence gibi ekranları farklı blok dizilişleriyle kur; tüm huniyi aynı dizilişle doldurma. '
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
-        .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz.';
+        .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz. '
+        // M2a: plan seçici; ödeme koşulunu ekran kendisi yazar.
+        .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar.';
 
     /** T3a: koşul işlemleri — listede (seçmeli cevap) ve tek değerde. */
     private const LISTE_ISLEMLERI = ['icerir', 'icermez', 'var', 'yok'];
@@ -245,6 +247,12 @@ final class Tanim
                 $beklenen[] = 'faydalar';
                 self::faydalar($adim['faydalar'], $yer, $h);
             }
+            // M2a: plan seçici — 2–3 plan (varsayılan `plan` içinde), isteğe bağlı önerilen.
+            foreach ('paywall' === $tur ? ['planlar', 'onerilen'] : [] as $alan) {
+                if (\array_key_exists($alan, $adim)) {
+                    $beklenen[] = $alan;
+                }
+            }
             foreach ('paywall' === $tur ? ['sartlar', 'gizlilik', 'iptal'] : [] as $alan) {
                 if (\array_key_exists($alan, $adim)) {
                     $beklenen[] = $alan;
@@ -306,8 +314,8 @@ final class Tanim
             if ('ekran' === $tur) {
                 self::bloklar($adim['bloklar'], $sira, $i, $yer, $h, 'tamEkran' === ($adim['duzen'] ?? null));
             }
-            if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
-                $h[] = "{$yer}: plan bu uygulamada yok";
+            if ('paywall' === $tur) {
+                self::paywallPlanlari($adim, $planlar, $yer, $h);
             }
             if (('paywall' === $tur) !== ($i === \count($adimlar) - 1)) {
                 $h[] = "{$yer}: paywall tam bir kez ve EN SONDA olmalı";
@@ -624,6 +632,37 @@ final class Tanim
                 'simge' => self::emoji($deger) ? null : $h[] = "{$ky} simge: tek emoji olmalı",
                 default => self::metin($deger, (string) $alanlar[$alan], "{$ky} {$alan}", $h),
             };
+        }
+    }
+
+    /**
+     * M2a: paywall'ın planları. Tek plan (`plan`) ya da plan seçici
+     * (`planlar` 2–3, benzersiz, `plan` = varsayılan seçili onların içinde);
+     * `onerilen` yalnız seçicide, planlardan biri. Hata bu uygulamanın
+     * planlarını sayar — yönetici ve AI anahtarı tahmin etmesin.
+     *
+     * @param array<mixed> $adim
+     * @param list<string> $planlar
+     * @param list<string> $h
+     */
+    private static function paywallPlanlari(array $adim, array $planlar, string $yer, array &$h): void
+    {
+        $varolan = [] === $planlar ? 'hiç plan yok — panel → Planlar' : 'planlar: '.implode(', ', $planlar);
+        $secici = $adim['planlar'] ?? null;
+        foreach (\is_array($secici) ? $secici : [$adim['plan']] as $p) {
+            if (!\is_string($p) || !\in_array($p, $planlar, true)) {
+                $h[] = "{$yer}: plan '".(\is_string($p) ? $p : '?')."' bu uygulamada yok ({$varolan})";
+            }
+        }
+        if (\array_key_exists('planlar', $adim)) {
+            if (!\is_array($secici) || !array_is_list($secici) || \count($secici) < 2 || \count($secici) > 3 || \count(array_unique(array_filter($secici, \is_string(...)))) !== \count($secici)) {
+                $h[] = "{$yer}: planlar 2–3 farklı plan olmalı (tek plan için yalnız plan)";
+            } elseif (!\in_array($adim['plan'], $secici, true)) {
+                $h[] = "{$yer}: plan (varsayılan seçili) planlar içinde olmalı";
+            }
+        }
+        if (\array_key_exists('onerilen', $adim) && (!\is_array($secici) || !\in_array($adim['onerilen'], $secici, true))) {
+            $h[] = "{$yer}: onerilen planlar içinden biri olmalı (yalnız plan seçicide)";
         }
     }
 

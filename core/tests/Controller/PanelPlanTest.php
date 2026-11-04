@@ -101,7 +101,7 @@ final class PanelPlanTest extends WebTestCase
         /** @var array{planlar: list<array{anahtar: string, fiyat: array<string, mixed>|null}>} $liste */
         $liste = $this->json();
         self::assertSame(['monthly', 'yearly'], array_column($liste['planlar'], 'anahtar'));
-        self::assertSame(['tutar' => 20, 'paraBirimi' => 'USD', 'aralik' => 'month'], $liste['planlar'][1]['fiyat']);
+        self::assertSame(['tutar' => 20, 'paraBirimi' => 'USD', 'aralik' => 'month', 'ad' => 'Yıllık'], $liste['planlar'][1]['fiyat']);
     }
 
     /** Var olan anahtar: Stripe'a hiç gidilmez (sahipsiz ürün açılmaz). */

@@ -355,6 +355,10 @@ export function Paywall({
     kapali = false,
     hata = "",
     konumAtfi = false,
+    planlar = [],
+    secili,
+    onPlanSec,
+    kosul,
 }: {
     baslik: string;
     metin: string;
@@ -366,6 +370,20 @@ export function Paywall({
      * lisansı (CC BY 4.0) sonucu kullanan sayfada bağlantılı atıf ister.
      */
     konumAtfi?: boolean;
+    /**
+     * M2a: plan seçici (2–3 plan). Doluysa tek fiyat kartı yerine radyo
+     * grubu; fiyat biçimlenmiş metin, okunamadıysa yok (kart yine seçilir).
+     */
+    planlar?: {
+        anahtar: string;
+        ad: string;
+        fiyat?: string | undefined;
+        onerilen?: boolean;
+    }[];
+    secili?: string | undefined;
+    onPlanSec?: ((anahtar: string) => void) | undefined;
+    /** M2a: seçili planın ödeme koşulu (bugün ne, sonra ne, yenileme) — düğmenin altında. */
+    kosul?: string | undefined;
     faydalar?: string[] | undefined;
     sartlar?: string | undefined;
     gizlilik?: string | undefined;
@@ -387,7 +405,36 @@ export function Paywall({
                     ))}
                 </ul>
             ) : null}
-            {fiyat ? (
+            {planlar.length > 1 ? (
+                <div
+                    className="plan-secici"
+                    role="radiogroup"
+                    aria-label="Plan"
+                >
+                    {planlar.map((p) => (
+                        <button
+                            key={p.anahtar}
+                            type="button"
+                            role="radio"
+                            aria-checked={p.anahtar === secili}
+                            className="plan-karti"
+                            data-plan={p.anahtar}
+                            onClick={() => onPlanSec?.(p.anahtar)}
+                        >
+                            <span className="isaret" aria-hidden="true" />
+                            <span className="plan-bilgi">
+                                <span className="plan-adi">{p.ad}</span>
+                                {p.fiyat ? (
+                                    <span className="fiyat">{p.fiyat}</span>
+                                ) : null}
+                            </span>
+                            {p.onerilen ? (
+                                <span className="onerilen">Önerilen</span>
+                            ) : null}
+                        </button>
+                    ))}
+                </div>
+            ) : fiyat ? (
                 // Tek plan: kart seçili görünür (ödeme adımındaki plan bu).
                 <div className="plan-karti">
                     <span className="isaret" aria-hidden="true" />
@@ -404,6 +451,7 @@ export function Paywall({
                 >
                     {dugme}
                 </button>
+                {kosul ? <p className="kosul">{kosul}</p> : null}
             </Eylem>
             {baglantilar.length || konumAtfi ? (
                 <p className="yasal">
@@ -816,6 +864,16 @@ export function Adim({
         fiyat?: string | undefined;
         /** M1c: fiyat ülkeye göre seçildi (DB-IP atfı). */
         konumAtfi?: boolean;
+        /** M2a: plan seçici, seçili plan ve onun ödeme koşulu. */
+        planlar?: {
+            anahtar: string;
+            ad: string;
+            fiyat?: string | undefined;
+            onerilen?: boolean;
+        }[];
+        secili?: string | undefined;
+        onPlanSec?: ((anahtar: string) => void) | undefined;
+        kosul?: string | undefined;
     };
 }): ReactNode {
     switch (adim.tur) {

@@ -42,6 +42,10 @@ export type PaywallProps = {
     metin: string;
     dugme: string;
     plan: Plan;
+    /** M2a: plan seçici (sıra korunur); boş satır yazılmaz, 2'den azsa seçici yok. */
+    planlar: { plan: string }[];
+    /** M2a: "" = önerilen yok. */
+    onerilen: string;
     ilerlemeGoster: boolean;
     /** Ç61 (3): boş metin / boş adres tanıma yazılmaz. */
     faydalar: { metin: string }[];
@@ -648,6 +652,10 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                             metin: adim.metin,
                             dugme: adim.dugme,
                             plan: adim.plan,
+                            planlar: (adim.planlar ?? []).map((plan) => ({
+                                plan,
+                            })),
+                            onerilen: adim.onerilen ?? "",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                             faydalar: (adim.faydalar ?? []).map((metin) => ({
                                 metin,
@@ -660,6 +668,13 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
             }
         }),
     };
+}
+
+/** M2a: 2+ dolu plan varsa seçici; önerilen yalnız seçiciyle (çekirdek ikisini de doğrular). */
+function planSecici(p: PaywallProps) {
+    const planlar = (p.planlar ?? []).map((x) => x.plan).filter(Boolean);
+    if (planlar.length < 2) return {};
+    return { planlar, ...(p.onerilen ? { onerilen: p.onerilen } : {}) };
 }
 
 /** Ç61 (3): yalnız dolu faydalar ve adresler — boş liste/adres çekirdekte geçersiz. */
@@ -733,6 +748,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     metin: p.metin,
                     dugme: p.dugme,
                     plan: p.plan,
+                    ...planSecici(p),
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),

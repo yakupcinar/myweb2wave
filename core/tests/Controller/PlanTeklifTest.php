@@ -238,7 +238,7 @@ final class PlanTeklifTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/planlar', $this->client->getResponse());
         /** @var array{planlar: list<array{fiyat: array<string, mixed>|null}>} $liste */
         $liste = $this->json();
-        self::assertSame(['tutar' => 20, 'paraBirimi' => 'USD', 'aralik' => 'month', 'teklif' => ['tur' => 'giris', 'gun' => 3, 'tutar' => 0.99]], $liste['planlar'][0]['fiyat']);
+        self::assertSame(['tutar' => 20, 'paraBirimi' => 'USD', 'aralik' => 'month', 'teklif' => ['tur' => 'giris', 'gun' => 3, 'tutar' => 0.99], 'ad' => 'Aylık'], $liste['planlar'][0]['fiyat']);
 
         foreach (['yinelenen' => ['currency' => 'usd', 'recurring' => ['interval' => 'month', 'interval_count' => 1]], 'para birimi' => ['currency' => 'eur', 'recurring' => null]] as $neden => $alanlar) {
             $onbellek = static::getContainer()->get('fiyat.onbellegi');
