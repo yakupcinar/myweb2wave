@@ -293,6 +293,9 @@ function Oynatici({
     let hata: string;
     try {
       const govde: Govde<"/checkout/sessions"> = { app, plan };
+      // M1c: paywall'daki para birimini seçen ülke testi ödemeye de gider.
+      const ulke = new URLSearchParams(window.location.search).get("ulke");
+      if (ulke && /^[A-Z]{2}$/.test(ulke)) govde.ulke = ulke;
       const ziyaret = await ziyaretSozu;
       if (ziyaret) govde.ziyaret = ziyaret;
       const { data, error, response } = await cekirdek.POST(
@@ -503,6 +506,10 @@ function Oynatici({
                       adim.tur === "paywall"
                         ? fiyatMetni(yayin.fiyatlar?.[adim.plan])
                         : undefined,
+                    // M1c: fiyat varsa para birimi IP'den bulunan ülkeyle seçildi (DB-IP lisansı).
+                    konumAtfi:
+                      adim.tur === "paywall" &&
+                      Boolean(yayin.fiyatlar?.[adim.plan]),
                     onDugme: () => {
                       // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
                       if (onizleme) return;

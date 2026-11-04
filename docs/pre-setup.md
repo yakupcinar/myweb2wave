@@ -192,6 +192,10 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   ⚠️ A13'teki "Adaptive Pricing AÇIK kalır" kararı **değişti → kapanır**
   (otomatik çeviri €18,47 gibi tutar verir ve paywall kesin yerel fiyatı
   gösteremez). Reddedilen: Stripe otomatik çeviri; tek para birimi.
+  **Ülke kaynağı (2026-11-04, kullanıcı; rakip araştırması):** IP'den, DB-IP
+  IP-to-Country Lite (CC BY 4.0 — paywall'da atıf); test `?ulke=DE`; desteklenmeyen
+  ülke → planın ana para birimi. Reddedilen: MaxMind GeoLite2 (hesap+anahtar),
+  tarayıcı dili. Kayıt `m1c-cok-para-birimi.md`.
 - **Ödeme paywall sayfasında, gömülü** (Stripe gömülü form + Apple/Google
   Pay; M2 alt bloğu). Apple Pay alan adı doğrulaması sunucuyla. Reddedilen:
   Stripe'ın barındırılan sayfasına yönlendirme (bugünkü yol, M2'ye dek kalır).

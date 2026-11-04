@@ -163,6 +163,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§46** | **`display` veren yazar kuralı `[hidden]`'ı ezer** — gizli öğe görünür, özniteliğe bakan test yeşil; yanına `[hidden] { display: none }`, ölçüm çizimde. |
 | **§47** | **Testin sahtesi denetlenen kodla aynı `memory_limit`'i paylaşır** — yerelde yeşil, CI'da bellekten ölür; sahte veriyi en küçük ölçen boyda tut, `Memory:` satırını oku. |
 | **§48** | **Satır içi YAML'da tırnaksız virgül JS tip üreticisinde metni sessizce keser** (EXIT=0), PHP ayrıştırıcısı reddeder — virgüllü metni çift tırnağa al. |
+| **§49** | **Tek tırnaklı satır içi betikte (`python3 -c '…'`) yorumdaki kesme işareti tırnağı kapatır** — tek sayıda: betik hiç çalışmaz; çift sayıda: `bash -n` geçer, kod sessizce bölünür; gömülü bloğu kendi diliyle derle. |
 
 ---
 

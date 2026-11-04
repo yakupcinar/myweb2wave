@@ -44,7 +44,7 @@ COPY templates templates/
 RUN composer dump-autoload --no-dev --classmap-authoritative \
     && php bin/console cache:warmup \
     && useradd --system --no-create-home cekirdek \
-    && mkdir -p /app/var/medya \
+    && mkdir -p /app/var/medya /app/var/ulke \
     && chown -R cekirdek /app/var /data/caddy /config/caddy
 
 USER cekirdek

@@ -46,7 +46,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Kuralların seçtiği huninin yayınlanmış en son tanımı (A7, A8); 60 sn önbellek
+         * Kuralların seçtiği huninin yayınlanmış en son tanımı (A7, A8); 60 sn yalnız tarayıcı önbelleği (M1c fiyat ülkeye göre)
          * @description Yalnız seçim parametrelerini gönder (fbclid gibi tıklama kimlikleri önbelleği bozar).
          */
         get: operations["getPublishedFunnel"];
@@ -536,6 +536,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                anahtar: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** M1c — planın ek para birimleri (elle sabit tutar); yeni Stripe fiyatı açılır, mevcut aboneler eskisinde kalır. Boş eşleme kaldırır */
+        put: operations["panelApiPlanParaBirimleri"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/planlar/{anahtar}/teklif": {
         parameters: {
             query?: never;
@@ -712,6 +732,10 @@ export interface components {
             /** @enum {string} */
             aralik: "day" | "week" | "month" | "year";
             teklif?: components["schemas"]["PlanTeklifi"];
+            /** @description M1c, yalnız panel: ana para birimi dışındaki sabit tutarlar (para birimi → ana birimde tutar) */
+            ekler?: {
+                [key: string]: number;
+            };
         };
         /** @description M1b: planın giriş teklifi (en çok bir). deneme = kartlı ücretsiz gün; giris = gün + o gün ödenen tek seferlik ücret (planın para biriminde, Stripe'tan); indirim = ilk dönem yüzde. Gösterilemiyorsa planın fiyatı da yanıtta yoktur. */
         PlanTeklifi: {
@@ -1078,6 +1102,8 @@ export interface operations {
                      */
                     app: "keepchat";
                     plan: components["schemas"]["PlanAnahtari"];
+                    /** @description M1c: huni adresindeki ülke testi (paywall'daki para birimiyle aynı seçim) */
+                    ulke?: string;
                     /**
                      * Format: uuid
                      * @description /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
@@ -1202,6 +1228,8 @@ export interface operations {
                 utm_content?: string;
                 /** @description Doğrudan test adresi */
                 huni?: components["schemas"]["HuniKimligi"];
+                /** @description M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi */
+                ulke?: string;
             };
             header?: never;
             path: {
@@ -1238,6 +1266,8 @@ export interface operations {
                 anahtar: string;
                 /** @description 1 ise taslak yerine yayındaki son sürüm (Ç70: panelden ölçümsüz bakış) */
                 yayin?: "1";
+                /** @description M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi */
+                ulke?: string;
             };
             header?: never;
             path: {
@@ -2667,6 +2697,66 @@ export interface operations {
                 };
             };
             /** @description Geçersiz tutar ya da Stripe yanıt vermedi */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiPlanParaBirimleri: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                anahtar: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    tutarlar: {
+                        [key: string]: number;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Güncel liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelPlanlari"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da plan */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz tutar */
             422: {
                 headers: {
                     [name: string]: unknown;

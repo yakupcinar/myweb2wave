@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Billing\Fiyatlar;
+use App\Billing\ParaBirimi;
+use App\Billing\UlkeBulucu;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +26,7 @@ final readonly class HuniController
     public function __construct(
         private Huniler $huniler,
         private Fiyatlar $fiyatlar,
+        private UlkeBulucu $ulkeler,
     ) {
     }
 
@@ -46,17 +49,20 @@ final readonly class HuniController
         if (null === $huni || null === $yayin) {
             return new JsonResponse(['error' => 'unknown_app'], 404);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin + $this->fiyatAlani($app));
-        $yanit->setPublic();
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + $this->fiyatAlani($app, $request));
+        // M1c: fiyat ziyaretçinin ülkesine (IP) göre — ortak önbellek (CDN) bir
+        // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
+        $yanit->setPrivate();
         $yanit->setMaxAge(self::ONBELLEK_SN);
 
         return $yanit;
     }
 
-    /** @return array{fiyatlar?: non-empty-array<string, array{tutar: int|float, paraBirimi: string, aralik: string}>} */
-    private function fiyatAlani(string $app): array
+    /** @return array{fiyatlar?: non-empty-array<string, array<string, mixed>>} */
+    private function fiyatAlani(string $app, Request $request): array
     {
-        $fiyatlar = $this->fiyatlar->uygulama($app);
+        $ulke = $this->ulkeler->ulke($request->getClientIp(), $request->query->get('ulke'));
+        $fiyatlar = $this->fiyatlar->uygulama($app, ParaBirimi::ulkeninki($ulke));
 
         return [] === $fiyatlar ? [] : ['fiyatlar' => $fiyatlar];
     }
@@ -76,7 +82,7 @@ final readonly class HuniController
         if (null === $sonuc) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app));
+        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

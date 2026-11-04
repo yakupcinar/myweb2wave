@@ -55,6 +55,8 @@ services:
       # E2.3: yüklenen görseller. Birim ilk açılışta imajdaki dizinin
       # sahipliğini (cekirdek) alır.
       - medya-data:/app/var/medya
+      # M1c: DB-IP ülke verisi (dagit.sh + aylık cron indirir); yoksa herkes ana para birimini görür.
+      - ulke-data:/app/var/ulke
     depends_on:
       db:
         condition: service_healthy
@@ -87,5 +89,6 @@ services:
 volumes:
   db-data:
   medya-data:
+  ulke-data:
   caddy-data:
   caddy-config:

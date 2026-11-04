@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Atif\Ziyaretler;
+use App\Billing\Fiyatlar;
+use App\Billing\ParaBirimi;
 use App\Billing\Planlar;
+use App\Billing\UlkeBulucu;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -27,6 +30,8 @@ final readonly class CheckoutController
         private LoggerInterface $logger,
         private Ziyaretler $ziyaretler,
         private Planlar $planlar,
+        private Fiyatlar $fiyatlar,
+        private UlkeBulucu $ulkeler,
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
@@ -64,6 +69,13 @@ final readonly class CheckoutController
             default => ['subscription_data' => [], 'line_items' => []],
         };
 
+        // M1c: para birimi paywall'daki seçimin aynısı (ülke → planın ek para
+        // birimi, yoksa ana). Zorlanır: Stripe kendi konum tahminine göre başka
+        // para birimi açmasın; fiyat okunamadıysa Stripe'ın ana para birimi.
+        // Ülke desteklenen bir para birimine denk gelmiyorsa okuma yok: Stripe ana birimi açar.
+        $ulkeninki = ParaBirimi::ulkeninki($this->ulkeler->ulke($request->getClientIp(), $govde['ulke'] ?? null));
+        $paraBirimi = null === $ulkeninki ? null : ($this->fiyatlar->uygulama($app, $ulkeninki)[$plan]['paraBirimi'] ?? null);
+
         // E1: huninin e-posta adımında yazılan adres ödeme sayfasında hazır.
         $ziyaret = $govde['ziyaret'] ?? null;
         $eposta = \is_string($ziyaret) ? $this->ziyaretler->eposta($ziyaret, $app) : null;
@@ -71,6 +83,9 @@ final readonly class CheckoutController
         try {
             $session = $this->stripe->checkout->sessions->create([
                 'mode' => 'subscription',
+                ...(null === $paraBirimi ? [] : ['currency' => strtolower($paraBirimi)]),
+                // A14: Adaptive Pricing kapalı — otomatik çeviri (€18,47 gibi, %4 ek) paywall'daki tutarla ayrışırdı (Ç19).
+                'adaptive_pricing' => ['enabled' => false],
                 ...(null === $eposta ? [] : ['customer_email' => $eposta]),
                 'line_items' => [['price' => $prices[$plan], 'quantity' => 1], ...($teklifAlanlari['line_items'] ?? [])],
                 ...(isset($teklifAlanlari['discounts']) ? ['discounts' => $teklifAlanlari['discounts']] : []),

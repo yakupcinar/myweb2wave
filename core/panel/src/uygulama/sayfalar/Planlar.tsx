@@ -8,6 +8,8 @@
 // M1b: planın en çok bir teklifi (kartlı deneme, ücretli giriş, ilk dönem
 // indirimi); giriş ücreti de Stripe'tan okunur. Teklifi gösterilemeyen planın
 // fiyatı da gelmez ("Stripe'tan okunamadı").
+// M1c: ek para birimleri elle sabit tutar; ziyaretçi ülkesinin para birimini
+// görür (IP), yoksa ana para birimini. Değişiklik yeni Stripe fiyatı açar.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
@@ -51,6 +53,19 @@ function teklifYazisi(f: PlanFiyati | null): string {
             currency: f.paraBirimi,
         }).format(t.tutar)}`;
     return `İlk ${ARALIK[f.aralik]} %${t.yuzde} indirim`;
+}
+
+function eklerYazisi(f: PlanFiyati | null): string {
+    const ekler = Object.entries(f?.ekler ?? {});
+    if (!ekler.length) return "—";
+    return ekler
+        .map(([para, tutar]) =>
+            new Intl.NumberFormat("tr-TR", {
+                style: "currency",
+                currency: para,
+            }).format(tutar),
+        )
+        .join(" · ");
 }
 
 export function Planlar(): ReactNode {
@@ -106,6 +121,9 @@ function PlanListesi({ app }: { app: string }): ReactNode {
         tutar: "",
         yuzde: "50",
     });
+    // M1c: seçili planın ek para birimi tutarları (boş alan = o para birimi yok).
+    const [ekPlan, setEkPlan] = useState("");
+    const [ekTutarlar, setEkTutarlar] = useState<Record<string, string>>({});
     const [degisen, setDegisen] = useState<{
         anahtar: string;
         tutar: string;
@@ -184,6 +202,30 @@ function PlanListesi({ app }: { app: string }): ReactNode {
         onSuccess: yaz,
     });
 
+    const ekKaydet = useMutation({
+        mutationFn: async () => {
+            const tutarlar = Object.fromEntries(
+                Object.entries(ekTutarlar)
+                    .filter(([, t]) => t.trim() !== "")
+                    .map(([para, t]) => [para, Number(t)]),
+            );
+            const { data, error } = await api.PUT(
+                "/panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri",
+                {
+                    params: {
+                        path: { app, anahtar: ekPlan },
+                        header: { "X-CSRF-Token": "" },
+                    },
+                    body: { tutarlar },
+                },
+            );
+            if (!data)
+                throw new Error((error?.hatalar ?? ["Değişmedi."]).join(" "));
+            return data;
+        },
+        onSuccess: yaz,
+    });
+
     if (sorgu.isError)
         return (
             <p role="alert" className="text-tehlike">
@@ -212,6 +254,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                 "Ad",
                                 "Fiyat",
                                 "Teklif",
+                                "Ek para birimleri",
                                 "Stripe fiyatı",
                                 "",
                             ].map((b) => (
@@ -228,6 +271,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                 <Td>{p.ad}</Td>
                                 <Td>{fiyatYazisi(p.fiyat)}</Td>
                                 <Td>{teklifYazisi(p.fiyat)}</Td>
+                                <Td>{eklerYazisi(p.fiyat)}</Td>
                                 <Td className="font-mono text-[12.5px]">
                                     {p.stripeFiyat}
                                 </Td>
@@ -289,7 +333,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         ))}
                         {sorgu.data.planlar.length ? null : (
                             <tr>
-                                <Td colSpan={6} className="text-soluk">
+                                <Td colSpan={7} className="text-soluk">
                                     Henüz plan yok — paywall bir plan seçmeden
                                     yayınlanamaz.
                                 </Td>
@@ -303,6 +347,91 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                     </p>
                 ) : null}
             </Kart>
+            {sorgu.data.planlar.length ? (
+                <Kart>
+                    <KartBasi
+                        baslik="Para birimleri"
+                        aciklama="Ziyaretçi ülkesinin para birimini (IP'den) görür; o para birimi yoksa ana para birimini. Boş bırakılan para birimi satılmaz. Kaydetmek yeni Stripe fiyatı açar; mevcut aboneler eskisinde kalır."
+                    />
+                    <form
+                        aria-label="Para birimleri"
+                        className="flex flex-wrap items-end gap-3 px-4.5 py-4"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            ekKaydet.mutate();
+                        }}
+                    >
+                        <label className="grid gap-1.5">
+                            <span className="font-semibold">Plan</span>
+                            <select
+                                value={ekPlan}
+                                onChange={(e) => {
+                                    const anahtar = e.currentTarget.value;
+                                    const p = sorgu.data.planlar.find(
+                                        (x) => x.anahtar === anahtar,
+                                    );
+                                    setEkPlan(anahtar);
+                                    setEkTutarlar(
+                                        Object.fromEntries(
+                                            Object.entries(
+                                                p?.fiyat?.ekler ?? {},
+                                            ).map(([para, t]) => [
+                                                para,
+                                                String(t),
+                                            ]),
+                                        ),
+                                    );
+                                }}
+                                className={girdiSinifi}
+                            >
+                                <option value="">seç</option>
+                                {sorgu.data.planlar.map((p) => (
+                                    <option key={p.anahtar} value={p.anahtar}>
+                                        {p.ad}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        {PARA_BIRIMLERI.filter(
+                            (para) =>
+                                ekPlan &&
+                                para !==
+                                    sorgu.data.planlar.find(
+                                        (p) => p.anahtar === ekPlan,
+                                    )?.fiyat?.paraBirimi,
+                        ).map((para) => (
+                            <label key={para} className="grid gap-1.5">
+                                <span className="font-semibold">{para}</span>
+                                <input
+                                    type="number"
+                                    min="0.01"
+                                    step="any"
+                                    value={ekTutarlar[para] ?? ""}
+                                    onChange={(e) =>
+                                        setEkTutarlar({
+                                            ...ekTutarlar,
+                                            [para]: e.currentTarget.value,
+                                        })
+                                    }
+                                    className={`${girdiSinifi} w-28`}
+                                />
+                            </label>
+                        ))}
+                        <Dugme
+                            tur="ana"
+                            type="submit"
+                            disabled={!ekPlan || ekKaydet.isPending}
+                        >
+                            Para birimlerini kaydet
+                        </Dugme>
+                        {ekKaydet.isError ? (
+                            <span role="alert" className="text-tehlike">
+                                {ekKaydet.error.message}
+                            </span>
+                        ) : null}
+                    </form>
+                </Kart>
+            ) : null}
             {sorgu.data.planlar.length ? (
                 <Kart>
                     <KartBasi

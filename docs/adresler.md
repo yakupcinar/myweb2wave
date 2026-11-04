@@ -44,6 +44,7 @@ Sol menü sırasıyla:
 | http://localhost:4321/keepchat/ | Reklam adresi — hangi huninin açılacağını kurallar seçer, tutmazsa varsayılan |
 | `…/keepchat/?k=fitness` · `?utm_source=` · `?utm_campaign=` · `?utm_content=` | Kurallara giden seçim parametreleri |
 | `…/keepchat/?huni=<ad>` | Belirli bir yayınlanmış huniyi doğrudan aç (ziyaret sayılır) |
+| `…/keepchat/?ulke=TR` | M1c: IP yerine bu ülkenin para birimiyle fiyat ve ödeme (yerelde IP ülke vermez) |
 | `…/keepchat/?huni=<ad>&onizleme=<anahtar>` | Taslak önizlemesi (1 saat, ziyaret sayılmaz, ödeme kapalı) |
 | `…&yayin=1&onizleme=<anahtar>` | Yayındaki sürümün önizlemesi (panelde "Aç") |
 | `…&adim=<kimlik>&ekran=1` | AI ekran görüntüsü için: belirli adımdan, şeritsiz |

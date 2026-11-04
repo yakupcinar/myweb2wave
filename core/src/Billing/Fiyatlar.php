@@ -33,18 +33,49 @@ final readonly class Fiyatlar
      * (giriş ücreti okunamadı) fiyat da YOK — "9,99 € / ay" yazıp ödemede
      * deneme + giriş ücreti açmak yanıltır, hiç yazmamak yanıltmaz.
      *
+     * M1c: `$paraBirimi` (ziyaretçinin ülkesinden) planda ek para birimi
+     * olarak varsa fiyat onunla; yoksa planın ana para birimi. Ödeme oturumu
+     * aynı seçimi zorlar — paywall ile ödeme sayfası aynı tutarı gösterir.
+     *
      * @return array<string, array{tutar: int|float, paraBirimi: string, aralik: string, teklif?: array<string, int|float|string>}> plan → fiyat
      */
-    public function uygulama(string $app): array
+    public function uygulama(string $app, ?string $paraBirimi = null): array
+    {
+        $fiyatlar = [];
+        foreach ($this->tum($app) as $plan => $f) {
+            $ekler = $f['ekler'] ?? [];
+            unset($f['ekler']);
+            // Giriş ücreti ana para biriminde (çok para birimiyle birlikte açılamaz — Planlar).
+            if (null !== $paraBirimi && isset($ekler[$paraBirimi]) && 'giris' !== ($f['teklif']['tur'] ?? null)) {
+                $f = ['tutar' => $ekler[$paraBirimi], 'paraBirimi' => $paraBirimi] + $f;
+            }
+            $fiyatlar[$plan] = $f;
+        }
+
+        return $fiyatlar;
+    }
+
+    /**
+     * Panel: ana fiyat + ek para birimleri (`ekler`, para birimi → tutar).
+     *
+     * @return array<string, array{tutar: int|float, paraBirimi: string, aralik: string, ekler?: array<string, int|float>, teklif?: array<string, int|float|string>}>
+     */
+    public function tum(string $app): array
     {
         $fiyatlar = [];
         $teklifler = $this->planlar->teklifler($app);
         foreach ($this->planlar->fiyatKimlikleri($app) as $plan => $fiyatKimligi) {
             try {
-                $fiyat = $this->fiyatOnbellegi->get('fiyat_'.hash('sha256', $fiyatKimligi), function (ItemInterface $oge) use ($fiyatKimligi): ?array {
+                // M1c: önbellek anahtarı 'fiyat2_' — eski biçim (eksiz) önbellekte kalmasın.
+                $fiyat = $this->fiyatOnbellegi->get('fiyat2_'.hash('sha256', $fiyatKimligi), function (ItemInterface $oge) use ($fiyatKimligi): ?array {
                     $oge->expiresAfter(self::ONBELLEK_SN);
+                    $p = $this->stripe->prices->retrieve($fiyatKimligi, ['expand' => ['currency_options']])->toArray();
+                    $f = self::oku($p);
 
-                    return self::oku($this->stripe->prices->retrieve($fiyatKimligi)->toArray());
+                    // Ek yoksa alan yok: boş PHP dizisi JSON'da liste olur, sözleşme nesne ister.
+                    $ekler = self::ekler($p);
+
+                    return null === $f ? null : $f + ([] === $ekler ? [] : ['ekler' => $ekler]);
                 });
             } catch (ExceptionInterface $e) {
                 $this->logger->warning('Stripe fiyatı okunamadı', ['plan' => $plan, 'exception' => $e]);
@@ -124,5 +155,27 @@ final readonly class Fiyatlar
             'paraBirimi' => strtoupper($p['currency']),
             'aralik' => $tekrar['interval'],
         ];
+    }
+
+    /**
+     * M1c: `currency_options`'tan ana para birimi dışındakiler (Stripe ana
+     * birimi de listeler), yalnız desteklenen para birimleri.
+     *
+     * @param array<mixed> $p
+     *
+     * @return array<string, int|float>
+     */
+    private static function ekler(array $p): array
+    {
+        $ekler = [];
+        foreach (\is_array($p['currency_options'] ?? null) ? $p['currency_options'] : [] as $para => $s) {
+            $buyuk = strtoupper((string) $para);
+            if ($para !== ($p['currency'] ?? null) && \in_array($buyuk, Planlar::PARA_BIRIMLERI, true) && \is_array($s) && \is_int($s['unit_amount'] ?? null)) {
+                $ekler[$buyuk] = ParaBirimi::anaBirim($s['unit_amount'], $buyuk);
+            }
+        }
+        ksort($ekler);
+
+        return $ekler;
     }
 }

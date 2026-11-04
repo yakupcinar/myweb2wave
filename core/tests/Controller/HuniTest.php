@@ -104,7 +104,8 @@ final class HuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
         // assertEquals: JSONB nesne anahtarlarını yeniden sıralar; içerik aynı olmalı.
         self::assertEquals(['huni' => 'genel', 'surum' => 2, 'tanim' => self::tanim('İki')], $this->yanit(fiyatsiz: true));
-        self::assertResponseHeaderSame('Cache-Control', 'max-age=60, public');
+        // M1c: fiyat ülkeye (IP) göre — yalnız ziyaretçinin tarayıcısı önbelleğe alır, CDN değil.
+        self::assertResponseHeaderSame('Cache-Control', 'max-age=60, private');
         self::assertSame(
             ['Bir', 'İki'],
             $this->db->fetchFirstColumn("SELECT tanim->>'sayfaBasligi' FROM huni_surumleri WHERE app = 'keepchat' ORDER BY surum"),

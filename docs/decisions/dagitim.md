@@ -74,3 +74,4 @@ için ilk koşuda görünmedi; yer tutucu ile düzeltildi, `env -i` ile ölçül
 öncesi gerekli, `null://` ön kontrolde reddediliyor) · sunucuda ilk koşu
 (`sunucu-hazirla.sh`, gerçek alan adı, Let's Encrypt, Stripe webhook) · M1a: ilk koşuda
 `bin/console app:plan-ice-aktar keepchat monthly <price_…>` (ortam değişkeni kaldırıldı, `m1a-fiyat-katalogu.md`).
+- **2026-11-04 (M1c):** `dagit.sh` 2026-10-20'den (`028f150`) beri sözdizimi hatalıydı — ön kontroldeki tek tırnaklı Python'da yorumdaki kesme işareti (tuzak §49); düzeltildi, `bash -n` bash 3.2 + 5.2'de 0. Dağıtıma ülke verisi eklendi: `ulke-data` birimi, `dagit.sh`'te `app:ulke-verisi` (düşerse uyarı, dağıtım durmaz), ayın 3'ünde cron. İlk sunucu koşusunda ikisi de ölçülecek (Ç109).

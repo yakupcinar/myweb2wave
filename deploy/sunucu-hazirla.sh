@@ -57,6 +57,9 @@ echo "*/5 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-
 echo "*/5 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:reklam-donusumleri:gonder >> /var/log/myweb2wave-reklam-donusumleri.log 2>&1" > /etc/cron.d/myweb2wave-reklam-donusumleri
 # Serbest yanıtların ham metni 90 günden eskiyse silinir; diğer huni analitiği kalır.
 echo "30 3 * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:huni-metin-cevaplari-sil >> /var/log/myweb2wave-metin-cevaplari.log 2>&1" > /etc/cron.d/myweb2wave-metin-cevaplari
+# M1c: DB-IP aylık yayınlar; ayın 3'ünde (geç yayına pay) yenisi.
+echo "0 4 3 * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:ulke-verisi >> /var/log/myweb2wave-ulke.log 2>&1" > /etc/cron.d/myweb2wave-ulke
+touch /var/log/myweb2wave-ulke.log && chown "$KULLANICI" /var/log/myweb2wave-ulke.log
 touch /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log /var/log/myweb2wave-reklam-donusumleri.log /var/log/myweb2wave-metin-cevaplari.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log /var/log/myweb2wave-reklam-donusumleri.log /var/log/myweb2wave-metin-cevaplari.log
 
 echo "HAZIRLIK TAMAM — sonraki: $KULLANICI ile gir, deploy/.env.uretim'i doldur, deploy/dagit.sh"

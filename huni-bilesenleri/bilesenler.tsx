@@ -354,12 +354,18 @@ export function Paywall({
     onDugme,
     kapali = false,
     hata = "",
+    konumAtfi = false,
 }: {
     baslik: string;
     metin: string;
     dugme: string;
     /** Ç19/Ç21: biçimlenmiş Stripe fiyatı ("€9,99 / ay"); yoksa satır yok. */
     fiyat?: string | undefined;
+    /**
+     * M1c: fiyatın para birimi IP'den bulunan ülkeyle seçildi — DB-IP Lite
+     * lisansı (CC BY 4.0) sonucu kullanan sayfada bağlantılı atıf ister.
+     */
+    konumAtfi?: boolean;
     faydalar?: string[] | undefined;
     sartlar?: string | undefined;
     gizlilik?: string | undefined;
@@ -399,7 +405,7 @@ export function Paywall({
                     {dugme}
                 </button>
             </Eylem>
-            {baglantilar.length ? (
+            {baglantilar.length || konumAtfi ? (
                 <p className="yasal">
                     {baglantilar.map(([alan, ad], i) => (
                         <span key={alan}>
@@ -413,6 +419,18 @@ export function Paywall({
                             </a>
                         </span>
                     ))}
+                    {konumAtfi ? (
+                        <span>
+                            {baglantilar.length ? " · " : null}
+                            <a
+                                href="https://db-ip.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                IP Geolocation by DB-IP
+                            </a>
+                        </span>
+                    ) : null}
                 </p>
             ) : null}
         </section>
@@ -796,6 +814,8 @@ export function Adim({
         hata?: string;
         /** Ç19/Ç21: biçimlenmiş Stripe fiyatı. */
         fiyat?: string | undefined;
+        /** M1c: fiyat ülkeye göre seçildi (DB-IP atfı). */
+        konumAtfi?: boolean;
     };
 }): ReactNode {
     switch (adim.tur) {

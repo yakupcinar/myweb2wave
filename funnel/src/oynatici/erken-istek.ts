@@ -27,6 +27,9 @@ export function tanimIstegi(app: string, kok: string): Promise<unknown> {
       if (deger) sorgu.set(ad, deger.slice(0, 200));
     }
   }
+  // M1c: ülke testi (?ulke=DE) fiyatın para birimini seçer — yayında da önizlemede de.
+  const ulke = adres.get("ulke");
+  if (ulke && /^[A-Z]{2}$/.test(ulke)) sorgu.set("ulke", ulke);
   const metin = sorgu.toString();
   return fetch(`${kok}${yol}${metin ? `?${metin}` : ""}`)
     .then((y) => (y.ok ? y.json() : undefined))

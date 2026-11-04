@@ -25,6 +25,7 @@ paths:
                   type: string
                   enum: [keepchat]
                 plan: { $ref: "#/components/schemas/PlanAnahtari" }
+                ulke: { type: string, pattern: "^[A-Z]{2}$", description: "M1c: huni adresindeki ülke testi (paywall'daki para birimiyle aynı seçim)" }
                 ziyaret:
                   description: /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
                   type: string
@@ -105,7 +106,7 @@ paths:
   /huni/{app}:
     get:
       operationId: getPublishedFunnel
-      summary: Kuralların seçtiği huninin yayınlanmış en son tanımı (A7, A8); 60 sn önbellek
+      summary: Kuralların seçtiği huninin yayınlanmış en son tanımı (A7, A8); 60 sn yalnız tarayıcı önbelleği (M1c fiyat ülkeye göre)
       description: Yalnız seçim parametrelerini gönder (fbclid gibi tıklama kimlikleri önbelleği bozar).
       parameters:
         - $ref: "#/components/parameters/App"
@@ -114,6 +115,7 @@ paths:
         - { name: utm_campaign, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: utm_content, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: huni, in: query, required: false, description: Doğrudan test adresi, schema: { $ref: "#/components/schemas/HuniKimligi" } }
+        - { name: ulke, in: query, required: false, description: "M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi", schema: { type: string, pattern: "^[A-Z]{2}$" } }
       responses:
         "200":
           description: Yayındaki sürüm
@@ -134,6 +136,7 @@ paths:
         - { name: huni, in: query, required: true, schema: { $ref: "#/components/schemas/HuniKimligi" } }
         - { name: anahtar, in: query, required: true, schema: { type: string } }
         - { name: yayin, in: query, required: false, description: "1 ise taslak yerine yayındaki son sürüm (Ç70: panelden ölçümsüz bakış)", schema: { type: string, enum: ["1"] } }
+        - { name: ulke, in: query, required: false, description: "M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi", schema: { type: string, pattern: "^[A-Z]{2}$" } }
       responses:
         "200":
           description: Taslak (surum null) ya da yayin=1 ile yayındaki sürüm
@@ -877,6 +880,32 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama ya da plan, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Geçersiz tutar ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: anahtar, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: panelApiPlanParaBirimleri
+      summary: "M1c — planın ek para birimleri (elle sabit tutar); yeni Stripe fiyatı açılır, mevcut aboneler eskisinde kalır. Boş eşleme kaldırır"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [tutarlar]
+              properties:
+                tutarlar:
+                  type: object
+                  additionalProperties: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1000000 }
+      responses:
+        "200": { description: Güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelPlanlari" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da plan, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz tutar, giriş teklifli plan ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/planlar/{anahtar}/teklif:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1136,6 +1165,10 @@ components:
         paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
         aralik: { type: string, enum: [day, week, month, year] }
         teklif: { $ref: "#/components/schemas/PlanTeklifi" }
+        ekler:
+          description: "M1c, yalnız panel: ana para birimi dışındaki sabit tutarlar (para birimi → ana birimde tutar)"
+          type: object
+          additionalProperties: { type: number }
     PlanTeklifi:
       description: >-
         M1b: planın giriş teklifi (en çok bir). deneme = kartlı ücretsiz gün;

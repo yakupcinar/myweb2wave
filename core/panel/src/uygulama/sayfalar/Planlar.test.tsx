@@ -37,6 +37,7 @@ function kur(yanit422?: string) {
                 paraBirimi: "EUR",
                 aralik: "month",
                 teklif: { tur: "giris", gun: 3, tutar: 0.99 },
+                ekler: { TRY: 349.99 },
             },
         },
         { anahtar: "eski", ad: "Eski", stripeFiyat: "price_b", fiyat: null },
@@ -114,7 +115,44 @@ describe("Planlar", () => {
         const tablo = await screen.findByRole("region", { name: "Planlar" });
         // Elle: giriş ücreti planın para biriminde.
         expect(await within(tablo).findByText("3 gün €0,99")).toBeTruthy();
-        expect(within(tablo).getByText("—")).toBeTruthy();
+        // "eski" planın fiyatı okunamadı: teklif ve ek para birimi sütunu tire.
+        expect(within(tablo).getAllByText("—")).toHaveLength(2);
+    });
+
+    it("M1c: ek para birimleri sütunu; form ana birimi sormaz, mevcutla dolar, silineni göndermez", async () => {
+        const istekler = kur();
+        const tablo = await screen.findByRole("region", { name: "Planlar" });
+        // Elle: tr-TR TRY biçimi.
+        expect(await within(tablo).findByText("₺349,99")).toBeTruthy();
+        const form = within(
+            await screen.findByRole("form", { name: "Para birimleri" }),
+        );
+        fireEvent.change(form.getByLabelText("Plan"), {
+            target: { value: "monthly" },
+        });
+        expect(form.queryByLabelText("EUR")).toBeNull();
+        expect((form.getByLabelText("TRY") as HTMLInputElement).value).toBe(
+            "349.99",
+        );
+        fireEvent.change(form.getByLabelText("USD"), {
+            target: { value: "10.49" },
+        });
+        // Silinen alan = o para birimi kaldırılır (gövdede yok, 0 değil).
+        fireEvent.change(form.getByLabelText("TRY"), {
+            target: { value: "" },
+        });
+        fireEvent.click(
+            form.getByRole("button", { name: "Para birimlerini kaydet" }),
+        );
+        await waitFor(() =>
+            expect(istekler.filter((i) => i.yontem === "PUT")).toHaveLength(1),
+        );
+        expect(istekler.find((i) => i.yontem === "PUT")).toEqual({
+            yontem: "PUT",
+            adres: "/panel/api/uygulamalar/keepchat/planlar/monthly/para-birimleri",
+            jeton: "jeton-kabuk",
+            govde: { tutarlar: { USD: 10.49 } },
+        });
     });
 
     it("M1b: teklif formu türün alanlarını SAYI olarak gönderir, fazlasını göndermez", async () => {

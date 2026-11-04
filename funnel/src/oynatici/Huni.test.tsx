@@ -203,6 +203,19 @@ describe("D5 — seçim parametreleri", () => {
       huni: "h".repeat(200),
     });
   });
+  it("M1c: ülke testi (?ulke=TR) tanım isteğine gider; biçimsizse gitmez", async () => {
+    kur("?k=fitness&ulke=TR");
+    await yuklendi();
+    expect(
+      Object.fromEntries(
+        new URLSearchParams(istekler("GET", "/huni/keepchat")[0]?.sorgu),
+      ),
+    ).toEqual({ k: "fitness", ulke: "TR" });
+    cleanup();
+    kur("?ulke=tr");
+    await yuklendi();
+    expect(istekler("GET", "/huni/keepchat").at(-1)?.sorgu ?? "").toBe("");
+  });
   it("sayfadaki erken istek varsa oynatıcı tanımı yeniden istemez", async () => {
     window.huniTanimi = Promise.resolve(yayin());
     kur();
@@ -876,11 +889,18 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     expect(
       document.querySelector('[data-adim="paywall"] p.fiyat')?.textContent,
     ).toBe("€9,99\u00a0/\u00a0ay");
+    // M1c: fiyat ülkeye (IP) göre seçildi → DB-IP atfı (CC BY 4.0), fiyatsızda yok.
+    const atif = () =>
+      document.querySelector<HTMLAnchorElement>(
+        '[data-adim="paywall"] a[href="https://db-ip.com"]',
+      );
+    expect(atif()?.textContent).toBe("IP Geolocation by DB-IP");
     cleanup();
     tanim = { durum: 200, govde: yayin() };
     kur();
     await yuklendi();
     expect(document.querySelector("p.fiyat")).toBeNull();
+    expect(atif()).toBeNull();
   });
   it("aynı sekmede yeniden yükleme yeni ziyaret açmaz; başka sürüm açar (Ç34)", async () => {
     kur();
@@ -994,6 +1014,26 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
       app: "keepchat",
       plan: "monthly",
+    });
+  });
+});
+
+describe("M1c — ülke testi ödemeye de gider", () => {
+  it("?ulke=TR ödeme gövdesinde: paywall'daki para birimiyle aynı seçim", async () => {
+    ziyaret = { durum: 500 };
+    const git = vi
+      .spyOn(window.location, "assign")
+      .mockImplementation(() => {});
+    kur("?ulke=TR");
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+    fireEvent.click(screen.getByText("Abone ol"));
+    await waitFor(() => expect(git).toHaveBeenCalled());
+    expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
+      app: "keepchat",
+      plan: "monthly",
+      ulke: "TR",
     });
   });
 });

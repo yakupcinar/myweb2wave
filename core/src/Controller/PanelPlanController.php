@@ -78,6 +78,27 @@ final class PanelPlanController extends AbstractController
             : self::korumali(new JsonResponse(['hatalar' => $hatalar], 422));
     }
 
+    /** M1c: planın ek para birimleri (para birimi → tutar); boş eşleme kaldırır. */
+    #[Route('/{anahtar}/para-birimleri', name: 'panel_api_plan_para_birimleri', methods: ['PUT'])]
+    public function paraBirimleri(Request $request, string $app, string $anahtar): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::hata("bilinmeyen uygulama: {$app}", 404);
+        }
+        if (!$this->isCsrfTokenValid(PanelUygulamaController::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::hata('Oturum jetonu geçersiz — sayfayı yenileyin.', 403);
+        }
+        $g = json_decode($request->getContent(), true);
+        $hatalar = $this->planlar->paraBirimleri($app, $anahtar, \is_array($g) ? ($g['tutarlar'] ?? null) : null);
+        if (null === $hatalar) {
+            return self::hata("'{$anahtar}' planı yok", 404);
+        }
+
+        return [] === $hatalar
+            ? self::korumali(new JsonResponse(['planlar' => $this->satirlar($app)]))
+            : self::korumali(new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
     /** M1b: planın teklifi; gövdede olmayan alan null. */
     #[Route('/{anahtar}/teklif', name: 'panel_api_plan_teklif', methods: ['PUT'])]
     public function teklif(Request $request, string $app, string $anahtar): JsonResponse
@@ -103,7 +124,7 @@ final class PanelPlanController extends AbstractController
     /** @return list<array{anahtar: string, ad: string, stripeFiyat: string, fiyat: array<string, mixed>|null}> */
     private function satirlar(string $app): array
     {
-        $fiyatlar = $this->fiyatlar->uygulama($app);
+        $fiyatlar = $this->fiyatlar->tum($app);
 
         return array_map(static fn (array $p): array => [...$p, 'fiyat' => $fiyatlar[$p['anahtar']] ?? null], $this->planlar->liste($app));
     }

@@ -47,7 +47,8 @@ final class KayitliStripeIstemcisi implements ClientInterface
             throw $this->firlat;
         }
         foreach ($this->yanitlar as $son => $govde) {
-            if (str_ends_with($absUrl, $son)) {
+            // Sorgu (ör. expand) yol eşleşmesini bozmasın.
+            if (str_ends_with(explode('?', $absUrl)[0], $son)) {
                 return [json_encode($govde, \JSON_THROW_ON_ERROR), 200, []];
             }
         }

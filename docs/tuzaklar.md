@@ -316,3 +316,9 @@ birden çok çekimle ölç.
 **Sebep:** `tutar: { type: number, description: Ana birimde, planın para biriminde }` — akış eşlemesinde virgül ayırıcıdır. JS ayrıştırıcısı (openapi-typescript) metni ilk virgülde bitirip kalanını değersiz bir anahtar sayar; Symfony YAML reddeder.
 **Ölçüm (2026-11-04, `m1b-teklifler.md`):** `npm run uret` EXIT=0, üretilen açıklama `Ana birimde`; aynı dosya PHPUnit'te 10 testte ParseException.
 **Doğrusu:** satır içi eşlemede virgül, iki nokta ya da `#` içeren metni çift tırnağa al; sözleşme değişince yalnız tip üretimine değil PHP sözleşme testlerine de bak (`bin/kontrol` ikisini koşar).
+
+## §49 — Tek tırnaklı satır içi betikte yorumdaki kesme işareti tırnağı kapatır
+**Belirti:** `deploy/dagit.sh` hiç çalışmaz (`syntax error near unexpected token`); hata satırı bir **yorum**. Daha kötüsü: kesme işareti sayısı çiftse `bash -n` geçer, betik çalışır, ama gömülü kodun bir parçası kabuk komutu olur — hata vermeden yanlış kod koşar.
+**Sebep:** `python3 -c '…'` içindeki her şey kabuk için tek tırnaklı dizgedir; içerdeki `#` Python'un yorumudur, kabuğun değil. "`$'ı`" ya da "bash'te" gibi bir kesme işareti dizgeyi bitirir.
+**Ölçüm (2026-11-04, `m1c-cok-para-birimi.md`):** `bash -n` macOS bash 3.2 ve bash 5.2'de 36. satırda hata (2026-10-20'den beri, `028f150`). Düzeltirken iki kesme işareti daha eklendi → `bash -n` 0 döndü; gömülü blok çıkarılıp `compile` edilince eksik olduğu görüldü.
+**Doğrusu:** gömülü kodda kesme işareti kullanma (ya da `<<'EOF'` heredoc'a taşı); ölçüt `bash -n` değil — gömülü bloğu çıkar ve kendi diliyle derle/çalıştır.

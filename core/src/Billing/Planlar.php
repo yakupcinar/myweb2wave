@@ -29,6 +29,8 @@ final readonly class Planlar
     /** M1b: planın giriş teklifi; giris = deneme günleri + tek seferlik ücret (kullanıcı kararı 2026-11-04). */
     public const TEKLIF_TURLERI = ['deneme', 'giris', 'indirim'];
     public const AZAMI_TEKLIF_GUNU = 90;
+    /** M1c: giriş ücreti tek seferlik fiyat; her para biriminde ayrı tutar ister — bu blokta yok (Ç109). */
+    private const GIRIS_TEK_PARA = 'Ücretli giriş teklifli plan tek para birimiyle satar: önce ek para birimlerini kaldır ya da başka teklif seç.';
 
     public function __construct(
         private Connection $db,
@@ -153,7 +155,7 @@ final readonly class Planlar
             return $hatalar;
         }
         try {
-            $eski = $this->stripe->prices->retrieve($satir['stripe_fiyat']);
+            $eski = $this->stripe->prices->retrieve($satir['stripe_fiyat'], ['expand' => ['currency_options']]);
             $aralik = $eski->recurring?->interval;
             if (!\is_string($aralik)) {
                 return ['Mevcut Stripe fiyatı yinelenen değil; değiştirilemez.'];
@@ -163,6 +165,8 @@ final readonly class Planlar
                 'currency' => $eski->currency,
                 'unit_amount' => ParaBirimi::kucukBirim($tutar, $eski->currency),
                 'recurring' => ['interval' => $aralik],
+                // M1c: ana tutar değişince ek para birimleri yeni fiyata aynen geçer.
+                ...self::ekSecenekler($eski->toArray()),
                 'metadata' => ['app' => $app, 'plan' => $anahtar],
             ]);
         } catch (ExceptionInterface $e) {
@@ -207,7 +211,10 @@ final readonly class Planlar
         $stripeTeklif = null;
         try {
             if ('giris' === $tur && (\is_int($tutar) || \is_float($tutar))) {
-                $ana = $this->stripe->prices->retrieve($satir['stripe_fiyat']);
+                $ana = $this->stripe->prices->retrieve($satir['stripe_fiyat'], ['expand' => ['currency_options']]);
+                if ([] !== self::ekSecenekler($ana->toArray())) {
+                    return [self::GIRIS_TEK_PARA];
+                }
                 $stripeTeklif = $this->stripe->prices->create([
                     'product' => $satir['stripe_urun'],
                     'currency' => $ana->currency,
@@ -255,6 +262,80 @@ final readonly class Planlar
     }
 
     /**
+     * M1c: planın ek para birimleri (ana para birimi dışında, elle sabit
+     * tutar; Stripe `currency_options`). Stripe fiyatı güncellenebilir ama
+     * güncellenmez: mevcut aboneler yenilemede yeni tutara geçebilirdi — M1a
+     * kuralı gibi yeni fiyat açılır (ana tutar aynı), eskisi satıştan kalkar.
+     * Boş liste ek para birimlerini kaldırır.
+     *
+     * @return list<string>|null null = böyle plan yok
+     */
+    public function paraBirimleri(string $app, string $anahtar, mixed $tutarlar): ?array
+    {
+        /** @var array{stripe_urun: string, stripe_fiyat: string, teklif_turu: string|null}|false $satir */
+        $satir = $this->db->fetchAssociative('SELECT stripe_urun, stripe_fiyat, teklif_turu FROM planlar WHERE app = :app AND anahtar = :anahtar', ['app' => $app, 'anahtar' => $anahtar]);
+        if (false === $satir) {
+            return null;
+        }
+        if (!\is_array($tutarlar)) {
+            return ['Tutarlar para birimi → tutar eşlemesi olmalı (ör. {"TRY": 349.99}).'];
+        }
+        $hatalar = [];
+        foreach ($tutarlar as $para => $tutar) {
+            if (!\in_array($para, self::PARA_BIRIMLERI, true)) {
+                $hatalar[] = 'Para birimi şunlardan biri olmalı: '.implode(', ', self::PARA_BIRIMLERI).'.';
+            } else {
+                $hatalar = [...$hatalar, ...array_map(static fn (string $h): string => "{$para}: {$h}", self::tutarHatasi($tutar))];
+            }
+        }
+        if ([] !== $hatalar) {
+            return $hatalar;
+        }
+        if ([] !== $tutarlar && 'giris' === $satir['teklif_turu']) {
+            return [self::GIRIS_TEK_PARA];
+        }
+        try {
+            $eski = $this->stripe->prices->retrieve($satir['stripe_fiyat']);
+            $aralik = $eski->recurring?->interval;
+            if (!\is_string($aralik) || !\is_int($eski->unit_amount)) {
+                return ['Mevcut Stripe fiyatı yinelenen değil; değiştirilemez.'];
+            }
+            if (isset($tutarlar[strtoupper($eski->currency)])) {
+                return [strtoupper($eski->currency).' planın ana para birimi; tutarı "Fiyatı değiştir" ile.'];
+            }
+            $secenekler = [];
+            foreach ($tutarlar as $para => $tutar) {
+                if (\is_string($para) && (\is_int($tutar) || \is_float($tutar))) {
+                    $secenekler[strtolower($para)] = ['unit_amount' => ParaBirimi::kucukBirim($tutar, $para)];
+                }
+            }
+            $yeni = $this->stripe->prices->create([
+                'product' => $satir['stripe_urun'],
+                'currency' => $eski->currency,
+                'unit_amount' => $eski->unit_amount,
+                'recurring' => ['interval' => $aralik],
+                ...([] === $secenekler ? [] : ['currency_options' => $secenekler]),
+                'metadata' => ['app' => $app, 'plan' => $anahtar],
+            ]);
+        } catch (ExceptionInterface $e) {
+            $this->logger->error('Stripe para birimleri değiştirilemedi', ['plan' => $anahtar, 'exception' => $e]);
+
+            return ['Stripe şu an yanıt vermiyor; para birimleri değişmedi.'];
+        }
+        $this->db->executeStatement(
+            'UPDATE planlar SET stripe_fiyat = :fiyat, updated_at = now() WHERE app = :app AND anahtar = :anahtar',
+            ['fiyat' => $yeni->id, 'app' => $app, 'anahtar' => $anahtar],
+        );
+        try {
+            $this->stripe->prices->update($satir['stripe_fiyat'], ['active' => false]);
+        } catch (ExceptionInterface $e) {
+            $this->logger->warning('Eski Stripe fiyatı kapatılamadı', ['fiyat' => $satir['stripe_fiyat'], 'exception' => $e]);
+        }
+
+        return [];
+    }
+
+    /**
      * Stripe'ta önceden açılmış fiyatı kataloğa alır (ör. M1a'dan önceki
      * KeepChat aylık planı; konsol app:plan-ice-aktar).
      *
@@ -281,6 +362,26 @@ final readonly class Planlar
         }
 
         return [];
+    }
+
+    /**
+     * Fiyatın ana para birimi dışındaki seçenekleri, yeni fiyata verilecek
+     * biçimde (Stripe `currency_options` ana para birimini de listeler).
+     *
+     * @param array<mixed> $fiyat
+     *
+     * @return array{currency_options?: array<string, array{unit_amount: int}>}
+     */
+    private static function ekSecenekler(array $fiyat): array
+    {
+        $secenekler = [];
+        foreach (\is_array($fiyat['currency_options'] ?? null) ? $fiyat['currency_options'] : [] as $para => $s) {
+            if (\is_string($para) && $para !== ($fiyat['currency'] ?? null) && \is_array($s) && \is_int($s['unit_amount'] ?? null)) {
+                $secenekler[$para] = ['unit_amount' => $s['unit_amount']];
+            }
+        }
+
+        return [] === $secenekler ? [] : ['currency_options' => $secenekler];
     }
 
     /** @return list<string> */
