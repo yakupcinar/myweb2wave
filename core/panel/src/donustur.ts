@@ -192,7 +192,14 @@ export type KokProps = {
     /** V4: hareket düzeyi; "sakin" tanıma yazılmaz. */
     hareket: OnAyar<"hareket">;
 };
+/** M3b: ödeme sonrası ekran (adım değil) — boş düğme metni yazılmaz. */
+export type OdemeSonrasiProps = {
+    baslik: string;
+    bloklar: EkranProps["bloklar"];
+    dugme: string;
+};
 export type Bilesenler = {
+    OdemeSonrasi: OdemeSonrasiProps;
     Yukleme: YuklemeProps;
     Ekran: EkranProps;
     Paywall: PaywallProps;
@@ -604,85 +611,111 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                 ...kokTemasi(tanim.tema ?? varsayilanTema),
             },
         },
-        content: tanim.adimlar.map((adim: Adim, i: number) => {
-            const id = `${adim.tur}-${i}-${adim.id}`;
-            switch (adim.tur) {
-                case "yukleme":
-                    return {
-                        type: "Yukleme" as const,
-                        props: {
-                            id,
-                            kimlik: adim.id,
-                            baslik: adim.baslik,
-                            maddeler: (adim.maddeler ?? []).map((metin) => ({
-                                metin,
-                            })),
-                            sure: adim.sure ?? 4,
-                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
-                        },
-                    };
-                case "ekran":
-                    return {
-                        type: "Ekran" as const,
-                        props: {
-                            id,
-                            kimlik: adim.id,
-                            baslik: adim.baslik,
-                            gorsel: adim.gorsel ?? "",
-                            gorselMetni: adim.gorselMetni ?? "",
-                            duzen: adim.duzen ?? "ust",
-                            bloklar: adim.bloklar.map((b, j) =>
-                                bloktanPuck(b, `blok-${i}-${j}`),
-                            ),
-                            // T1b: tek seçimli soru bloğunda düğme yok → "".
-                            dugme: adim.dugme ?? "",
-                            hedef: adim.hedef ?? "",
-                            yonlendirme: (adim.yonlendirme ?? []).map((k) => ({
-                                baglac: k.baglac ?? "hepsi",
-                                kosullar: kosulProps(k.kosullar),
-                                hedef: k.hedef,
-                            })),
-                            degerler: degerProps(adim.degerler),
-                            gosterBaglac: adim.goster?.baglac ?? "hepsi",
-                            gosterKosullar: kosulProps(
-                                adim.goster?.kosullar ?? [],
-                            ),
-                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
-                        },
-                    };
-                default:
-                    return {
-                        type: "Paywall" as const,
-                        props: {
-                            id,
-                            kimlik: adim.id,
-                            baslik: adim.baslik,
-                            metin: adim.metin,
-                            dugme: adim.dugme,
-                            plan: adim.plan,
-                            planlar: (adim.planlar ?? []).map((plan) => ({
-                                plan,
-                            })),
-                            onerilen: adim.onerilen ?? "",
-                            guvenceler: (adim.guvenceler ?? []).map(
-                                (rozet) => ({ rozet }),
-                            ),
-                            sartOnayi: adim.sartOnayi ? "evet" : "hayir",
-                            downsellPlan: adim.downsell?.plan ?? "",
-                            downsellBaslik: adim.downsell?.baslik ?? "",
-                            downsellMetin: adim.downsell?.metin ?? "",
-                            downsellDugme: adim.downsell?.dugme ?? "",
-                            ilerlemeGoster: adim.ilerlemeGoster ?? true,
-                            faydalar: (adim.faydalar ?? []).map((metin) => ({
-                                metin,
-                            })),
-                            sartlar: adim.sartlar ?? "",
-                            gizlilik: adim.gizlilik ?? "",
-                            iptal: adim.iptal ?? "",
-                        },
-                    };
-            }
-        }),
+        content: [
+            ...tanim.adimlar.map((adim: Adim, i: number) => {
+                const id = `${adim.tur}-${i}-${adim.id}`;
+                switch (adim.tur) {
+                    case "yukleme":
+                        return {
+                            type: "Yukleme" as const,
+                            props: {
+                                id,
+                                kimlik: adim.id,
+                                baslik: adim.baslik,
+                                maddeler: (adim.maddeler ?? []).map(
+                                    (metin) => ({
+                                        metin,
+                                    }),
+                                ),
+                                sure: adim.sure ?? 4,
+                                ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                            },
+                        };
+                    case "ekran":
+                        return {
+                            type: "Ekran" as const,
+                            props: {
+                                id,
+                                kimlik: adim.id,
+                                baslik: adim.baslik,
+                                gorsel: adim.gorsel ?? "",
+                                gorselMetni: adim.gorselMetni ?? "",
+                                duzen: adim.duzen ?? "ust",
+                                bloklar: adim.bloklar.map((b, j) =>
+                                    bloktanPuck(b, `blok-${i}-${j}`),
+                                ),
+                                // T1b: tek seçimli soru bloğunda düğme yok → "".
+                                dugme: adim.dugme ?? "",
+                                hedef: adim.hedef ?? "",
+                                yonlendirme: (adim.yonlendirme ?? []).map(
+                                    (k) => ({
+                                        baglac: k.baglac ?? "hepsi",
+                                        kosullar: kosulProps(k.kosullar),
+                                        hedef: k.hedef,
+                                    }),
+                                ),
+                                degerler: degerProps(adim.degerler),
+                                gosterBaglac: adim.goster?.baglac ?? "hepsi",
+                                gosterKosullar: kosulProps(
+                                    adim.goster?.kosullar ?? [],
+                                ),
+                                ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                            },
+                        };
+                    default:
+                        return {
+                            type: "Paywall" as const,
+                            props: {
+                                id,
+                                kimlik: adim.id,
+                                baslik: adim.baslik,
+                                metin: adim.metin,
+                                dugme: adim.dugme,
+                                plan: adim.plan,
+                                planlar: (adim.planlar ?? []).map((plan) => ({
+                                    plan,
+                                })),
+                                onerilen: adim.onerilen ?? "",
+                                guvenceler: (adim.guvenceler ?? []).map(
+                                    (rozet) => ({ rozet }),
+                                ),
+                                sartOnayi: adim.sartOnayi
+                                    ? ("evet" as const)
+                                    : ("hayir" as const),
+                                downsellPlan: adim.downsell?.plan ?? "",
+                                downsellBaslik: adim.downsell?.baslik ?? "",
+                                downsellMetin: adim.downsell?.metin ?? "",
+                                downsellDugme: adim.downsell?.dugme ?? "",
+                                ilerlemeGoster: adim.ilerlemeGoster ?? true,
+                                faydalar: (adim.faydalar ?? []).map(
+                                    (metin) => ({
+                                        metin,
+                                    }),
+                                ),
+                                sartlar: adim.sartlar ?? "",
+                                gizlilik: adim.gizlilik ?? "",
+                                iptal: adim.iptal ?? "",
+                            },
+                        };
+                }
+            }),
+            // M3b: ödeme sonrası ekran listenin sonunda (adım sayılmaz).
+            ...(tanim.sonrasi
+                ? [
+                      {
+                          type: "OdemeSonrasi" as const,
+                          props: {
+                              id: "odeme-sonrasi",
+                              baslik: tanim.sonrasi.baslik,
+                              bloklar: tanim.sonrasi.bloklar.map((b, j) =>
+                                  bloktanPuck(b, `sonrasi-${j}`),
+                              ),
+                              dugme: tanim.sonrasi.dugme ?? "",
+                          },
+                      },
+                  ]
+                : []),
+        ],
     };
 }
 
@@ -730,83 +763,97 @@ function yasal(p: PaywallProps) {
 
 export function puckTanim(veri: HuniVerisi): Tanim {
     const k = veri.root.props;
-    const adimlar = veri.content.map((oge): Adim => {
-        switch (oge.type) {
-            case "Yukleme": {
-                const p = oge.props as YuklemeProps;
-                const maddeler = (p.maddeler ?? []).map((m) => m.metin);
-                return {
-                    id: p.kimlik,
-                    tur: "yukleme",
-                    baslik: p.baslik,
-                    ...(maddeler.length ? { maddeler } : {}),
-                    ...(Number(p.sure) !== 4 ? { sure: Number(p.sure) } : {}),
-                    ...(p.ilerlemeGoster === false
-                        ? { ilerlemeGoster: false }
-                        : {}),
-                };
+    // M3b: ödeme sonrası ekran adım değil — tanımın kökünde.
+    const sonrasi = veri.content.find((o) => o.type === "OdemeSonrasi");
+    const adimlar = veri.content
+        .filter((o) => o.type !== "OdemeSonrasi")
+        .map((oge): Adim => {
+            switch (oge.type) {
+                case "Yukleme": {
+                    const p = oge.props as YuklemeProps;
+                    const maddeler = (p.maddeler ?? []).map((m) => m.metin);
+                    return {
+                        id: p.kimlik,
+                        tur: "yukleme",
+                        baslik: p.baslik,
+                        ...(maddeler.length ? { maddeler } : {}),
+                        ...(Number(p.sure) !== 4
+                            ? { sure: Number(p.sure) }
+                            : {}),
+                        ...(p.ilerlemeGoster === false
+                            ? { ilerlemeGoster: false }
+                            : {}),
+                    };
+                }
+                case "Ekran": {
+                    const p = oge.props as EkranProps;
+                    return hedefli(
+                        gorselli(
+                            {
+                                id: p.kimlik,
+                                tur: "ekran" as const,
+                                baslik: p.baslik,
+                                ...(p.duzen && p.duzen !== "ust"
+                                    ? { duzen: p.duzen }
+                                    : {}),
+                                bloklar: (p.bloklar ?? []).map(puckBloktan),
+                                ...(p.dugme ? { dugme: p.dugme } : {}),
+                                ...yonlendirmesi(p.yonlendirme),
+                                ...degerleri(p.degerler),
+                                ...(p.gosterKosullar?.length
+                                    ? {
+                                          goster: kosulGrubu(
+                                              p.gosterBaglac,
+                                              p.gosterKosullar,
+                                          ),
+                                      }
+                                    : {}),
+                                ...(p.ilerlemeGoster === false
+                                    ? { ilerlemeGoster: false }
+                                    : {}),
+                            } satisfies EkranAdimi,
+                            p.gorsel ?? "",
+                            p.gorselMetni ?? "",
+                        ),
+                        p.hedef ?? "",
+                    );
+                }
+                case "Paywall": {
+                    const p = oge.props as PaywallProps;
+                    return {
+                        id: p.kimlik,
+                        tur: "paywall",
+                        baslik: p.baslik,
+                        metin: p.metin,
+                        dugme: p.dugme,
+                        plan: p.plan,
+                        ...planSecici(p),
+                        ...guvence(p),
+                        ...downsell(p),
+                        ...(p.ilerlemeGoster === false
+                            ? { ilerlemeGoster: false }
+                            : {}),
+                        ...yasal(p),
+                    };
+                }
+                default:
+                    // T1: ekran dışına bırakılmış blok — düzenleyici uyarır
+                    // (akis.ts), çekirdek türüyle reddeder; sessizce düşmez.
+                    return {
+                        id: String(oge.props["id"]),
+                        tur: oge.type,
+                    } as unknown as Adim;
             }
-            case "Ekran": {
-                const p = oge.props as EkranProps;
-                return hedefli(
-                    gorselli(
-                        {
-                            id: p.kimlik,
-                            tur: "ekran" as const,
-                            baslik: p.baslik,
-                            ...(p.duzen && p.duzen !== "ust"
-                                ? { duzen: p.duzen }
-                                : {}),
-                            bloklar: (p.bloklar ?? []).map(puckBloktan),
-                            ...(p.dugme ? { dugme: p.dugme } : {}),
-                            ...yonlendirmesi(p.yonlendirme),
-                            ...degerleri(p.degerler),
-                            ...(p.gosterKosullar?.length
-                                ? {
-                                      goster: kosulGrubu(
-                                          p.gosterBaglac,
-                                          p.gosterKosullar,
-                                      ),
-                                  }
-                                : {}),
-                            ...(p.ilerlemeGoster === false
-                                ? { ilerlemeGoster: false }
-                                : {}),
-                        } satisfies EkranAdimi,
-                        p.gorsel ?? "",
-                        p.gorselMetni ?? "",
-                    ),
-                    p.hedef ?? "",
-                );
-            }
-            case "Paywall": {
-                const p = oge.props as PaywallProps;
-                return {
-                    id: p.kimlik,
-                    tur: "paywall",
-                    baslik: p.baslik,
-                    metin: p.metin,
-                    dugme: p.dugme,
-                    plan: p.plan,
-                    ...planSecici(p),
-                    ...guvence(p),
-                    ...downsell(p),
-                    ...(p.ilerlemeGoster === false
-                        ? { ilerlemeGoster: false }
-                        : {}),
-                    ...yasal(p),
-                };
-            }
-            default:
-                // T1: ekran dışına bırakılmış blok — düzenleyici uyarır
-                // (akis.ts), çekirdek türüyle reddeder; sessizce düşmez.
-                return {
-                    id: String(oge.props["id"]),
-                    tur: oge.type,
-                } as unknown as Adim;
-        }
-    });
+        });
     const tanim: Tanim = { sayfaBasligi: k?.sayfaBasligi ?? "", adimlar };
+    if (sonrasi) {
+        const p = sonrasi.props as OdemeSonrasiProps;
+        tanim.sonrasi = {
+            baslik: p.baslik,
+            bloklar: (p.bloklar ?? []).map(puckBloktan),
+            ...(p.dugme ? { dugme: p.dugme } : {}),
+        };
+    }
     if (k?.logo) tanim.logo = k.logo;
     if (k?.ozelTema === "evet") {
         tanim.tema = {

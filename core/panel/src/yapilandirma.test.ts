@@ -81,12 +81,13 @@ describe("soru bloğu ayarlarının görünürlüğü", () => {
 });
 
 describe("adım menüsü (T1c)", () => {
-    it("adım olarak yalnız ekran, yükleme ve ödeme; eski türler yok", () => {
+    it("adım olarak yalnız ekran, yükleme ve ödeme (+ M3b ödeme sonrası ekran); eski türler yok", () => {
         const yap = yapilandirma(ortam);
         expect(yap.categories?.adimlar?.components).toEqual([
             "Ekran",
             "Yukleme",
             "Paywall",
+            "OdemeSonrasi",
         ]);
         for (const eski of [
             "Tanitim",

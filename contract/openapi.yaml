@@ -1224,6 +1224,18 @@ components:
         logo:
           description: "Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız)"
           allOf: [{ $ref: "#/components/schemas/GorselKimligi" }]
+        sonrasi:
+          description: "M3b: ödeme sonrası ekran (adım değil) — başlık + bloklar (soru ve koşullu değer yok); giriş bağlantısı alanı sayfanın sabit parçası, dugme onun metni"
+          type: object
+          additionalProperties: false
+          required: [baslik, bloklar]
+          properties:
+            baslik: { type: string, minLength: 1, maxLength: 200 }
+            bloklar:
+              type: array
+              maxItems: 12
+              items: { $ref: "#/components/schemas/EkranBlogu" }
+            dugme: { type: string, minLength: 1, maxLength: 60 }
         adimlar:
           type: array
           minItems: 2

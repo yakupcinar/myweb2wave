@@ -58,6 +58,42 @@ final class GomuluOdemeTest extends WebTestCase
         self::assertArrayNotHasKey('cancel_url', $p);
     }
 
+    /**
+     * M3b: dönüş adresi ziyaretin hunisini taşır (o huninin ödeme sonrası
+     * ekranı); ziyaretsiz/tanınmayan ziyarette huni yok, sayfa varsayılanı.
+     */
+    public function testDonusAdresiHuniyiTasir(): void
+    {
+        $client = static::createClient();
+        // Ziyaret huniyi yalnız yayınlanmış sürümüyle kaydeder.
+        $db = static::getContainer()->get(\Doctrine\DBAL\Connection::class);
+        self::assertInstanceOf(\Doctrine\DBAL\Connection::class, $db);
+        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
+        $huniler = static::getContainer()->get(\App\Huni\Huniler::class);
+        self::assertInstanceOf(\App\Huni\Huniler::class, $huniler);
+        self::assertSame([], $huniler->yeniHuni('keepchat', 'fitness-2', null, 'fitness'));
+        self::assertSame(1, $huniler->yayinla('keepchat', 'fitness-2'));
+        $client->jsonRequest('POST', '/huni/ziyaretler', ['app' => 'keepchat', 'huni' => 'fitness-2', 'surum' => 1]);
+        self::assertResponseStatusCodeSame(201);
+        $yanit = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertIsArray($yanit);
+        $ziyaret = $yanit['ziyaret'] ?? null;
+        self::assertIsString($ziyaret);
+
+        $client->jsonRequest('POST', '/checkout/sessions', ['app' => 'keepchat', 'plan' => 'monthly', 'ziyaret' => $ziyaret]);
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame('https://huni.test/keepchat/basarili?huni=fitness-2&session_id={CHECKOUT_SESSION_ID}', $this->oturumIstegi()['success_url']);
+
+        // Başka uygulamanın ziyareti başka uygulamanın hunisini açtırmaz (tek uygulamalı yapılandırmada uçtan ölçülemez).
+        $z = static::getContainer()->get(Ziyaretler::class);
+        self::assertInstanceOf(Ziyaretler::class, $z);
+        self::assertSame(['fitness-2', null], [$z->huni($ziyaret, 'keepchat'), $z->huni($ziyaret, 'baska')]);
+
+        $this->stripe->istekler = [];
+        $client->jsonRequest('POST', '/checkout/sessions', ['app' => 'keepchat', 'plan' => 'monthly', 'ziyaret' => '11111111-1111-4111-8111-111111111111']);
+        self::assertSame('https://huni.test/keepchat/basarili?session_id={CHECKOUT_SESSION_ID}', $this->oturumIstegi()['success_url']);
+    }
+
     /** Stripe sır döndürmezse (beklenmez) istemciye 502 — boş sırla form açılmaz. */
     public function testSirYoksa502(): void
     {

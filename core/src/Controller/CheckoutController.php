@@ -85,10 +85,12 @@ final readonly class CheckoutController
         $onay = true === ($govde['sartOnayi'] ?? null) ? ['sart_onayi' => '1'] : [];
         // M2d: ödeme paywall sayfasında, gömülü (A14); Stripe.js yüklenemezse istemci gomulu'suz ister.
         $gomulu = true === ($govde['gomulu'] ?? null) && '' !== $this->yayimlanabilirAnahtar;
-        $donus = $this->funnelBaseUrl.'/'.$app.'/basarili?session_id={CHECKOUT_SESSION_ID}';
+        $ziyaret = $govde['ziyaret'] ?? null;
+        // M3b: dönüş sayfası ziyaretin hunisinin ödeme sonrası ekranını çizer.
+        $huni = \is_string($ziyaret) ? $this->ziyaretler->huni($ziyaret, $app) : null;
+        $donus = $this->funnelBaseUrl.'/'.$app.'/basarili?'.(null === $huni ? '' : 'huni='.rawurlencode($huni).'&').'session_id={CHECKOUT_SESSION_ID}';
 
         // E1: huninin e-posta adımında yazılan adres ödeme sayfasında hazır.
-        $ziyaret = $govde['ziyaret'] ?? null;
         $eposta = \is_string($ziyaret) ? $this->ziyaretler->eposta($ziyaret, $app) : null;
 
         try {

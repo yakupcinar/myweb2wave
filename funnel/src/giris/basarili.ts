@@ -9,16 +9,37 @@ import { cekirdek } from "../lib/cekirdek";
 import { temaUygula } from "../lib/sonuc-tema";
 import { izinOku } from "../lib/izin";
 import { satinAlmaOlayiGonder } from "../lib/reklam-pikselleri";
+import { sonrasiCiz } from "./sonrasi";
 
 temaUygula(import.meta.env.PUBLIC_CORE_URL);
 
 const DENEME = 8;
 const ARALIK_MS = 1500;
 
-const oturum = new URLSearchParams(window.location.search).get("session_id");
+const adres = new URLSearchParams(window.location.search);
+const oturum = adres.get("session_id");
+// M3b: ödeme dönüşü huninin adını taşır — o huninin ödeme sonrası ekranı.
+const huni = adres.get("huni");
 // Ödeme kimliği adreste kalmasın: geçmişe ve sayfadaki betiklere
 // sızmasın (Ç46). Yalnız bu sayfanın belleğinde yaşar.
 if (oturum) window.history.replaceState(null, "", window.location.pathname);
+
+// M3b: huninin `sonrasi` ekranı varsa başlık + bloklar + düğme metni; yoksa ya
+// da okunamazsa sayfanın varsayılan metni kalır (giriş akışı her durumda aynı).
+if (huni && /^[a-z0-9_-]{1,64}$/.test(huni))
+  void cekirdek
+    .GET("/huni/{app}", {
+      params: { path: { app: "keepchat" }, query: { huni } },
+    })
+    .then(({ data }) => {
+      if (data?.tanim.sonrasi)
+        sonrasiCiz(
+          data.tanim.sonrasi,
+          import.meta.env.PUBLIC_CORE_URL,
+          data.tanim.tema,
+        );
+    })
+    .catch(() => undefined);
 
 const goster = (id: string) => {
   const el = document.getElementById(id);

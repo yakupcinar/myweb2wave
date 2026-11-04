@@ -159,6 +159,17 @@ final readonly class Ziyaretler
         );
     }
 
+    /** M3b: ödeme sonrası ekran hangi hunininki — ziyaret bu uygulamanınsa. */
+    public function huni(string $ziyaret, string $app): ?string
+    {
+        if (1 !== preg_match(self::UUID, $ziyaret)) {
+            return null;
+        }
+        $huni = $this->db->fetchOne('SELECT huni FROM huni_ziyaretleri WHERE id = :ziyaret AND app = :app', ['ziyaret' => $ziyaret, 'app' => $app]);
+
+        return \is_string($huni) && '' !== $huni ? $huni : null;
+    }
+
     /** E1: ödeme sayfası adresi önceden doldursun — ziyaret bu uygulamanınsa. */
     public function eposta(string $ziyaret, string $app): ?string
     {

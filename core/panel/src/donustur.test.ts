@@ -192,6 +192,32 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         ).not.toHaveProperty("metin");
     });
 
+    it("M3b: ödeme sonrası ekran gidiş-dönüş; adımlara karışmaz, boş düğme metni yazılmaz", () => {
+        const sonrali: Tanim = {
+            ...temel,
+            sonrasi: {
+                baslik: "Hoş geldin",
+                bloklar: [{ tur: "metin", metin: "Uygulamayı aç." }],
+                dugme: "Uygulamaya geç",
+            },
+        };
+        expect(puckTanim(tanimdanPuck(sonrali, VARSAYILAN))).toStrictEqual(
+            sonrali,
+        );
+        const puck = tanimdanPuck(sonrali, VARSAYILAN);
+        expect(puck.content.at(-1)?.type).toBe("OdemeSonrasi");
+        Object.assign(puck.content.at(-1)!.props, { dugme: "" });
+        const t = puckTanim(puck);
+        expect(t.adimlar).toStrictEqual(temel.adimlar);
+        expect(t.sonrasi).toStrictEqual({
+            baslik: "Hoş geldin",
+            bloklar: [{ tur: "metin", metin: "Uygulamayı aç." }],
+        });
+        expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).not.toHaveProperty(
+            "sonrasi",
+        );
+    });
+
     it("ilerleme çubuğu kapatma ayarı tanıma yazılır; varsayılan ayar eklenmez", () => {
         const kapali: Tanim = {
             ...temel,

@@ -47,6 +47,8 @@ final class Tanim
         .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar. '
         // M2c
         .'Cevaba göre farklı paywall: huni birden çok paywall adımı içerebilir; son adım paywall olmalı, öndeki paywall\'a yonlendirme ya da hedef ile gidilir (paywall\'dan sonra sıradaki adıma geçilmez). '
+        // M3b
+        .'İsteğe bağlı sonrasi (tanımın kökünde, adım değil): {"baslik", "bloklar", "dugme"?} — ödeme sonrası ekran (sonraki adımlar, uygulamayı indir, destek); soru bloğu ve koşullu değer yok. Uygulamaya giriş bağlantısı düğmesi ekranın altına kendiliğinden gelir, dugme onun metni. '
         // M3a
         .'İsteğe bağlı downsell: {"plan", "baslik", "dugme", "metin"?} — ziyaretçi paywall\'dan geri dönmeye çalışınca ya da ödeme panelini kapatınca BİR KEZ sunulan daha uygun plan (genelde indirim teklifli); fiyatı ve koşulu pencere yazar, "son şans" gibi sahte aciliyet yazma. '
         // M2b
@@ -146,9 +148,10 @@ final class Tanim
     {
         // tema isteğe bağlı (E2.2): yoksa huni sayfası varsayılanı kullanır.
         // logo isteğe bağlı (Ç61 (5)): temadan bağımsız, görsel kimliği.
-        $istege = \is_array($tanim) ? array_values(array_intersect(['tema', 'logo'], array_map(strval(...), array_keys($tanim)))) : [];
+        // M3b: sonrasi isteğe bağlı — ödeme sonrası ekran (adım değil).
+        $istege = \is_array($tanim) ? array_values(array_intersect(['tema', 'logo', 'sonrasi'], array_map(strval(...), array_keys($tanim)))) : [];
         if (!\is_array($tanim) || !self::anahtarlar($tanim, ['sayfaBasligi', 'adimlar', ...$istege])) {
-            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema, logo içermeli'];
+            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema, logo, sonrasi içermeli'];
         }
         $h = \array_key_exists('tema', $tanim) ? Tema::hatalar($tanim['tema']) : [];
         if (\array_key_exists('logo', $tanim)) {
@@ -358,8 +361,42 @@ final class Tanim
                 $h[] = "{$yer}: son adım paywall olmalı (başka paywall'lar öne konup yönlendirmeyle açılabilir)";
             }
         }
+        if (\array_key_exists('sonrasi', $tanim)) {
+            self::sonrasi($tanim['sonrasi'], $sira, \count($adimlar), $h);
+        }
 
         return $h;
+    }
+
+    /**
+     * M3b (A16): ödeme sonrası ekran — başlık + bloklar (+ giriş düğmesinin
+     * metni). Giriş bağlantısı alanı sayfanın sabit parçası (silinemez).
+     * O sayfada cevap yok: soru bloğu ve koşullu değer yok.
+     *
+     * @param array<string, int> $sira
+     * @param list<string>       $h
+     */
+    private static function sonrasi(mixed $s, array $sira, int $son, array &$h): void
+    {
+        $istege = \is_array($s) && \array_key_exists('dugme', $s) ? ['dugme'] : [];
+        if (!\is_array($s) || !self::anahtarlar($s, ['baslik', 'bloklar', ...$istege])) {
+            $h[] = 'sonrasi: alanlar tam olarak baslik, bloklar ve (isteğe bağlı) dugme olmalı';
+
+            return;
+        }
+        self::metin($s['baslik'], 'baslik', 'sonrasi baslik', $h);
+        if ([] !== $istege) {
+            self::metin($s['dugme'], 'dugme', 'sonrasi dugme', $h);
+        }
+        foreach (\is_array($s['bloklar']) ? $s['bloklar'] : [] as $j => $b) {
+            if (\is_array($b) && 'soru' === ($b['tur'] ?? null)) {
+                $h[] = 'sonrasi blok '.($j + 1).': soru bloğu olmaz (ödeme sonrası cevap alınmaz)';
+            }
+            if (\is_array($b) && \array_key_exists('degerler', $b)) {
+                $h[] = 'sonrasi blok '.($j + 1).': koşullu değer olmaz (o sayfada cevap yok)';
+            }
+        }
+        self::bloklar($s['bloklar'], $sira, $son, 'sonrasi', $h);
     }
 
     /**
@@ -394,6 +431,10 @@ final class Tanim
             $k[] = $zemin['gorsel'];
         }
         $adimlar = \is_array($tanim) && \is_array($tanim['adimlar'] ?? null) ? $tanim['adimlar'] : [];
+        // M3b: ödeme sonrası ekranın blok görselleri de bu uygulamanın olmalı.
+        if (\is_array($tanim) && \is_array($tanim['sonrasi'] ?? null)) {
+            $adimlar[] = $tanim['sonrasi'];
+        }
         foreach ($adimlar as $adim) {
             // Ekranın kapağı.
             if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {

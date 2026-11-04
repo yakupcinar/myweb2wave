@@ -978,7 +978,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
         categories: {
             adimlar: {
                 title: "Adımlar",
-                components: ["Ekran", "Yukleme", "Paywall"],
+                components: ["Ekran", "Yukleme", "Paywall", "OdemeSonrasi"],
             },
             bloklar: {
                 title: "Ekran blokları (Ekran adımının içine)",
@@ -1432,6 +1432,42 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             Önce/sonra: iki görsel seçin.
                         </p>
                     ),
+            },
+            // M3b: ödeme sonrası ekran — adım değil; giriş bağlantısı alanı sayfada sabit.
+            OdemeSonrasi: {
+                label: "Ödeme sonrası ekran (en çok bir)",
+                fields: {
+                    baslik: { type: "text", label: "Başlık" },
+                    bloklar: { type: "slot", allow: BLOK_BILESENLERI },
+                    dugme: {
+                        type: "text",
+                        label: "Giriş düğmesi metni (boş = varsayılan)",
+                    },
+                },
+                defaultProps: {
+                    baslik: "Hoş geldin!",
+                    bloklar: [
+                        {
+                            type: "MetinBlogu",
+                            props: {
+                                metin: "Aboneliğin hazır. Uygulamayı açıp giriş yap.",
+                            },
+                        },
+                    ],
+                    dugme: "",
+                },
+                render: ({ baslik, bloklar: Bloklar }) => (
+                    <div style={kart}>
+                        <Ekran
+                            baslik={baslik}
+                            medyaKoku=""
+                            yuva={<Bloklar className="bloklar" />}
+                        />
+                        <p className="onizleme">
+                            Giriş bağlantısı düğmesi burada (sayfada sabit).
+                        </p>
+                    </div>
+                ),
             },
             Paywall: {
                 // M2c: birden çok olabilir; son adım ödeme olmalı, öndekine yönlendirmeyle gidilir.

@@ -769,6 +769,12 @@ export interface components {
             tema?: components["schemas"]["HuniTemasi"];
             /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
             logo?: components["schemas"]["GorselKimligi"];
+            /** @description M3b: ödeme sonrası ekran (adım değil) — başlık + bloklar (soru ve koşullu değer yok); giriş bağlantısı alanı sayfanın sabit parçası, dugme onun metni */
+            sonrasi?: {
+                baslik: string;
+                bloklar: components["schemas"]["EkranBlogu"][];
+                dugme?: string;
+            };
             adimlar: (components["schemas"]["YuklemeAdimi"] | components["schemas"]["EkranAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
         /** @description Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil) */
