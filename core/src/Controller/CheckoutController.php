@@ -51,6 +51,19 @@ final readonly class CheckoutController
             return new JsonResponse(['error' => 'unknown_plan'], 422);
         }
 
+        // M1b: teklif istemciden DEĞİL katalogdan — istemci yalnız planı seçer.
+        $teklif = $this->planlar->teklifler($app)[$plan] ?? null;
+        // Türün alanları DB kısıtıyla zorunlu (planlar_teklif_tutarli): giris/indirimde Stripe kimliği, deneme/giriste gün.
+        $stripeTeklif = (string) ($teklif['stripe'] ?? '');
+        $gun = (int) ($teklif['gun'] ?? 0);
+        $teklifAlanlari = match ($teklif['tur'] ?? null) {
+            'deneme' => ['subscription_data' => ['trial_period_days' => $gun]],
+            // Ücretli giriş: deneme günleri + ilk faturada tek seferlik ücret (kullanıcı kararı 2026-11-04).
+            'giris' => ['subscription_data' => ['trial_period_days' => $gun], 'line_items' => [['price' => $stripeTeklif, 'quantity' => 1]]],
+            'indirim' => ['discounts' => [['coupon' => $stripeTeklif]]],
+            default => ['subscription_data' => [], 'line_items' => []],
+        };
+
         // E1: huninin e-posta adımında yazılan adres ödeme sayfasında hazır.
         $ziyaret = $govde['ziyaret'] ?? null;
         $eposta = \is_string($ziyaret) ? $this->ziyaretler->eposta($ziyaret, $app) : null;
@@ -59,13 +72,16 @@ final readonly class CheckoutController
             $session = $this->stripe->checkout->sessions->create([
                 'mode' => 'subscription',
                 ...(null === $eposta ? [] : ['customer_email' => $eposta]),
-                'line_items' => [['price' => $prices[$plan], 'quantity' => 1]],
+                'line_items' => [['price' => $prices[$plan], 'quantity' => 1], ...($teklifAlanlari['line_items'] ?? [])],
+                ...(isset($teklifAlanlari['discounts']) ? ['discounts' => $teklifAlanlari['discounts']] : []),
+                // Deneme kartlıdır: kart ilk günden alınır, süre bitince ücret kendiliğinden çekilir.
+                'payment_method_collection' => 'always',
                 'success_url' => $this->funnelBaseUrl.'/'.$app.'/basarili?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => $this->funnelBaseUrl.'/'.$app.'/iptal',
                 // Webhook aboneliğin uygulamasını buradan okur (A4); oturuma
                 // ve aboneliğe ayrı ayrı yazılmalı — olaylar ikisinden de gelir.
                 'metadata' => ['app' => $app],
-                'subscription_data' => ['metadata' => ['app' => $app]],
+                'subscription_data' => ['metadata' => ['app' => $app]] + ($teklifAlanlari['subscription_data'] ?? []),
             ]);
         } catch (ApiErrorException $e) {
             // Ç16: ağ, Stripe 5xx ya da reddedilen istek — huni mesaj gösterir.

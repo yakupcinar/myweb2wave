@@ -32,7 +32,12 @@ function kur(yanit422?: string) {
             anahtar: "monthly",
             ad: "Aylık",
             stripeFiyat: "price_a",
-            fiyat: { tutar: 9.99, paraBirimi: "EUR", aralik: "month" },
+            fiyat: {
+                tutar: 9.99,
+                paraBirimi: "EUR",
+                aralik: "month",
+                teklif: { tur: "giris", gun: 3, tutar: 0.99 },
+            },
         },
         { anahtar: "eski", ad: "Eski", stripeFiyat: "price_b", fiyat: null },
     ];
@@ -104,6 +109,54 @@ afterEach(() => {
 });
 
 describe("Planlar", () => {
+    it("M1b: teklif sütunu yanıttan; teklifsiz plan tire", async () => {
+        kur();
+        const tablo = await screen.findByRole("region", { name: "Planlar" });
+        // Elle: giriş ücreti planın para biriminde.
+        expect(await within(tablo).findByText("3 gün €0,99")).toBeTruthy();
+        expect(within(tablo).getByText("—")).toBeTruthy();
+    });
+
+    it("M1b: teklif formu türün alanlarını SAYI olarak gönderir, fazlasını göndermez", async () => {
+        const istekler = kur();
+        const form = within(
+            await screen.findByRole("form", { name: "Teklif" }),
+        );
+        fireEvent.change(form.getByLabelText("Plan"), {
+            target: { value: "monthly" },
+        });
+        const gonder = async (tur: string, alanlar: Record<string, string>) => {
+            fireEvent.change(form.getByLabelText("Tür"), {
+                target: { value: tur },
+            });
+            for (const [etiket, deger] of Object.entries(alanlar))
+                fireEvent.change(form.getByLabelText(etiket), {
+                    target: { value: deger },
+                });
+            const once = istekler.length;
+            fireEvent.click(
+                form.getByRole("button", { name: "Teklifi kaydet" }),
+            );
+            await waitFor(() => expect(istekler.length).toBe(once + 1));
+            return istekler.at(-1);
+        };
+        expect(await gonder("indirim", { "İndirim (%)": "30" })).toEqual({
+            yontem: "PUT",
+            adres: "/panel/api/uygulamalar/keepchat/planlar/monthly/teklif",
+            jeton: "jeton-kabuk",
+            govde: { tur: "indirim", yuzde: 30 },
+        });
+        expect(
+            (await gonder("giris", { Gün: "3", "Giriş ücreti": "0.99" }))
+                ?.govde,
+        ).toEqual({ tur: "giris", gun: 3, tutar: 0.99 });
+        expect((await gonder("deneme", { Gün: "14" }))?.govde).toEqual({
+            tur: "deneme",
+            gun: 14,
+        });
+        expect((await gonder("", {}))?.govde).toEqual({ tur: null });
+    });
+
     it("fiyatı yanıttan biçimler; okunamayan fiyatı söyler", async () => {
         kur();
         const tablo = await screen.findByRole("region", { name: "Planlar" });

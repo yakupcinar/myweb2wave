@@ -5,6 +5,9 @@
 // step="any": ondalık sınırı çekirdekte (en çok 2 hane) — step="0.01" +
 // min="0.01" happy-dom'da kayan nokta yüzünden 59'u bile geçersiz sayıp
 // formu göndermiyordu (ölçüldü).
+// M1b: planın en çok bir teklifi (kartlı deneme, ücretli giriş, ilk dönem
+// indirimi); giriş ücreti de Stripe'tan okunur. Teklifi gösterilemeyen planın
+// fiyatı da gelmez ("Stripe'tan okunamadı").
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
@@ -29,6 +32,25 @@ function fiyatYazisi(f: PlanFiyati | null): string {
         currency: f.paraBirimi,
     }).format(f.tutar);
     return `${tutar} / ${ARALIK[f.aralik]}`;
+}
+
+const TEKLIF_TURLERI = {
+    "": "Teklif yok",
+    deneme: "Kartlı ücretsiz deneme",
+    giris: "Ücretli giriş dönemi",
+    indirim: "İlk dönem indirimi",
+} as const;
+
+function teklifYazisi(f: PlanFiyati | null): string {
+    const t = f?.teklif;
+    if (!f || !t) return "—";
+    if (t.tur === "deneme") return `${t.gun} gün ücretsiz`;
+    if (t.tur === "giris")
+        return `${t.gun} gün ${new Intl.NumberFormat("tr-TR", {
+            style: "currency",
+            currency: f.paraBirimi,
+        }).format(t.tutar)}`;
+    return `İlk ${ARALIK[f.aralik]} %${t.yuzde} indirim`;
 }
 
 export function Planlar(): ReactNode {
@@ -77,6 +99,13 @@ function PlanListesi({ app }: { app: string }): ReactNode {
         paraBirimi: "EUR" as (typeof PARA_BIRIMLERI)[number],
         aralik: "month" as "week" | "month" | "year",
     });
+    const [teklif, setTeklif] = useState({
+        anahtar: "",
+        tur: "" as keyof typeof TEKLIF_TURLERI,
+        gun: "7",
+        tutar: "",
+        yuzde: "50",
+    });
     const [degisen, setDegisen] = useState<{
         anahtar: string;
         tutar: string;
@@ -124,6 +153,37 @@ function PlanListesi({ app }: { app: string }): ReactNode {
         },
     });
 
+    const teklifKaydet = useMutation({
+        mutationFn: async () => {
+            const { data, error } = await api.PUT(
+                "/panel/api/uygulamalar/{app}/planlar/{anahtar}/teklif",
+                {
+                    params: {
+                        path: { app, anahtar: teklif.anahtar },
+                        header: { "X-CSRF-Token": "" },
+                    },
+                    // Türün almadığı alan gönderilmez (çekirdek fazlayı reddeder).
+                    body:
+                        teklif.tur === ""
+                            ? { tur: null }
+                            : teklif.tur === "indirim"
+                              ? { tur: "indirim", yuzde: Number(teklif.yuzde) }
+                              : {
+                                    tur: teklif.tur,
+                                    gun: Number(teklif.gun),
+                                    ...(teklif.tur === "giris"
+                                        ? { tutar: Number(teklif.tutar) }
+                                        : {}),
+                                },
+                },
+            );
+            if (!data)
+                throw new Error((error?.hatalar ?? ["Değişmedi."]).join(" "));
+            return data;
+        },
+        onSuccess: yaz,
+    });
+
     if (sorgu.isError)
         return (
             <p role="alert" className="text-tehlike">
@@ -151,6 +211,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                 "Anahtar",
                                 "Ad",
                                 "Fiyat",
+                                "Teklif",
                                 "Stripe fiyatı",
                                 "",
                             ].map((b) => (
@@ -166,6 +227,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                 </Td>
                                 <Td>{p.ad}</Td>
                                 <Td>{fiyatYazisi(p.fiyat)}</Td>
+                                <Td>{teklifYazisi(p.fiyat)}</Td>
                                 <Td className="font-mono text-[12.5px]">
                                     {p.stripeFiyat}
                                 </Td>
@@ -227,7 +289,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         ))}
                         {sorgu.data.planlar.length ? null : (
                             <tr>
-                                <Td colSpan={5} className="text-soluk">
+                                <Td colSpan={6} className="text-soluk">
                                     Henüz plan yok — paywall bir plan seçmeden
                                     yayınlanamaz.
                                 </Td>
@@ -241,6 +303,140 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                     </p>
                 ) : null}
             </Kart>
+            {sorgu.data.planlar.length ? (
+                <Kart>
+                    <KartBasi
+                        baslik="Teklif"
+                        aciklama="Ödeme sayfası ve paywall planın teklifini kullanır. Değişiklik yalnız yeni ödemelere uygulanır."
+                    />
+                    <form
+                        aria-label="Teklif"
+                        className="flex flex-wrap items-end gap-3 px-4.5 py-4"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            teklifKaydet.mutate();
+                        }}
+                    >
+                        <label className="grid gap-1.5">
+                            <span className="font-semibold">Plan</span>
+                            <select
+                                value={teklif.anahtar}
+                                onChange={(e) =>
+                                    setTeklif({
+                                        ...teklif,
+                                        anahtar: e.currentTarget.value,
+                                    })
+                                }
+                                className={girdiSinifi}
+                            >
+                                <option value="">seç</option>
+                                {sorgu.data.planlar.map((p) => (
+                                    <option key={p.anahtar} value={p.anahtar}>
+                                        {p.ad}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="grid gap-1.5">
+                            <span className="font-semibold">Tür</span>
+                            <select
+                                value={teklif.tur}
+                                onChange={(e) =>
+                                    setTeklif({
+                                        ...teklif,
+                                        tur: e.currentTarget
+                                            .value as keyof typeof TEKLIF_TURLERI,
+                                    })
+                                }
+                                className={girdiSinifi}
+                            >
+                                {Object.entries(TEKLIF_TURLERI).map(
+                                    ([deger, ad]) => (
+                                        <option key={deger} value={deger}>
+                                            {ad}
+                                        </option>
+                                    ),
+                                )}
+                            </select>
+                        </label>
+                        {teklif.tur === "deneme" || teklif.tur === "giris" ? (
+                            <label className="grid gap-1.5">
+                                <span className="font-semibold">Gün</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="90"
+                                    value={teklif.gun}
+                                    onChange={(e) =>
+                                        setTeklif({
+                                            ...teklif,
+                                            gun: e.currentTarget.value,
+                                        })
+                                    }
+                                    className={`${girdiSinifi} w-20`}
+                                />
+                            </label>
+                        ) : null}
+                        {teklif.tur === "giris" ? (
+                            <label className="grid gap-1.5">
+                                <span className="font-semibold">
+                                    Giriş ücreti
+                                </span>
+                                <input
+                                    type="number"
+                                    min="0.01"
+                                    step="any"
+                                    value={teklif.tutar}
+                                    placeholder="0.99"
+                                    onChange={(e) =>
+                                        setTeklif({
+                                            ...teklif,
+                                            tutar: e.currentTarget.value,
+                                        })
+                                    }
+                                    className={`${girdiSinifi} w-28`}
+                                />
+                            </label>
+                        ) : null}
+                        {teklif.tur === "indirim" ? (
+                            <label className="grid gap-1.5">
+                                <span className="font-semibold">
+                                    İndirim (%)
+                                </span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    value={teklif.yuzde}
+                                    onChange={(e) =>
+                                        setTeklif({
+                                            ...teklif,
+                                            yuzde: e.currentTarget.value,
+                                        })
+                                    }
+                                    className={`${girdiSinifi} w-20`}
+                                />
+                            </label>
+                        ) : null}
+                        <Dugme
+                            tur="ana"
+                            type="submit"
+                            disabled={
+                                !teklif.anahtar ||
+                                (teklif.tur === "giris" && !teklif.tutar) ||
+                                teklifKaydet.isPending
+                            }
+                        >
+                            Teklifi kaydet
+                        </Dugme>
+                        {teklifKaydet.isError ? (
+                            <span role="alert" className="text-tehlike">
+                                {teklifKaydet.error.message}
+                            </span>
+                        ) : null}
+                    </form>
+                </Kart>
+            ) : null}
             <Kart>
                 <KartBasi
                     baslik="Yeni plan"

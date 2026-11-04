@@ -196,7 +196,11 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Pay; M2 alt bloğu). Apple Pay alan adı doğrulaması sunucuyla. Reddedilen:
   Stripe'ın barındırılan sayfasına yönlendirme (bugünkü yol, M2'ye dek kalır).
 - **M1 teklif türleri: üçü de** — kartlı ücretsiz deneme, ücretli giriş
-  dönemi (Subscription Schedule), ilk dönem indirimi (kupon).
+  dönemi, ilk dönem indirimi (kupon). ⚠️ Giriş dönemi **değişti
+  (2026-11-04, kullanıcı)**: Subscription Schedule değil, **deneme günleri +
+  ilk faturada tek seferlik ücret** — schedule ödemeden sonra webhook'ta
+  kurulur, kurulamazsa müşteri süresiz giriş fiyatında kalırdı. Reddedilen:
+  Subscription Schedule. Kayıt `m1b-teklifler.md`.
 
 ## §B — Yığın
 

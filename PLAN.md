@@ -34,6 +34,7 @@
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
+| Teklifler (M1b) | ✅ 523 çekirdek testi, kırma 20/20, gerçek Stripe'ta üç teklif (0 € / 0,99 € / 4,99 bugün); panel formu tarayıcıda bekliyor (Ç108) | `docs/decisions/m1b-teklifler.md` |
 | Niş şablonları (V6) | ✅ 4 şablon, 503 çekirdek testi, kırma 15/15, 57 adım ekranda; 17 boşluk uyarısı (Ç107) | `docs/decisions/v6-nis-sablonlari.md` |
 | Yeni bloklar (V5) | ✅ 495 çekirdek testi, kırma 13/13, ekran + Chrome ölçümü; JS 18,6 KB / 30 | `docs/decisions/v5-yeni-bloklar.md` |
 | Hareket (V4) | ✅ 483 çekirdek testi, kırma 12/12, Chrome'da ölçüldü; Ç101 kapandı | `docs/decisions/v4-hareket.md` |
@@ -192,7 +193,7 @@
     - [x] V6 · 2026-11-04, `docs/decisions/v6-nis-sablonlari.md`: uyku/fitness/dil/finans şablonları (`config/huni/sablonlar`), panel Başlangıç seçicisi + API + AI `yeni_huni` `sablon`; tema hazır temadan, plan uygulamadan, görsel/yorum yok. Kırma 15/15. Açık Ç107
   - [ ] M1 · fiyat kataloğu — üç blok:
     - [x] M1a · 2026-11-03, `docs/decisions/m1a-fiyat-katalogu.md`: `planlar` tablosu, panel → Planlar (Stripe'ta ürün + fiyat; fiyat değişimi yeni fiyat), ödeme/huni/Puck/AI katalogdan, ortam değişkeni → `app:plan-ice-aktar`. Gerçek Stripe test API. Kırma 15/15 (K11 testi buldu). Açık Ç96
-    - [ ] M1b · teklifler: kartlı deneme + ücretli giriş dönemi + ilk dönem indirimi
+    - [x] M1b · 2026-11-04, `docs/decisions/m1b-teklifler.md`: plan başına bir teklif (katalogda); deneme kartlı, ücretli giriş = deneme + tek seferlik ücret (kullanıcı kararı, schedule reddedildi), indirim tek dönemlik yüzde kuponu; paywall metni teklifle. Kırma 20/20. Açık Ç108
     - [ ] M1c · sabit tutarlı çok para birimi (Adaptive Pricing kapanır)
   - [ ] M2 · paywall ayrı varlık + paywall blokları (plan seçici, sayaç, dinamik koşullar…), cevaba göre paywall; **gömülü ödeme** + Apple/Google Pay alt blok
   - [ ] M3 · downsell penceresi + ödeme sonrası tek tık upsell

@@ -536,6 +536,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/planlar/{anahtar}/teklif": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                anahtar: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** M1b — planın teklifini koyar, değiştirir ya da kaldırır (tur null); mevcut aboneler etkilenmez */
+        put: operations["panelApiPlanTeklifi"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -691,6 +711,23 @@ export interface components {
             paraBirimi: string;
             /** @enum {string} */
             aralik: "day" | "week" | "month" | "year";
+            teklif?: components["schemas"]["PlanTeklifi"];
+        };
+        /** @description M1b: planın giriş teklifi (en çok bir). deneme = kartlı ücretsiz gün; giris = gün + o gün ödenen tek seferlik ücret (planın para biriminde, Stripe'tan); indirim = ilk dönem yüzde. Gösterilemiyorsa planın fiyatı da yanıtta yoktur. */
+        PlanTeklifi: {
+            /** @enum {string} */
+            tur: "deneme";
+            gun: number;
+        } | {
+            /** @enum {string} */
+            tur: "giris";
+            gun: number;
+            /** @description Ana birimde, planın para biriminde */
+            tutar: number;
+        } | {
+            /** @enum {string} */
+            tur: "indirim";
+            yuzde: number;
         };
         /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
         HuniTanimi: {
@@ -2630,6 +2667,68 @@ export interface operations {
                 };
             };
             /** @description Geçersiz tutar ya da Stripe yanıt vermedi */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiPlanTeklifi: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                anahtar: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string|null} */
+                    tur: "deneme" | "giris" | "indirim" | null;
+                    gun?: number;
+                    tutar?: number;
+                    yuzde?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Güncel liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelPlanlari"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da plan */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz teklif ya da Stripe yanıt vermedi */
             422: {
                 headers: {
                     [name: string]: unknown;

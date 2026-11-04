@@ -875,7 +875,7 @@ describe("D9 · D10 · D11 · D12 — ilerleme", () => {
     await yuklendi();
     expect(
       document.querySelector('[data-adim="paywall"] p.fiyat')?.textContent,
-    ).toBe("€9,99 / ay");
+    ).toBe("€9,99\u00a0/\u00a0ay");
     cleanup();
     tanim = { durum: 200, govde: yayin() };
     kur();

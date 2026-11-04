@@ -39,6 +39,16 @@ uygulanmadı. `cat -A` macOS'ta yok, hata çıktıyı yuttu. **Doğrusu:** sabit
 metin ararken `grep -F`; metin değiştirirken düzenli ifadesiz bir betik
 (Python `str.replace` + "tam bir kez geçiyor mu" kontrolü).
 
+**Kabuk zsh (2026-11-04, `v6-nis-sablonlari.md`, `m1b-teklifler.md`):** bu
+makinede komutlar zsh'te koşuyor. (1) `K="python3 kir.py"; $K …` → "no such
+file": zsh değişkeni kelimelere **bölmez**; aynı sebeple döngüde
+`ayarla $t` (`t="giris 3 0.99"`) tek argüman gitti — üç ölçüm teklifsiz
+alındı, "yeşil" sanılabilirdi. (2) Tek tırnak içindeki `'\u00a0'` programa
+**karakter** olarak ulaştı (`repr` → `'\xa0'`), kırma yaması "0 kez eşleşti".
+**Doğrusu:** komut için işlev (`K() { …; }`), bölünecek değişken için
+`${=t}`; ters bölülü metni kabuktan değil Python içinden ver; yamanın
+eşleşme sayısını her zaman yazdır (§8).
+
 ## §21 — CI sonucunu SHA ile ararken push olmadıysa ESKİ koşu gelir
 **Belirti:** kırma denemesi "yeşil" döndü; oysa yama hiç uygulanmamış,
 commit/push olmamıştı. **Sebep:** HEAD değişmedi → aynı SHA'nın önceki
@@ -300,3 +310,9 @@ birden çok çekimle ölç.
 **Sebep:** sahte (ör. büyük görsel üreten HTTP sahtesi) ve denetlenen kod (aynı görseli çözen) aynı PHP sürecinde; ikisi birlikte sınıra yakın. Yerelde aynı 128M ile geçmesi şanstı (sıra/çöp toplama).
 **Ölçüm (2026-11-03, `v3b-stok-fotograf.md`):** 1880×2820 sahte JPEG + gerçek çözme → CI'da tam süitte 128 MB aşıldı (test tek başına 78,7 MB — birikmiş süit belleğiyle aştı); 1130×1700 (küçültmeyi yine ölçer) ile 9 testlik sınıf 69 MB.
 **Doğrusu:** sahte veriyi davranışı ölçen en küçük boyda tut, bir kez üret; yerel yeşili "sınıra ne kadar yakın" sorusuyla oku (`Memory:` satırı).
+
+## §48 — Satır içi YAML'da tırnaksız virgül JS üreticisinde metni sessizce keser
+**Belirti:** sözleşmeden üretilen TypeScript tipleri hatasız üretilir, tip denetimi yeşil; ama alanın açıklaması yarıda ("Ana birimde"). PHP tarafındaki sözleşme testleri ise `Malformed inline YAML string` ile düşer.
+**Sebep:** `tutar: { type: number, description: Ana birimde, planın para biriminde }` — akış eşlemesinde virgül ayırıcıdır. JS ayrıştırıcısı (openapi-typescript) metni ilk virgülde bitirip kalanını değersiz bir anahtar sayar; Symfony YAML reddeder.
+**Ölçüm (2026-11-04, `m1b-teklifler.md`):** `npm run uret` EXIT=0, üretilen açıklama `Ana birimde`; aynı dosya PHPUnit'te 10 testte ParseException.
+**Doğrusu:** satır içi eşlemede virgül, iki nokta ya da `#` içeren metni çift tırnağa al; sözleşme değişince yalnız tip üretimine değil PHP sözleşme testlerine de bak (`bin/kontrol` ikisini koşar).

@@ -877,6 +877,33 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama ya da plan, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Geçersiz tutar ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/planlar/{anahtar}/teklif:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: anahtar, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: panelApiPlanTeklifi
+      summary: M1b — planın teklifini koyar, değiştirir ya da kaldırır (tur null); mevcut aboneler etkilenmez
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [tur]
+              properties:
+                tur: { type: [string, "null"], enum: [deneme, giris, indirim, null] }
+                gun: { type: integer, minimum: 1, maximum: 90 }
+                tutar: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1000000 }
+                yuzde: { type: integer, minimum: 1, maximum: 99 }
+      responses:
+        "200": { description: Güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelPlanlari" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da plan, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz teklif ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
 components:
   securitySchemes:
     uygulamaAnahtari:
@@ -1108,6 +1135,33 @@ components:
         tutar: { type: number, description: Ana birimde (9.99) }
         paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
         aralik: { type: string, enum: [day, week, month, year] }
+        teklif: { $ref: "#/components/schemas/PlanTeklifi" }
+    PlanTeklifi:
+      description: >-
+        M1b: planın giriş teklifi (en çok bir). deneme = kartlı ücretsiz gün;
+        giris = gün + o gün ödenen tek seferlik ücret (planın para biriminde,
+        Stripe'tan); indirim = ilk dönem yüzde. Gösterilemiyorsa planın fiyatı
+        da yanıtta yoktur.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [tur, gun]
+          properties:
+            tur: { type: string, enum: [deneme] }
+            gun: { type: integer, minimum: 1, maximum: 90 }
+        - type: object
+          additionalProperties: false
+          required: [tur, gun, tutar]
+          properties:
+            tur: { type: string, enum: [giris] }
+            gun: { type: integer, minimum: 1, maximum: 90 }
+            tutar: { type: number, description: "Ana birimde, planın para biriminde" }
+        - type: object
+          additionalProperties: false
+          required: [tur, yuzde]
+          properties:
+            tur: { type: string, enum: [indirim] }
+            yuzde: { type: integer, minimum: 1, maximum: 99 }
     HuniTanimi:
       description: Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)
       type: object
