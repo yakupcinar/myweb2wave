@@ -1172,6 +1172,7 @@ describe("M3a — downsell", () => {
   });
   it("ödeme panelini ödemeden kapatmak pencereyi açar", async () => {
     vi.mocked(stripeYukle).mockResolvedValue(() => ({
+      handleNextAction: async () => ({}),
       createEmbeddedCheckoutPage: async () => ({
         mount: () => {},
         destroy: () => {},
@@ -1223,6 +1224,7 @@ describe("M2d — gömülü ödeme", () => {
     vi.mocked(stripeYukle).mockResolvedValue((anahtar: string) => {
       anahtarlar.push(anahtar);
       return {
+        handleNextAction: async () => ({}),
         createEmbeddedCheckoutPage: async ({ fetchClientSecret }) => {
           sirlar.push(await fetchClientSecret());
           return { mount: (k: HTMLElement) => takilan.push(k), destroy: yokEt };
@@ -1257,6 +1259,7 @@ describe("M2d — gömülü ödeme", () => {
   });
   it("Escape paneli kapatır", async () => {
     vi.mocked(stripeYukle).mockResolvedValue(() => ({
+      handleNextAction: async () => ({}),
       createEmbeddedCheckoutPage: async () => ({
         mount: () => {},
         destroy: () => {},

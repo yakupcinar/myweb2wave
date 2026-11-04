@@ -37,6 +37,8 @@ if (huni && /^[a-z0-9_-]{1,64}$/.test(huni))
           data.tanim.sonrasi,
           import.meta.env.PUBLIC_CORE_URL,
           data.tanim.tema,
+          data.ekUrunler,
+          oturum,
         );
     })
     .catch(() => undefined);

@@ -283,6 +283,37 @@
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 60
+                        },
+                        "upsell": {
+                            "description": "M3c: ödeme sonrası tek tık ek ürün (kayıtlı kartla); fiyatı sayfa yazar",
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "urun",
+                                "baslik",
+                                "dugme"
+                            ],
+                            "properties": {
+                                "urun": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,31}$"
+                                },
+                                "baslik": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                },
+                                "metin": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 1000
+                                },
+                                "dugme": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 60
+                                }
+                            }
                         }
                     }
                 },

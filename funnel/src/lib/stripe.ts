@@ -12,6 +12,10 @@ export type StripeYapici = (anahtar: string) => {
   createEmbeddedCheckoutPage(secenekler: {
     fetchClientSecret: () => Promise<string>;
   }): Promise<GomuluOdeme>;
+  /** M3c: ek ürün ödemesinde banka doğrulaması (3D Secure). */
+  handleNextAction(secenekler: {
+    clientSecret: string;
+  }): Promise<{ error?: { message?: string } }>;
 };
 
 let soz: Promise<StripeYapici | null> | null = null;

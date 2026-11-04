@@ -40,6 +40,27 @@ describe("M3b — ödeme sonrası ekran", () => {
       "Aboneliğiniz başlatılıyor…",
     );
   });
+  it("M3c: upsell yalnız ürün fiyatı ve oturum varken; tutar düğmede", () => {
+    const s = {
+      baslik: "Hoş geldin",
+      bloklar: [],
+      upsell: { urun: "kocluk", baslik: "Koçluk ekle", dugme: "Ekle" },
+    };
+    const fiyat = { kocluk: { ad: "Koçluk", tutar: 19.99, paraBirimi: "EUR" } };
+    document.body.innerHTML = SAYFA;
+    sonrasiCiz(s, "", undefined, fiyat, "cs_test_x");
+    expect(document.querySelector(".upsell button")?.textContent).toBe(
+      "Ekle · €19,99",
+    );
+    for (const [f, o] of [
+      [undefined, "cs_test_x"],
+      [fiyat, null],
+    ] as const) {
+      document.body.innerHTML = SAYFA;
+      sonrasiCiz(s, "", undefined, f, o);
+      expect(document.querySelector(".upsell")).toBeNull();
+    }
+  });
   it("düğme metni yoksa sayfanın varsayılanı kalır; metin HTML olarak yorumlanmaz", () => {
     document.body.innerHTML = SAYFA;
     sonrasiCiz(

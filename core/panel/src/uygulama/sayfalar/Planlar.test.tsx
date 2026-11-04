@@ -42,6 +42,7 @@ function kur(yanit422?: string) {
         },
         { anahtar: "eski", ad: "Eski", stripeFiyat: "price_b", fiyat: null },
     ];
+    let ekUrunler: unknown[] = [];
     const istekler: Istek[] = [];
     vi.stubGlobal(
         "fetch",
@@ -58,6 +59,20 @@ function kur(yanit422?: string) {
                 new Response(JSON.stringify(o), { status: durum });
             if (adres === "/panel/api/uygulamalar")
                 return j({ uygulamalar: ["keepchat"] });
+            // M3c: ek ürün kataloğu.
+            if (adres.endsWith("/ek-urunler")) {
+                if (istek.method === "POST")
+                    ekUrunler = [
+                        ...ekUrunler,
+                        {
+                            anahtar: "kocluk",
+                            ad: "Koçluk",
+                            stripeFiyat: "price_k",
+                            fiyat: { tutar: 19.99, paraBirimi: "EUR" },
+                        },
+                    ];
+                return j({ ekUrunler }, istek.method === "POST" ? 201 : 200);
+            }
             if (yanit422 && istek.method !== "GET")
                 return j({ hatalar: [yanit422] }, 422);
             if (istek.method === "POST") {
@@ -110,6 +125,37 @@ afterEach(() => {
 });
 
 describe("Planlar", () => {
+    it("M3c: ek ürün kartı — boş liste, yeni ürün tutarı SAYI olarak, liste yanıttan", async () => {
+        const istekler = kur();
+        const kart = within(
+            await screen.findByRole("region", { name: "Ek ürünler" }),
+        );
+        expect(await kart.findByText("Henüz ek ürün yok.")).toBeTruthy();
+        const form = within(screen.getByRole("form", { name: "Yeni ek ürün" }));
+        fireEvent.change(form.getByLabelText("Ürün anahtarı"), {
+            target: { value: "kocluk" },
+        });
+        fireEvent.change(form.getByLabelText("Ürün adı"), {
+            target: { value: "Koçluk" },
+        });
+        fireEvent.change(form.getByLabelText("Ürün tutarı"), {
+            target: { value: "19.99" },
+        });
+        fireEvent.click(form.getByRole("button", { name: "Ek ürünü oluştur" }));
+        // Elle: tr-TR EUR biçimi.
+        expect(await kart.findByText("€19,99")).toBeTruthy();
+        expect(
+            istekler.find(
+                (i) => i.adres.endsWith("/ek-urunler") && i.yontem === "POST",
+            )?.govde,
+        ).toEqual({
+            anahtar: "kocluk",
+            ad: "Koçluk",
+            tutar: 19.99,
+            paraBirimi: "EUR",
+        });
+    });
+
     it("M1b: teklif sütunu yanıttan; teklifsiz plan tire", async () => {
         kur();
         const tablo = await screen.findByRole("region", { name: "Planlar" });

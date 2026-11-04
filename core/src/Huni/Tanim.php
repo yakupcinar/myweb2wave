@@ -47,6 +47,8 @@ final class Tanim
         .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar. '
         // M2c
         .'Cevaba göre farklı paywall: huni birden çok paywall adımı içerebilir; son adım paywall olmalı, öndeki paywall\'a yonlendirme ya da hedef ile gidilir (paywall\'dan sonra sıradaki adıma geçilmez). '
+        // M3c
+        .'sonrasi içinde isteğe bağlı upsell: {"urun", "baslik", "dugme", "metin"?} — ödeme sonrası tek tıkla satılan ek ürün (kayıtlı kartla); fiyatı ekran yazar, metne fiyat ya da aciliyet yazma. '
         // M3b
         .'İsteğe bağlı sonrasi (tanımın kökünde, adım değil): {"baslik", "bloklar", "dugme"?} — ödeme sonrası ekran (sonraki adımlar, uygulamayı indir, destek); soru bloğu ve koşullu değer yok. Uygulamaya giriş bağlantısı düğmesi ekranın altına kendiliğinden gelir, dugme onun metni. '
         // M3a
@@ -140,11 +142,12 @@ final class Tanim
     ];
 
     /**
-     * @param list<string> $planlar bu uygulamanın planları (config uygulamalar)
+     * @param list<string> $planlar   bu uygulamanın planları (config uygulamalar)
+     * @param list<string> $ekUrunler M3c: bu uygulamanın ek ürünleri (upsell)
      *
      * @return list<string> boşsa geçerli
      */
-    public static function hatalar(mixed $tanim, array $planlar): array
+    public static function hatalar(mixed $tanim, array $planlar, array $ekUrunler = []): array
     {
         // tema isteğe bağlı (E2.2): yoksa huni sayfası varsayılanı kullanır.
         // logo isteğe bağlı (Ç61 (5)): temadan bağımsız, görsel kimliği.
@@ -362,7 +365,7 @@ final class Tanim
             }
         }
         if (\array_key_exists('sonrasi', $tanim)) {
-            self::sonrasi($tanim['sonrasi'], $sira, \count($adimlar), $h);
+            self::sonrasi($tanim['sonrasi'], $sira, \count($adimlar), $ekUrunler, $h);
         }
 
         return $h;
@@ -374,18 +377,36 @@ final class Tanim
      * O sayfada cevap yok: soru bloğu ve koşullu değer yok.
      *
      * @param array<string, int> $sira
+     * @param list<string>       $ekUrunler
      * @param list<string>       $h
      */
-    private static function sonrasi(mixed $s, array $sira, int $son, array &$h): void
+    private static function sonrasi(mixed $s, array $sira, int $son, array $ekUrunler, array &$h): void
     {
-        $istege = \is_array($s) && \array_key_exists('dugme', $s) ? ['dugme'] : [];
+        $istege = \is_array($s) ? array_values(array_intersect(['dugme', 'upsell'], array_map(strval(...), array_keys($s)))) : [];
         if (!\is_array($s) || !self::anahtarlar($s, ['baslik', 'bloklar', ...$istege])) {
-            $h[] = 'sonrasi: alanlar tam olarak baslik, bloklar ve (isteğe bağlı) dugme olmalı';
+            $h[] = 'sonrasi: alanlar tam olarak baslik, bloklar ve (isteğe bağlı) dugme, upsell olmalı';
 
             return;
         }
+        // M3c: tek tık ek ürün — katalogdan ürün + başlık + düğme (+ metin); fiyat Stripe'tan.
+        if (\array_key_exists('upsell', $s)) {
+            $u = $s['upsell'];
+            $uIstege = \is_array($u) && \array_key_exists('metin', $u) ? ['metin'] : [];
+            if (!\is_array($u) || !self::anahtarlar($u, ['urun', 'baslik', 'dugme', ...$uIstege])) {
+                $h[] = 'sonrasi upsell: alanlar tam olarak urun, baslik, dugme ve (isteğe bağlı) metin olmalı';
+            } else {
+                if (!\is_string($u['urun']) || !\in_array($u['urun'], $ekUrunler, true)) {
+                    $h[] = "sonrasi upsell: ek ürün '".(\is_string($u['urun']) ? $u['urun'] : '?')."' bu uygulamada yok (".([] === $ekUrunler ? 'hiç ek ürün yok — panel → Planlar' : 'ek ürünler: '.implode(', ', $ekUrunler)).')';
+                }
+                self::metin($u['baslik'], 'baslik', 'sonrasi upsell baslik', $h);
+                self::metin($u['dugme'], 'dugme', 'sonrasi upsell dugme', $h);
+                if ([] !== $uIstege) {
+                    self::metin($u['metin'], 'blokMetni', 'sonrasi upsell metin', $h);
+                }
+            }
+        }
         self::metin($s['baslik'], 'baslik', 'sonrasi baslik', $h);
-        if ([] !== $istege) {
+        if (\array_key_exists('dugme', $s)) {
             self::metin($s['dugme'], 'dugme', 'sonrasi dugme', $h);
         }
         foreach (\is_array($s['bloklar']) ? $s['bloklar'] : [] as $j => $b) {

@@ -197,6 +197,11 @@ export type OdemeSonrasiProps = {
     baslik: string;
     bloklar: EkranProps["bloklar"];
     dugme: string;
+    /** M3c: ürün "" = upsell yok; başlık + düğme doluysa yazılır. */
+    upsellUrun: string;
+    upsellBaslik: string;
+    upsellMetin: string;
+    upsellDugme: string;
 };
 export type Bilesenler = {
     OdemeSonrasi: OdemeSonrasiProps;
@@ -711,6 +716,10 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                   bloktanPuck(b, `sonrasi-${j}`),
                               ),
                               dugme: tanim.sonrasi.dugme ?? "",
+                              upsellUrun: tanim.sonrasi.upsell?.urun ?? "",
+                              upsellBaslik: tanim.sonrasi.upsell?.baslik ?? "",
+                              upsellMetin: tanim.sonrasi.upsell?.metin ?? "",
+                              upsellDugme: tanim.sonrasi.upsell?.dugme ?? "",
                           },
                       },
                   ]
@@ -852,6 +861,16 @@ export function puckTanim(veri: HuniVerisi): Tanim {
             baslik: p.baslik,
             bloklar: (p.bloklar ?? []).map(puckBloktan),
             ...(p.dugme ? { dugme: p.dugme } : {}),
+            ...(p.upsellUrun && p.upsellBaslik && p.upsellDugme
+                ? {
+                      upsell: {
+                          urun: p.upsellUrun,
+                          baslik: p.upsellBaslik,
+                          ...(p.upsellMetin ? { metin: p.upsellMetin } : {}),
+                          dugme: p.upsellDugme,
+                      },
+                  }
+                : {}),
         };
     }
     if (k?.logo) tanim.logo = k.logo;

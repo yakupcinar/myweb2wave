@@ -27,6 +27,7 @@ final readonly class HuniController
         private Huniler $huniler,
         private Fiyatlar $fiyatlar,
         private UlkeBulucu $ulkeler,
+        private \App\Billing\EkUrunler $ekUrunler,
     ) {
     }
 
@@ -49,7 +50,7 @@ final readonly class HuniController
         if (null === $huni || null === $yayin) {
             return new JsonResponse(['error' => 'unknown_app'], 404);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin + $this->fiyatAlani($app, $request));
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']));
         // M1c: fiyat ziyaretçinin ülkesine (IP) göre — ortak önbellek (CDN) bir
         // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
         $yanit->setPrivate();
@@ -67,6 +68,22 @@ final readonly class HuniController
         return [] === $fiyatlar ? [] : ['fiyatlar' => $fiyatlar];
     }
 
+    /**
+     * M3c: ödeme sonrası ekranın upsell ürünü — ad ve Stripe tutarı (başarı
+     * sayfası gösterir); okunamazsa alan yok, upsell gösterilmez.
+     *
+     * @param array<mixed> $tanim
+     *
+     * @return array{ekUrunler?: array<string, array{ad: string, tutar: int|float, paraBirimi: string}>}
+     */
+    private function ekUrunAlani(string $app, array $tanim): array
+    {
+        $urun = \is_array($tanim['sonrasi'] ?? null) && \is_array($tanim['sonrasi']['upsell'] ?? null) ? ($tanim['sonrasi']['upsell']['urun'] ?? null) : null;
+        $fiyat = \is_string($urun) ? $this->ekUrunler->fiyat($app, $urun) : null;
+
+        return null === $fiyat ? [] : ['ekUrunler' => [$urun => $fiyat]];
+    }
+
     #[Route('/huni/{app}/taslak', name: 'huni_taslak', methods: ['GET'], requirements: ['app' => '[a-z0-9_-]+'])]
     public function taslak(Request $request, string $app): JsonResponse
     {
@@ -82,7 +99,7 @@ final readonly class HuniController
         if (null === $sonuc) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request));
+        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $sonuc['tanim']));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

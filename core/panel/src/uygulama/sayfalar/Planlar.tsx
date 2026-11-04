@@ -86,7 +86,10 @@ export function Planlar(): ReactNode {
                 aciklama="Paywall'un sattığı abonelikler. Plan açınca Stripe'ta ürün ve fiyat oluşur."
             />
             {app ? (
-                <PlanListesi app={app} />
+                <>
+                    <PlanListesi app={app} />
+                    <EkUrunListesi app={app} />
+                </>
             ) : (
                 <p className="text-soluk">Yükleniyor…</p>
             )}
@@ -719,5 +722,176 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                 </form>
             </Kart>
         </div>
+    );
+}
+
+/**
+ * M3c: ek ürünler — ödeme sonrası ekranında kayıtlı kartla tek tıkla satılan
+ * tek seferlik ürünler. Tutar Stripe'tan; ürün açılınca Stripe'ta ürün + tek
+ * seferlik fiyat oluşur.
+ */
+function EkUrunListesi({ app }: { app: string }): ReactNode {
+    const istemci = useQueryClient();
+    const anahtar = ["ek-urunler", app];
+    const sorgu = useQuery({
+        queryKey: anahtar,
+        queryFn: async () => {
+            const { data } = await api.GET(
+                "/panel/api/uygulamalar/{app}/ek-urunler",
+                { params: { path: { app } } },
+            );
+            if (!data) throw new Error("ek ürünler alınamadı");
+            return data;
+        },
+    });
+    const [yeni, setYeni] = useState({
+        anahtar: "",
+        ad: "",
+        tutar: "",
+        paraBirimi: "EUR" as (typeof PARA_BIRIMLERI)[number],
+    });
+    const olustur = useMutation({
+        mutationFn: async () => {
+            const { data, error } = await api.POST(
+                "/panel/api/uygulamalar/{app}/ek-urunler",
+                {
+                    params: { path: { app }, header: { "X-CSRF-Token": "" } },
+                    body: { ...yeni, tutar: Number(yeni.tutar) },
+                },
+            );
+            if (!data)
+                throw new Error(
+                    (error?.hatalar ?? ["Oluşturulmadı."]).join(" "),
+                );
+            return data;
+        },
+        onSuccess: (d) => {
+            istemci.setQueryData(anahtar, d);
+            setYeni({ ...yeni, anahtar: "", ad: "", tutar: "" });
+        },
+    });
+    return (
+        <Kart aria-label="Ek ürünler">
+            <KartBasi
+                baslik="Ek ürünler"
+                aciklama="Ödeme sonrası ekranında kayıtlı kartla tek tıkla satılan tek seferlik ürünler (huni düzenleyicisi → Ödeme sonrası ekran → upsell)."
+            />
+            <Tablo>
+                <thead>
+                    <tr>
+                        {["Anahtar", "Ad", "Fiyat"].map((b) => (
+                            <Th key={b}>{b}</Th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {(sorgu.data?.ekUrunler ?? []).map((u) => (
+                        <tr key={u.anahtar}>
+                            <Td className="font-mono text-[12.5px]">
+                                {u.anahtar}
+                            </Td>
+                            <Td>{u.ad}</Td>
+                            <Td>
+                                {u.fiyat
+                                    ? new Intl.NumberFormat("tr-TR", {
+                                          style: "currency",
+                                          currency: u.fiyat.paraBirimi,
+                                      }).format(u.fiyat.tutar)
+                                    : "Stripe'tan okunamadı"}
+                            </Td>
+                        </tr>
+                    ))}
+                    {sorgu.data && !sorgu.data.ekUrunler.length ? (
+                        <tr>
+                            <Td colSpan={3} className="text-soluk">
+                                Henüz ek ürün yok.
+                            </Td>
+                        </tr>
+                    ) : null}
+                </tbody>
+            </Tablo>
+            <form
+                aria-label="Yeni ek ürün"
+                className="flex flex-wrap items-end gap-3 px-4.5 py-4"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    olustur.mutate();
+                }}
+            >
+                <label className="grid gap-1.5">
+                    <span className="font-semibold">Ürün anahtarı</span>
+                    <input
+                        value={yeni.anahtar}
+                        maxLength={32}
+                        placeholder="kocluk"
+                        onChange={(e) =>
+                            setYeni({ ...yeni, anahtar: e.currentTarget.value })
+                        }
+                        className={`${girdiSinifi} w-40 font-mono`}
+                    />
+                </label>
+                <label className="grid gap-1.5">
+                    <span className="font-semibold">Ürün adı</span>
+                    <input
+                        value={yeni.ad}
+                        maxLength={100}
+                        placeholder="Kişisel koçluk paketi"
+                        onChange={(e) =>
+                            setYeni({ ...yeni, ad: e.currentTarget.value })
+                        }
+                        className={`${girdiSinifi} w-56`}
+                    />
+                </label>
+                <label className="grid gap-1.5">
+                    <span className="font-semibold">Ürün tutarı</span>
+                    <input
+                        type="number"
+                        min="0.01"
+                        step="any"
+                        value={yeni.tutar}
+                        placeholder="19.99"
+                        onChange={(e) =>
+                            setYeni({ ...yeni, tutar: e.currentTarget.value })
+                        }
+                        className={`${girdiSinifi} w-28`}
+                    />
+                </label>
+                <label className="grid gap-1.5">
+                    <span className="font-semibold">Ürün para birimi</span>
+                    <select
+                        value={yeni.paraBirimi}
+                        onChange={(e) =>
+                            setYeni({
+                                ...yeni,
+                                paraBirimi: e.currentTarget
+                                    .value as (typeof PARA_BIRIMLERI)[number],
+                            })
+                        }
+                        className={girdiSinifi}
+                    >
+                        {PARA_BIRIMLERI.map((p) => (
+                            <option key={p}>{p}</option>
+                        ))}
+                    </select>
+                </label>
+                <Dugme
+                    tur="ana"
+                    type="submit"
+                    disabled={
+                        !yeni.anahtar.trim() ||
+                        !yeni.ad.trim() ||
+                        !yeni.tutar ||
+                        olustur.isPending
+                    }
+                >
+                    Ek ürünü oluştur
+                </Dugme>
+                {olustur.isError ? (
+                    <span role="alert" className="text-tehlike">
+                        {olustur.error.message}
+                    </span>
+                ) : null}
+            </form>
+        </Kart>
     );
 }

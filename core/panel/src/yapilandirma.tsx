@@ -42,6 +42,8 @@ import type {
 
 export type Ortam = {
     planlar: string[];
+    /** M3c: ek ürün anahtarları (ödeme sonrası upsell); yoksa seçici boş. */
+    ekUrunler?: string[];
     yaziTipleri: string[];
     medyaAdresi: string; // panel listesi + yükleme ucu
     jeton: string;
@@ -1443,6 +1445,24 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         type: "text",
                         label: "Giriş düğmesi metni (boş = varsayılan)",
                     },
+                    // M3c: tek tık ek ürün (kayıtlı kartla); fiyatı sayfa yazar.
+                    upsellUrun: {
+                        type: "select",
+                        label: "Tek tık ek ürün (upsell)",
+                        options: [
+                            { label: "yok", value: "" },
+                            ...(ortam.ekUrunler ?? []).map((u) => ({
+                                label: u,
+                                value: u,
+                            })),
+                        ],
+                    },
+                    upsellBaslik: { type: "text", label: "Upsell başlığı" },
+                    upsellMetin: {
+                        type: "text",
+                        label: "Upsell metni (isteğe bağlı)",
+                    },
+                    upsellDugme: { type: "text", label: "Upsell düğmesi" },
                 },
                 defaultProps: {
                     baslik: "Hoş geldin!",
@@ -1455,6 +1475,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                         },
                     ],
                     dugme: "",
+                    upsellUrun: "",
+                    upsellBaslik: "",
+                    upsellMetin: "",
+                    upsellDugme: "",
                 },
                 render: ({ baslik, bloklar: Bloklar }) => (
                     <div style={kart}>

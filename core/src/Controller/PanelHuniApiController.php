@@ -29,6 +29,7 @@ final class PanelHuniApiController extends AbstractController
     public function __construct(
         private readonly Huniler $huniler,
         private readonly Planlar $planlar,
+        private readonly \App\Billing\EkUrunler $ekUrunler,
         private readonly Sablonlar $sablonlar,
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
@@ -112,6 +113,8 @@ final class PanelHuniApiController extends AbstractController
             'taslak' => $taslak,
             'imza' => $this->huniler->taslakImzasi($app, $ad),
             'planlar' => array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))),
+            // M3c: ödeme sonrası upsell seçicisi.
+            'ekUrunler' => $this->ekUrunler->anahtarlar($app),
             'temaVarsayilan' => Tema::VARSAYILAN,
             'hazirTemalar' => array_map(static fn (string $anahtar, array $h): array => ['anahtar' => $anahtar] + $h, array_keys(Tema::HAZIR_TEMALAR), Tema::HAZIR_TEMALAR),
             'yaziTipleri' => Tema::YAZI_TIPLERI,

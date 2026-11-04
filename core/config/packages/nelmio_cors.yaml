@@ -12,7 +12,7 @@ nelmio_cors:
     paths:
         # H6a/Ç56: izin verme ve geri alma uçları, E1 e-posta ucu da; CORS'tan biri eksikse
         # tarayıcıda sessizce düşer (durum 0), sunucu testleri yeşil kalır.
-        '^/(checkout/sessions|huni/giris-baglantisi|huni/ziyaretler(/[0-9a-f-]{36}/(ilerleme|izin|eposta))?)$':
+        '^/(checkout/sessions|huni/giris-baglantisi|huni/ek-satis|huni/ziyaretler(/[0-9a-f-]{36}/(ilerleme|izin|eposta))?)$':
             allow_origin: ['%env(FUNNEL_BASE_URL)%']
             allow_methods: ['POST', 'DELETE', 'OPTIONS']
             allow_headers: ['Content-Type']

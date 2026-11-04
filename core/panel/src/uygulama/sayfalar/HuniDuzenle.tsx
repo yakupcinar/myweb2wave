@@ -92,6 +92,7 @@ export function HuniDuzenle(): ReactNode {
                     varsayilanTema={acilis.data.temaVarsayilan}
                     ortam={{
                         planlar: acilis.data.planlar,
+                        ekUrunler: acilis.data.ekUrunler,
                         yaziTipleri: acilis.data.yaziTipleri,
                         hazirTemalar: acilis.data.hazirTemalar,
                         ozellikler: acilis.data.ozellikler,

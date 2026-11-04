@@ -60,3 +60,11 @@ export function kosulMetni(fiyat: PlanFiyati | undefined): string | undefined {
     return `Bugün ${para(t.tutar)} ödenir. ${t.gun}${B}gün sonra ilk ödeme alınır; ${yenileme}`;
   return `İlk${B}${ARALIK[fiyat.aralik]} %${t.yuzde}${B}indirimli ödenir; sonra ${yenileme}`;
 }
+
+// M3c: tek seferlik tutar (ek ürün) — fiyat metniyle aynı biçim.
+export function tutarMetni(tutar: number, paraBirimi: string): string {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: paraBirimi,
+  }).format(tutar);
+}

@@ -652,12 +652,13 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [baslik, taslak, imza, planlar, temaVarsayilan, hazirTemalar, yaziTipleri, ozellikler, jeton, adresler]
+                required: [baslik, taslak, imza, planlar, ekUrunler, temaVarsayilan, hazirTemalar, yaziTipleri, ozellikler, jeton, adresler]
                 properties:
                   baslik: { type: string }
                   taslak: { $ref: "#/components/schemas/HuniTanimi" }
                   imza: { type: string, description: "Ç39: taslak imzası; kayıtta geri yollanır (eşleşmezse 409)" }
                   planlar: { type: array, items: { type: string } }
+                  ekUrunler: { type: array, items: { type: string }, description: "M3c: ek ürün anahtarları (ödeme sonrası upsell)" }
                   temaVarsayilan: { $ref: "#/components/schemas/HuniTemasi" }
                   hazirTemalar:
                     description: "V2 — hazır temalar (tek kaynak Tema::HAZIR_TEMALAR; AI istemi de aynı listeyi görür)"
@@ -889,6 +890,84 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama ya da plan, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Geçersiz tutar ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /huni/ek-satis:
+    post:
+      operationId: huniEkSatis
+      summary: "M3c — ödeme sonrası tek tık ek ürün; yetki ödenmiş, bu uygulamanın, son 1 saatteki Stripe oturumu; oturum + ürün başına bir satış. 3D Secure gerekirse istemci doğrulayıp aynı isteği yineler"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [app, oturum, urun]
+              properties:
+                app: { type: string }
+                oturum: { type: string, pattern: "^cs_[A-Za-z0-9_]{1,250}$" }
+                urun: { type: string, pattern: "^[a-z][a-z0-9_]{0,31}$" }
+      responses:
+        "200":
+          description: Ödendi ya da banka doğrulaması gerekli
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    required: [durum]
+                    properties:
+                      durum: { type: string, enum: [odendi] }
+                  - type: object
+                    additionalProperties: false
+                    required: [durum, clientSecret, anahtar]
+                    properties:
+                      durum: { type: string, enum: [dogrulama] }
+                      clientSecret: { type: string }
+                      anahtar: { type: string }
+        "422":
+          description: "Geçersiz istek, uygun olmayan oturum, para birimi uyuşmazlığı, kart reddi ya da sürmekte olan satış"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [error]
+                properties:
+                  error: { type: string, enum: [invalid_request, unknown_product, unknown_session, session_not_eligible, currency_mismatch, card_declined, in_progress] }
+        "502": { description: Stripe'a ulaşılamadı, content: { application/json: { schema: { type: object, required: [error], properties: { error: { type: string, enum: [payment_provider_unavailable] } } } } } }
+  /panel/api/uygulamalar/{app}/ek-urunler:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiEkUrunler
+      summary: M3c — ek ürün kataloğu (tutar Stripe'tan)
+      responses:
+        "200": { description: Liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelEkUrunleri" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiEkUrunOlustur
+      summary: M3c — yeni ek ürün (Stripe'ta ürün + tek seferlik fiyat)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [anahtar, ad, tutar, paraBirimi]
+              properties:
+                anahtar: { type: string, pattern: "^[a-z][a-z0-9_]{0,31}$" }
+                ad: { type: string, minLength: 1, maxLength: 100 }
+                tutar: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1000000 }
+                paraBirimi: { type: string, enum: [EUR, USD, GBP, TRY] }
+      responses:
+        "201": { description: Oluştu; güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelEkUrunleri" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz alan ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1137,6 +1216,17 @@ components:
         huni: { $ref: "#/components/schemas/HuniKimligi" }
         surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
         tanim: { $ref: "#/components/schemas/HuniTanimi" }
+        ekUrunler:
+          description: "M3c: ödeme sonrası upsell ürünü → ad + Stripe tutarı; okunamazsa yok (upsell gösterilmez)"
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: false
+            required: [ad, tutar, paraBirimi]
+            properties:
+              ad: { type: string }
+              tutar: { type: number }
+              paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
         fiyatlar:
           description: >-
             Ç19/Ç21: plan → Stripe fiyatı (tek kaynak). Stripe'a ulaşılamazsa
@@ -1166,6 +1256,31 @@ components:
               fiyat:
                 description: Stripe'tan; okunamazsa null
                 oneOf: [{ $ref: "#/components/schemas/PlanFiyati" }, { type: "null" }]
+    PanelEkUrunleri:
+      type: object
+      additionalProperties: false
+      required: [ekUrunler]
+      properties:
+        ekUrunler:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [anahtar, ad, stripeFiyat, fiyat]
+            properties:
+              anahtar: { type: string }
+              ad: { type: string }
+              stripeFiyat: { type: string }
+              fiyat:
+                description: Stripe'tan; okunamazsa null
+                oneOf:
+                  - type: "null"
+                  - type: object
+                    additionalProperties: false
+                    required: [tutar, paraBirimi]
+                    properties:
+                      tutar: { type: number }
+                      paraBirimi: { type: string }
     PlanFiyati:
       type: object
       additionalProperties: false
@@ -1236,6 +1351,16 @@ components:
               maxItems: 12
               items: { $ref: "#/components/schemas/EkranBlogu" }
             dugme: { type: string, minLength: 1, maxLength: 60 }
+            upsell:
+              description: "M3c: ödeme sonrası tek tık ek ürün (kayıtlı kartla); fiyatı sayfa yazar"
+              type: object
+              additionalProperties: false
+              required: [urun, baslik, dugme]
+              properties:
+                urun: { type: string, pattern: "^[a-z][a-z0-9_]{0,31}$" }
+                baslik: { type: string, minLength: 1, maxLength: 200 }
+                metin: { type: string, minLength: 1, maxLength: 1000 }
+                dugme: { type: string, minLength: 1, maxLength: 60 }
         adimlar:
           type: array
           minItems: 2

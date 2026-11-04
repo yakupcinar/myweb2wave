@@ -536,6 +536,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/ek-satis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M3c — ödeme sonrası tek tık ek ürün; yetki ödenmiş, bu uygulamanın, son 1 saatteki Stripe oturumu; oturum + ürün başına bir satış. 3D Secure gerekirse istemci doğrulayıp aynı isteği yineler */
+        post: operations["huniEkSatis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/ek-urunler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** M3c — ek ürün kataloğu (tutar Stripe'tan) */
+        get: operations["panelApiEkUrunler"];
+        put?: never;
+        /** M3c — yeni ek ürün (Stripe'ta ürün + tek seferlik fiyat) */
+        post: operations["panelApiEkUrunOlustur"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri": {
         parameters: {
             query?: never;
@@ -709,6 +746,14 @@ export interface components {
             /** @description Yayınlanmış sürüm; taslakta null */
             surum: number | null;
             tanim: components["schemas"]["HuniTanimi"];
+            /** @description M3c: ödeme sonrası upsell ürünü → ad + Stripe tutarı; okunamazsa yok (upsell gösterilmez) */
+            ekUrunler?: {
+                [key: string]: {
+                    ad: string;
+                    tutar: number;
+                    paraBirimi: string;
+                };
+            };
             /** @description Ç19/Ç21: plan → Stripe fiyatı (tek kaynak). Stripe'a ulaşılamazsa ya da fiyat tek aralıklı yinelenen değilse yok — paywall yalnız metnini gösterir. */
             fiyatlar?: {
                 [key: string]: components["schemas"]["PlanFiyati"];
@@ -723,6 +768,18 @@ export interface components {
                 stripeFiyat: string;
                 /** @description Stripe'tan; okunamazsa null */
                 fiyat: components["schemas"]["PlanFiyati"] | null;
+            }[];
+        };
+        PanelEkUrunleri: {
+            ekUrunler: {
+                anahtar: string;
+                ad: string;
+                stripeFiyat: string;
+                /** @description Stripe'tan; okunamazsa null */
+                fiyat: null | {
+                    tutar: number;
+                    paraBirimi: string;
+                };
             }[];
         };
         PlanFiyati: {
@@ -774,6 +831,13 @@ export interface components {
                 baslik: string;
                 bloklar: components["schemas"]["EkranBlogu"][];
                 dugme?: string;
+                /** @description M3c: ödeme sonrası tek tık ek ürün (kayıtlı kartla); fiyatı sayfa yazar */
+                upsell?: {
+                    urun: string;
+                    baslik: string;
+                    metin?: string;
+                    dugme: string;
+                };
             };
             adimlar: (components["schemas"]["YuklemeAdimi"] | components["schemas"]["EkranAdimi"] | components["schemas"]["PaywallAdimi"])[];
         };
@@ -2227,6 +2291,8 @@ export interface operations {
                         /** @description Ç39: taslak imzası; kayıtta geri yollanır (eşleşmezse 409) */
                         imza: string;
                         planlar: string[];
+                        /** @description M3c: ek ürün anahtarları (ödeme sonrası upsell) */
+                        ekUrunler: string[];
                         temaVarsayilan: components["schemas"]["HuniTemasi"];
                         /** @description V2 — hazır temalar (tek kaynak Tema::HAZIR_TEMALAR; AI istemi de aynı listeyi görür) */
                         hazirTemalar: {
@@ -2740,6 +2806,158 @@ export interface operations {
                 };
             };
             /** @description Geçersiz tutar ya da Stripe yanıt vermedi */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    huniEkSatis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    app: string;
+                    oturum: string;
+                    urun: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Ödendi ya da banka doğrulaması gerekli */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        durum: "odendi";
+                    } | {
+                        /** @enum {string} */
+                        durum: "dogrulama";
+                        clientSecret: string;
+                        anahtar: string;
+                    };
+                };
+            };
+            /** @description Geçersiz istek, uygun olmayan oturum, para birimi uyuşmazlığı, kart reddi ya da sürmekte olan satış */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        error: "invalid_request" | "unknown_product" | "unknown_session" | "session_not_eligible" | "currency_mismatch" | "card_declined" | "in_progress";
+                    };
+                };
+            };
+            /** @description Stripe'a ulaşılamadı */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        error: "payment_provider_unavailable";
+                    };
+                };
+            };
+        };
+    };
+    panelApiEkUrunler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelEkUrunleri"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiEkUrunOlustur: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    anahtar: string;
+                    ad: string;
+                    tutar: number;
+                    /** @enum {string} */
+                    paraBirimi: "EUR" | "USD" | "GBP" | "TRY";
+                };
+            };
+        };
+        responses: {
+            /** @description Oluştu; güncel liste */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelEkUrunleri"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz alan ya da Stripe yanıt vermedi */
             422: {
                 headers: {
                     [name: string]: unknown;

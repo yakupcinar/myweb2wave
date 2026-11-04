@@ -34,6 +34,7 @@
 | Huni görselleri (E2.3) | ✅ 154 test, kırma 8/8, gerçek HTTP 16 Mpx + 4,6 MB, tarayıcıda kapak/seçenek | `docs/decisions/gorseller.md` |
 | Sürükle-bırak (E2.4a, Puck) | ✅ 155 + 5 test, kırma 6/6, tarayıcıda sürükle + kaydet + hata | `docs/decisions/puck.md` |
 | Huni çatısı (B4) | 🟡 karar ✅, H0 ✅ ölçüldü, H1 ✅ ortak bileşen + tek tema/CSS, H2 ✅ React oynatıcı (22 test, JS 73,2 KB gzip), H3 ✅ önizleme = huni (DOM + stil farkı 0), H4 ✅ CSS geçişleri, H5 ✅ dallanma (A11), H6 bekliyor | `docs/decisions/huni-cati-arastirmasi.md`, `huni-bilesenleri-h1.md`, `huni-oynatici-h2.md`, `huni-onizleme-h3.md`, `huni-gecisler-h4.md`, `huni-dallanma-h5.md` |
+| Ek ürün upsell (M3c) | ✅ 587 çekirdek testi, kırma 16/16, Chrome'da gerçek abonelik + tek tık €19,99 (kayıtlı kart) | `docs/decisions/m3c-ek-urun-upsell.md` |
 | Ödeme sonrası (M3b) | ✅ 575 çekirdek testi, kırma 9/9, gerçek oturum dönüş adresi + Chrome'da çizim | `docs/decisions/m3b-odeme-sonrasi.md` |
 | Downsell (M3a) | ✅ 571 çekirdek testi, kırma 10/10, Chrome'da gerçek geri tuşuyla | `docs/decisions/m3a-downsell.md` |
 | Gömülü ödeme (M2d) | ✅ 564 çekirdek testi, kırma 10/10, Chrome'da test kartıyla gerçek abonelik (eur 999, gömülü); cüzdanlar sunucuda | `docs/decisions/m2d-gomulu-odeme.md` |
@@ -207,10 +208,10 @@
     - [x] M2b · 2026-11-04, `docs/decisions/m2b-sayac-guvence-onay.md`: teklif bitişi (tek bekçi `teklifler()`, istemci saati), sayaç yalnız gerçek bitişe; rozetler yalnız doğru olanlar; şart onayı düğmeyi kilitler, kanıt Stripe metadata'sında. Kırma 17/17. Açık Ç111
     - [x] M2c · 2026-11-04, `docs/decisions/m2c-cok-paywall.md`: "tam bir kez" kalktı, son adım paywall; öndeki paywall'a seçenek hedefi/yönlendirme; her paywall'da çubuk dolu. Kırma 4/4. Açık Ç112
     - [x] M2d · 2026-11-04, `docs/decisions/m2d-gomulu-odeme.md`: gömülü ödeme (Stripe.js yüklenemezse barındırılan sayfa), panel kapat/Escape; para birimi hep zorlanır (§50). Kırma 10/10. **Apple/Google Pay sunucuya ertelendi** (kullanıcı). Açık Ç113
-  - [ ] M3 · downsell + upsell (kararlar `pre-setup.md` A16, kullanıcı 2026-11-04):
+  - [x] M3 · downsell + upsell (kararlar `pre-setup.md` A16, kullanıcı 2026-11-04):
     - [x] M3a · 2026-11-04, `docs/decisions/m3a-downsell.md`: geri tuşu / panel kapatma → bir kez downsell penceresi (katalog planı, fiyat + koşul Stripe'tan, şart onayı korunur). Kırma 10/10 (K6 testi buldu). Açık Ç114
     - [x] M3b · 2026-11-04, `docs/decisions/m3b-odeme-sonrasi.md`: tanım kökünde `sonrasi` (başlık + bloklar + düğme metni), giriş alanı sabit; dönüş adresi huniyi taşır; düzenleyicide "Ödeme sonrası ekran". Kırma 9/9 (K6 testi buldu). Açık Ç115
-    - [ ] M3c · ek ürün kataloğu + kayıtlı kartla tek tık upsell (3D Secure gerekirse)
+    - [x] M3c · 2026-11-04, `docs/decisions/m3c-ek-urun-upsell.md`: ek ürün kataloğu (tek seferlik fiyat), ödeme sonrası tek tık upsell (on-session, kayıtlı kart, oturum + ürün başına bir, ≤ 1 sa, 3D Secure sayfada). Kırma 16/16 (K10 testi buldu). Açık Ç116
   - [ ] M4 · deneyler: yönlendirme + içerik (`deney.<id>`), yapışık atama, sonuçlar
   - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla
   - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)

@@ -27,6 +27,7 @@ final readonly class Huniler
         private Connection $db,
         private Medyalar $medyalar,
         private Planlar $planlar,
+        private \App\Billing\EkUrunler $ekUrunler,
         private Sablonlar $sablonlar,
         /** @var array<string, array<string, string>> uygulama kaydı (A4); planlar veritabanında (M1a) */
         #[Autowire('%uygulamalar%')]
@@ -432,7 +433,7 @@ final readonly class Huniler
             return ['bilinmeyen uygulama'];
         }
 
-        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))));
+        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))), $this->ekUrunler->anahtarlar($app));
         // E2.3: görsel bu uygulamaya yüklenmiş olmalı (başka uygulamanınki ya da silinmiş değil).
         foreach ($this->medyalar->eksikler($app, Tanim::gorseller($tanim)) as $id) {
             $hatalar[] = 'görsel '.substr($id, 0, 8).'… bu uygulamada yok';

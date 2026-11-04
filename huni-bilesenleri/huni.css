@@ -1172,3 +1172,27 @@ html:has(> body.huni) {
     text-decoration: underline;
     cursor: pointer;
 }
+/* M3c: ödeme sonrası tek tık ek ürün kutusu. */
+.huni .upsell {
+    margin: 20px 0;
+    padding: 18px;
+    border: 2px solid var(--ana);
+    border-radius: calc(var(--kose) * 1.5);
+    background: color-mix(in srgb, var(--ana) 8%, var(--arka));
+    text-align: center;
+}
+.huni .upsell h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+}
+.huni .upsell p {
+    margin: 0 0 12px;
+    color: var(--soluk);
+}
+.huni .upsell button.ana {
+    width: 100%;
+}
+.huni .upsell .upsell-tamam {
+    color: var(--metin);
+    font-weight: 700;
+}

@@ -218,6 +218,26 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         );
     });
 
+    it("M3c: upsell gidiş-dönüş; ürün ya da düğme boşsa yazılmaz", () => {
+        const u: Tanim = {
+            ...temel,
+            sonrasi: {
+                baslik: "Hoş geldin",
+                bloklar: [],
+                upsell: {
+                    urun: "kocluk",
+                    baslik: "Koçluk ekle",
+                    metin: "Bir aylık",
+                    dugme: "Ekle",
+                },
+            },
+        };
+        expect(puckTanim(tanimdanPuck(u, VARSAYILAN))).toStrictEqual(u);
+        const puck = tanimdanPuck(u, VARSAYILAN);
+        Object.assign(puck.content.at(-1)!.props, { upsellDugme: "" });
+        expect(puckTanim(puck).sonrasi).not.toHaveProperty("upsell");
+    });
+
     it("ilerleme çubuğu kapatma ayarı tanıma yazılır; varsayılan ayar eklenmez", () => {
         const kapali: Tanim = {
             ...temel,
