@@ -929,6 +929,47 @@ html:has(> body.huni) {
     font-size: 12px;
     font-weight: 700;
 }
+.huni p.sayac {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: calc(var(--kose) * 1);
+    background: color-mix(in srgb, var(--ana) 12%, var(--arka));
+    text-align: center;
+    font-size: 15px;
+}
+.huni p.sayac strong {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.huni .sart-onayi {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 0 0 12px;
+    font-size: 14px;
+    text-align: left;
+}
+.huni .sart-onayi input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+    accent-color: var(--ana);
+}
+.huni .sart-onayi a {
+    color: inherit;
+}
+.huni ul.guvenceler {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 16px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    color: var(--soluk);
+}
 .huni p.kosul {
     margin: 10px 0 0;
     font-size: 13px;

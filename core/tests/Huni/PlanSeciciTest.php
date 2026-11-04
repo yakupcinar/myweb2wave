@@ -45,6 +45,22 @@ final class PlanSeciciTest extends TestCase
         self::assertStringContainsString($hata, implode(' | ', Tanim::hatalar(self::tanim($ek), self::PLANLAR)));
     }
 
+    /** M2b: rozetler yalnız katalogdan, şart onayı yalnız true ve şart adresiyle. */
+    public function testGuvencelerVeSartOnayi(): void
+    {
+        $sartli = ['sartlar' => 'https://ornek.com/sartlar'];
+        self::assertSame([], Tanim::hatalar(self::tanim(['guvenceler' => ['guvenli-odeme', 'kart-saklanmaz'], 'sartOnayi' => true] + $sartli), self::PLANLAR));
+        foreach ([
+            [['guvenceler' => ['iade-garantisi']], 'guvenceler şunlardan'],
+            [['guvenceler' => ['guvenli-odeme', 'guvenli-odeme']], 'guvenceler şunlardan'],
+            [['guvenceler' => []], 'guvenceler şunlardan'],
+            [['sartOnayi' => true], 'sartlar) ister'],
+            [['sartOnayi' => false] + $sartli, 'yalnız true'],
+        ] as [$ek, $hata]) {
+            self::assertStringContainsString($hata, implode(' | ', Tanim::hatalar(self::tanim($ek), self::PLANLAR)), (string) json_encode($ek));
+        }
+    }
+
     public function testPlanYoksaPaneleYonlendirir(): void
     {
         self::assertContains("adım 2: plan 'monthly' bu uygulamada yok (hiç plan yok — panel → Planlar)", Tanim::hatalar(self::tanim([]), []));

@@ -701,6 +701,27 @@
                         }
                     ]
                 },
+                "guvenceler": {
+                    "description": "M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "guvenli-odeme",
+                            "kart-saklanmaz"
+                        ]
+                    }
+                },
+                "sartOnayi": {
+                    "description": "M2b: ödeme düğmesi şart onay kutusu işaretlenince açılır (sartlar adresi şart)",
+                    "type": "boolean",
+                    "enum": [
+                        true
+                    ]
+                },
                 "faydalar": {
                     "description": "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)",
                     "type": "array",

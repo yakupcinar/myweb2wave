@@ -335,6 +335,22 @@ function Yanit({
     );
 }
 
+/** M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar (çekirdek GUVENCELER ile aynı). */
+const GUVENCELER = {
+    "guvenli-odeme": ["🔒", "Güvenli ödeme · Stripe"],
+    "kart-saklanmaz": ["💳", "Kart bilgin bizde saklanmaz"],
+} as const;
+
+/** M2b: kalan süre "2 gün 03:12:45" ya da "03:12:45"; ms ≤ 0 → null. */
+export function kalanSure(ms: number): string | null {
+    if (ms <= 0) return null;
+    const sn = Math.floor(ms / 1000);
+    const gun = Math.floor(sn / 86400);
+    const iki = (n: number) => String(n).padStart(2, "0");
+    const saat = `${iki(Math.floor((sn % 86400) / 3600))}:${iki(Math.floor((sn % 3600) / 60))}:${iki(sn % 60)}`;
+    return gun ? `${gun} gün ${saat}` : saat;
+}
+
 /** Ç61 (3): yasal bağlantı adları sabit; adresi çekirdek yalnız https ise kabul eder. */
 const YASAL = [
     ["sartlar", "Kullanım şartları"],
@@ -359,6 +375,9 @@ export function Paywall({
     secili,
     onPlanSec,
     kosul,
+    kalan,
+    guvenceler = [],
+    sartOnayi,
 }: {
     baslik: string;
     metin: string;
@@ -384,6 +403,12 @@ export function Paywall({
     onPlanSec?: ((anahtar: string) => void) | undefined;
     /** M2a: seçili planın ödeme koşulu (bugün ne, sonra ne, yenileme) — düğmenin altında. */
     kosul?: string | undefined;
+    /** M2b: seçili planın teklifinin gerçek bitişine kalan süre (biçimli); yoksa sayaç yok. */
+    kalan?: string | null | undefined;
+    guvenceler?: string[] | undefined;
+    /** M2b: şart onay kutusu; işaretlenmeden düğme kapalı. */
+    sartOnayi?:
+        { onay: boolean; onDegistir: (onay: boolean) => void } | undefined;
     faydalar?: string[] | undefined;
     sartlar?: string | undefined;
     gizlilik?: string | undefined;
@@ -404,6 +429,11 @@ export function Paywall({
                         <li key={i}>{f}</li>
                     ))}
                 </ul>
+            ) : null}
+            {kalan ? (
+                <p className="sayac" role="timer">
+                    Teklifin bitmesine <strong>{kalan}</strong>
+                </p>
             ) : null}
             {planlar.length > 1 ? (
                 <div
@@ -443,15 +473,53 @@ export function Paywall({
             ) : null}
             <Eylem>
                 {hata ? <p role="alert">{hata}</p> : null}
+                {sartOnayi ? (
+                    <label className="sart-onayi">
+                        <input
+                            type="checkbox"
+                            checked={sartOnayi.onay}
+                            onChange={(e) =>
+                                sartOnayi.onDegistir(e.currentTarget.checked)
+                            }
+                        />
+                        <span>
+                            <a
+                                href={sartlar}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Kullanım şartlarını
+                            </a>{" "}
+                            ve abonelik koşulunu okudum, kabul ediyorum.
+                        </span>
+                    </label>
+                ) : null}
                 <button
                     type="button"
                     className="ana"
                     onClick={onDugme}
-                    disabled={kapali}
+                    disabled={kapali || (sartOnayi ? !sartOnayi.onay : false)}
                 >
                     {dugme}
                 </button>
                 {kosul ? <p className="kosul">{kosul}</p> : null}
+                {guvenceler.length ? (
+                    <ul className="guvenceler">
+                        {guvenceler
+                            .filter(
+                                (g): g is keyof typeof GUVENCELER =>
+                                    g in GUVENCELER,
+                            )
+                            .map((g) => (
+                                <li key={g}>
+                                    <span aria-hidden="true">
+                                        {GUVENCELER[g][0]}
+                                    </span>{" "}
+                                    {GUVENCELER[g][1]}
+                                </li>
+                            ))}
+                    </ul>
+                ) : null}
             </Eylem>
             {baglantilar.length || konumAtfi ? (
                 <p className="yasal">
@@ -864,6 +932,10 @@ export function Adim({
         fiyat?: string | undefined;
         /** M1c: fiyat ülkeye göre seçildi (DB-IP atfı). */
         konumAtfi?: boolean;
+        kalan?: string | null | undefined;
+        guvenceler?: string[] | undefined;
+        sartOnayi?:
+            { onay: boolean; onDegistir: (onay: boolean) => void } | undefined;
         /** M2a: plan seçici, seçili plan ve onun ödeme koşulu. */
         planlar?: {
             anahtar: string;

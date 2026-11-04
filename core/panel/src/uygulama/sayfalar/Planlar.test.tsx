@@ -193,6 +193,20 @@ describe("Planlar", () => {
             gun: 14,
         });
         expect((await gonder("", {}))?.govde).toEqual({ tur: null });
+        // M2b: bitiş yerel saatten UTC ISO'ya, milisaniyesiz (elle hesap).
+        const yerel = "2030-06-15T23:59";
+        expect(
+            (
+                await gonder("deneme", {
+                    Gün: "7",
+                    "Bitiş (isteğe bağlı)": yerel,
+                })
+            )?.govde,
+        ).toEqual({
+            tur: "deneme",
+            gun: 7,
+            bitis: new Date(yerel).toISOString().slice(0, 19) + "Z",
+        });
     });
 
     it("fiyatı yanıttan biçimler; okunamayan fiyatı söyler", async () => {

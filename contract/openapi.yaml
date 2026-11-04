@@ -26,6 +26,7 @@ paths:
                   enum: [keepchat]
                 plan: { $ref: "#/components/schemas/PlanAnahtari" }
                 ulke: { type: string, pattern: "^[A-Z]{2}$", description: "M1c: huni adresindeki ülke testi (paywall'daki para birimiyle aynı seçim)" }
+                sartOnayi: { type: boolean, description: "M2b: paywall şart onay kutusu işaretlendi — Stripe oturum/abonelik metadata.sart_onayi" }
                 ziyaret:
                   description: /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
                   type: string
@@ -928,6 +929,7 @@ paths:
                 gun: { type: integer, minimum: 1, maximum: 90 }
                 tutar: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1000000 }
                 yuzde: { type: integer, minimum: 1, maximum: 99 }
+                bitis: { type: string, format: date-time, description: "M2b: isteğe bağlı gerçek bitiş (saat dilimli, gelecekte, ≤ 1 yıl)" }
       responses:
         "200": { description: Güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelPlanlari" } } } }
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
@@ -1183,6 +1185,7 @@ components:
           properties:
             tur: { type: string, enum: [deneme] }
             gun: { type: integer, minimum: 1, maximum: 90 }
+            bitis: { $ref: "#/components/schemas/TeklifBitisi" }
         - type: object
           additionalProperties: false
           required: [tur, gun, tutar]
@@ -1190,12 +1193,18 @@ components:
             tur: { type: string, enum: [giris] }
             gun: { type: integer, minimum: 1, maximum: 90 }
             tutar: { type: number, description: "Ana birimde, planın para biriminde" }
+            bitis: { $ref: "#/components/schemas/TeklifBitisi" }
         - type: object
           additionalProperties: false
           required: [tur, yuzde]
           properties:
             tur: { type: string, enum: [indirim] }
             yuzde: { type: integer, minimum: 1, maximum: 99 }
+            bitis: { $ref: "#/components/schemas/TeklifBitisi" }
+    TeklifBitisi:
+      description: "M2b: teklifin gerçek bitişi (UTC, herkes için aynı); geçince teklif ne paywall'da ne ödemede uygulanır, sayaç buna sayar"
+      type: string
+      format: date-time
     HuniTanimi:
       description: Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)
       type: object
@@ -1630,6 +1639,17 @@ components:
         onerilen:
           description: "M2a: seçicide 'Önerilen' etiketli plan (planlardan biri)"
           allOf: [{ $ref: "#/components/schemas/PlanAnahtari" }]
+        guvenceler:
+          description: "M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar"
+          type: array
+          minItems: 1
+          maxItems: 2
+          uniqueItems: true
+          items: { type: string, enum: [guvenli-odeme, kart-saklanmaz] }
+        sartOnayi:
+          description: "M2b: ödeme düğmesi şart onay kutusu işaretlenince açılır (sartlar adresi şart)"
+          type: boolean
+          enum: [true]
         faydalar:
           description: "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)"
           type: array

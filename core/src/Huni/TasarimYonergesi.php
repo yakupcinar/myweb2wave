@@ -20,7 +20,7 @@ final class TasarimYonergesi
         - Ekranı doldur: düğme telefonda alta yapışır; içerik üstte toplanıp ortası boş kalmasın — bilgi ekranına istatistik, kutu, madde ya da görsel ekle. Soru ekranında seçenek görsel/simgeliyse ızgara, uzun metinliyse liste.
         - Satır sonu: başlık ya da paragrafın son satırında tek kısa kelime kalmasın; kelimeyi değiştir ya da cümleyi kısalt.
         - Simgeler: aynı soruda ya hepsinde simge ya hiçbirinde; tek emoji, anlamı metinde.
-        - Dürüst içerik: verilmeyen sayı, oran, kullanıcı sayısı, rozet ya da yorum ekleme; sayaç ya da "sınırlı teklif" yazma.
+        - Dürüst içerik: verilmeyen sayı, oran, kullanıcı sayısı, rozet ya da yorum ekleme (paywall'ın guvenceler kataloğu hariç); sayaç ya da "sınırlı teklif" metni yazma — teklifin gerçek bitişi varsa paywall sayacı kendisi gösterir.
         - Görsel: stok_gorsel_ara/stok_gorsel_al varsa ilk ekrana kapak, sonuç/özet ekranına atmosfer görseli koy (görselsiz huni şablon gibi durur); her görsele gorselMetni yaz. Stok fotoğraftaki kişiyi müşteri, yorum sahibi ya da önce/sonra örneği gibi gösterme (lisans: onay ima edilemez).
 
         Görsel döngü (ekran_goruntusu varsa ZORUNLU):

@@ -1096,6 +1096,98 @@ describe("M2a — plan seçici", () => {
   });
 });
 
+describe("M2b — sayaç, şart onayı, güven rozetleri", () => {
+  const paywallli = (
+    ek: Record<string, unknown>,
+    fiyatlar: Yayin["fiyatlar"],
+  ) => {
+    const temel = yayin();
+    return {
+      ...temel,
+      tanim: {
+        ...temel.tanim,
+        adimlar: temel.tanim.adimlar.map((a) =>
+          a.tur === "paywall" ? { ...a, ...ek } : a,
+        ),
+      },
+      fiyatlar,
+    };
+  };
+  const paywallaGit = async () => {
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+  };
+  it("sayaç gerçek bitişe sayar; süre dolunca sayaç VE teklif paywall'dan kalkar", async () => {
+    tanim = {
+      durum: 200,
+      govde: paywallli(
+        {},
+        {
+          monthly: {
+            tutar: 9.99,
+            paraBirimi: "EUR",
+            aralik: "month",
+            teklif: {
+              tur: "deneme",
+              gun: 7,
+              bitis: new Date(Date.now() + 2000).toISOString(),
+            },
+          },
+        },
+      ),
+    };
+    await paywallaGit();
+    const sayac = () =>
+      document.querySelector('[data-adim="paywall"] p.sayac')?.textContent;
+    const fiyat = () =>
+      document.querySelector('[data-adim="paywall"] p.fiyat')?.textContent;
+    expect(sayac()).toMatch(/^Teklifin bitmesine 00:00:0[12]$/);
+    expect(fiyat()).toContain("ücretsiz");
+    await waitFor(() => expect(sayac()).toBeUndefined(), { timeout: 4000 });
+    expect(fiyat()).toBe("€9,99\u00a0/\u00a0ay");
+  });
+  it("şart onayı işaretlenmeden düğme kapalı; işaretlenince ödeme sartOnayi ile; rozetler", async () => {
+    tanim = {
+      durum: 200,
+      govde: paywallli(
+        {
+          sartOnayi: true,
+          sartlar: "https://ornek.com/sartlar",
+          guvenceler: ["guvenli-odeme", "kart-saklanmaz"],
+        },
+        { monthly: { tutar: 9.99, paraBirimi: "EUR", aralik: "month" } },
+      ),
+    };
+    ziyaret = { durum: 500 };
+    const git = vi
+      .spyOn(window.location, "assign")
+      .mockImplementation(() => {});
+    await paywallaGit();
+    const dugme = screen.getByText("Abone ol") as HTMLButtonElement;
+    expect(dugme.disabled).toBe(true);
+    expect(
+      [
+        ...document.querySelectorAll('[data-adim="paywall"] ul.guvenceler li'),
+      ].map((l) => l.textContent),
+    ).toEqual(["🔒 Güvenli ödeme · Stripe", "💳 Kart bilgin bizde saklanmaz"]);
+    fireEvent.click(
+      document.querySelector<HTMLInputElement>(
+        '[data-adim="paywall"] .sart-onayi input',
+      )!,
+    );
+    expect(dugme.disabled).toBe(false);
+    fireEvent.click(dugme);
+    await waitFor(() => expect(git).toHaveBeenCalled());
+    expect(istekler("POST", "/checkout/sessions")[0]?.govde).toEqual({
+      app: "keepchat",
+      plan: "monthly",
+      sartOnayi: true,
+    });
+  });
+});
+
 describe("M1c — ülke testi ödemeye de gider", () => {
   it("?ulke=TR ödeme gövdesinde: paywall'daki para birimiyle aynı seçim", async () => {
     ziyaret = { durum: 500 };

@@ -46,6 +46,9 @@ export type PaywallProps = {
     planlar: { plan: string }[];
     /** M2a: "" = önerilen yok. */
     onerilen: string;
+    /** M2b: rozet satırları (boş yazılmaz) ve şart onayı ("evet" → true). */
+    guvenceler: { rozet: string }[];
+    sartOnayi: "evet" | "hayir";
     ilerlemeGoster: boolean;
     /** Ç61 (3): boş metin / boş adres tanıma yazılmaz. */
     faydalar: { metin: string }[];
@@ -656,6 +659,10 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
                                 plan,
                             })),
                             onerilen: adim.onerilen ?? "",
+                            guvenceler: (adim.guvenceler ?? []).map(
+                                (rozet) => ({ rozet }),
+                            ),
+                            sartOnayi: adim.sartOnayi ? "evet" : "hayir",
                             ilerlemeGoster: adim.ilerlemeGoster ?? true,
                             faydalar: (adim.faydalar ?? []).map((metin) => ({
                                 metin,
@@ -675,6 +682,17 @@ function planSecici(p: PaywallProps) {
     const planlar = (p.planlar ?? []).map((x) => x.plan).filter(Boolean);
     if (planlar.length < 2) return {};
     return { planlar, ...(p.onerilen ? { onerilen: p.onerilen } : {}) };
+}
+
+/** M2b: dolu, tekrarsız rozetler; şart onayı yalnız true yazılır (çekirdek false'u reddeder). */
+function guvence(p: PaywallProps) {
+    const guvenceler = [
+        ...new Set((p.guvenceler ?? []).map((g) => g.rozet).filter(Boolean)),
+    ] as ("guvenli-odeme" | "kart-saklanmaz")[];
+    return {
+        ...(guvenceler.length ? { guvenceler } : {}),
+        ...(p.sartOnayi === "evet" ? { sartOnayi: true as const } : {}),
+    };
 }
 
 /** Ç61 (3): yalnız dolu faydalar ve adresler — boş liste/adres çekirdekte geçersiz. */
@@ -749,6 +767,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                     dugme: p.dugme,
                     plan: p.plan,
                     ...planSecici(p),
+                    ...guvence(p),
                     ...(p.ilerlemeGoster === false
                         ? { ilerlemeGoster: false }
                         : {}),

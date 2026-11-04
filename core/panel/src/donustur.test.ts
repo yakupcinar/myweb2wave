@@ -120,6 +120,38 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(puck)).toStrictEqual(temel);
     });
 
+    it("M2b: güven rozetleri ve şart onayı gidiş-dönüş; boş/tekrar rozet ve 'hayır' yazılmaz", () => {
+        const guvenli: Tanim = {
+            ...temel,
+            adimlar: temel.adimlar.map((adim) =>
+                adim.tur === "paywall"
+                    ? {
+                          ...adim,
+                          sartlar: "https://ornek.com/sartlar",
+                          guvenceler: ["kart-saklanmaz", "guvenli-odeme"],
+                          sartOnayi: true,
+                      }
+                    : adim,
+            ),
+        };
+        expect(puckTanim(tanimdanPuck(guvenli, VARSAYILAN))).toStrictEqual(
+            guvenli,
+        );
+        const puck = tanimdanPuck(guvenli, VARSAYILAN);
+        const odeme = puck.content.find((o) => o.type === "Paywall")!;
+        Object.assign(odeme.props, {
+            guvenceler: [
+                { rozet: "guvenli-odeme" },
+                { rozet: "guvenli-odeme" },
+                { rozet: "" },
+            ],
+            sartOnayi: "hayir",
+        });
+        const sonuc = puckTanim(puck).adimlar.find((a) => a.tur === "paywall");
+        expect(sonuc).toMatchObject({ guvenceler: ["guvenli-odeme"] });
+        expect(sonuc).not.toHaveProperty("sartOnayi");
+    });
+
     it("ilerleme çubuğu kapatma ayarı tanıma yazılır; varsayılan ayar eklenmez", () => {
         const kapali: Tanim = {
             ...temel,

@@ -46,13 +46,17 @@ const TEKLIF_TURLERI = {
 function teklifYazisi(f: PlanFiyati | null): string {
     const t = f?.teklif;
     if (!f || !t) return "—";
-    if (t.tur === "deneme") return `${t.gun} gün ücretsiz`;
+    // M2b: gerçek bitiş yerel saatle.
+    const bitis = t.bitis
+        ? ` · bitiş ${new Date(t.bitis).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}`
+        : "";
+    if (t.tur === "deneme") return `${t.gun} gün ücretsiz${bitis}`;
     if (t.tur === "giris")
         return `${t.gun} gün ${new Intl.NumberFormat("tr-TR", {
             style: "currency",
             currency: f.paraBirimi,
-        }).format(t.tutar)}`;
-    return `İlk ${ARALIK[f.aralik]} %${t.yuzde} indirim`;
+        }).format(t.tutar)}${bitis}`;
+    return `İlk ${ARALIK[f.aralik]} %${t.yuzde} indirim${bitis}`;
 }
 
 function eklerYazisi(f: PlanFiyati | null): string {
@@ -120,6 +124,8 @@ function PlanListesi({ app }: { app: string }): ReactNode {
         gun: "7",
         tutar: "",
         yuzde: "50",
+        // M2b: datetime-local (yerel saat); boş = bitişsiz.
+        bitis: "",
     });
     // M1c: seçili planın ek para birimi tutarları (boş alan = o para birimi yok).
     const [ekPlan, setEkPlan] = useState("");
@@ -184,15 +190,32 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                     body:
                         teklif.tur === ""
                             ? { tur: null }
-                            : teklif.tur === "indirim"
-                              ? { tur: "indirim", yuzde: Number(teklif.yuzde) }
-                              : {
-                                    tur: teklif.tur,
-                                    gun: Number(teklif.gun),
-                                    ...(teklif.tur === "giris"
-                                        ? { tutar: Number(teklif.tutar) }
-                                        : {}),
-                                },
+                            : {
+                                  ...(teklif.tur === "indirim"
+                                      ? {
+                                            tur: "indirim" as const,
+                                            yuzde: Number(teklif.yuzde),
+                                        }
+                                      : {
+                                            tur: teklif.tur,
+                                            gun: Number(teklif.gun),
+                                            ...(teklif.tur === "giris"
+                                                ? {
+                                                      tutar: Number(
+                                                          teklif.tutar,
+                                                      ),
+                                                  }
+                                                : {}),
+                                        }),
+                                  // Yerel saat → UTC ISO, milisaniyesiz (çekirdeğin biçimi).
+                                  ...(teklif.bitis
+                                      ? {
+                                            bitis: new Date(teklif.bitis)
+                                                .toISOString()
+                                                .replace(/\.\d{3}Z$/, "Z"),
+                                        }
+                                      : {}),
+                              },
                 },
             );
             if (!data)
@@ -524,6 +547,24 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                         })
                                     }
                                     className={`${girdiSinifi} w-28`}
+                                />
+                            </label>
+                        ) : null}
+                        {teklif.tur ? (
+                            <label className="grid gap-1.5">
+                                <span className="font-semibold">
+                                    Bitiş (isteğe bağlı)
+                                </span>
+                                <input
+                                    type="datetime-local"
+                                    value={teklif.bitis}
+                                    onChange={(e) =>
+                                        setTeklif({
+                                            ...teklif,
+                                            bitis: e.currentTarget.value,
+                                        })
+                                    }
+                                    className={girdiSinifi}
                                 />
                             </label>
                         ) : null}

@@ -111,7 +111,7 @@ final class PanelPlanController extends AbstractController
         }
         $g = json_decode($request->getContent(), true);
         $g = \is_array($g) ? $g : [];
-        $hatalar = $this->planlar->teklifAyarla($app, $anahtar, $g['tur'] ?? null, $g['gun'] ?? null, $g['tutar'] ?? null, $g['yuzde'] ?? null);
+        $hatalar = $this->planlar->teklifAyarla($app, $anahtar, $g['tur'] ?? null, $g['gun'] ?? null, $g['tutar'] ?? null, $g['yuzde'] ?? null, $g['bitis'] ?? null);
         if (null === $hatalar) {
             return self::hata("'{$anahtar}' planı yok", 404);
         }

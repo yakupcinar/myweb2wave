@@ -14,6 +14,7 @@ import {
 import {
   Adim,
   HareketBaglami,
+  kalanSure,
   Logo,
   OLCEK,
   SimgeBaglami,
@@ -217,6 +218,27 @@ function Oynatici({
   const [odeme, setOdeme] = useState({ suruyor: false, hata: "" });
   // M2a: plan seçicide seçilen plan (paywall kimliği → plan); yoksa adımın varsayılanı.
   const [secilenPlan, setSecilenPlan] = useState<Record<string, string>>({});
+  // M2b: paywall kimliği → şart onay kutusu.
+  const [sartOnaylari, setSartOnaylari] = useState<Record<string, boolean>>({});
+  // M2b: saniyelik saat — yalnız bitişli teklif varken (sayaç + sürenin
+  // dolduğu an teklifin paywall'dan kalkması; sunucu da bitişte keser).
+  const [simdi, setSimdi] = useState(() => Date.now());
+  const bitisVar = Object.values(yayin?.fiyatlar ?? {}).some(
+    (f) => f.teklif?.bitis,
+  );
+  useEffect(() => {
+    if (!bitisVar) return;
+    const z = setInterval(() => setSimdi(Date.now()), 1000);
+    return () => clearInterval(z);
+  }, [bitisVar]);
+  const etkin = (
+    plan: string,
+  ): components["schemas"]["PlanFiyati"] | undefined => {
+    const f = yayin?.fiyatlar?.[plan];
+    if (!f?.teklif?.bitis || Date.parse(f.teklif.bitis) > simdi) return f;
+    const { teklif: _bitti, ...teklifsiz } = f;
+    return teklifsiz;
+  };
   const kutu = useRef<HTMLDivElement>(null);
   const ilkAdim = useRef(true);
 
@@ -290,11 +312,15 @@ function Oynatici({
   }
 
   // Paywall: plan adını çekirdeğe gönderir, dönen ödeme adresine yönlenir.
-  async function aboneOl(plan: Govde<"/checkout/sessions">["plan"]) {
+  async function aboneOl(
+    plan: Govde<"/checkout/sessions">["plan"],
+    sartOnayi = false,
+  ) {
     setOdeme({ suruyor: true, hata: "" });
     let hata: string;
     try {
       const govde: Govde<"/checkout/sessions"> = { app, plan };
+      if (sartOnayi) govde.sartOnayi = true;
       // M1c: paywall'daki para birimini seçen ülke testi ödemeye de gider.
       const ulke = new URLSearchParams(window.location.search).get("ulke");
       if (ulke && /^[A-Z]{2}$/.test(ulke)) govde.ulke = ulke;
@@ -506,7 +532,7 @@ function Oynatici({
                     hata: odeme.hata,
                     fiyat:
                       adim.tur === "paywall"
-                        ? fiyatMetni(yayin.fiyatlar?.[adim.plan])
+                        ? fiyatMetni(etkin(adim.plan))
                         : undefined,
                     // M1c: fiyat varsa para birimi IP'den bulunan ülkeyle seçildi (DB-IP lisansı).
                     konumAtfi:
@@ -519,22 +545,41 @@ function Oynatici({
                           planlar: (adim.planlar ?? []).map((p) => ({
                             anahtar: p,
                             ad: yayin.fiyatlar?.[p]?.ad ?? p,
-                            fiyat: fiyatMetni(yayin.fiyatlar?.[p]),
+                            fiyat: fiyatMetni(etkin(p)),
                             onerilen: p === adim.onerilen,
                           })),
                           secili: secilenPlan[adim.id] ?? adim.plan,
                           onPlanSec: (p: string) =>
                             setSecilenPlan((s) => ({ ...s, [adim.id]: p })),
                           kosul: kosulMetni(
-                            yayin.fiyatlar?.[secilenPlan[adim.id] ?? adim.plan],
+                            etkin(secilenPlan[adim.id] ?? adim.plan),
                           ),
+                          kalan: ((b) =>
+                            b ? kalanSure(Date.parse(b) - simdi) : null)(
+                            etkin(secilenPlan[adim.id] ?? adim.plan)?.teklif
+                              ?.bitis,
+                          ),
+                          guvenceler: adim.guvenceler,
+                          sartOnayi: adim.sartOnayi
+                            ? {
+                                onay: sartOnaylari[adim.id] ?? false,
+                                onDegistir: (onay: boolean) =>
+                                  setSartOnaylari((s) => ({
+                                    ...s,
+                                    [adim.id]: onay,
+                                  })),
+                              }
+                            : undefined,
                         }
                       : {}),
                     onDugme: () => {
                       // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
                       if (onizleme) return;
                       if (adim.tur === "paywall")
-                        void aboneOl(secilenPlan[adim.id] ?? adim.plan);
+                        void aboneOl(
+                          secilenPlan[adim.id] ?? adim.plan,
+                          Boolean(adim.sartOnayi && sartOnaylari[adim.id]),
+                        );
                     },
                   }}
                 />

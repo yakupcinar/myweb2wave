@@ -44,7 +44,9 @@ final class Tanim
         .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
         .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz. '
         // M2a: plan seçici; ödeme koşulunu ekran kendisi yazar.
-        .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar.';
+        .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar. '
+        // M2b
+        .'İsteğe bağlı guvenceler: ["guvenli-odeme", "kart-saklanmaz"] (yalnız bunlar; iptal/iade rozeti yok). sartOnayi: true ödeme düğmesinden önce şart onay kutusu ister (sartlar adresi şart). Sayaç/aciliyet metni yazma: teklifin gerçek bitişi varsa ekran sayacı kendisi gösterir.';
 
     /** T3a: koşul işlemleri — listede (seçmeli cevap) ve tek değerde. */
     private const LISTE_ISLEMLERI = ['icerir', 'icermez', 'var', 'yok'];
@@ -101,6 +103,13 @@ final class Tanim
         // V5: önce/sonra — iki yüklenmiş görsel, etiketleri alt metin de olur.
         'onceSonra' => [['once' => null, 'sonra' => null, 'onceEtiketi' => 'etiket', 'sonraEtiketi' => 'etiket'], []],
     ];
+
+    /**
+     * M2b: paywall güven rozetleri — yalnız kurgusu gereği doğru olanlar
+     * (ödeme Stripe'ta, kart bilgisi bizde değil). İptal/iade sözü yok:
+     * iptal yolu M6'da, iade yöneticinin politikası.
+     */
+    public const GUVENCELER = ['guvenli-odeme', 'kart-saklanmaz'];
 
     /** V5: ölçek sorusunun kendiliğinden seçenek (cevap) kimlikleri — huni-bilesenleri OLCEK ile aynı. */
     public const OLCEK_KIMLIKLERI = ['1', '2', '3', '4', '5'];
@@ -251,6 +260,22 @@ final class Tanim
             foreach ('paywall' === $tur ? ['planlar', 'onerilen'] : [] as $alan) {
                 if (\array_key_exists($alan, $adim)) {
                     $beklenen[] = $alan;
+                }
+            }
+            // M2b: güven rozetleri yalnız kurgusu gereği doğru olanlar; şart onayı şart adresi ister.
+            if ('paywall' === $tur && \array_key_exists('guvenceler', $adim)) {
+                $beklenen[] = 'guvenceler';
+                $g = $adim['guvenceler'];
+                if (!\is_array($g) || !array_is_list($g) || [] === $g || \count(array_unique(array_filter($g, \is_string(...)))) !== \count($g) || [] !== array_diff(array_filter($g, \is_string(...)), self::GUVENCELER)) {
+                    $h[] = "{$yer}: guvenceler şunlardan 1–".\count(self::GUVENCELER).' farklı rozet olmalı: '.implode(', ', self::GUVENCELER);
+                }
+            }
+            if ('paywall' === $tur && \array_key_exists('sartOnayi', $adim)) {
+                $beklenen[] = 'sartOnayi';
+                if (true !== $adim['sartOnayi']) {
+                    $h[] = "{$yer}: sartOnayi yalnız true (yoksa alanı yazma)";
+                } elseif (!\array_key_exists('sartlar', $adim)) {
+                    $h[] = "{$yer}: sartOnayi kullanım şartları adresini (sartlar) ister";
                 }
             }
             foreach ('paywall' === $tur ? ['sartlar', 'gizlilik', 'iptal'] : [] as $alan) {

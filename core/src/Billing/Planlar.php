@@ -52,20 +52,24 @@ final readonly class Planlar
     }
 
     /**
-     * M1b: planların teklifleri (teklifsiz plan listede yok).
+     * M1b: planların SÜRESİ GEÇMEMİŞ teklifleri (teklifsiz plan listede yok).
+     * M2b: bitişi geçmiş teklif burada düşer — paywall, sayaç ve ödeme hepsi
+     * buradan okur, tek bekçi. `bitis` UTC ISO 8601 ya da null.
      *
-     * @return array<string, array{tur: string, gun: int|null, yuzde: int|null, stripe: string|null}>
+     * @return array<string, array{tur: string, gun: int|null, yuzde: int|null, stripe: string|null, bitis: string|null}>
      */
     public function teklifler(string $app): array
     {
-        /** @var list<array{anahtar: string, teklif_turu: string, teklif_gun: int|null, teklif_yuzde: int|null, stripe_teklif: string|null}> $satirlar */
+        /** @var list<array{anahtar: string, teklif_turu: string, teklif_gun: int|null, teklif_yuzde: int|null, stripe_teklif: string|null, bitis: string|null}> $satirlar */
         $satirlar = $this->db->fetchAllAssociative(
-            'SELECT anahtar, teklif_turu, teklif_gun, teklif_yuzde, stripe_teklif FROM planlar WHERE app = :app AND teklif_turu IS NOT NULL',
+            'SELECT anahtar, teklif_turu, teklif_gun, teklif_yuzde, stripe_teklif,
+                    to_char(teklif_bitis AT TIME ZONE \'UTC\', \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') AS bitis
+             FROM planlar WHERE app = :app AND teklif_turu IS NOT NULL AND (teklif_bitis IS NULL OR teklif_bitis > now())',
             ['app' => $app],
         );
         $teklifler = [];
         foreach ($satirlar as $s) {
-            $teklifler[$s['anahtar']] = ['tur' => $s['teklif_turu'], 'gun' => $s['teklif_gun'], 'yuzde' => $s['teklif_yuzde'], 'stripe' => $s['stripe_teklif']];
+            $teklifler[$s['anahtar']] = ['tur' => $s['teklif_turu'], 'gun' => $s['teklif_gun'], 'yuzde' => $s['teklif_yuzde'], 'stripe' => $s['stripe_teklif'], 'bitis' => $s['bitis']];
         }
 
         return $teklifler;
@@ -197,7 +201,7 @@ final readonly class Planlar
      *
      * @return list<string>|null null = böyle plan yok
      */
-    public function teklifAyarla(string $app, string $anahtar, mixed $tur, mixed $gun, mixed $tutar, mixed $yuzde): ?array
+    public function teklifAyarla(string $app, string $anahtar, mixed $tur, mixed $gun, mixed $tutar, mixed $yuzde, mixed $bitis = null): ?array
     {
         /** @var array{stripe_urun: string, stripe_fiyat: string, teklif_turu: string|null, stripe_teklif: string|null}|false $satir */
         $satir = $this->db->fetchAssociative('SELECT stripe_urun, stripe_fiyat, teklif_turu, stripe_teklif FROM planlar WHERE app = :app AND anahtar = :anahtar', ['app' => $app, 'anahtar' => $anahtar]);
@@ -205,6 +209,7 @@ final readonly class Planlar
             return null;
         }
         $hatalar = self::teklifHatalari($tur, $gun, $tutar, $yuzde);
+        $bitisAni = self::bitisAni($tur, $bitis, $hatalar);
         if ([] !== $hatalar) {
             return $hatalar;
         }
@@ -236,13 +241,14 @@ final readonly class Planlar
             return ['Stripe şu an yanıt vermiyor; teklif değişmedi.'];
         }
         $this->db->executeStatement(
-            'UPDATE planlar SET teklif_turu = :tur, teklif_gun = :gun, teklif_yuzde = :yuzde, stripe_teklif = :stripe, updated_at = now()
+            'UPDATE planlar SET teklif_turu = :tur, teklif_gun = :gun, teklif_yuzde = :yuzde, stripe_teklif = :stripe, teklif_bitis = :bitis, updated_at = now()
              WHERE app = :app AND anahtar = :anahtar',
             [
                 'tur' => $tur,
                 'gun' => \in_array($tur, ['deneme', 'giris'], true) ? $gun : null,
                 'yuzde' => 'indirim' === $tur ? $yuzde : null,
                 'stripe' => $stripeTeklif,
+                'bitis' => $bitisAni?->format(\DATE_ATOM),
                 'app' => $app,
                 'anahtar' => $anahtar,
             ],
@@ -382,6 +388,35 @@ final readonly class Planlar
         }
 
         return [] === $secenekler ? [] : ['currency_options' => $secenekler];
+    }
+
+    /**
+     * M2b: bitiş isteğe bağlı; ISO 8601 (saat dilimli), gelecekte, en çok 1 yıl
+     * sonra. Teklifsiz planda bitiş olmaz.
+     *
+     * @param list<string> $hatalar
+     */
+    private static function bitisAni(mixed $tur, mixed $bitis, array &$hatalar): ?\DateTimeImmutable
+    {
+        if (null === $bitis) {
+            return null;
+        }
+        if (null === $tur) {
+            $hatalar[] = 'Teklifsiz planda bitiş olmaz.';
+
+            return null;
+        }
+        $an = \is_string($bitis) ? \DateTimeImmutable::createFromFormat(\DATE_ATOM, $bitis) : false;
+        if (false === $an) {
+            $an = \is_string($bitis) ? \DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s\Z', $bitis, new \DateTimeZone('UTC')) : false;
+        }
+        if (false === $an || $an <= new \DateTimeImmutable() || $an > new \DateTimeImmutable('+1 year')) {
+            $hatalar[] = 'Bitiş gelecekte, en çok 1 yıl sonra ve saat dilimli olmalı (ör. 2026-12-31T23:59:00+03:00).';
+
+            return null;
+        }
+
+        return $an;
     }
 
     /** @return list<string> */

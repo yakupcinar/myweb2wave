@@ -744,17 +744,25 @@ export interface components {
             /** @enum {string} */
             tur: "deneme";
             gun: number;
+            bitis?: components["schemas"]["TeklifBitisi"];
         } | {
             /** @enum {string} */
             tur: "giris";
             gun: number;
             /** @description Ana birimde, planın para biriminde */
             tutar: number;
+            bitis?: components["schemas"]["TeklifBitisi"];
         } | {
             /** @enum {string} */
             tur: "indirim";
             yuzde: number;
+            bitis?: components["schemas"]["TeklifBitisi"];
         };
+        /**
+         * Format: date-time
+         * @description M2b: teklifin gerçek bitişi (UTC, herkes için aynı); geçince teklif ne paywall'da ne ödemede uygulanır, sayaç buna sayar
+         */
+        TeklifBitisi: string;
         /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
         HuniTanimi: {
             sayfaBasligi: string;
@@ -1044,6 +1052,13 @@ export interface components {
             planlar?: components["schemas"]["PlanAnahtari"][];
             /** @description M2a: seçicide 'Önerilen' etiketli plan (planlardan biri) */
             onerilen?: components["schemas"]["PlanAnahtari"];
+            /** @description M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar */
+            guvenceler?: ("guvenli-odeme" | "kart-saklanmaz")[];
+            /**
+             * @description M2b: ödeme düğmesi şart onay kutusu işaretlenince açılır (sartlar adresi şart)
+             * @enum {boolean}
+             */
+            sartOnayi?: true;
             /** @description Ç61: paywall'da madde madde fayda listesi (isteğe bağlı) */
             faydalar?: string[];
             sartlar?: components["schemas"]["YasalAdres"];
@@ -1110,6 +1125,8 @@ export interface operations {
                     plan: components["schemas"]["PlanAnahtari"];
                     /** @description M1c: huni adresindeki ülke testi (paywall'daki para birimiyle aynı seçim) */
                     ulke?: string;
+                    /** @description M2b: paywall şart onay kutusu işaretlendi — Stripe oturum/abonelik metadata.sart_onayi */
+                    sartOnayi?: boolean;
                     /**
                      * Format: uuid
                      * @description /huni/ziyaretler'in döndürdüğü kimlik (A6); tanınmazsa ödeme yine açılır
@@ -2793,6 +2810,11 @@ export interface operations {
                     gun?: number;
                     tutar?: number;
                     yuzde?: number;
+                    /**
+                     * Format: date-time
+                     * @description M2b: isteğe bağlı gerçek bitiş (saat dilimli, gelecekte, ≤ 1 yıl)
+                     */
+                    bitis?: string;
                 };
             };
         };

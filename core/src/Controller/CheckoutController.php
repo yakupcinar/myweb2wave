@@ -76,6 +76,8 @@ final readonly class CheckoutController
         $ulkeninki = ParaBirimi::ulkeninki($this->ulkeler->ulke($request->getClientIp(), $govde['ulke'] ?? null));
         $paraBirimi = null === $ulkeninki ? null : ($this->fiyatlar->uygulama($app, $ulkeninki)[$plan]['paraBirimi'] ?? null);
 
+        $onay = true === ($govde['sartOnayi'] ?? null) ? ['sart_onayi' => '1'] : [];
+
         // E1: huninin e-posta adımında yazılan adres ödeme sayfasında hazır.
         $ziyaret = $govde['ziyaret'] ?? null;
         $eposta = \is_string($ziyaret) ? $this->ziyaretler->eposta($ziyaret, $app) : null;
@@ -95,8 +97,9 @@ final readonly class CheckoutController
                 'cancel_url' => $this->funnelBaseUrl.'/'.$app.'/iptal',
                 // Webhook aboneliğin uygulamasını buradan okur (A4); oturuma
                 // ve aboneliğe ayrı ayrı yazılmalı — olaylar ikisinden de gelir.
-                'metadata' => ['app' => $app],
-                'subscription_data' => ['metadata' => ['app' => $app]] + ($teklifAlanlari['subscription_data'] ?? []),
+                // M2b: paywall şart onay kutusu işaretlendiyse kanıtı Stripe'ta (oturum + abonelik).
+                'metadata' => ['app' => $app] + $onay,
+                'subscription_data' => ['metadata' => ['app' => $app] + $onay] + ($teklifAlanlari['subscription_data'] ?? []),
             ]);
         } catch (ApiErrorException $e) {
             // Ç16: ağ, Stripe 5xx ya da reddedilen istek — huni mesaj gösterir.

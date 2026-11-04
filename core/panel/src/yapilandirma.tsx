@@ -1468,6 +1468,39 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                             },
                         },
                     },
+                    // M2b: yalnız kurgusu gereği doğru rozetler; şart onayı şart adresi ister.
+                    guvenceler: {
+                        type: "array",
+                        label: "Güven rozetleri (isteğe bağlı)",
+                        max: 2,
+                        getItemSummary: (g: { rozet: string }) =>
+                            g.rozet || "rozet",
+                        defaultItemProps: { rozet: "guvenli-odeme" },
+                        arrayFields: {
+                            rozet: {
+                                type: "select",
+                                label: "Rozet",
+                                options: [
+                                    {
+                                        label: "Güvenli ödeme · Stripe",
+                                        value: "guvenli-odeme",
+                                    },
+                                    {
+                                        label: "Kart bilgin bizde saklanmaz",
+                                        value: "kart-saklanmaz",
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    sartOnayi: {
+                        type: "radio",
+                        label: "Şart onay kutusu (kullanım şartları adresi gerekir)",
+                        options: [
+                            { label: "Yok", value: "hayir" },
+                            { label: "Var", value: "evet" },
+                        ],
+                    },
                     onerilen: {
                         type: "select",
                         label: "Önerilen (seçicide)",
@@ -1512,6 +1545,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     plan: "monthly",
                     planlar: [],
                     onerilen: "",
+                    guvenceler: [],
+                    sartOnayi: "hayir",
                     faydalar: [],
                     sartlar: "",
                     gizlilik: "",
@@ -1524,6 +1559,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     plan,
                     planlar,
                     onerilen,
+                    guvenceler,
+                    sartOnayi,
                     faydalar,
                     sartlar,
                     gizlilik,
@@ -1543,6 +1580,12 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                     onerilen: p.plan === onerilen,
                                 }))}
                             secili={plan}
+                            guvenceler={(guvenceler ?? []).map((g) => g.rozet)}
+                            sartOnayi={
+                                sartOnayi === "evet"
+                                    ? { onay: false, onDegistir: () => {} }
+                                    : undefined
+                            }
                             faydalar={(faydalar ?? [])
                                 .map((f) => f.metin)
                                 .filter(Boolean)}

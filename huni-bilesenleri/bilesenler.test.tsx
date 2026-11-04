@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     Adim,
     Blok,
+    kalanSure,
     Ekran,
     Logo,
     Paywall,
@@ -154,6 +155,19 @@ describe("Ç61 — paywall faydaları ve yasal bağlantılar", () => {
             />,
         );
         expect(html.match(/<a /g)).toHaveLength(1);
+    });
+});
+
+describe("M2b — sayaç biçimi", () => {
+    // Elle: 1 gün 2 sa 3 dk 4 sn; 59 sn; 0 ve eksi → sayaç yok.
+    it("gün varsa önde, saat hep iki haneli; bitince null", () => {
+        expect(kalanSure((86400 + 2 * 3600 + 3 * 60 + 4) * 1000)).toBe(
+            "1 gün 02:03:04",
+        );
+        expect(kalanSure(59_000)).toBe("00:00:59");
+        expect(kalanSure(999)).toBe("00:00:00");
+        expect(kalanSure(0)).toBeNull();
+        expect(kalanSure(-5)).toBeNull();
     });
 });
 

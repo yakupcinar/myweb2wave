@@ -101,17 +101,19 @@ final readonly class Fiyatlar
     }
 
     /**
-     * @param array{tur: string, gun: int|null, yuzde: int|null, stripe: string|null} $t
+     * @param array{tur: string, gun: int|null, yuzde: int|null, stripe: string|null, bitis: string|null} $t
      *
      * @return array<string, int|float|string>|null
      */
     private function teklif(array $t, string $paraBirimi, string $plan): ?array
     {
+        // M2b: bitiş varsa gösterilir (sayaç); yoksa alan yok.
+        $bitis = null === $t['bitis'] ? [] : ['bitis' => $t['bitis']];
         if ('deneme' === $t['tur'] && null !== $t['gun']) {
-            return ['tur' => 'deneme', 'gun' => $t['gun']];
+            return ['tur' => 'deneme', 'gun' => $t['gun']] + $bitis;
         }
         if ('indirim' === $t['tur'] && null !== $t['yuzde']) {
-            return ['tur' => 'indirim', 'yuzde' => $t['yuzde']];
+            return ['tur' => 'indirim', 'yuzde' => $t['yuzde']] + $bitis;
         }
         if ('giris' !== $t['tur'] || null === $t['gun'] || null === $t['stripe']) {
             return null;
@@ -133,7 +135,7 @@ final readonly class Fiyatlar
             return null;
         }
 
-        return null === $tutar ? null : ['tur' => 'giris', 'gun' => $t['gun'], 'tutar' => $tutar];
+        return null === $tutar ? null : ['tur' => 'giris', 'gun' => $t['gun'], 'tutar' => $tutar] + $bitis;
     }
 
     /**
