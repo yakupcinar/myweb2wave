@@ -8,22 +8,58 @@
             "adres": "?utm_source=meta&utm_medium=paid&utm_campaign=yaz&fbclid=X1",
             "izin": "evet",
             "olaylar": [
-                { "sira": 0, "adim": "kiminle" },
-                { "sira": 0, "adim": "kiminle", "cevap": "aile" },
-                { "sira": 1, "adim": "ilgi" },
+                {
+                    "sira": 0,
+                    "adim": "kiminle"
+                },
+                {
+                    "sira": 0,
+                    "adim": "kiminle",
+                    "cevap": "aile"
+                },
+                {
+                    "sira": 1,
+                    "adim": "ilgi"
+                },
                 {
                     "sira": 1,
                     "adim": "ilgi",
-                    "cevaplar": ["a_1", "a2", "a-1", "a1"]
+                    "cevaplar": [
+                        "a_1",
+                        "a2",
+                        "a-1",
+                        "a1"
+                    ]
                 },
-                { "sira": 2, "adim": "not" },
-                { "sira": 2, "adim": "not", "cevapMetni": "Daha az bildirim" },
-                { "sira": 1, "adim": "ilgi", "cevaplar": ["a1", "a_1", "a-1"] }
+                {
+                    "sira": 2,
+                    "adim": "not"
+                },
+                {
+                    "sira": 2,
+                    "adim": "not",
+                    "cevapMetni": "Daha az bildirim"
+                },
+                {
+                    "sira": 1,
+                    "adim": "ilgi",
+                    "cevaplar": [
+                        "a1",
+                        "a_1",
+                        "a-1"
+                    ]
+                }
             ],
             "beklenen": {
                 "adim.son": "not",
-                "cevap.ilgi": ["a-1", "a1", "a_1"],
-                "cevap.kiminle": ["aile"],
+                "cevap.ilgi": [
+                    "a-1",
+                    "a1",
+                    "a_1"
+                ],
+                "cevap.kiminle": [
+                    "aile"
+                ],
                 "cevap.not": "Daha az bildirim",
                 "huni": "genel",
                 "huni.surum": 1,
@@ -40,14 +76,32 @@
             "adres": "",
             "izin": "hayir",
             "olaylar": [
-                { "sira": 0, "adim": "kiminle", "cevap": "is" },
-                { "sira": 0, "adim": "kiminle", "cevap": "aile" },
-                { "sira": 1, "adim": "not", "cevapMetni": "ilk" },
-                { "sira": 1, "adim": "not", "cevapMetni": "   " }
+                {
+                    "sira": 0,
+                    "adim": "kiminle",
+                    "cevap": "is"
+                },
+                {
+                    "sira": 0,
+                    "adim": "kiminle",
+                    "cevap": "aile"
+                },
+                {
+                    "sira": 1,
+                    "adim": "not",
+                    "cevapMetni": "ilk"
+                },
+                {
+                    "sira": 1,
+                    "adim": "not",
+                    "cevapMetni": "   "
+                }
             ],
             "beklenen": {
                 "adim.son": "not",
-                "cevap.kiminle": ["aile"],
+                "cevap.kiminle": [
+                    "aile"
+                ],
                 "huni": "genel",
                 "huni.surum": 1,
                 "izin.reklam": "hayir"
@@ -61,6 +115,22 @@
             "izin": null,
             "olaylar": [],
             "beklenen": {
+                "huni": "genel",
+                "huni.surum": 1
+            }
+        },
+        {
+            "ad": "deney ataması: çekirdeğin verdiği varyant deney.<ad> olur (M4a)",
+            "huni": "genel",
+            "surum": 1,
+            "adres": "",
+            "izin": null,
+            "deneyler": {
+                "baslik": "b"
+            },
+            "olaylar": [],
+            "beklenen": {
+                "deney.baslik": "b",
                 "huni": "genel",
                 "huni.surum": 1
             }

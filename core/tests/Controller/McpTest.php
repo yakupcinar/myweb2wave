@@ -32,7 +32,7 @@ final class McpTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya, uygulama_baglamlari, api_anahtarlari, mcp_cagrilari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya, uygulama_baglamlari, api_anahtarlari, mcp_cagrilari');
         $sinir = static::getContainer()->get('cache.rate_limiter');
         self::assertTrue(method_exists($sinir, 'clear') && $sinir->clear());
         $huniler = static::getContainer()->get(Huniler::class);

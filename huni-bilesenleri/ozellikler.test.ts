@@ -13,6 +13,7 @@ describe("T2b — özellikler sunucuyla aynı (ortak örnekler)", () => {
                 adres: o.adres,
                 izin: o.izin as "evet" | "hayir" | null,
                 olaylar: o.olaylar as Olay[],
+                deneyler: "deneyler" in o ? o.deneyler : undefined,
             }),
         ).toStrictEqual(o.beklenen);
     });

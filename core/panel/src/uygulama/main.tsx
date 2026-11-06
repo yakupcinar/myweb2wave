@@ -9,6 +9,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
 import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Baglam } from "./sayfalar/Baglam";
+import { Deneyler } from "./sayfalar/Deneyler";
 import { Huniler } from "./sayfalar/Huniler";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
 import { Planlar } from "./sayfalar/Planlar";
@@ -28,6 +29,7 @@ export const yollar = [
             { path: "huniler", element: <Huniler /> },
             { path: "kullanicilar", element: <Kullanicilar /> },
             { path: "planlar", element: <Planlar /> },
+            { path: "deneyler", element: <Deneyler /> },
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
         ],

@@ -64,6 +64,8 @@ export function ziyaretBaslat(
   surum?: number,
   /** Ç56 (3): önceki tercih — "hayir" de çekirdeğe gider (oran raporu). */
   izin: "evet" | "hayir" | null = null,
+  /** M4a: çekirdeğin tanımla verdiği deney ataması. */
+  deneyler?: Govde<"/huni/ziyaretler">["deneyler"],
 ): Promise<string | undefined> {
   const anahtar = sekmeAnahtari(app, huni, surum);
   const onceki = sekmedenOku(anahtar);
@@ -78,6 +80,7 @@ export function ziyaretBaslat(
   if (huni && surum) {
     govde.huni = huni;
     govde.surum = surum;
+    if (deneyler && Object.keys(deneyler).length) govde.deneyler = deneyler;
   }
   for (const ad of ALANLAR) {
     const deger = adres.get(ad)?.slice(0, 500);

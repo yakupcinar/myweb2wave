@@ -25,7 +25,7 @@ final class AtifTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE reklam_donusumleri, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler');
+        $this->db->executeStatement('TRUNCATE reklam_donusumleri, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler');
         ApiRequestor::setHttpClient(new KayitliStripeIstemcisi());
         // Ç34: hız sınırı durumu testler arasında taşınmasın.
         $limiter = static::getContainer()->get('cache.rate_limiter');

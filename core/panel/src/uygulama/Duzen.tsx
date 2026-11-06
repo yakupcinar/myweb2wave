@@ -2,6 +2,7 @@
 // sayfa NavLink'le işaretlenir (aria-current).
 import {
     ChartColumn,
+    FlaskConical,
     Filter,
     KeyRound,
     LogOut,
@@ -50,6 +51,10 @@ export function Duzen(): ReactNode {
                 <NavLink to="/panel/planlar" className={ogeSinifi}>
                     <Tags aria-hidden="true" className="size-4.5" />
                     Planlar
+                </NavLink>
+                <NavLink to="/panel/deneyler" className={ogeSinifi}>
+                    <FlaskConical aria-hidden="true" className="size-4.5" />
+                    Deneyler
                 </NavLink>
                 <NavLink to="/panel/baglam" className={ogeSinifi}>
                     <Sparkles aria-hidden="true" className="size-4.5" />

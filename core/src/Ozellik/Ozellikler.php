@@ -32,6 +32,7 @@ final class Ozellikler
         'adim.son' => ['metin', 'ulaşılan en ileri adımın kimliği'],
         'odeme.durum' => ['metin', 'baslatildi / tamamlandi'],
         'abonelik.durum' => ['metin', 'Stripe abonelik durumu (active, past_due, canceled…)'],
+        'deney.*' => ['metin', 'deney adıyla ziyaretçinin varyantı (M4a; yalnız aktif deneyde)'],
     ];
 
     public function __construct(private readonly Connection $db)

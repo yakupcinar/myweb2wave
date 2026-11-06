@@ -27,7 +27,7 @@ final class PanelKullanicilarTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, subscriptions, kisiler, baglantilar CASCADE');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, subscriptions, kisiler, baglantilar CASCADE');
         // Ziyaretin huni/sürümü yayınlanmış çift olmalı (yabancı anahtar) — sırası başka teste bağlı kalmasın.
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);

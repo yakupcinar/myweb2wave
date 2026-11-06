@@ -740,12 +740,17 @@ export interface components {
                 cevap: string;
             }[];
         };
+        /** @description M4a: aktif deney adı → ziyaretçinin varyantı (koşulda deney.<ad>); çekirdek yalnız aktif deneyin geçerli varyantını yazar */
+        DeneyAtamasi: {
+            [key: string]: string;
+        };
         AtifAlani: string;
         HuniYayini: {
             huni: components["schemas"]["HuniKimligi"];
             /** @description Yayınlanmış sürüm; taslakta null */
             surum: number | null;
             tanim: components["schemas"]["HuniTanimi"];
+            deneyler?: components["schemas"]["DeneyAtamasi"];
             /** @description M3c: ödeme sonrası upsell ürünü → ad + Stripe tutarı; okunamazsa yok (upsell gösterilmez) */
             ekUrunler?: {
                 [key: string]: {
@@ -1283,6 +1288,7 @@ export interface operations {
                     surum?: number;
                     /** @description Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz */
                     izin?: boolean;
+                    deneyler?: components["schemas"]["DeneyAtamasi"];
                 };
             };
         };
@@ -1333,8 +1339,10 @@ export interface operations {
                 utm_source?: string;
                 utm_campaign?: string;
                 utm_content?: string;
-                /** @description Doğrudan test adresi */
+                /** @description Doğrudan test adresi; yönlendirme deneyi uygulanmaz (M4a) */
                 huni?: components["schemas"]["HuniKimligi"];
+                /** @description M4a: sekme tohumu (sessionStorage) — deney varyantı bundan hesaplanır; yoksa deney yok */
+                tohum?: string;
                 /** @description M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi */
                 ulke?: string;
             };

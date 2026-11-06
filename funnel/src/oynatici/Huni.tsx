@@ -154,7 +154,13 @@ function Oynatici({
   const [ziyaretSozu] = useState(() =>
     onizleme
       ? Promise.resolve(undefined)
-      : ziyaretBaslat(app, yayin.huni, yayin.surum ?? undefined, izinOku()),
+      : ziyaretBaslat(
+          app,
+          yayin.huni,
+          yayin.surum ?? undefined,
+          izinOku(),
+          yayin.deneyler,
+        ),
   );
   // Ç72: önizlemede ?adim=<kimlik> o adımdan başlar (ekran görüntüsü aracı);
   // gerçek ziyarette yok sayılır — ölçüm hep ilk adımdan.
@@ -222,6 +228,7 @@ function Oynatici({
       adres: window.location.search,
       izin,
       olaylar: olaylar.current,
+      deneyler: yayin.deneyler,
     });
   /** T3a: ekrandan çıkış — ilk tutan kural, yoksa verilen (seçenek/ekran) hedef. */
   function cik(adim: TanimAdimi, hedef?: string): void {

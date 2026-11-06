@@ -24,7 +24,7 @@ final class OzellikEsligiTest extends WebTestCase
         $this->client = static::createClient();
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
-        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
+        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         self::assertSame([], $huniler->yeniHuni('keepchat', 'genel', null));
@@ -33,6 +33,9 @@ final class OzellikEsligiTest extends WebTestCase
             ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => 'Pro', 'metin' => '', 'dugme' => 'Al', 'plan' => 'monthly'],
         ]]));
         self::assertSame(1, $huniler->yayinla('keepchat', 'genel'));
+        // M4a: örneklerdeki deney ataması aktif bir içerik deneyine düşer.
+        $db->executeStatement('TRUNCATE deneyler');
+        $db->executeStatement("INSERT INTO deneyler (app, ad, tur, huni, varyantlar, durum) VALUES ('keepchat', 'baslik', 'icerik', 'genel', '[{\"ad\":\"a\",\"pay\":50},{\"ad\":\"b\",\"pay\":50}]', 'aktif')");
     }
 
     /** @return iterable<string, array{array<mixed>}> */
@@ -64,6 +67,9 @@ final class OzellikEsligiTest extends WebTestCase
             $govde += array_intersect_key($adres, ['fbclid' => 1, 'ttclid' => 1]) + ['izin' => true];
         } elseif ('hayir' === $ornek['izin']) {
             $govde['izin'] = false;
+        }
+        if (isset($ornek['deneyler'])) {
+            $govde['deneyler'] = $ornek['deneyler'];
         }
         $this->client->jsonRequest('POST', '/huni/ziyaretler', $govde);
         self::assertResponseStatusCodeSame(201);

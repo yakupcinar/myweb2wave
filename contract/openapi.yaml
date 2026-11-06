@@ -90,6 +90,7 @@ paths:
                 huni: { $ref: "#/components/schemas/HuniKimligi" }
                 surum: { type: integer, minimum: 1, description: "Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır" }
                 izin: { type: boolean, description: "Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz" }
+                deneyler: { $ref: "#/components/schemas/DeneyAtamasi" }
       responses:
         "201":
           description: Kaydedildi; ödeme oturumu açarken gönderilecek kimlik
@@ -123,7 +124,8 @@ paths:
         - { name: utm_source, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: utm_campaign, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: utm_content, in: query, required: false, schema: { type: string, maxLength: 200 } }
-        - { name: huni, in: query, required: false, description: Doğrudan test adresi, schema: { $ref: "#/components/schemas/HuniKimligi" } }
+        - { name: huni, in: query, required: false, description: "Doğrudan test adresi; yönlendirme deneyi uygulanmaz (M4a)", schema: { $ref: "#/components/schemas/HuniKimligi" } }
+        - { name: tohum, in: query, required: false, description: "M4a: sekme tohumu (sessionStorage) — deney varyantı bundan hesaplanır; yoksa deney yok", schema: { type: string, pattern: "^[A-Za-z0-9-]{8,64}$" } }
         - { name: ulke, in: query, required: false, description: "M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi", schema: { type: string, pattern: "^[A-Z]{2}$" } }
       responses:
         "200":
@@ -1205,6 +1207,11 @@ components:
               app: { type: string }
               soru: { type: string }
               cevap: { type: string }
+    DeneyAtamasi:
+      description: "M4a: aktif deney adı → ziyaretçinin varyantı (koşulda deney.<ad>); çekirdek yalnız aktif deneyin geçerli varyantını yazar"
+      type: object
+      maxProperties: 20
+      additionalProperties: { type: string, pattern: "^[A-Za-z0-9_-]{1,20}$" }
     AtifAlani:
       type: string
       maxLength: 500
@@ -1216,6 +1223,7 @@ components:
         huni: { $ref: "#/components/schemas/HuniKimligi" }
         surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
         tanim: { $ref: "#/components/schemas/HuniTanimi" }
+        deneyler: { $ref: "#/components/schemas/DeneyAtamasi" }
         ekUrunler:
           description: "M3c: ödeme sonrası upsell ürünü → ad + Stripe tutarı; okunamazsa yok (upsell gösterilmez)"
           type: object

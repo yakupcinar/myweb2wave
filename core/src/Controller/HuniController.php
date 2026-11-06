@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Billing\Fiyatlar;
 use App\Billing\ParaBirimi;
 use App\Billing\UlkeBulucu;
+use App\Huni\Deneyler;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -28,6 +29,7 @@ final readonly class HuniController
         private Fiyatlar $fiyatlar,
         private UlkeBulucu $ulkeler,
         private \App\Billing\EkUrunler $ekUrunler,
+        private Deneyler $deneyler,
     ) {
     }
 
@@ -50,7 +52,21 @@ final readonly class HuniController
         if (null === $huni || null === $yayin) {
             return new JsonResponse(['error' => 'unknown_app'], 404);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']));
+        // M4a (A17): tohumsuz (depo engelli) ziyaretçi deneye girmez; ?huni=
+        // doğrudan test adresidir, yönlendirme deneyi onu ezmez.
+        $tohum = $request->query->getString('tohum');
+        $atama = [];
+        if (1 === preg_match(Deneyler::TOHUM, $tohum)) {
+            if (!isset($parametreler['huni'])) {
+                $y = $this->deneyler->yonlendir($app, $huni, $tohum);
+                $varyant = $y['huni'] === $huni ? $yayin : $this->huniler->yayinda($app, $y['huni']);
+                if (null !== $varyant) {
+                    [$huni, $yayin, $atama] = [$y['huni'], $varyant, $y['atama']];
+                }
+            }
+            $atama += $this->deneyler->icerik($app, $huni, $tohum);
+        }
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + ([] === $atama ? [] : ['deneyler' => $atama]) + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']));
         // M1c: fiyat ziyaretçinin ülkesine (IP) göre — ortak önbellek (CDN) bir
         // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
         $yanit->setPrivate();

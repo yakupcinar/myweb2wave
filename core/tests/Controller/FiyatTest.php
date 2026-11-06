@@ -31,7 +31,7 @@ final class FiyatTest extends WebTestCase
         $this->client = static::createClient();
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
-        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya');
+        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya');
         // Önbellek testler arası taşınırsa "Stripe kapalı" testi eski fiyatla yeşil kalırdı.
         $onbellek = static::getContainer()->get('fiyat.onbellegi');
         self::assertInstanceOf(CacheInterface::class, $onbellek);

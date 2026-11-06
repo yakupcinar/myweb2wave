@@ -30,7 +30,7 @@ final class AiDegerlendirCommandTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ai_istekleri, uygulama_baglamlari CASCADE');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, ai_istekleri, uygulama_baglamlari CASCADE');
         $huniler = self::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;

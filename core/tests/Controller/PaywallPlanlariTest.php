@@ -34,7 +34,7 @@ final class PaywallPlanlariTest extends WebTestCase
         $client = static::createClient();
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
-        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
+        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
         $db->insert('planlar', ['app' => 'keepchat', 'anahtar' => 'yearly', 'ad' => 'Yıllık', 'stripe_urun' => 'prod_y', 'stripe_fiyat' => 'price_yillik']);
         $onbellek = static::getContainer()->get('fiyat.onbellegi');
         self::assertInstanceOf(CacheInterface::class, $onbellek);

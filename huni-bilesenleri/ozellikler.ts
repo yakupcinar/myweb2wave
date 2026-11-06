@@ -23,6 +23,7 @@ export function ozellikler({
     adres,
     izin,
     olaylar,
+    deneyler,
 }: {
     huni?: string | undefined;
     surum?: number | undefined;
@@ -30,6 +31,8 @@ export function ozellikler({
     adres: string;
     izin: "evet" | "hayir" | null;
     olaylar: Olay[];
+    /** M4a: çekirdeğin tanımla verdiği atama (deney adı → varyant). */
+    deneyler?: Record<string, string> | undefined;
 }): Ozellikler {
     const o: Ozellikler = {};
     if (huni) o["huni"] = huni;
@@ -41,6 +44,8 @@ export function ozellikler({
         if (deger) o[`utm.${ad}`] = deger;
     }
     if (izin) o["izin.reklam"] = izin;
+    for (const [ad, varyant] of Object.entries(deneyler ?? {}))
+        o[`deney.${ad}`] = varyant;
     // Sunucu: aynı sırada ilk yazılan adım kalır (ON CONFLICT DO NOTHING).
     const adimlar = new Map<number, string>();
     for (const olay of olaylar) {
