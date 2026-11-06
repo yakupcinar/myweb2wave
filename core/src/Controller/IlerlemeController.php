@@ -27,15 +27,44 @@ final readonly class IlerlemeController
         $govde = $request->toArray();
         $sira = $govde['sira'] ?? null;
         $adim = $govde['adim'] ?? null;
+        $cevapVar = \array_key_exists('cevap', $govde);
         $cevap = $govde['cevap'] ?? null;
+        $cevaplarVar = \array_key_exists('cevaplar', $govde);
+        $cevaplar = $cevaplarVar ? self::cevaplariDogrula($govde['cevaplar']) : null;
+        $cevapMetniVar = \array_key_exists('cevapMetni', $govde);
+        $cevapMetni = $govde['cevapMetni'] ?? null;
         if (!\is_int($sira) || $sira < 0 || $sira > Ziyaretler::AZAMI_SIRA
             || !\is_string($adim) || 1 !== preg_match(Ziyaretler::KIMLIK, $adim)
-            || (null !== $cevap && (!\is_string($cevap) || 1 !== preg_match(Ziyaretler::KIMLIK, $cevap)))) {
+            || ($cevapVar && (!\is_string($cevap) || 1 !== preg_match(Ziyaretler::KIMLIK, $cevap)))
+            || ($cevaplarVar && null === $cevaplar)
+            || ($cevapVar && $cevaplarVar)
+            || ($cevapMetniVar && (!\is_string($cevapMetni) || mb_strlen($cevapMetni) > 500 || str_contains($cevapMetni, "\0")))
+            || ($cevapMetniVar && ($cevapVar || $cevaplarVar))) {
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
 
-        return $this->ziyaretler->ilerle($ziyaret, $sira, $adim, $cevap)
+        $secenekler = \is_string($cevap) ? [$cevap] : $cevaplar;
+
+        return $this->ziyaretler->ilerle($ziyaret, $sira, $adim, $secenekler, $cevapMetniVar ? $cevapMetni : null)
             ? new Response('', 204)
             : new JsonResponse(['error' => 'unknown_visit'], 404);
+    }
+
+    /** @return list<string>|null */
+    private static function cevaplariDogrula(mixed $cevaplar): ?array
+    {
+        if (!\is_array($cevaplar) || !array_is_list($cevaplar) || \count($cevaplar) < 1 || \count($cevaplar) > 8) {
+            return null;
+        }
+
+        $dogrulanan = [];
+        foreach ($cevaplar as $cevap) {
+            if (!\is_string($cevap) || 1 !== preg_match(Ziyaretler::KIMLIK, $cevap)) {
+                return null;
+            }
+            $dogrulanan[] = $cevap;
+        }
+
+        return \count(array_unique($dogrulanan)) === \count($dogrulanan) ? $dogrulanan : null;
     }
 }

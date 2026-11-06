@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Billing\Fiyatlar;
+use App\Billing\ParaBirimi;
+use App\Billing\UlkeBulucu;
+use App\Huni\Deneyler;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,6 +26,10 @@ final readonly class HuniController
 
     public function __construct(
         private Huniler $huniler,
+        private Fiyatlar $fiyatlar,
+        private UlkeBulucu $ulkeler,
+        private \App\Billing\EkUrunler $ekUrunler,
+        private Deneyler $deneyler,
     ) {
     }
 
@@ -44,11 +52,52 @@ final readonly class HuniController
         if (null === $huni || null === $yayin) {
             return new JsonResponse(['error' => 'unknown_app'], 404);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin);
-        $yanit->setPublic();
+        // M4a (A17): tohumsuz (depo engelli) ziyaretçi deneye girmez; ?huni=
+        // doğrudan test adresidir, yönlendirme deneyi onu ezmez.
+        $tohum = $request->query->getString('tohum');
+        $atama = [];
+        if (1 === preg_match(Deneyler::TOHUM, $tohum)) {
+            if (!isset($parametreler['huni'])) {
+                $y = $this->deneyler->yonlendir($app, $huni, $tohum);
+                $varyant = $y['huni'] === $huni ? $yayin : $this->huniler->yayinda($app, $y['huni']);
+                if (null !== $varyant) {
+                    [$huni, $yayin, $atama] = [$y['huni'], $varyant, $y['atama']];
+                }
+            }
+            $atama += $this->deneyler->icerik($app, $huni, $tohum);
+        }
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + ([] === $atama ? [] : ['deneyler' => $atama]) + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']));
+        // M1c: fiyat ziyaretçinin ülkesine (IP) göre — ortak önbellek (CDN) bir
+        // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
+        $yanit->setPrivate();
         $yanit->setMaxAge(self::ONBELLEK_SN);
 
         return $yanit;
+    }
+
+    /** @return array{fiyatlar?: non-empty-array<string, array<string, mixed>>} */
+    private function fiyatAlani(string $app, Request $request): array
+    {
+        $ulke = $this->ulkeler->ulke($request->getClientIp(), $request->query->get('ulke'));
+        $fiyatlar = $this->fiyatlar->uygulama($app, ParaBirimi::ulkeninki($ulke));
+
+        return [] === $fiyatlar ? [] : ['fiyatlar' => $fiyatlar];
+    }
+
+    /**
+     * M3c: ödeme sonrası ekranın upsell ürünü — ad ve Stripe tutarı (başarı
+     * sayfası gösterir); okunamazsa alan yok, upsell gösterilmez.
+     *
+     * @param array<mixed> $tanim
+     *
+     * @return array{ekUrunler?: array<string, array{ad: string, tutar: int|float, paraBirimi: string}>}
+     */
+    private function ekUrunAlani(string $app, array $tanim): array
+    {
+        $urun = \is_array($tanim['sonrasi'] ?? null) && \is_array($tanim['sonrasi']['upsell'] ?? null) ? ($tanim['sonrasi']['upsell']['urun'] ?? null) : null;
+        $fiyat = \is_string($urun) ? $this->ekUrunler->fiyat($app, $urun) : null;
+
+        return null === $fiyat ? [] : ['ekUrunler' => [$urun => $fiyat]];
     }
 
     #[Route('/huni/{app}/taslak', name: 'huni_taslak', methods: ['GET'], requirements: ['app' => '[a-z0-9_-]+'])]
@@ -60,7 +109,13 @@ final readonly class HuniController
         if (null === $taslak || !$this->huniler->anahtarGecerli($app, $ad, $anahtar, time())) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad, 'surum' => null, 'tanim' => $taslak]);
+        // Ç70: yayin=1 aynı anahtarla yayındaki sürümü gösterir — panel "Aç"
+        // canlıya bakarken ziyaret açmasın (önizlemede oynatıcı ölçmez).
+        $sonuc = '1' === $request->query->getString('yayin') ? $this->huniler->yayinda($app, $ad) : ['surum' => null, 'tanim' => $taslak];
+        if (null === $sonuc) {
+            return new JsonResponse(['error' => 'forbidden'], 403);
+        }
+        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $sonuc['tanim']));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

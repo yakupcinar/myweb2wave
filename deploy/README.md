@@ -12,7 +12,9 @@ denemeleri: `docs/decisions/dagitim.md`.
 3. Stripe panelinde (**test modu**) Webhooks → uç nokta ekle:
    `https://<API_ALANI>/webhooks/stripe`, olaylar
    `checkout.session.completed`, `customer.subscription.created`,
-   `customer.subscription.updated`, `customer.subscription.deleted`.
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `checkout.session.expired` (terk edilen ödemenin IP/UA'sı hemen silinir — Ç59;
+   seçilmezse 48 sa cron temizliği yine siler).
    Verilen `whsec_` → `STRIPE_WEBHOOK_SECRET`.
 4. E-posta sağlayıcısı (Ç30): SMTP bilgisi → `MAILER_DSN`. Gönderen alan
    adında SPF/DKIM yoksa kodlar spam'e düşer.
@@ -25,7 +27,8 @@ ssh root@<ip> 'bash sunucu-hazirla.sh > /root/hazirla.log 2>&1; echo EXIT=$?'
 ```
 
 Docker, güvenlik duvarı (22/80/443), `dagitim` kullanıcısı, şifreli ssh ve
-root girişi kapalı, depo `/opt/myweb2wave`, günlük yedek (03:15). Bundan
+root girişi kapalı, depo `/opt/myweb2wave`, günlük yedek (03:15) ve günlük
+serbest yanıt temizliği (03:30; 90 günden eski ziyaretler). Bundan
 sonra giriş: `ssh dagitim@<ip>`.
 
 ## 3 · Değerler (dagitim kullanıcısı)
@@ -40,6 +43,25 @@ Doldur; rastgele değerler `openssl rand -hex 32`. Panel şifresinin
 → `PANEL_SIFRE_OZETI='…'` (**tek tırnak**, tuzak §26). Panel:
 `https://<API_ALANI>/panel`. `UYGULAMA_ANAHTARI_KEEPCHAT`
 KeepChat sunucusundakiyle **aynı**. Sırlar sohbete, depoya yazılmaz.
+
+H6 reklam ölçümü isteğe bağlıdır. `META_PIXEL_ID` ve `TIKTOK_PIXEL_ID`, hem
+sunucu olayları hem tarayıcı pikseli için aynı herkese açık kimliklerdir;
+web imajı bu değerlerle derlenir. Kimlikler değişince `deploy/dagit.sh`
+`web` imajını yeniden kurar. Erişim anahtarları yalnız çekirdek sunucuda
+kullanılır; tarayıcıya aktarılmaz. Meta için `META_PIXEL_ID`,
+`META_ACCESS_TOKEN`, `META_GRAPH_API_VERSION` (ör. `vXX.0`) ve test modu
+doğrulaması için `META_TEST_EVENT_CODE`; TikTok için `TIKTOK_PIXEL_ID`,
+`TIKTOK_ACCESS_TOKEN` ve isteğe bağlı `TIKTOK_TEST_EVENT_CODE` girilir. Boş
+değer ilgili ağı kapalı tutar. Gerçek trafik öncesinde sağlayıcı panellerinde
+test olayını doğrula. Test olay kodları yalnız sunucu olaylarına eklenir.
+İzin metni, gizlilik bağlantısı ve geri alma akışı Ç56 kapanmadan ücretli
+reklam açılmamalıdır.
+
+Mevcut sunucuya H6b dağıtılırken reklam dönüşüm yeniden-deneme cron'u da
+kurulmalıdır. `sunucu-hazirla.sh` bu kaydı tekrar çalıştırıldığında güvenle
+yeniler; depoyu güncelledikten sonra root ile sunucuda
+`bash /opt/myweb2wave/deploy/sunucu-hazirla.sh` çalıştır. Yeni kurulumlarda
+bu cron ilk hazırlıkta zaten eklenir.
 
 ## 4 · Her dağıtım
 
@@ -58,3 +80,7 @@ dağıtım olmamıştır.
 `/var/backups/myweb2wave/app-*.dump`, 14 gün. Geri yükleme:
 `docker exec -i myweb2wave-uretim-db-1 pg_restore -U app -d <boş_db> < dosya`.
 ⚠️ Yedek aynı diskte (Ç33).
+
+Anket serbest yanıtlarının metni ziyaret tarihinden 90 gün sonra ana DB'den
+silinir (`app:huni-metin-cevaplari-sil`). Günlük yedek temizliği nedeniyle
+silinen metin, yedeklerde en çok yaklaşık 105 güne kadar kalabilir.

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Huni;
 
+use App\Ozellik\Ozellikler;
+
 /**
  * Huni tanımının biçimi (A7) — yayından ÖNCE burada doğrulanır; huni
  * sayfası yalnız buradan geçmiş tanımı görür. Sözleşme: contract
@@ -17,32 +19,162 @@ final class Tanim
     /** Alan → [en az, en çok] karakter. */
     private const UZUNLUK = [
         'sayfaBasligi' => [1, 120], 'baslik' => [1, 200], 'metin' => [0, 1000],
-        'dugme' => [1, 60], 'soru' => [1, 200], 'secenek' => [1, 120],
+        'dugme' => [1, 60], 'secenek' => [1, 120],
+        'yazar' => [1, 80], 'unvan' => [0, 100],
+        'fayda' => [1, 120], 'gorselMetni' => [1, 200], 'madde' => [1, 80],
+        // T1: blok metinleri.
+        'blokMetni' => [1, 1000], 'satir' => [1, 120], 'deger' => [1, 12], 'kutu' => [1, 500],
+        // E1: e-posta sorusunun pazarlama izni kutusu.
+        'izinMetni' => [1, 200],
+        // V5: grafik uçları, önce/sonra ve ölçek etiketleri.
+        'etiket' => [1, 40],
     ];
 
-    /** Tür → zorunlu metin alanları (başka alan kabul edilmez). */
+    /**
+     * T1: AI istemlerine (panel asistanı + MCP) ortak blok kataloğu yönergesi;
+     * uydurma sayı ve yorum yasağı reklam metni için (yanıltıcı reklam).
+     */
+    public const EKRAN_YONERGESI = 'İçerik adımı ekrandır (T1c: tanıtım, soru ve yorum adımı yok): baslik (sayfanın başlığı) + bloklar (0–12, yukarıdan aşağı) + dugme, isteğe bağlı hedef. '
+        .'Bloklar: baslik (ara başlık), metin (paragraf), gorsel (yüklenmiş görsel, gorselMetni), maddeler (1–6), yorum (metin, yazar, isteğe bağlı unvan ve puan 1–5), istatistik (deger ≤ 12 karakter + metin), kutu (vurgulu not, isteğe bağlı tek emoji simge), grafik (projeksiyon eğrisi: baslangic ve hedef etiketi ≤ 40, ör. "Bugün" → "4. hafta", isteğe bağlı egri artan|azalan; SAYI ve sonuç vaadi yok — etiket kişiye özel olabilir, koşullu değerle), onceSonra (once, sonra: iki yüklenmiş görsel + onceEtiketi, sonraEtiketi; stok fotoğraftaki kişiyle kullanma — onay ima eder), soru (ekranda en çok bir; soru adımının secimTuru/secenekler/duzen/yanitZorunlu alanları, soru metni ekranın başlığı — tekli ve olcek seçimde ekrana dugme ve hedef yazma, hedef seçenekte; secimTuru olcek = 1–5 katılma ölçeği (olcekSol, olcekSag uç etiketleri ≤ 40, seçenek yazılmaz, cevap kimlikleri "1"…"5" — koşulda icerir "5"); coklu/metin/eposta seçimde dugme gönderir; secimTuru eposta = e-posta alanı, isteğe bağlı izinMetni pazarlama izni kutusunu açar — adres ödeme sayfasını doldurur, koşulda kullanılmaz; en iyi hunilerde kişisel sonuç ve paywall adımından hemen önce). '
+        .'Açıklama, görsel ya da güvence notu gereken soruyu soru bloklu ekranla kur. '
+        .'Koşullu yönlendirme (isteğe bağlı, ekranda): yonlendirme: [{"kosullar": [{"ozellik": "cevap.<bu ya da önceki ekran>", "islem": "icerir", "deger": "<seçenek kimliği>"}], "hedef": "<sonraki adım>"}] — ilk tutan kural kazanır; özellikler utm.source/medium/campaign/content/term, izin.reklam, huni, huni.surum, adim.son, cevap.<adım>; seçmeli cevapta icerir/icermez, diğerlerinde esit/esit_degil, her biri için var/yok; birden çok koşulda "baglac": "herhangi" VEYA yapar. Yalnız kişiselleştirme gerçekten gerekiyorsa kullan (ör. farklı kitleye farklı ekran). '
+        .'Koşullu gösterim (isteğe bağlı, ilk ekran dışında): goster: {"kosullar": [...], "baglac"?} — aynı koşul biçimi, cevap yalnız ÖNCEKİ ekranlardan; tutmazsa ekran atlanır, sıradaki adıma geçilir. '
+        .'Koşullu değer (isteğe bağlı, ekranda ve soru/maddeler dışı blokta): degerler: [{"kosullar": [...], "alan": "baslik", "deger": "<yeni metin>"}] — alan öğede VAR olmalı (ekran: baslik, dugme, gorsel, gorselMetni; blok: kendi metin alanları, gorsel, simge); alan başına ilk tutan kural, tutmazsa alanın kendi değeri; cevap yalnız önceki ekranlardan. Aynı ekranı kitleye göre kişiselleştirmek için (ör. kiminle cevabına göre başlık). '
+        .'Karşılama, neden bu ürün, nasıl çalışır, güvence gibi ekranları farklı blok dizilişleriyle kur; tüm huniyi aynı dizilişle doldurma. '
+        .'istatistik bloğuna yalnız ürün bağlamında verilmiş gerçek bir sayı yaz — yoksa istatistik bloğu koyma. '
+        .'yorum bloğunda gerçek yorum yoksa unvana "Örnek — yayından önce gerçeğiyle değiştir" yaz. '
+        // M2a: plan seçici; ödeme koşulunu ekran kendisi yazar.
+        .'Ödeme ekranı (paywall): plan tek plan; birden çok plan için planlar (2–3 farklı plan, plan bunların içinde ve varsayılan seçili) ve isteğe bağlı onerilen (planlardan biri, "Önerilen" etiketi). Plan anahtarlarını uydurma — hata uygulamanın planlarını sayar. Fiyatı, denemeyi, yenilemeyi metne yazma: ekran seçili planın fiyatını ve ödeme koşulunu Stripe\'tan kendisi yazar. '
+        // M2c
+        .'Cevaba göre farklı paywall: huni birden çok paywall adımı içerebilir; son adım paywall olmalı, öndeki paywall\'a yonlendirme ya da hedef ile gidilir (paywall\'dan sonra sıradaki adıma geçilmez). '
+        // M3c
+        .'sonrasi içinde isteğe bağlı upsell: {"urun", "baslik", "dugme", "metin"?} — ödeme sonrası tek tıkla satılan ek ürün (kayıtlı kartla); fiyatı ekran yazar, metne fiyat ya da aciliyet yazma. '
+        // M3b
+        .'İsteğe bağlı sonrasi (tanımın kökünde, adım değil): {"baslik", "bloklar", "dugme"?} — ödeme sonrası ekran (sonraki adımlar, uygulamayı indir, destek); soru bloğu ve koşullu değer yok. Uygulamaya giriş bağlantısı düğmesi ekranın altına kendiliğinden gelir, dugme onun metni. '
+        // M3a
+        .'İsteğe bağlı downsell: {"plan", "baslik", "dugme", "metin"?} — ziyaretçi paywall\'dan geri dönmeye çalışınca ya da ödeme panelini kapatınca BİR KEZ sunulan daha uygun plan (genelde indirim teklifli); fiyatı ve koşulu pencere yazar, "son şans" gibi sahte aciliyet yazma. '
+        // M2b
+        .'İsteğe bağlı guvenceler: ["guvenli-odeme", "kart-saklanmaz"] (yalnız bunlar; iptal/iade rozeti yok). sartOnayi: true ödeme düğmesinden önce şart onay kutusu ister (sartlar adresi şart). Sayaç/aciliyet metni yazma: teklifin gerçek bitişi varsa ekran sayacı kendisi gösterir.';
+
+    /** T3a: koşul işlemleri — listede (seçmeli cevap) ve tek değerde. */
+    private const LISTE_ISLEMLERI = ['icerir', 'icermez', 'var', 'yok'];
+    private const DEGER_ISLEMLERI = ['esit', 'esit_degil', 'var', 'yok'];
+
+    /** T3c: koşullu değer alabilen ekran alanları (alan → metin türü; null = görsel). */
+    private const EKRAN_DEGERLERI = ['baslik' => 'baslik', 'dugme' => 'dugme', 'gorsel' => null, 'gorselMetni' => 'gorselMetni'];
+
+    /** T3a: hunide (tarayıcıda) bilinmeyen özellikler — ödemeden sonra sunucuda. */
+    private const HUNI_DISI_OZELLIKLER = ['odeme', 'abonelik'];
+
+    /**
+     * Ç91: koşullarda kullanılabilen sabit özellikler (sözlük sırasıyla) —
+     * düzenleyici bunu açılışta alır; `cevap.<adım>` ekranlardan eklenir.
+     *
+     * @return list<array{ad: string, aciklama: string}>
+     */
+    public static function kosulOzellikleri(): array
+    {
+        $liste = [];
+        foreach (Ozellikler::SOZLUK as $ad => [, $aciklama]) {
+            if (!str_ends_with($ad, '.*') && !\in_array(explode('.', $ad, 2)[0], self::HUNI_DISI_OZELLIKLER, true)) {
+                $liste[] = ['ad' => $ad, 'aciklama' => $aciklama];
+            }
+        }
+
+        return $liste;
+    }
+
+    /** T1c: tam ekran kapaklı ekranda izinli bloklar (yüzeysiz, metin). */
+    public const TAM_EKRAN_BLOKLARI = ['baslik', 'metin', 'maddeler', 'istatistik'];
+
+    /** T1: ekran adımındaki blok sayısı. */
+    public const AZAMI_BLOK = 12;
+
+    /**
+     * T1 blok kataloğu: tür → [zorunlu alanlar, isteğe bağlı alanlar]; alan →
+     * UZUNLUK anahtarı, null = kendi denetimi (görsel, liste, puan, simge).
+     *
+     * @var array<string, array{array<string, ?string>, array<string, ?string>}>
+     */
+    public const BLOKLAR = [
+        'baslik' => [['metin' => 'baslik'], []],
+        'metin' => [['metin' => 'blokMetni'], []],
+        'gorsel' => [['gorsel' => null], ['gorselMetni' => 'gorselMetni']],
+        'maddeler' => [['maddeler' => null], []],
+        'yorum' => [['metin' => 'blokMetni', 'yazar' => 'yazar'], ['unvan' => 'unvan', 'puan' => null]],
+        'istatistik' => [['deger' => 'deger', 'metin' => 'satir'], []],
+        'kutu' => [['metin' => 'kutu'], ['simge' => null]],
+        // T1b: secenekler serbest yanıtta yok, seçmelide zorunlu (aşağıda).
+        'soru' => [[], ['secimTuru' => null, 'duzen' => null, 'yanitZorunlu' => null, 'secenekler' => null, 'izinMetni' => 'izinMetni', 'olcekSol' => 'etiket', 'olcekSag' => 'etiket']],
+        // V5: projeksiyon grafiği — sayı yok, yalnız uç etiketleri (uydurma sonuç yazılamaz).
+        'grafik' => [['baslangic' => 'etiket', 'hedef' => 'etiket'], ['egri' => null]],
+        // V5: önce/sonra — iki yüklenmiş görsel, etiketleri alt metin de olur.
+        'onceSonra' => [['once' => null, 'sonra' => null, 'onceEtiketi' => 'etiket', 'sonraEtiketi' => 'etiket'], []],
+    ];
+
+    /**
+     * M2b: paywall güven rozetleri — yalnız kurgusu gereği doğru olanlar
+     * (ödeme Stripe'ta, kart bilgisi bizde değil). İptal/iade sözü yok:
+     * iptal yolu M6'da, iade yöneticinin politikası.
+     */
+    public const GUVENCELER = ['guvenli-odeme', 'kart-saklanmaz'];
+
+    /** V5: ölçek sorusunun kendiliğinden seçenek (cevap) kimlikleri — huni-bilesenleri OLCEK ile aynı. */
+    public const OLCEK_KIMLIKLERI = ['1', '2', '3', '4', '5'];
+
+    /** Ç101: tam ekran kapak karartmasında düğmenin en az kontrastı (WCAG 1.4.11). */
+    public const KAPAK_DUGME_KONTRASTI = 3.0;
+
+    /** G5: tanıtım adımında görselin yeri. */
+    public const DUZENLER = ['ust', 'kahraman', 'tamEkran'];
+
+    /** G4: soru adımında seçeneklerin dizilişi. */
+    public const SORU_DUZENLERI = ['liste', 'izgara'];
+
+    /** Tür → zorunlu metin alanları (başka alan kabul edilmez). T1c: içerik ekranda. */
     private const TURLER = [
-        'tanitim' => ['baslik', 'metin', 'dugme'],
-        'soru' => ['soru'],
+        // T1: başlık (h1) + bloklar; düğme ve hedef aşağıda (T1b: tek seçimli
+        // soru bloğunda düğme yok, seçenek geçirir).
+        'ekran' => ['baslik'],
+        // Mobil görünüm 4: düğmesiz; maddeler ve süre isteğe bağlı.
+        'yukleme' => ['baslik'],
         'paywall' => ['baslik', 'metin', 'dugme'],
     ];
 
     /**
-     * @param list<string> $planlar bu uygulamanın planları (config uygulamalar)
+     * @param list<string> $planlar   bu uygulamanın planları (config uygulamalar)
+     * @param list<string> $ekUrunler M3c: bu uygulamanın ek ürünleri (upsell)
      *
      * @return list<string> boşsa geçerli
      */
-    public static function hatalar(mixed $tanim, array $planlar): array
+    public static function hatalar(mixed $tanim, array $planlar, array $ekUrunler = []): array
     {
         // tema isteğe bağlı (E2.2): yoksa huni sayfası varsayılanı kullanır.
-        if (!\is_array($tanim) || !self::anahtarlar($tanim, \array_key_exists('tema', $tanim) ? ['sayfaBasligi', 'adimlar', 'tema'] : ['sayfaBasligi', 'adimlar'])) {
-            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema içermeli'];
+        // logo isteğe bağlı (Ç61 (5)): temadan bağımsız, görsel kimliği.
+        // M3b: sonrasi isteğe bağlı — ödeme sonrası ekran (adım değil).
+        $istege = \is_array($tanim) ? array_values(array_intersect(['tema', 'logo', 'sonrasi'], array_map(strval(...), array_keys($tanim)))) : [];
+        if (!\is_array($tanim) || !self::anahtarlar($tanim, ['sayfaBasligi', 'adimlar', ...$istege])) {
+            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema, logo, sonrasi içermeli'];
         }
         $h = \array_key_exists('tema', $tanim) ? Tema::hatalar($tanim['tema']) : [];
+        if (\array_key_exists('logo', $tanim)) {
+            self::gorsel($tanim['logo'], 'logo', $h);
+        }
         self::metin($tanim['sayfaBasligi'], 'sayfaBasligi', 'sayfaBasligi', $h);
         $adimlar = $tanim['adimlar'];
         if (!\is_array($adimlar) || !array_is_list($adimlar) || \count($adimlar) < 2 || \count($adimlar) > self::AZAMI_ADIM) {
             return [...$h, 'adimlar 2–'.self::AZAMI_ADIM.' öğeli bir liste olmalı'];
+        }
+        // Ç101: tam ekran kapakta düğme her temada dolu ve kapağın %88 siyah
+        // karartmasında durur — arka plan siyah ile #1f1f1f (beyaz fotoğraf)
+        // arası. Ana renk ikisine karşı en az 3:1 (WCAG 1.4.11, metin dışı);
+        // yoksa düğme kaybolur (Sade #111827: 1,08:1, ekranda görüldü).
+        $ana = [] === $h && \is_array($tanim['tema'] ?? null) && \is_string($tanim['tema']['anaRenk'] ?? null) ? $tanim['tema']['anaRenk'] : Tema::VARSAYILAN['anaRenk'];
+        $kapakOrani = min(Tema::kontrast($ana, '#000000'), Tema::kontrast($ana, '#1f1f1f'));
+        foreach ($adimlar as $i => $adim) {
+            if (\is_array($adim) && 'tamEkran' === ($adim['duzen'] ?? null) && \is_string($adim['dugme'] ?? null) && $kapakOrani < self::KAPAK_DUGME_KONTRASTI) {
+                $h[] = \sprintf('adım %d: tam ekran kapakta düğme karartmada görünmüyor (ana renk %.2f:1, en az %.1f:1) — ana rengi açık seç ya da duzen kahraman kullan', $i + 1, $kapakOrani, self::KAPAK_DUGME_KONTRASTI);
+            }
         }
 
         // H5: hedef yalnız İLERİ — kimlik → sıra (döngü olamaz, doğrulama tek geçiş).
@@ -52,12 +184,29 @@ final class Tanim
                 $sira[$adim['id']] = $i;
             }
         }
+        // T3a: koşullar için ekranların soruları: kimlik → [seçmeli mi, seçenek kimlikleri].
+        $sorular = [];
+        foreach ($adimlar as $adim) {
+            $id = \is_array($adim) ? ($adim['id'] ?? null) : null;
+            if (!\is_array($adim) || !\is_string($id) || !\is_array($adim['bloklar'] ?? null)) {
+                continue;
+            }
+            foreach ($adim['bloklar'] as $b) {
+                if (\is_array($b) && 'soru' === ($b['tur'] ?? null)) {
+                    // E1: e-posta cevabı koşul özelliği değil (null) — adres tanıma yazılmasın.
+                    $sorular[$id] = 'eposta' === ($b['secimTuru'] ?? null) ? null : ('olcek' === ($b['secimTuru'] ?? null) ? [true, self::OLCEK_KIMLIKLERI] : [
+                        'metin' !== ($b['secimTuru'] ?? 'tekli'),
+                        array_values(array_filter(array_map(static fn (mixed $s): mixed => \is_array($s) ? ($s['id'] ?? null) : null, \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : []), \is_string(...))),
+                    ]);
+                }
+            }
+        }
         $gorulen = [];
         foreach ($adimlar as $i => $adim) {
             $yer = 'adım '.($i + 1);
             $tur = \is_array($adim) ? ($adim['tur'] ?? null) : null;
             if (!\is_array($adim) || !\is_string($tur) || !isset(self::TURLER[$tur])) {
-                $h[] = "{$yer}: tür tanitim, soru ya da paywall olmalı";
+                $h[] = "{$yer}: tür ekran, yukleme ya da paywall olmalı";
                 continue;
             }
             $id = $adim['id'] ?? null;
@@ -69,17 +218,131 @@ final class Tanim
                 $gorulen[$id] = true;
             }
             $beklenen = ['id', 'tur', ...self::TURLER[$tur], ...match ($tur) {
-                'soru' => ['secenekler'], 'paywall' => ['plan'], default => [],
+                'paywall' => ['plan'], 'ekran' => ['bloklar'], default => [],
             }];
-            // E2.3: tanıtım adımında isteğe bağlı görsel.
-            if ('tanitim' === $tur && \array_key_exists('gorsel', $adim)) {
+            if (\array_key_exists('ilerlemeGoster', $adim)) {
+                $beklenen[] = 'ilerlemeGoster';
+                if (!\is_bool($adim['ilerlemeGoster'])) {
+                    $h[] = "{$yer}: ilerlemeGoster true ya da false olmalı";
+                }
+            }
+            // E2.3 / T1c: ekranın kapağı (eski tanıtım görseli).
+            $kapakli = 'ekran' === $tur;
+            if ($kapakli && \array_key_exists('gorsel', $adim)) {
                 $beklenen[] = 'gorsel';
                 self::gorsel($adim['gorsel'], $yer, $h);
             }
-            // H5: tanıtım düğmesi de atlayabilir — dallar ortak adımda birleşsin.
-            if ('tanitim' === $tur && \array_key_exists('hedef', $adim)) {
+            if ($kapakli && \array_key_exists('gorselMetni', $adim)) {
+                $beklenen[] = 'gorselMetni';
+                self::gorselMetni($adim, $yer, $h);
+            }
+            // Mobil görünüm 4: yükleme adımının maddeleri ve süresi.
+            if ('yukleme' === $tur && \array_key_exists('maddeler', $adim)) {
+                $beklenen[] = 'maddeler';
+                self::maddeler($adim['maddeler'], $yer, $h);
+            }
+            if ('yukleme' === $tur && \array_key_exists('sure', $adim)) {
+                $beklenen[] = 'sure';
+                if (!\is_int($adim['sure']) || $adim['sure'] < 2 || $adim['sure'] > 10) {
+                    $h[] = "{$yer}: sure: 2–10 tam sayı (saniye) olmalı";
+                }
+            }
+            // G5: görselin yeri; kahraman/tamEkran görselsiz anlamsız.
+            if ($kapakli && \array_key_exists('duzen', $adim)) {
+                $beklenen[] = 'duzen';
+                if (!\in_array($adim['duzen'], self::DUZENLER, true)) {
+                    $h[] = "{$yer}: duzen: ".implode(', ', self::DUZENLER).' olmalı';
+                } elseif ('ust' !== $adim['duzen'] && !\array_key_exists('gorsel', $adim)) {
+                    $h[] = "{$yer}: duzen {$adim['duzen']} görsel ister";
+                }
+            }
+            // H5: ekranın düğmesi de atlayabilir — dallar ortak adımda birleşsin.
+            if ('ekran' === $tur && \array_key_exists('hedef', $adim)) {
                 $beklenen[] = 'hedef';
                 self::hedef($adim['hedef'], $sira, $i, $yer, $h);
+            }
+            // Ç61 (3): paywall'da isteğe bağlı fayda listesi ve yasal bağlantılar.
+            if ('paywall' === $tur && \array_key_exists('faydalar', $adim)) {
+                $beklenen[] = 'faydalar';
+                self::faydalar($adim['faydalar'], $yer, $h);
+            }
+            // M2a: plan seçici — 2–3 plan (varsayılan `plan` içinde), isteğe bağlı önerilen.
+            foreach ('paywall' === $tur ? ['planlar', 'onerilen'] : [] as $alan) {
+                if (\array_key_exists($alan, $adim)) {
+                    $beklenen[] = $alan;
+                }
+            }
+            // M2b: güven rozetleri yalnız kurgusu gereği doğru olanlar; şart onayı şart adresi ister.
+            if ('paywall' === $tur && \array_key_exists('guvenceler', $adim)) {
+                $beklenen[] = 'guvenceler';
+                $g = $adim['guvenceler'];
+                if (!\is_array($g) || !array_is_list($g) || [] === $g || \count(array_unique(array_filter($g, \is_string(...)))) !== \count($g) || [] !== array_diff(array_filter($g, \is_string(...)), self::GUVENCELER)) {
+                    $h[] = "{$yer}: guvenceler şunlardan 1–".\count(self::GUVENCELER).' farklı rozet olmalı: '.implode(', ', self::GUVENCELER);
+                }
+            }
+            // M3a (A16): downsell — geri tuşu ya da ödeme panelini kapatınca bir kez sunulan plan.
+            if ('paywall' === $tur && \array_key_exists('downsell', $adim)) {
+                $beklenen[] = 'downsell';
+                self::downsell($adim['downsell'], $planlar, $yer, $h);
+            }
+            if ('paywall' === $tur && \array_key_exists('sartOnayi', $adim)) {
+                $beklenen[] = 'sartOnayi';
+                if (true !== $adim['sartOnayi']) {
+                    $h[] = "{$yer}: sartOnayi yalnız true (yoksa alanı yazma)";
+                } elseif (!\array_key_exists('sartlar', $adim)) {
+                    $h[] = "{$yer}: sartOnayi kullanım şartları adresini (sartlar) ister";
+                }
+            }
+            foreach ('paywall' === $tur ? ['sartlar', 'gizlilik', 'iptal'] : [] as $alan) {
+                if (\array_key_exists($alan, $adim)) {
+                    $beklenen[] = $alan;
+                    self::adres($adim[$alan], "{$yer} {$alan}", $h);
+                }
+            }
+            // T1b: tek seçimli soru bloğunda seçenek geçirir — düğme ve ekran hedefi yok.
+            $tekSecimli = 'ekran' === $tur && self::tekSecimliSoru($adim['bloklar'] ?? null);
+            if ('ekran' === $tur && \array_key_exists('dugme', $adim)) {
+                $beklenen[] = 'dugme';
+                if ($tekSecimli) {
+                    $h[] = "{$yer}: tek seçimli soru bloğu olan ekranda dugme olmaz (seçenek seçilince geçer)";
+                } else {
+                    self::metin($adim['dugme'], 'dugme', "{$yer} dugme", $h);
+                }
+            } elseif ('ekran' === $tur && !$tekSecimli) {
+                $h[] = "{$yer}: dugme olmalı";
+            }
+            // T3a: koşullu yönlendirme (ilk tutan kural kazanır).
+            if ('ekran' === $tur && \array_key_exists('yonlendirme', $adim)) {
+                $beklenen[] = 'yonlendirme';
+                self::yonlendirme($adim['yonlendirme'], $sira, $sorular, $i, $yer, $h);
+            }
+            // T3c: koşullu değer — ekranın ve bloklarının metin/görsel alanları.
+            if ('ekran' === $tur && \array_key_exists('degerler', $adim)) {
+                $beklenen[] = 'degerler';
+                self::degerler($adim['degerler'], $adim, self::EKRAN_DEGERLERI, $sira, $sorular, $i, $yer, $h);
+            }
+            foreach ('ekran' === $tur && \is_array($adim['bloklar'] ?? null) ? $adim['bloklar'] : [] as $j => $b) {
+                if (!\is_array($b) || !\array_key_exists('degerler', $b)) {
+                    continue;
+                }
+                $by = "{$yer} blok ".((int) $j + 1);
+                $blokTuru = \is_string($b['tur'] ?? null) ? $b['tur'] : '';
+                if ('soru' === $blokTuru || !isset(self::BLOKLAR[$blokTuru])) {
+                    $h[] = "{$by}: soru bloğunda degerler olmaz (seçenek kimlikleri koşulların dayanağı)";
+                    continue;
+                }
+                [$zorunlu, $istege] = self::BLOKLAR[$blokTuru];
+                $alanlar = array_filter($zorunlu + $istege, static fn (?string $u): bool => null !== $u)
+                    + array_intersect_key(['gorsel' => null, 'simge' => null], $zorunlu + $istege);
+                self::degerler($b['degerler'], $b, $alanlar, $sira, $sorular, $i, $by, $h);
+            }
+            // T3b: koşullu gösterim — tutmazsa ekran atlanır (sıradakine geçilir).
+            if ('ekran' === $tur && \array_key_exists('goster', $adim)) {
+                $beklenen[] = 'goster';
+                self::goster($adim['goster'], $sira, $sorular, $i, $yer, $h);
+            }
+            if ($tekSecimli && \array_key_exists('hedef', $adim)) {
+                $h[] = "{$yer}: tek seçimli soru bloğunda hedef seçeneklerde verilir";
             }
             if (!self::anahtarlar($adim, $beklenen)) {
                 $h[] = "{$yer}: alanlar tam olarak ".implode(', ', $beklenen).' olmalı';
@@ -88,18 +351,73 @@ final class Tanim
             foreach (self::TURLER[$tur] as $alan) {
                 self::metin($adim[$alan], $alan, "{$yer} {$alan}", $h);
             }
-            if ('soru' === $tur) {
-                self::secenekler($adim['secenekler'], $sira, $i, $yer, $h);
+            if ('ekran' === $tur) {
+                self::bloklar($adim['bloklar'], $sira, $i, $yer, $h, 'tamEkran' === ($adim['duzen'] ?? null));
             }
-            if ('paywall' === $tur && !\in_array($adim['plan'], $planlar, true)) {
-                $h[] = "{$yer}: plan bu uygulamada yok";
+            if ('paywall' === $tur) {
+                self::paywallPlanlari($adim, $planlar, $yer, $h);
             }
-            if (('paywall' === $tur) !== ($i === \count($adimlar) - 1)) {
-                $h[] = "{$yer}: paywall tam bir kez ve EN SONDA olmalı";
+            // M2c (A15): birden çok paywall olabilir (cevaba göre farklı paywall,
+            // T3 yönlendirmesiyle); SON adım paywall olmalı — oynatıcının gösterim
+            // koşuluyla ekran atlaması huninin sonunda durabileceği bir adım bulsun.
+            if ($i === \count($adimlar) - 1 && 'paywall' !== $tur) {
+                $h[] = "{$yer}: son adım paywall olmalı (başka paywall'lar öne konup yönlendirmeyle açılabilir)";
             }
+        }
+        if (\array_key_exists('sonrasi', $tanim)) {
+            self::sonrasi($tanim['sonrasi'], $sira, \count($adimlar), $ekUrunler, $h);
         }
 
         return $h;
+    }
+
+    /**
+     * M3b (A16): ödeme sonrası ekran — başlık + bloklar (+ giriş düğmesinin
+     * metni). Giriş bağlantısı alanı sayfanın sabit parçası (silinemez).
+     * O sayfada cevap yok: soru bloğu ve koşullu değer yok.
+     *
+     * @param array<string, int> $sira
+     * @param list<string>       $ekUrunler
+     * @param list<string>       $h
+     */
+    private static function sonrasi(mixed $s, array $sira, int $son, array $ekUrunler, array &$h): void
+    {
+        $istege = \is_array($s) ? array_values(array_intersect(['dugme', 'upsell'], array_map(strval(...), array_keys($s)))) : [];
+        if (!\is_array($s) || !self::anahtarlar($s, ['baslik', 'bloklar', ...$istege])) {
+            $h[] = 'sonrasi: alanlar tam olarak baslik, bloklar ve (isteğe bağlı) dugme, upsell olmalı';
+
+            return;
+        }
+        // M3c: tek tık ek ürün — katalogdan ürün + başlık + düğme (+ metin); fiyat Stripe'tan.
+        if (\array_key_exists('upsell', $s)) {
+            $u = $s['upsell'];
+            $uIstege = \is_array($u) && \array_key_exists('metin', $u) ? ['metin'] : [];
+            if (!\is_array($u) || !self::anahtarlar($u, ['urun', 'baslik', 'dugme', ...$uIstege])) {
+                $h[] = 'sonrasi upsell: alanlar tam olarak urun, baslik, dugme ve (isteğe bağlı) metin olmalı';
+            } else {
+                if (!\is_string($u['urun']) || !\in_array($u['urun'], $ekUrunler, true)) {
+                    $h[] = "sonrasi upsell: ek ürün '".(\is_string($u['urun']) ? $u['urun'] : '?')."' bu uygulamada yok (".([] === $ekUrunler ? 'hiç ek ürün yok — panel → Planlar' : 'ek ürünler: '.implode(', ', $ekUrunler)).')';
+                }
+                self::metin($u['baslik'], 'baslik', 'sonrasi upsell baslik', $h);
+                self::metin($u['dugme'], 'dugme', 'sonrasi upsell dugme', $h);
+                if ([] !== $uIstege) {
+                    self::metin($u['metin'], 'blokMetni', 'sonrasi upsell metin', $h);
+                }
+            }
+        }
+        self::metin($s['baslik'], 'baslik', 'sonrasi baslik', $h);
+        if (\array_key_exists('dugme', $s)) {
+            self::metin($s['dugme'], 'dugme', 'sonrasi dugme', $h);
+        }
+        foreach (\is_array($s['bloklar']) ? $s['bloklar'] : [] as $j => $b) {
+            if (\is_array($b) && 'soru' === ($b['tur'] ?? null)) {
+                $h[] = 'sonrasi blok '.($j + 1).': soru bloğu olmaz (ödeme sonrası cevap alınmaz)';
+            }
+            if (\is_array($b) && \array_key_exists('degerler', $b)) {
+                $h[] = 'sonrasi blok '.($j + 1).': koşullu değer olmaz (o sayfada cevap yok)';
+            }
+        }
+        self::bloklar($s['bloklar'], $sira, $son, 'sonrasi', $h);
     }
 
     /**
@@ -126,15 +444,39 @@ final class Tanim
      */
     public static function gorseller(mixed $tanim): array
     {
-        $k = [];
+        // Ç61 (5): logo da bir görsel — aynı "bu uygulamada var mı" kuralı.
+        $k = \is_array($tanim) && \is_string($tanim['logo'] ?? null) ? [$tanim['logo']] : [];
+        // G3: zemin görseli de.
+        $zemin = \is_array($tanim) && \is_array($tanim['tema'] ?? null) && \is_array($tanim['tema']['zemin'] ?? null) ? $tanim['tema']['zemin'] : [];
+        if ('gorsel' === ($zemin['tur'] ?? null) && \is_string($zemin['gorsel'] ?? null)) {
+            $k[] = $zemin['gorsel'];
+        }
         $adimlar = \is_array($tanim) && \is_array($tanim['adimlar'] ?? null) ? $tanim['adimlar'] : [];
+        // M3b: ödeme sonrası ekranın blok görselleri de bu uygulamanın olmalı.
+        if (\is_array($tanim) && \is_array($tanim['sonrasi'] ?? null)) {
+            $adimlar[] = $tanim['sonrasi'];
+        }
         foreach ($adimlar as $adim) {
+            // Ekranın kapağı.
             if (\is_array($adim) && \is_string($adim['gorsel'] ?? null)) {
                 $k[] = $adim['gorsel'];
             }
-            foreach (\is_array($adim) && \is_array($adim['secenekler'] ?? null) ? $adim['secenekler'] : [] as $s) {
-                if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
-                    $k[] = $s['gorsel'];
+            // T1: görsel bloğu.
+            foreach (\is_array($adim) && \is_array($adim['bloklar'] ?? null) ? $adim['bloklar'] : [] as $b) {
+                if (\is_array($b) && \is_string($b['gorsel'] ?? null)) {
+                    $k[] = $b['gorsel'];
+                }
+                // V5: önce/sonra bloğunun iki görseli.
+                foreach (['once', 'sonra'] as $alan) {
+                    if (\is_array($b) && 'onceSonra' === ($b['tur'] ?? null) && \is_string($b[$alan] ?? null)) {
+                        $k[] = $b[$alan];
+                    }
+                }
+                // T1b: soru bloğunun seçenek görselleri.
+                foreach (\is_array($b) && \is_array($b['secenekler'] ?? null) ? $b['secenekler'] : [] as $s) {
+                    if (\is_array($s) && \is_string($s['gorsel'] ?? null)) {
+                        $k[] = $s['gorsel'];
+                    }
                 }
             }
         }
@@ -147,6 +489,480 @@ final class Tanim
     {
         if (!\is_string($deger) || 1 !== preg_match('/^[0-9a-f]{64}$/', $deger)) {
             $h[] = "{$yer}: görsel kimliği geçersiz";
+        }
+    }
+
+    /**
+     * Ç44: alt metin yalnız görselle — görselsiz alt metin ekranda hiçbir
+     * yere çıkmaz, yazanı yanıltır.
+     *
+     * @param array<mixed> $nesne
+     * @param list<string> $h
+     */
+    private static function gorselMetni(array $nesne, string $yer, array &$h): void
+    {
+        if (!\array_key_exists('gorsel', $nesne)) {
+            $h[] = "{$yer}: gorselMetni yalnız gorsel ile kullanılabilir";
+
+            return;
+        }
+        self::metin($nesne['gorselMetni'], 'gorselMetni', "{$yer} gorselMetni", $h);
+    }
+
+    /** @param list<string> $h */
+    private static function maddeler(mixed $maddeler, string $yer, array &$h): void
+    {
+        if (!\is_array($maddeler) || !array_is_list($maddeler) || \count($maddeler) > 5) {
+            $h[] = "{$yer}: maddeler: en çok 5 metinlik liste olmalı";
+
+            return;
+        }
+        foreach ($maddeler as $j => $m) {
+            self::metin($m, 'madde', "{$yer} madde ".($j + 1), $h);
+        }
+    }
+
+    /**
+     * T1: ekranın blokları — her blok katalogdaki bir tür, alanları tam olarak
+     * o türün alanları. Sayfanın h1'i adımın baslik alanı; baslik bloğu ara başlık.
+     *
+     * @param array<string, int> $sira
+     * @param list<string>       $h
+     */
+    private static function bloklar(mixed $bloklar, array $sira, int $i, string $yer, array &$h, bool $tamEkran = false): void
+    {
+        // T1c: bloksuz ekran geçerli (başlık + düğme).
+        if (!\is_array($bloklar) || !array_is_list($bloklar) || \count($bloklar) > self::AZAMI_BLOK) {
+            $h[] = "{$yer}: bloklar 0–".self::AZAMI_BLOK.' öğeli liste olmalı';
+
+            return;
+        }
+        $sorular = 0;
+        foreach ($bloklar as $j => $b) {
+            $by = "{$yer} blok ".($j + 1);
+            $tur = \is_array($b) ? ($b['tur'] ?? null) : null;
+            if (!\is_array($b) || !\is_string($tur) || !isset(self::BLOKLAR[$tur])) {
+                $h[] = "{$by}: tür baslik, metin, gorsel, maddeler, yorum, istatistik, kutu, grafik, onceSonra ya da soru olmalı";
+                continue;
+            }
+            // T1c: tam ekranda metin beyaz, karartmanın üstünde — yüzeyli blok
+            // (kutu, yorum kartı, seçenek, görsel) beyaz metni açık zeminde bırakırdı.
+            if ($tamEkran && !\in_array($tur, self::TAM_EKRAN_BLOKLARI, true)) {
+                $h[] = "{$by}: tam ekranda yalnız ".implode(', ', self::TAM_EKRAN_BLOKLARI).' blokları olabilir';
+            }
+            // T1b: cevap ekranın kimliğiyle kaydedilir — ekranda tek soru.
+            if ('soru' === $tur && ++$sorular > 1) {
+                $h[] = "{$yer}: ekranda en çok bir soru bloğu olabilir";
+            }
+            // T3c: koşullu değerler ekranın döngüsünde denetlenir.
+            unset($b['degerler']);
+            [$zorunlu, $istege] = self::BLOKLAR[$tur];
+            // E1: e-posta da serbest yanıt ailesinde (seçeneksiz, düzensiz).
+            $metinYaniti = 'soru' === $tur && \in_array($b['secimTuru'] ?? 'tekli', ['metin', 'eposta'], true);
+            // V5: ölçek sorusunun seçenekleri kendiliğinden (1–5); uç etiketleri zorunlu.
+            $olcek = 'soru' === $tur && 'olcek' === ($b['secimTuru'] ?? null);
+            if ('soru' === $tur && !$metinYaniti) {
+                $zorunlu = $olcek ? ['olcekSol' => 'etiket', 'olcekSag' => 'etiket'] : ['secenekler' => null];
+            }
+            $alanlar = $zorunlu + array_intersect_key($istege, $b);
+            if ($metinYaniti) {
+                unset($alanlar['secenekler']);
+            }
+            if (!self::anahtarlar($b, ['tur', ...array_keys($alanlar)])) {
+                $h[] = "{$by}: alanlar tam olarak ".implode(', ', ['tur', ...array_keys($zorunlu)]).([] === $istege ? '' : ' ve (isteğe bağlı) '.implode(', ', array_keys($istege))).' olmalı';
+                continue;
+            }
+            foreach ($alanlar as $alan => $uzunluk) {
+                if (null !== $uzunluk) {
+                    self::metin($b[$alan], $uzunluk, "{$by} {$alan}", $h);
+                }
+            }
+            match ($tur) {
+                'gorsel' => self::gorsel($b['gorsel'], $by, $h),
+                'maddeler' => self::blokMaddeleri($b['maddeler'], $by, $h),
+                'soru' => self::soruBlogu($b, $metinYaniti, $sira, $i, $by, $h),
+                default => null,
+            };
+            // V5: önce/sonra iki yüklenmiş görsel; eğri yönü ön ayar.
+            if ('onceSonra' === $tur) {
+                self::gorsel($b['once'], "{$by} once", $h);
+                self::gorsel($b['sonra'], "{$by} sonra", $h);
+            }
+            if ('grafik' === $tur && \array_key_exists('egri', $b) && !\in_array($b['egri'], ['artan', 'azalan'], true)) {
+                $h[] = "{$by}: egri artan ya da azalan olmalı";
+            }
+            if (\array_key_exists('puan', $b) && (!\is_int($b['puan']) || $b['puan'] < 1 || $b['puan'] > 5)) {
+                $h[] = "{$by}: puan 1–5 tam sayı olmalı";
+            }
+            if (\array_key_exists('simge', $b) && !self::emoji($b['simge'])) {
+                $h[] = "{$by}: simge tek emoji olmalı";
+            }
+        }
+    }
+
+    /**
+     * T1b: soru bloğu — soru adımının yanıt kuralları (metni ekranın başlığı ve
+     * blokları taşır).
+     *
+     * @param array<mixed>       $b
+     * @param array<string, int> $sira
+     * @param list<string>       $h
+     */
+    private static function soruBlogu(array $b, bool $metinYaniti, array $sira, int $i, string $yer, array &$h): void
+    {
+        if (\array_key_exists('secimTuru', $b) && !\in_array($b['secimTuru'], ['tekli', 'coklu', 'metin', 'eposta', 'olcek'], true)) {
+            $h[] = "{$yer}: secimTuru tekli, coklu, metin, eposta ya da olcek olmalı";
+        }
+        $olcek = 'olcek' === ($b['secimTuru'] ?? null);
+        if ($olcek && \array_key_exists('secenekler', $b)) {
+            $h[] = "{$yer}: ölçek sorusunda secenekler yazılmaz (1–5 kendiliğinden, cevap kimlikleri 1…5)";
+        }
+        if ($olcek && \array_key_exists('duzen', $b)) {
+            $h[] = "{$yer}: ölçek sorusunda duzen olmaz";
+        }
+        if (!$olcek && (\array_key_exists('olcekSol', $b) || \array_key_exists('olcekSag', $b))) {
+            $h[] = "{$yer}: olcekSol ve olcekSag yalnız olcek sorusunda kullanılabilir";
+        }
+        if (\array_key_exists('izinMetni', $b) && 'eposta' !== ($b['secimTuru'] ?? null)) {
+            $h[] = "{$yer}: izinMetni yalnız eposta sorusunda kullanılabilir";
+        }
+        if (\array_key_exists('yanitZorunlu', $b)) {
+            if (!$metinYaniti) {
+                $h[] = "{$yer}: yanitZorunlu yalnız serbest yanıt türünde kullanılabilir";
+            } elseif (!\is_bool($b['yanitZorunlu'])) {
+                $h[] = "{$yer}: yanitZorunlu true ya da false olmalı";
+            }
+        }
+        if (\array_key_exists('duzen', $b)) {
+            self::soruDuzeni($b['duzen'], $metinYaniti, $yer, $h);
+        }
+        if (\array_key_exists('secenekler', $b)) {
+            self::secenekler($b['secenekler'], $sira, $i, $yer, $h, 'coklu' === ($b['secimTuru'] ?? 'tekli'));
+        }
+    }
+
+    /** T1b: ekranda tek seçimli soru bloğu var mı (düğme yerine seçenek geçirir). */
+    public static function tekSecimliSoru(mixed $bloklar): bool
+    {
+        foreach (\is_array($bloklar) ? $bloklar : [] as $b) {
+            // V5: ölçek de tek dokunuşla geçer.
+            if (\is_array($b) && 'soru' === ($b['tur'] ?? null) && \in_array($b['secimTuru'] ?? 'tekli', ['tekli', 'olcek'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * T3a: yönlendirme kuralları. Koşulun özelliği T2 sözlüğünden; cevap bu ya
+     * da önceki ekranın sorusu (sonrakinin cevabı henüz yok); işlem özelliğin
+     * türüne uygun; seçmelide değer gerçek seçenek (yazım hatası sessizce hiç
+     * tutmayan kural olurdu).
+     *
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
+     */
+    private static function yonlendirme(mixed $kurallar, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        if (!\is_array($kurallar) || !array_is_list($kurallar) || [] === $kurallar || \count($kurallar) > 10) {
+            $h[] = "{$yer}: yonlendirme 1–10 kurallık liste olmalı";
+
+            return;
+        }
+        foreach ($kurallar as $k => $kural) {
+            $ky = "{$yer} kural ".($k + 1);
+            $istege = \is_array($kural) && \array_key_exists('baglac', $kural) ? ['baglac'] : [];
+            if (!\is_array($kural) || !self::anahtarlar($kural, ['kosullar', 'hedef', ...$istege])) {
+                $h[] = "{$ky}: alanlar tam olarak kosullar, hedef ve (isteğe bağlı) baglac olmalı";
+                continue;
+            }
+            if ([] !== $istege && !\in_array($kural['baglac'], ['hepsi', 'herhangi'], true)) {
+                $h[] = "{$ky}: baglac hepsi ya da herhangi olmalı";
+            }
+            self::hedef($kural['hedef'], $sira, $i, $ky, $h);
+            $kosullar = $kural['kosullar'];
+            if (!\is_array($kosullar) || !array_is_list($kosullar) || [] === $kosullar || \count($kosullar) > 5) {
+                $h[] = "{$ky}: kosullar 1–5 öğeli liste olmalı";
+                continue;
+            }
+            foreach ($kosullar as $j => $kosul) {
+                self::kosul($kosul, $sira, $sorular, $i, "{$ky} koşul ".($j + 1), $h);
+            }
+        }
+    }
+
+    /**
+     * T3c: koşullu değerler — kural = koşullar + bir alanın yeni değeri; aynı
+     * alanda ilk tutan kural kazanır. Alan öğede VAR olmalı (yokken değer
+     * vermek görünmeyen alan açardı) ve değer o alanın kendi kuralına uyar.
+     * Gösterimde hesaplanır: cevap yalnız önceki adımlardan.
+     *
+     * @param array<mixed>                                  $oge
+     * @param array<string, ?string>                        $alanlar alan → metin türü (null: görsel/simge)
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
+     */
+    private static function degerler(mixed $kurallar, array $oge, array $alanlar, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        if (!\is_array($kurallar) || !array_is_list($kurallar) || [] === $kurallar || \count($kurallar) > 20) {
+            $h[] = "{$yer}: degerler 1–20 kurallık liste olmalı";
+
+            return;
+        }
+        foreach ($kurallar as $k => $kural) {
+            $ky = "{$yer} degerler ".($k + 1);
+            $istege = \is_array($kural) && \array_key_exists('baglac', $kural) ? ['baglac'] : [];
+            if (!\is_array($kural) || !self::anahtarlar($kural, ['kosullar', 'alan', 'deger', ...$istege])) {
+                $h[] = "{$ky}: alanlar tam olarak kosullar, alan, deger ve (isteğe bağlı) baglac olmalı";
+                continue;
+            }
+            self::kosulGrubu($kural, $sira, $sorular, $i - 1, $ky, $h);
+            $alan = $kural['alan'];
+            if (!\is_string($alan) || !\array_key_exists($alan, $alanlar) || !\array_key_exists($alan, $oge)) {
+                $h[] = "{$ky}: ".(\is_string($alan) ? $alan : '?').' bu öğede değiştirilemez ('.implode(', ', array_keys(array_intersect_key($alanlar, $oge))).')';
+                continue;
+            }
+            $deger = $kural['deger'];
+            match ($alan) {
+                'gorsel' => self::gorsel($deger, "{$ky} {$alan}", $h),
+                'simge' => self::emoji($deger) ? null : $h[] = "{$ky} simge: tek emoji olmalı",
+                default => self::metin($deger, (string) $alanlar[$alan], "{$ky} {$alan}", $h),
+            };
+        }
+    }
+
+    /**
+     * M3a: downsell penceresi — plan bu uygulamanın kataloğundan, başlık ve
+     * düğme zorunlu, metin isteğe bağlı. Fiyat ve koşulu pencere kendisi
+     * yazar (metne yazılmaz).
+     *
+     * @param list<string> $planlar
+     * @param list<string> $h
+     */
+    private static function downsell(mixed $d, array $planlar, string $yer, array &$h): void
+    {
+        $istege = \is_array($d) && \array_key_exists('metin', $d) ? ['metin'] : [];
+        if (!\is_array($d) || !self::anahtarlar($d, ['plan', 'baslik', 'dugme', ...$istege])) {
+            $h[] = "{$yer} downsell: alanlar tam olarak plan, baslik, dugme ve (isteğe bağlı) metin olmalı";
+
+            return;
+        }
+        if (!\is_string($d['plan']) || !\in_array($d['plan'], $planlar, true)) {
+            $h[] = "{$yer} downsell: plan '".(\is_string($d['plan']) ? $d['plan'] : '?')."' bu uygulamada yok (planlar: ".implode(', ', $planlar).')';
+        }
+        self::metin($d['baslik'], 'baslik', "{$yer} downsell baslik", $h);
+        self::metin($d['dugme'], 'dugme', "{$yer} downsell dugme", $h);
+        if ([] !== $istege) {
+            self::metin($d['metin'], 'blokMetni', "{$yer} downsell metin", $h);
+        }
+    }
+
+    /**
+     * M2a: paywall'ın planları. Tek plan (`plan`) ya da plan seçici
+     * (`planlar` 2–3, benzersiz, `plan` = varsayılan seçili onların içinde);
+     * `onerilen` yalnız seçicide, planlardan biri. Hata bu uygulamanın
+     * planlarını sayar — yönetici ve AI anahtarı tahmin etmesin.
+     *
+     * @param array<mixed> $adim
+     * @param list<string> $planlar
+     * @param list<string> $h
+     */
+    private static function paywallPlanlari(array $adim, array $planlar, string $yer, array &$h): void
+    {
+        $varolan = [] === $planlar ? 'hiç plan yok — panel → Planlar' : 'planlar: '.implode(', ', $planlar);
+        $secici = $adim['planlar'] ?? null;
+        foreach (\is_array($secici) ? $secici : [$adim['plan']] as $p) {
+            if (!\is_string($p) || !\in_array($p, $planlar, true)) {
+                $h[] = "{$yer}: plan '".(\is_string($p) ? $p : '?')."' bu uygulamada yok ({$varolan})";
+            }
+        }
+        if (\array_key_exists('planlar', $adim)) {
+            if (!\is_array($secici) || !array_is_list($secici) || \count($secici) < 2 || \count($secici) > 3 || \count(array_unique(array_filter($secici, \is_string(...)))) !== \count($secici)) {
+                $h[] = "{$yer}: planlar 2–3 farklı plan olmalı (tek plan için yalnız plan)";
+            } elseif (!\in_array($adim['plan'], $secici, true)) {
+                $h[] = "{$yer}: plan (varsayılan seçili) planlar içinde olmalı";
+            }
+        }
+        if (\array_key_exists('onerilen', $adim) && (!\is_array($secici) || !\in_array($adim['onerilen'], $secici, true))) {
+            $h[] = "{$yer}: onerilen planlar içinden biri olmalı (yalnız plan seçicide)";
+        }
+    }
+
+    /**
+     * T3b: gösterim koşulu ekran çizilmeden önce hesaplanır — cevap yalnız
+     * ÖNCEKİ adımlardan; ilk adımda yok (hep gösterilir, geri tuşu sade kalır).
+     *
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
+     */
+    private static function goster(mixed $goster, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        if (0 === $i) {
+            $h[] = "{$yer}: goster ilk adımda olmaz";
+
+            return;
+        }
+        $istege = \is_array($goster) && \array_key_exists('baglac', $goster) ? ['baglac'] : [];
+        if (!\is_array($goster) || !self::anahtarlar($goster, ['kosullar', ...$istege])) {
+            $h[] = "{$yer} goster: alanlar tam olarak kosullar ve (isteğe bağlı) baglac olmalı";
+
+            return;
+        }
+        self::kosulGrubu($goster, $sira, $sorular, $i - 1, "{$yer} goster", $h);
+    }
+
+    /**
+     * T3b/T3c: bağlaç + 1–5 koşul; cevap en çok `$sinir` sıradaki adımdan.
+     *
+     * @param array<mixed>                                  $grup
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
+     */
+    private static function kosulGrubu(array $grup, array $sira, array $sorular, int $sinir, string $yer, array &$h): void
+    {
+        if (\array_key_exists('baglac', $grup) && !\in_array($grup['baglac'], ['hepsi', 'herhangi'], true)) {
+            $h[] = "{$yer}: baglac hepsi ya da herhangi olmalı";
+        }
+        $kosullar = $grup['kosullar'] ?? null;
+        if (!\is_array($kosullar) || !array_is_list($kosullar) || [] === $kosullar || \count($kosullar) > 5) {
+            $h[] = "{$yer}: kosullar 1–5 öğeli liste olmalı";
+
+            return;
+        }
+        foreach ($kosullar as $j => $kosul) {
+            self::kosul($kosul, $sira, $sorular, $sinir, "{$yer} koşul ".($j + 1), $h);
+        }
+    }
+
+    /**
+     * @param array<string, int>                            $sira
+     * @param array<string, array{bool, list<string>}|null> $sorular
+     * @param list<string>                                  $h
+     */
+    private static function kosul(mixed $kosul, array $sira, array $sorular, int $i, string $yer, array &$h): void
+    {
+        $degerli = \is_array($kosul) && \array_key_exists('deger', $kosul);
+        if (!\is_array($kosul) || !self::anahtarlar($kosul, ['ozellik', 'islem', ...($degerli ? ['deger'] : [])])) {
+            $h[] = "{$yer}: alanlar tam olarak ozellik, islem ve (isteğe bağlı) deger olmalı";
+
+            return;
+        }
+        $ozellik = $kosul['ozellik'];
+        if (!\is_string($ozellik) || null === Ozellikler::tanimi($ozellik)) {
+            $h[] = "{$yer}: ozellik sözlükte yok: ".(\is_string($ozellik) ? $ozellik : '?');
+
+            return;
+        }
+        $onek = explode('.', $ozellik, 2)[0];
+        if (\in_array($onek, self::HUNI_DISI_OZELLIKLER, true)) {
+            $h[] = "{$yer}: {$ozellik} hunide bilinmez (ödemeden sonra)";
+
+            return;
+        }
+        $soru = null;
+        if ('cevap' === $onek) {
+            $adim = substr($ozellik, 6);
+            if (!isset($sira[$adim]) || !\array_key_exists($adim, $sorular) || $sira[$adim] > $i) {
+                $h[] = "{$yer}: {$ozellik} bu adımda ya da önceki adımlarda sorulmuyor";
+
+                return;
+            }
+            $soru = $sorular[$adim];
+            if (null === $soru) {
+                $h[] = "{$yer}: {$ozellik} e-posta sorusu; e-posta cevabı koşulda kullanılmaz";
+
+                return;
+            }
+        }
+        $liste = null !== $soru && $soru[0];
+        $islemler = $liste ? self::LISTE_ISLEMLERI : self::DEGER_ISLEMLERI;
+        $islem = $kosul['islem'];
+        if (!\in_array($islem, $islemler, true)) {
+            $h[] = "{$yer}: {$ozellik} için islem ".implode(', ', \array_slice($islemler, 0, -1)).' ya da '.end($islemler).' olmalı';
+
+            return;
+        }
+        if (\in_array($islem, ['var', 'yok'], true)) {
+            if ($degerli) {
+                $h[] = "{$yer}: var ve yok değer almaz";
+            }
+
+            return;
+        }
+        if (!$degerli) {
+            $h[] = "{$yer}: deger gerekli";
+
+            return;
+        }
+        $deger = $kosul['deger'];
+        if ('huni.surum' === $ozellik) {
+            if (!\is_int($deger)) {
+                $h[] = "{$yer}: huni.surum değeri tam sayı olmalı";
+            }
+        } elseif (!\is_string($deger) || '' === trim($deger) || mb_strlen($deger) > 200) {
+            $h[] = "{$yer}: deger 1–200 karakter metin olmalı";
+        } elseif ($liste && !\in_array($deger, $soru[1], true)) {
+            $h[] = "{$yer}: deger ".substr($ozellik, 6).' sorusunun seçeneklerinden olmalı ('.implode(', ', $soru[1]).')';
+        }
+    }
+
+    /** @param list<string> $h */
+    private static function blokMaddeleri(mixed $maddeler, string $yer, array &$h): void
+    {
+        if (!\is_array($maddeler) || !array_is_list($maddeler) || [] === $maddeler || \count($maddeler) > 6) {
+            $h[] = "{$yer}: maddeler 1–6 öğeli liste olmalı";
+
+            return;
+        }
+        foreach ($maddeler as $j => $m) {
+            self::metin($m, 'satir', "{$yer} madde ".($j + 1), $h);
+        }
+    }
+
+    /** Mobil görünüm 3: tek emoji (ZWJ aile, bayrak, ten tonu tek grafem). */
+    private static function emoji(mixed $simge): bool
+    {
+        return \is_string($simge) && \strlen($simge) <= 32 && 1 === grapheme_strlen($simge) && 1 === preg_match('/\p{Extended_Pictographic}|\p{Regional_Indicator}/u', $simge);
+    }
+
+    /** @param list<string> $h */
+    private static function soruDuzeni(mixed $duzen, bool $metinYaniti, string $yer, array &$h): void
+    {
+        if ($metinYaniti) {
+            $h[] = "{$yer}: duzen yalnız seçmeli soruda kullanılabilir";
+        } elseif (!\in_array($duzen, self::SORU_DUZENLERI, true)) {
+            $h[] = "{$yer}: duzen: ".implode(', ', self::SORU_DUZENLERI).' olmalı';
+        }
+    }
+
+    /** @param list<string> $h */
+    private static function faydalar(mixed $deger, string $yer, array &$h): void
+    {
+        if (!\is_array($deger) || !array_is_list($deger) || [] === $deger || \count($deger) > 6) {
+            $h[] = "{$yer}: faydalar 1–6 öğeli liste olmalı";
+
+            return;
+        }
+        foreach ($deger as $j => $fayda) {
+            self::metin($fayda, 'fayda', "{$yer} fayda ".($j + 1), $h);
+        }
+    }
+
+    /**
+     * Yasal bağlantı yalnız https: javascript:/data: gibi şemalar huni
+     * sayfasında tıklanınca betik çalıştırırdı (Ç61 (3)).
+     *
+     * @param list<string> $h
+     */
+    private static function adres(mixed $deger, string $yer, array &$h): void
+    {
+        if (!\is_string($deger) || 1 !== preg_match('~^https://[^\s]{1,490}$~', $deger)) {
+            $h[] = "{$yer}: https:// ile başlayan adres olmalı (en çok 500 karakter)";
         }
     }
 
@@ -163,7 +979,7 @@ final class Tanim
      * @param array<string, int> $sira
      * @param list<string>       $h
      */
-    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h): void
+    private static function secenekler(mixed $secenekler, array $sira, int $i, string $yer, array &$h, bool $coklu): void
     {
         if (!\is_array($secenekler) || !array_is_list($secenekler) || \count($secenekler) < 2 || \count($secenekler) > 8) {
             $h[] = "{$yer}: 2–8 seçenek olmalı";
@@ -173,16 +989,31 @@ final class Tanim
         $gorulen = [];
         foreach ($secenekler as $j => $s) {
             $sy = "{$yer} seçenek ".($j + 1);
-            $istege = \is_array($s) ? array_values(array_intersect(['gorsel', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
+            $istege = \is_array($s) ? array_values(array_intersect(['simge', 'gorsel', 'gorselMetni', 'hedef'], array_map(strval(...), array_keys($s)))) : [];
             if (!\is_array($s) || !self::anahtarlar($s, ['id', 'metin', ...$istege])) {
-                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) gorsel, hedef";
+                $h[] = "{$sy}: yalnız id, metin ve (isteğe bağlı) simge, gorsel, gorselMetni, hedef";
                 continue;
             }
+            // Mobil görünüm 3: tek emoji (ZWJ aile, bayrak, ten tonu tek grafem);
+            // görselle birlikte değil — ikisi aynı yeri doldurur.
+            if (\array_key_exists('simge', $s)) {
+                if (!self::emoji($s['simge'])) {
+                    $h[] = "{$sy}: simge tek emoji olmalı";
+                } elseif (\array_key_exists('gorsel', $s)) {
+                    $h[] = "{$sy}: simge ve gorsel birlikte olmaz";
+                }
+            }
             if (\array_key_exists('hedef', $s)) {
+                if ($coklu) {
+                    $h[] = "{$sy}: çoklu seçimde seçenek hedefi kullanılamaz";
+                }
                 self::hedef($s['hedef'], $sira, $i, $sy, $h);
             }
             if (\array_key_exists('gorsel', $s)) {
                 self::gorsel($s['gorsel'], $sy, $h);
+            }
+            if (\array_key_exists('gorselMetni', $s)) {
+                self::gorselMetni($s, $sy, $h);
             }
             if (!\is_string($s['id']) || 1 !== preg_match(self::KIMLIK, $s['id']) || isset($gorulen[$s['id']])) {
                 $h[] = "{$sy}: kimlik geçersiz ya da tekrar ediyor";

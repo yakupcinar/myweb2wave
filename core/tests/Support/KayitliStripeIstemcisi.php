@@ -21,6 +21,15 @@ final class KayitliStripeIstemcisi implements ClientInterface
     public ?\Throwable $firlat = null;
 
     /**
+     * M1b: adres sonu → yanıt gövdesi; stripe-mock'un sabit nesnesinin
+     * ölçemediği değerler için (ör. tek seferlik giriş fiyatı — mock her
+     * fiyatı yinelenen döndürür).
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    public array $yanitlar = [];
+
+    /**
      * @param 'delete'|'get'|'post' $method
      * @param string                $absUrl
      * @param array<mixed>          $headers
@@ -36,6 +45,19 @@ final class KayitliStripeIstemcisi implements ClientInterface
         $this->istekler[] = ['method' => $method, 'url' => $absUrl, 'params' => $params];
         if (null !== $this->firlat) {
             throw $this->firlat;
+        }
+        foreach ($this->yanitlar as $son => $govde) {
+            // Sorgu (ör. expand) yol eşleşmesini bozmasın. Anahtar "post /v1/…"
+            // ise yalnız o yöntem; "__durum" yanıtın HTTP kodu (ör. 402 kart reddi).
+            $parca = explode(' ', $son, 2);
+            $yontem = isset($parca[1]) ? $parca[0] : null;
+            $yol = $parca[1] ?? $parca[0];
+            if ((null === $yontem || $yontem === $method) && str_ends_with(explode('?', $absUrl)[0], $yol)) {
+                $durum = \is_int($govde['__durum'] ?? null) ? $govde['__durum'] : 200;
+                unset($govde['__durum']);
+
+                return [json_encode($govde, \JSON_THROW_ON_ERROR), $durum, []];
+            }
         }
 
         return (new CurlClient())->request($method, $absUrl, $headers, $params, $hasFile, $apiMode, $maxNetworkRetries);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Huni\Huniler;
+use App\Huni\Tema;
 use App\Panel\YoneticiSaglayici;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -25,7 +26,7 @@ final class MedyaTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE medya, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, odeme_oturumlari, huni_adimlari, huni_cevaplari');
+        $this->db->executeStatement('TRUNCATE medya, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
         // .env.test: MEDYA_DIZINI=%kernel.project_dir%/var/test-medya (resolve: ile çözülmeli).
         $this->dizin = \dirname(__DIR__, 2).'/var/test-medya';
         foreach (glob($this->dizin.'/*') ?: [] as $f) {
@@ -160,12 +161,16 @@ final class MedyaTest extends WebTestCase
         $huniler->yeniHuni('keepchat', 'genel', null);
 
         $tanim = static fn (string $g): array => ['sayfaBasligi' => 'X', 'adimlar' => [
-            ['id' => 'a', 'tur' => 'tanitim', 'baslik' => 'A', 'metin' => '', 'dugme' => 'B', 'gorsel' => $g],
-            ['id' => 's', 'tur' => 'soru', 'soru' => 'S', 'secenekler' => [['id' => 'x', 'metin' => 'X', 'gorsel' => $g], ['id' => 'y', 'metin' => 'Y']]],
+            ['id' => 'a', 'tur' => 'ekran', 'baslik' => 'A', 'bloklar' => [], 'dugme' => 'B', 'gorsel' => $g],
+            ['id' => 's', 'tur' => 'ekran', 'baslik' => 'S', 'bloklar' => [['tur' => 'soru', 'secenekler' => [['id' => 'x', 'metin' => 'X', 'gorsel' => $g], ['id' => 'y', 'metin' => 'Y']]]]],
             ['id' => 'p', 'tur' => 'paywall', 'baslik' => 'P', 'metin' => '', 'dugme' => 'Al', 'plan' => 'monthly'],
         ]];
 
         self::assertSame([], $huniler->taslakKaydet('keepchat', 'genel', $tanim($id)));
+        // G3: zemin görseli de aynı kural.
+        $zeminli = static fn (string $g): array => $tanim($id) + ['tema' => ['zemin' => ['tur' => 'gorsel', 'gorsel' => $g, 'karartma' => 80]] + Tema::VARSAYILAN];
+        self::assertSame([], $huniler->taslakKaydet('keepchat', 'genel', $zeminli($id)));
+        self::assertStringContainsString('bu uygulamada yok', implode('', $huniler->taslakKaydet('keepchat', 'genel', $zeminli(str_repeat('c', 64)))));
         self::assertStringContainsString('bu uygulamada yok', implode('', $huniler->taslakKaydet('keepchat', 'genel', $tanim(str_repeat('b', 64)))));
         self::assertStringContainsString('görsel kimliği geçersiz', implode('', $huniler->taslakKaydet('keepchat', 'genel', $tanim('../../x'))));
         $this->db->executeStatement("UPDATE medya SET app = 'baska'");
@@ -174,8 +179,13 @@ final class MedyaTest extends WebTestCase
 
     private function yukle(string $yol, int $beklenen = 201): string
     {
-        $this->client->request('GET', '/panel/huniler');
-        $jeton = (string) $this->client->getCrawler()->filter('[data-uygulama=keepchat] input[name=_token]')->first()->attr('value');
+        // Jeton düzenleyicinin açılış ucundan (huni-<app>); sayfa için huni gerekir (zaten varsa hata döner, sorun değil).
+        $huniler = static::getContainer()->get(Huniler::class);
+        self::assertInstanceOf(Huniler::class, $huniler);
+        $huniler->yeniHuni('keepchat', 'genel', null);
+        $this->client->request('GET', '/panel/api/uygulamalar/keepchat/huniler/genel/duzenleyici');
+        $acilis = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $jeton = \is_array($acilis) && \is_string($acilis['jeton'] ?? null) ? $acilis['jeton'] : '';
         $this->client->request('POST', '/panel/medya/keepchat', [], [
             'dosya' => new UploadedFile($yol, basename($yol), null, null, true),
         ], ['HTTP_X_CSRF_TOKEN' => $jeton]);

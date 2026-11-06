@@ -13,7 +13,7 @@ use Doctrine\DBAL\Connection;
 final readonly class Rapor
 {
     /** Tıklama kimliği ya da ücretli UTM ortamı varsa reklam; yoksa organik. */
-    private const REKLAM = "(z.fbclid IS NOT NULL OR z.ttclid IS NOT NULL
+    public const REKLAM = "(z.fbclid IS NOT NULL OR z.ttclid IS NOT NULL
         OR lower(z.utm_medium) IN ('cpc', 'ppc', 'paid', 'paid_social', 'paidsocial', 'display', 'ads'))";
 
     public const GUNLER = [7, 30, 90];
@@ -85,6 +85,56 @@ final readonly class Rapor
     }
 
     /**
+     * P4: aralığın her UTC takvim günü (en eski önce) — ziyaret, ödeme
+     * başlatıldı/tamamlandı; boş gün 0. Olay deposundan (T4), aynı adlar.
+     *
+     * @return list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>
+     */
+    public function gunluk(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'gun' => \is_string($s['gun']) ? $s['gun'] : '',
+            'ziyaret' => self::sayi($s['ziyaret']),
+            'odemeBaslatildi' => self::sayi($s['baslatildi']),
+            'odemeTamamlandi' => self::sayi($s['tamamlandi']),
+        ], $this->db->fetchAllAssociative(
+            "WITH bugun AS (SELECT (now() AT TIME ZONE 'UTC')::date AS g)
+             SELECT to_char(d, 'YYYY-MM-DD') AS gun,
+                    count(o.ad) FILTER (WHERE o.ad = 'huni.ziyaret') AS ziyaret,
+                    count(o.ad) FILTER (WHERE o.ad = 'odeme.baslatildi') AS baslatildi,
+                    count(o.ad) FILTER (WHERE o.ad = 'odeme.tamamlandi') AS tamamlandi
+             FROM bugun, generate_series(bugun.g - (CAST(:gun AS int) - 1), bugun.g, interval '1 day') d
+             LEFT JOIN ziyaret_olaylari o
+               ON o.ad IN ('huni.ziyaret', 'odeme.baslatildi', 'odeme.tamamlandi')
+              AND o.zaman >= d AT TIME ZONE 'UTC' AND o.zaman < (d + interval '1 day') AT TIME ZONE 'UTC'
+             GROUP BY d ORDER BY d",
+            ['gun' => $gun],
+        ));
+    }
+
+    /**
+     * Ç56 (3): reklam ölçümü izni — kabul / ret / seçmeyen (yalnız sayı).
+     *
+     * @return array{kabul: int, red: int, secmeyen: int}
+     */
+    public function izinler(int $gun): array
+    {
+        $s = $this->db->fetchAssociative(
+            'SELECT count(*) FILTER (WHERE izin_at IS NOT NULL) AS kabul,
+                    count(*) FILTER (WHERE izin_red_at IS NOT NULL) AS red,
+                    count(*) FILTER (WHERE izin_at IS NULL AND izin_red_at IS NULL) AS secmeyen
+             FROM huni_ziyaretleri WHERE created_at >= now() - make_interval(days => :gun)',
+            ['gun' => $gun],
+        );
+
+        return [
+            'kabul' => self::sayi($s['kabul'] ?? 0),
+            'red' => self::sayi($s['red'] ?? 0),
+            'secmeyen' => self::sayi($s['secmeyen'] ?? 0),
+        ];
+    }
+
+    /**
      * Anket hunisi: her adıma kaç ziyaret ulaştı (uygulama + huni başına, A8).
      * Adım adı huni tanımından gelir; tanım değiştiyse aynı sıradaki en son ad.
      *
@@ -122,6 +172,24 @@ final readonly class Rapor
              WHERE z.created_at >= now() - make_interval(days => :gun)
              GROUP BY z.app, c.soru, c.secenek
              ORDER BY z.app, c.soru, sayi DESC, c.secenek',
+            ['gun' => $gun],
+        ));
+    }
+
+    /** @return list<array{zaman: string, app: string, soru: string, cevap: string}> */
+    public function metinCevaplari(int $gun): array
+    {
+        return array_map(static fn (array $s): array => [
+            'zaman' => self::dizge($s['created_at']),
+            'app' => self::dizge($s['app']),
+            'soru' => self::dizge($s['soru']),
+            'cevap' => self::dizge($s['cevap']),
+        ], $this->db->fetchAllAssociative(
+            'SELECT z.created_at, z.app, c.soru, c.cevap
+             FROM huni_metin_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
+             WHERE z.created_at >= now() - make_interval(days => :gun)
+             ORDER BY c.updated_at DESC
+             LIMIT '.self::AZAMI_SATIR,
             ['gun' => $gun],
         ));
     }

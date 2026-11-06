@@ -32,8 +32,8 @@ services:
       DEFAULT_URI: https://${API_ALANI:?}
       DATABASE_URL: postgresql://app:${POSTGRES_PASSWORD:?}@db:5432/app?serverVersion=18&charset=utf8
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?}
-      STRIPE_PRICE_KEEPCHAT_MONTHLY: ${STRIPE_PRICE_KEEPCHAT_MONTHLY:?}
       FUNNEL_BASE_URL: https://${HUNI_ALANI:?}
       MAILER_DSN: ${MAILER_DSN:?}
       MAIL_GONDEREN: ${MAIL_GONDEREN:?}
@@ -42,10 +42,22 @@ services:
       PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
       # A9: boş bırakılabilir (aktarım kapalı); ':-' — zorunlu değil.
       REVENUECAT_STRIPE_KEEPCHAT: ${REVENUECAT_STRIPE_KEEPCHAT:-}
+      # H6b: boş değer ilgili ağ aktarımını devre dışı bırakır.
+      META_PIXEL_ID: ${META_PIXEL_ID:-}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-}
+      META_TEST_EVENT_CODE: ${META_TEST_EVENT_CODE:-}
+      TIKTOK_PIXEL_ID: ${TIKTOK_PIXEL_ID:-}
+      TIKTOK_ACCESS_TOKEN: ${TIKTOK_ACCESS_TOKEN:-}
+      # V3b: boş = stok fotoğraf kapalı.
+      PEXELS_API_KEY: ${PEXELS_API_KEY:-}
+      TIKTOK_TEST_EVENT_CODE: ${TIKTOK_TEST_EVENT_CODE:-}
     volumes:
       # E2.3: yüklenen görseller. Birim ilk açılışta imajdaki dizinin
       # sahipliğini (cekirdek) alır.
       - medya-data:/app/var/medya
+      # M1c: DB-IP ülke verisi (dagit.sh + aylık cron indirir); yoksa herkes ana para birimini görür.
+      - ulke-data:/app/var/ulke
     depends_on:
       db:
         condition: service_healthy
@@ -56,6 +68,8 @@ services:
       dockerfile: deploy/web.Dockerfile
       args:
         PUBLIC_CORE_URL: https://${API_ALANI:?}
+        PUBLIC_META_PIXEL_ID: ${META_PIXEL_ID:-}
+        PUBLIC_TIKTOK_PIXEL_ID: ${TIKTOK_PIXEL_ID:-}
     image: myweb2wave-web:uretim
     restart: unless-stopped
     environment:
@@ -76,5 +90,6 @@ services:
 volumes:
   db-data:
   medya-data:
+  ulke-data:
   caddy-data:
   caddy-config:

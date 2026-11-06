@@ -13,6 +13,8 @@ export function tanimIstegi(app: string, kok: string): Promise<unknown> {
     yol += "/taslak";
     sorgu.set("huni", adres.get("huni") ?? "");
     sorgu.set("anahtar", onizleme);
+    // Ç70: panelden yayındaki sürüme ölçümsüz bakış.
+    if (adres.get("yayin") === "1") sorgu.set("yayin", "1");
   } else {
     for (const ad of [
       "k",
@@ -25,6 +27,24 @@ export function tanimIstegi(app: string, kok: string): Promise<unknown> {
       if (deger) sorgu.set(ad, deger.slice(0, 200));
     }
   }
+  // M4a (A17): deney varyantı sekme tohumundan — ziyaret kimliğiyle aynı depo
+  // (Ç34, çerez değil). Depo ya da randomUUID yoksa tohum yok → deney dışı.
+  if (!onizleme) {
+    try {
+      const anahtar = "huni-tohum";
+      let tohum = window.sessionStorage.getItem(anahtar);
+      if (!tohum && window.crypto?.randomUUID) {
+        tohum = window.crypto.randomUUID();
+        window.sessionStorage.setItem(anahtar, tohum);
+      }
+      if (tohum) sorgu.set("tohum", tohum);
+    } catch {
+      // engelli depo: deney yok, huni yine açılır
+    }
+  }
+  // M1c: ülke testi (?ulke=DE) fiyatın para birimini seçer — yayında da önizlemede de.
+  const ulke = adres.get("ulke");
+  if (ulke && /^[A-Z]{2}$/.test(ulke)) sorgu.set("ulke", ulke);
   const metin = sorgu.toString();
   return fetch(`${kok}${yol}${metin ? `?${metin}` : ""}`)
     .then((y) => (y.ok ? y.json() : undefined))

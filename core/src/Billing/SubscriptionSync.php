@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Billing;
 
+use App\Atif\DonusumAktarimi;
 use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -30,6 +31,7 @@ final readonly class SubscriptionSync
         private Connection $db,
         private LoggerInterface $logger,
         private Aktarim $revenuecat,
+        private DonusumAktarimi $donusum,
     ) {
     }
 
@@ -40,7 +42,18 @@ final readonly class SubscriptionSync
                 $db->insert('processed_webhook_events', ['event_id' => $event->id, 'type' => $event->type]);
 
                 $nesne = $event->data->object->toArray();
+                /** @var array<string, mixed> $nesne */
                 $ilgili = \in_array($event->type, ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'], true);
+                if ('checkout.session.expired' === $event->type) {
+                    // Ç59: ödenmeden kapanan oturumda completed hiç gelmez; eşleşme
+                    // verisi (IP/UA) burada silinir — uygulamadan bağımsız.
+                    $db->executeStatement(
+                        'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE stripe_checkout_session_id = :oturum',
+                        ['oturum' => $nesne['id'] ?? null],
+                    );
+
+                    return;
+                }
                 if (!$ilgili) {
                     return;
                 }
@@ -53,7 +66,7 @@ final readonly class SubscriptionSync
                 }
 
                 match ($event->type) {
-                    'checkout.session.completed' => $this->linkEmail($db, $nesne, $app),
+                    'checkout.session.completed' => $this->linkEmail($db, $nesne, $app, $event->created),
                     default => $this->applyStatus($db, $nesne, $event->created, $app),
                 };
             });
@@ -62,8 +75,8 @@ final readonly class SubscriptionSync
         }
     }
 
-    /** @param array<mixed> $session */
-    private function linkEmail(Connection $db, array $session, string $app): void
+    /** @param array<string, mixed> $session */
+    private function linkEmail(Connection $db, array $session, string $app, int $eventTime): void
     {
         $sub = $session['subscription'] ?? null;
         $cus = $session['customer'] ?? null;
@@ -85,11 +98,20 @@ final readonly class SubscriptionSync
         );
         $this->revenuecat->aboneligiKuyrugaAl($db, $app, $sub);
         // Atıf (A6): bu oturum bir huni ziyaretinden açıldıysa ödendi say.
-        $db->executeStatement(
-            'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, tamamlandi_at = now()
-             WHERE stripe_checkout_session_id = :oturum',
-            ['sub' => $sub, 'oturum' => $session['id'] ?? null],
-        );
+        $odemeTamamlandi = 'paid' === ($session['payment_status'] ?? null);
+        if ($odemeTamamlandi) {
+            $db->executeStatement(
+                'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, tamamlandi_at = now()
+                 WHERE stripe_checkout_session_id = :oturum',
+                ['sub' => $sub, 'oturum' => $session['id'] ?? null],
+            );
+            $this->donusum->kuyrugaAl($db, $session, $app, $eventTime);
+        } elseif (\is_string($session['id'] ?? null)) {
+            $db->executeStatement(
+                'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE stripe_checkout_session_id = :oturum',
+                ['oturum' => $session['id']],
+            );
+        }
     }
 
     /** @param array<mixed> $sub */

@@ -2,7 +2,7 @@
 
 <!-- TODO: proje adı, tek cümlelik tanım -->
 **Proje:** _henüz adı yok_ — _ne yaptığını tek cümleyle yaz_.
-**Yığın:** Astro (statik huni, CDN) · Symfony (çekirdek API) · Postgres ·
+**Yığın:** Vite + Preact (statik huni, CDN) · Symfony (çekirdek API) · Postgres ·
 Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 
 > **Bu dosya bir YÖNLENDİRİCİ (router).** İçinde yalnızca **her oturumda
@@ -23,7 +23,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 ## 1. Yığın ve ortam
 
 <!-- TODO: yığın seçilince doldur -->
-- Dil / çatı: huni = TypeScript · Astro (+ React adacıkları); çekirdek =
+- Dil / çatı: huni = TypeScript · Vite çok sayfalı + Preact (React adları `preact/compat`); çekirdek =
   PHP · Symfony (B2) — iskelet henüz yok
 - Veri servisleri: Postgres 18.6 Docker'da, host portu **5435**; çekirdek
   FrankenPHP konteynerinde **8081**. Testler gerçek Stripe'a değil **stripe-mock**'a
@@ -96,12 +96,14 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 |---|---|
 | **Tam doğrulama** | `bin/kontrol > /tmp/k.log 2>&1; echo EXIT=$?` · `/kontrol` · `sinayici` |
 | Biçim | `docker compose run --rm -T core vendor/bin/php-cs-fixer fix` · `… funnel npm run format` |
-| Statik analiz | `… core vendor/bin/phpstan analyse` (max) · `… funnel npm run check` |
+| Statik analiz | `… core vendor/bin/phpstan analyse --memory-limit=1G` (max; bayraksız işçi 128M'de ölür) · `… funnel npm run check` |
 | Test | `docker compose run --rm -T core vendor/bin/phpunit` · `… funnel npm test` (huni oynatıcısı) |
 | Dar TDD turu | `… core vendor/bin/phpunit --filter <TestAdı>` |
 | Çalıştır | `docker compose up -d --wait` → `curl localhost:8081/health` |
-| Sözleşme → huni + panel düzenleyicisi tipleri | `docker compose run --rm contract npm run uret` (`contract/openapi.yaml` değişince) |
-| Panel düzenleyicisi (Puck) | `docker compose run --rm editor npm run build` · `… editor npm test` |
+| Sözleşme → huni + panel tipleri + AI araç şeması | `docker compose run --rm contract npm run uret` + `… core bin/console app:huni-semasi` (`contract/openapi.yaml` değişince) |
+| AI araçları (A0/A1) | `… core bin/console app:huni-arac keepchat --liste` · `… app:huni-arac keepchat taslak_kaydet < istek.json` · `ekran_goruntusu` → `core/var/ekran/*.jpg` (`ekran` kabı + `huni-dev` gerekir) |
+| Özellik deposu (T2) | `… core bin/console app:ozellikler <ziyaret>` · `--kisi <kişi>` · `--sozluk` |
+| Panel (React, B5; Puck dahil) | `docker compose run --rm panel npm run build` · `… panel npm test` |
 
 ---
 
@@ -128,7 +130,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§13** | Yeşil bir süit **ölçülmemiş bir sıra/zaman varsayımı** taşıyabilir; yeni iş onu bozmaz, açığa çıkarır. Kırmızının üç şıkkı: yarış · mantık · **zaman aşımı**. |
 | **§14** | Ölçümden önce **ortamı say**: dolu disk, eşzamanlı ağır koşum, iki test aynı simülatörde/DB'de — hepsi kodu suçlayan sahte kırmızı üretir. `df -h` ilk komut. |
 | **§15** | `kill $!` alt kabuğu öldürür, içindeki komutu değil (öksüz süreç sonraki koşuyu bozar) — alt kabukta `exec`. `pkill -f <desen>` kendi kabuğunu da öldürür. |
-| **§16** | macOS'ta `timeout` yok; `sh` macOS'ta bash, Ubuntu'da dash; BSD `sed` `\|`'yi tanımaz, düzenli ifadeli `grep` sabit metni **bulamayabilir** (`-F` kullan) — hiçbiri hata vermez. |
+| **§16** | macOS'ta `timeout` yok; `sh` macOS'ta bash, Ubuntu'da dash; BSD `sed` `\|`'yi tanımaz, düzenli ifadeli `grep` sabit metni **bulamayabilir** (`-F` kullan); zsh `$K …`'yı bölmez, tek tırnakta `\u00a0`'ı karaktere çevirir — hiçbiri hata vermez. |
 | **§17** | Log'da "yok" sonucu çoğu zaman **soru** hatasıdır (yanlış etiket, varsayılan zaman penceresi, yanlış log biçimi). Önce log'a yazıldığı bilinen bir kontrol grubunu ara. |
 | **§18** | SwiftUI (ve benzeri bildirimsel UI): değiştirici **boş bir kapsayıcıya** (`Group { if … }`) bağlanırsa koşmaz — `.task`/`onAppear` hiç çalışmaz, hata yoktur. Gerçek kapsayıcı (`ZStack`) kullan. |
 | **§19** | PHPUnit `<server>` gerçek ortam değişkenine **yenilir** (Symfony önce `$_ENV`) — `<env force>` kullan. |
@@ -139,7 +141,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§24** | `MAILER_DSN=null://null` e-postayı **sessizce atar**, uç yine 202 — geliştirmede Mailpit. |
 | **§25** | TypeScript **nesne yaymada (`...`) fazla alanı denetlemez** — yanlış alan adı tip denetiminden geçer; gövdeyi üretilen tipten kur. |
 | **§26** | Şifre özetindeki **`$` tırnaksız ortam dosyasında sessizce bozulur** (dotenv ve compose) — giriş yalnız "yanlış şifre" der; tek tırnak. |
-| **§27** | Astro bileşen **stili yuvadan (slot) gelen öğeye uygulanmaz** — derleme yeşil, düğme stilsiz; `is:global` ya da stili yuvayı dolduran dosyaya. |
+| **§27** | Astro bileşen **stili yuvadan (slot) gelen öğeye uygulanmaz** — derleme yeşil, düğme stilsiz; `is:global` ya da stili yuvayı dolduran dosyaya. _(Astro dönemi; Astro 2026-11-03 kaldırıldı)_ |
 | **§28** | Postgres **JSONB nesne anahtarlarının sırasını değiştirir** — sıraya bakan karşılaştırma geri okunan geçerli veriyi reddeder; anahtarı küme olarak karşılaştır. |
 | **§29** | Twig'e **`app` adlı değişken geçmek global `app`'i ezer** — üretimde flaşlar sessizce kaybolur (testte 500); başka ad. |
 | **§30** | **Cache-Control'süz statik dosya** tarayıcıda eski hâliyle çalışır (dağıtımdan sonra da) — adrese içerik özeti. |
@@ -148,6 +150,21 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§33** | Testing Library'de **metnin görünmesi `useEffect`'in koştuğunu garanti etmez** — effect'e bağlı iddia aralıklı kırmızı, olumsuz iddia yalancı yeşil; `waitFor`. |
 | **§34** | **Gizli sekmede animasyon zaman çizelgesi durur** — opaklık 0'da "takılı" görünür, FCP/LCP yok; önce `visibilityState` + `document.timeline.currentTime` oku. |
 | **§35** | **Betikle doldurulan alanın DOM değeri uygulamanın durumu değildir** — olay görünmeyen kopyaya gitmiş olabilir; önce uygulamanın kendi göstergesini oku. |
+| **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi. |
+| **§37** | **iCloud'daki masaüstünde** üretilen dizinler (`var/cache`…) " 2" çakışma kopyası alır — `cache:clear` kod değişmeden kırmızı; önce `find . -name "* 2"`. |
+| **§38** | **Docker'daki Vite sunucusu macOS'taki dosya değişikliğini görmeyebilir** — tarayıcı eski stili hatasız çizer; önce sunulan dosyayı `curl` ile oku, eskiyse kabı yeniden başlat. |
+| **§39** | Testing Library **metin sorgusu `hidden` öğeyi de bulur** — "adım görünüyor" testi yalancı yeşil; görünürlüğü ayrıca ölç (`closest("[hidden]")`). |
+| **§40** | **Boyamadan sonra (`useEffect`) yazılan tema + CSS geçişi** ilk görünümü ara renkte çizer — jsdom görmez; `useLayoutEffect`, ölçüm gerçek tarayıcıda. |
+| **§41** | **Postgres sıralaması (en_US) JS `sort()` ile aynı değil** — iki taraf aynı listeyi farklı sırada üretir, ikisi de yeşil; `COLLATE "C"` + ortak örnekli eşlik testi. |
+| **§42** | **Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz** — birim testi yeşil, düzenleyicide etkisiz; kural bekçide, ölçüm tarayıcıda. |
+| **§43** | **Puck kabuk sayfasının stilini önizleme çerçevesine kopyalar; tembel düzenleyici CSS'i de çıkınca sayfada kalır** — panel ↔ huni aynı CSS değişken adları birbirini ezer, testler yeşil; yalıtım iki yönlü (`media="not all"`), ölçüm tarayıcıda gezinme sırasıyla. |
+| **§44** | **happy-dom `step="0.01"`+`min`'li sayı alanında geçerli tutarı reddeder, form sessizce gönderilmez** — "istek gitmez" testi yalancı yeşil; ondalık sınırı sunucuda, alanda `step="any"`. |
+| **§45** | **Çatı değişince bağlama kökü (`<div id>`) flex zincirini koparır** — telefonda yapışık düğme içeriğin altında kalır, hata yok; kök `display: contents`, ölçüm gerçek tarayıcıda. |
+| **§46** | **`display` veren yazar kuralı `[hidden]`'ı ezer** — gizli öğe görünür, özniteliğe bakan test yeşil; yanına `[hidden] { display: none }`, ölçüm çizimde. |
+| **§47** | **Testin sahtesi denetlenen kodla aynı `memory_limit`'i paylaşır** — yerelde yeşil, CI'da bellekten ölür; sahte veriyi en küçük ölçen boyda tut, `Memory:` satırını oku. |
+| **§48** | **Satır içi YAML'da tırnaksız virgül JS tip üreticisinde metni sessizce keser** (EXIT=0), PHP ayrıştırıcısı reddeder — virgüllü metni çift tırnağa al. |
+| **§49** | **Tek tırnaklı satır içi betikte (`python3 -c '…'`) yorumdaki kesme işareti tırnağı kapatır** — tek sayıda: betik hiç çalışmaz; çift sayıda: `bash -n` geçer, kod sessizce bölünür; gömülü bloğu kendi diliyle derle. |
+| **§50** | **Para birimi verilmeyen çok para birimli Stripe fiyatı ödemede kendiliğinden yerelleşir** — paywall €, ödeme TRY; paywall'daki birimi `currency` ile hep zorla, `+location_XX` test e-postasıyla ölç. |
 
 ---
 
@@ -159,6 +176,10 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | [docs/pre-setup.md](docs/pre-setup.md) | **Kararlar ve NEDEN'leri** + reddedilen alternatifler + risk tablosu |
 | [docs/decisions/acik-uclar.md](docs/decisions/acik-uclar.md) | Karara dönüşmemiş gözlemler (Ç-no) |
 | [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzakların tam metni, ölçümü ve doğrusu |
+| [docs/adresler.md](docs/adresler.md) | Panel sayfaları, huni sayfaları, portlar ve API uçları (yerel) |
+| [docs/backend-mimarisi.md](docs/backend-mimarisi.md) | **Backend mimarisi & veri akışları**: teknoloji rolleri, şema felsefesi, uçtan uca akışlar |
+| [docs/teknik-mimari-notu.md](docs/teknik-mimari-notu.md) | **Sıralı teknik mimari notu**: 8 sıralı adım, dosya yolları, veri mekanizmaları, tuzaklar |
+| [.tours/](.tours/) | **İnteraktif kod turları** (CodeTour): 3 modüllü uçtan uca mimari, para ve AI yürüyüşleri |
 | [docs/uygulama-entegrasyonu.md](docs/uygulama-entegrasyonu.md) | Bir uygulama (KeepChat…) çekirdeğe nasıl bağlanır: anahtar, uçlar, akış, App Store kuralları |
 | [docs/yontem/](docs/yontem/README.md) | **Yöntem el kitabı** (okuyucu için, bölümlü): nasıl ve neden böyle çalışıyoruz; kayıtlara bağlantı verir, kopyalamaz |
 | `.claude/skills/` | `blok` (işin dokuz adımı) · `kirma` (testin ölçtüğünü kanıtla) · `belge` (bilgiyi depoya yaz) · `kontrol` (tam doğrulama — **yığına göre doldur**) |

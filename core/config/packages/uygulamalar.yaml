@@ -1,10 +1,9 @@
-# A4: Kendi uygulamalarımız ve planları. Fiyat kimliği ortama göre (test /
-# canlı) değiştiği için ortam değişkeninden. Yeni uygulama = buraya bir blok
-# + sözleşmede (contract/openapi.yaml) app enum'una bir değer.
+# A4: Kendi uygulamalarımız. Yeni uygulama = buraya bir satır + sözleşmede
+# (contract/openapi.yaml) app enum'una bir değer. Planlar M1a'dan beri
+# veritabanında (`planlar`, panel → Planlar; eski fiyat: app:plan-ice-aktar).
 parameters:
     uygulamalar:
-        keepchat:
-            monthly: '%env(STRIPE_PRICE_KEEPCHAT_MONTHLY)%'
+        keepchat: {}
     # A5: uygulamanın SUNUCUSU çekirdeğe bununla sorar; uygulamanın içinde yok.
     uygulama_anahtarlari:
         keepchat: '%env(UYGULAMA_ANAHTARI_KEEPCHAT)%'

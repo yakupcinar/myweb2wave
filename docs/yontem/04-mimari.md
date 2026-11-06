@@ -39,7 +39,8 @@ reklam ──► Huni (Astro, statik, CDN)          ── sunucusu yok
 ## Uygulama boyutu (A4): birden çok kendi uygulamamız
 
 - Tek kiracı (SaaS değil), ama abonelik, fiyat ve huni **hangi uygulamaya**
-  ait olduğunu taşır. Uygulamalar `config/packages/uygulamalar.yaml`'da.
+  ait olduğunu taşır. Uygulamalar `config/packages/uygulamalar.yaml`'da; planları
+  veritabanında (`planlar`, M1a — tutar yine Stripe'tan).
 - Kimlik çekirdekte, bir kişi tüm uygulamalarda aynı; **hak uygulama
   başına**.
 - Abonelik hangi uygulamaya ait: çekirdek Stripe oturumuna `metadata.app`

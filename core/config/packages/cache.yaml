@@ -1,5 +1,9 @@
 framework:
     cache:
+        pools:
+            # Ç19/Ç21: Stripe fiyatı (Billing\Fiyatlar), bir saat.
+            fiyat.onbellegi:
+                adapter: cache.app
         # Unique name of your app: used to compute stable namespaces for cache keys.
         #prefix_seed: your_vendor_name/app_name
 

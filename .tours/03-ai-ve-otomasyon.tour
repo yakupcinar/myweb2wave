@@ -1,0 +1,60 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "03 · Yapay Zeka ve Otomasyon: Claude, CDP ve MCP",
+  "description": "Claude Opus/Sonnet ile doğal dilden huni tasarımı, Headless Chrome görsel denetimi ve dış AI araçları için MCP sunucusu.",
+  "steps": [
+    {
+      "description": "## 🤖 3. MODÜL: Yapay Zeka, MCP ve Görsel Denetim\n\nBu turda, sistemin **en ileri mühendislik katmanını** inceliyoruz: Doğal dilden çalışan huni üreten Claude asistanı, tasarlanan sayfayı iPhone gözüyle gören Headless Chrome ve dış geliştirici araçları için Model Context Protocol (MCP) sunucusu.\n\n### İnceleyeceğimiz Parçalar:\n1. **AI Asistanı:** Anthropic PHP SDK + Tool Use + Prompt Caching.\n2. **Araç Seti:** Yapay zekaya verilen yetkiler ve güvenlik sınırları.\n3. **Görsel Denetim:** Headless Chrome (CDP) ile anlık ekran görüntüsü alma.\n4. **MCP Sunucusu:** Cursor ve Claude Code için Streamable HTTP `/mcp` ucu.\n5. **Benchmark:** Model ve maliyet kıyaslama motoru (`app:ai-degerlendir`).\n\n*Hadi AI Asistanı sınıfına gidelim! 👉*"
+    },
+    {
+      "file": "core/src/Ai/HuniAsistani.php",
+      "line": 70,
+      "selection": {
+        "start": { "line": 70, "character": 1 },
+        "end": { "line": 105, "character": 1 }
+      },
+      "description": "### 📍 1. DURAK: Panel İçi AI Asistanı (Claude Motoru)\nYönetici paneldeki sohbet kutusuna bir brief yazdığında bu metot çalışır.\n\n- Anthropic PHP SDK ile akışsız mesaj döngüsü kurulur.\n- `prompt-caching`: Sistem istemi ve araç tanımları önbelleğe alınır (`ephemeral`), böylece her mesajlaşmada API maliyeti %85 daha ucuzdur.\n- Döngü bizim kontrolümüzdedir; Claude bir hata yaparsa çekirdek hatayı modele geri verir ve model kendi kendini düzeltir.\n\n💻 **AI Panel Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter PanelAiTest\n```"
+    },
+    {
+      "file": "core/src/Huni/Arac/HuniAraclari.php",
+      "line": 30,
+      "selection": {
+        "start": { "line": 30, "character": 1 },
+        "end": { "line": 65, "character": 1 }
+      },
+      "description": "### 📍 2. DURAK: AI Araç Seti (Tools)\nYapay zekanın çağırabileceği araçlar burada tanımlıdır:\n\n1. `huni_listele`: Mevcut hunileri listeler.\n2. `huni_oku`: Seçilen huninin JSON şemasını okur.\n3. `huni_taslak_kaydet`: Huniye yeni ekranlar, bloklar veya tema yazar.\n4. `ekran_goruntusu`: Huninin mobilde nasıl göründüğünü çeker.\n\n*Güvenlik Kuralı:* AI yalnızca **taslağa** yazabilir; canlıya yayınlama veya huni silme yetkisi kesinlikle insandadır."
+    },
+    {
+      "file": "core/src/Huni/Ekran/ChromeEkranCekici.php",
+      "line": 20,
+      "selection": {
+        "start": { "line": 20, "character": 1 },
+        "end": { "line": 50, "character": 1 }
+      },
+      "description": "### 📍 3. DURAK: Görsel Denetim (Headless Chrome / CDP)\nBir yapay zekanın sadece JSON üretmesi yetmez; tasarladığı sayfanın nasıl göründüğünü insan gibi görmesi gerekir.\n\n- Ayrı bir Docker konteynerinde (`ekran`) çalışan Chromium'a Chrome DevTools Protocol (CDP, Port 9222) üzerinden bağlanır.\n- Sayfayı 390×844 (iPhone) boyutunda açar.\n- `HAZIR` JavaScript'i: Sayfadaki spinner kaybolana, fontlar ve görseller %100 yüklenene kadar bekler; ardından JPEG çekip AI'a görsel geri bildirim döner."
+    },
+    {
+      "file": "core/src/Mcp/McpSunucusu.php",
+      "line": 40,
+      "selection": {
+        "start": { "line": 40, "character": 1 },
+        "end": { "line": 70, "character": 1 }
+      },
+      "description": "### 📍 4. DURAK: Model Context Protocol (MCP) Sunucusu\nSistemi sadece web panelinden değil, dış dünyadaki gelişmiş AI ajanlarından (Cursor, Windsurf, Claude Code) yönetebilmek için bu sunucu kurulmuştur.\n\n- Streamable HTTP `/mcp` protokolü çalışır.\n- Panelden üretilen kişisel Bearer API anahtarlarıyla korunur.\n- Dış bir agent bu uca bağlandığında, yukarıdaki tüm huni araçlarını ve ekran görüntüsü servisini uzaktan çağırabilir.\n\n💻 **MCP Testlerini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter McpTest\n```"
+    },
+    {
+      "file": "core/src/Command/AiDegerlendirCommand.php",
+      "line": 45,
+      "selection": {
+        "start": { "line": 45, "character": 1 },
+        "end": { "line": 85, "character": 1 }
+      },
+      "description": "### 📍 5. DURAK: Model ve Maliyet Kıyaslama Motoru (A6)\nYeni modeller çıktığında (Claude 3.7 Sonnet, Opus 4 vb.) hangisinin daha ucuz ve başarılı olduğunu ölçen benchmark komutumuzdur:\n\n`bin/console app:ai-degerlendir --efor=low`\n\n- `config/ai/degerlendirme.json` içindeki brief setlerini alır.\n- Her biri için geçici bir test hunisi açıp Claude'a huni tasarlatır.\n- Başarı oranını, tur sayısını, milisaniye cinsinden süreyi ve mikrodolar ($) maliyetini raporlar.\n\n💻 **AI Değerlendirme Testini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter AiDegerlendirCommandTest\n```"
+    },
+    {
+      "file": "docs/backend-mimarisi.md",
+      "line": 1,
+      "description": "## 🎓 TEBRİKLER! Tüm Turları Tamamladınız!\n\nMyWeb2Wave projesinin 3 ana omurgasını kod seviyesinde baştan sona gezdiniz:\n\n1. ✅ **Temel Mimari:** Sözleşme -> Puck -> PHP Doğrulama -> Preact Oynatıcı.\n2. ✅ **Para & Abonelik:** Paywall -> Stripe Webhook -> Past_Due -> Mobil Hak Doğrulama.\n3. ✅ **AI & Otomasyon:** Claude Tool Use -> Headless Chrome CDP -> MCP Sunucusu.\n\n*İhtiyacınız olan her an bu turları CodeTour menüsünden tekrar başlatabilirsiniz!*"
+    }
+  ]
+}

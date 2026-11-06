@@ -39,6 +39,16 @@ uygulanmadı. `cat -A` macOS'ta yok, hata çıktıyı yuttu. **Doğrusu:** sabit
 metin ararken `grep -F`; metin değiştirirken düzenli ifadesiz bir betik
 (Python `str.replace` + "tam bir kez geçiyor mu" kontrolü).
 
+**Kabuk zsh (2026-11-04, `v6-nis-sablonlari.md`, `m1b-teklifler.md`):** bu
+makinede komutlar zsh'te koşuyor. (1) `K="python3 kir.py"; $K …` → "no such
+file": zsh değişkeni kelimelere **bölmez**; aynı sebeple döngüde
+`ayarla $t` (`t="giris 3 0.99"`) tek argüman gitti — üç ölçüm teklifsiz
+alındı, "yeşil" sanılabilirdi. (2) Tek tırnak içindeki `'\u00a0'` programa
+**karakter** olarak ulaştı (`repr` → `'\xa0'`), kırma yaması "0 kez eşleşti".
+**Doğrusu:** komut için işlev (`K() { …; }`), bölünecek değişken için
+`${=t}`; ters bölülü metni kabuktan değil Python içinden ver; yamanın
+eşleşme sayısını her zaman yazdır (§8).
+
 ## §21 — CI sonucunu SHA ile ararken push olmadıysa ESKİ koşu gelir
 **Belirti:** kırma denemesi "yeşil" döndü; oysa yama hiç uygulanmamış,
 commit/push olmamıştı. **Sebep:** HEAD değişmedi → aynı SHA'nın önceki
@@ -191,3 +201,130 @@ ve veritabanı hiç değişmemişti; buna dayanan "düzeltme" geri alındı.
 **Doğrusu:** değişikliğin uygulamaya ulaştığını önce uygulamanın kendi
 göstergesinden oku (durum notu, kayıt, ağ isteği); gerçek klavye/fare olayı
 (`computer` aracı) ya da `form_input` kullan.
+
+## §36 — CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer
+**Belirti:** yeni huni ucu sunucu testlerinde ve happy-dom testlerinde
+yeşil; tarayıcıda ekranda her şey normal (şerit kalkıyor, seçim kaydoluyor)
+ama veritabanına hiçbir şey yazılmıyor. **Sebep:** `nelmio_cors` yalnız
+listedeki yollara izin veriyor; ön kontrol başarısız → `fetch` hata verir,
+huni bildirim hatalarını bilerek yutar (akış durmasın). Sunucu testinde
+köken yok, happy-dom'da CORS yok. **Ölçüm (2026-10-21, `huni-izin-h6a.md`):**
+Resource Timing'de izin isteği **durum 0**, `izin_at` boş; yol listesine
+eklenince 204. **Doğrusu:** tarayıcıdan çağrılan her yeni uç için önce
+`OPTIONS` + `Origin` ile CORS testi (kırmızı), sonra listeye ekle.
+
+## §11 — Aracın yanıtı ölçtüğün şeyin yanıtı sanılır (örnek: tarayıcı uzantısı 503)
+**Belirti:** Claude in Chrome ağ kaydı çekirdeğe giden çapraz kökenli
+POST/DELETE'i **503** gösterdi (`ilerleme`, `izin`; 2026-10-26).
+**Sebep:** uzantının kaydı; sunucu isteği işlemişti. **Ölçüm:** çekirdek
+günlüğünde rota eşleşti + işlem commit edildi; DB'de satır var; aynı istek
+sayfadan `fetch` ile 204. **Doğrusu:** uzantının durum kodunu kanıt sayma;
+sunucu günlüğü ya da DB'den oku.
+
+## §37 — iCloud'daki masaüstünde üretilen dizin çakışma kopyası alır
+**Belirti:** `composer install` → `cache:clear` aralıksız kırmızı:
+`Failed to remove directory "/app/var/cache/de~" … Directory not empty`;
+kod değişmemişken. **Sebep:** masaüstü iCloud Drive'a eşitleniyor; iCloud
+önbellek dizinlerinde `Symfony 2`, `pools 2` gibi 0 B yer tutucu kopyalar
+yaratıyor, silme yarışı yarıda kalan `de~`'yi bırakıyor ve sonraki her koşu
+ona takılıyor. **Ölçüm (2026-10-26):** `defaults read com.apple.finder
+FXICloudDriveDesktop` = 1; `find core/var -name "* 2"` üç dizin; `du` 0 B,
+bağlantı sayısı 65535; silmek 5 dk'yı aştı. **Doğrusu:** projeyi iCloud
+dışında tut (ya da `.nosync`); kırmızıda önce `find . -name "* 2"`.
+
+## §38 — Docker'daki Vite geliştirme sunucusu macOS'taki değişikliği görmez
+**Belirti:** `huni-bilesenleri/huni.css` değişti, testler yeni kuralı
+gördü; tarayıcı (yenileme dahil) **eski stili** çizdi, hata yok.
+**Sebep:** `huni-dev` kabı günlerdir açık; bağlı dizindeki dosya olayı
+kaba ulaşmadı, Vite modülü önbellekten verdi. **Ölçüm (2026-10-27,
+`huni-mobil-gorunum.md`):** `curl …/@fs/huni-bilesenleri/huni.css` yeni
+sınıfı **0** kez, aynı adres `?t=1` ile **1** kez içerdi; kap yeniden
+başlayınca 1. **Doğrusu:** tarayıcıda görsel ölçümden önce sunulan dosyayı
+`curl` ile oku; eskiyse `docker restart huni-dev`.
+
+## §39 — Testing Library `getByText`/`findByText` gizli öğeyi de bulur
+**Belirti:** "önizlemede ikinci adımdan başlar" testi `findByText("Kiminle?")`
+ile yeşil olurdu — adım ekranda değilken. Tersine "ilk adım yok" iddiası
+(`queryByText("Merhaba")` null) kod doğruyken kırmızı.
+**Sebep:** huni oynatıcısı bütün adımları DOM'da tutar, görünmeyenleri
+`hidden` ile gizler; metin sorguları `hidden`'ı (ve `display:none`'ı)
+**süzmez** — bulunmak görünmek değildir. **Ölçüm (2026-10-27,
+`ai-ekran-goruntusu.md`):** kod yokken "gerçek ziyarette adım yok sayılır"
+testi `queryByText("Kiminle?")` ile kırmızıydı; DOM'da `<h1>Kiminle?</h1>`
+gizli adımın içindeydi. **Doğrusu:** görünürlüğü ayrıca ölç —
+`el.closest("[hidden]") === null` (ya da `toBeVisible`) — ve olumlu iddiayı
+da görünürlükle yaz.
+
+## §40 — Boyamadan sonra uygulanan tema + CSS geçişi = ilk görünüm ara renk
+**Belirti:** aynı temayla çekilen ekran görüntülerinde düğme bazen
+varsayılan mavi, bazen tema rengi; hata yok, testler yeşil.
+**Sebep:** tema değişkenleri `useEffect`'te (ilk boyamadan sonra) köke
+yazılıyor; düğmede `transition: background-color 120ms` var → öğe önce
+varsayılanla çiziliyor, sonra geçişle temaya dönüyor. Ziyaretçi her
+açılışta parlama görüyor. jsdom boyama yapmadığı için Testing Library
+iki effect'i ayırt edemez — test hep yeşil. **Ölçüm (2026-10-27,
+`gorunum-g3.md`):** 6 çekimde 4'ü ara renk → `useLayoutEffect` ile 6/6
+hedef renk. **Doğrusu:** ilk çizimi etkileyen değişkeni boyamadan önce
+yaz (`useLayoutEffect` / sunucuda); görsel iddiayı gerçek tarayıcıda,
+birden çok çekimle ölç.
+
+## §41 — Veritabanı sıralaması ≠ JS sıralaması (aynı liste, farklı sıra)
+**Belirti:** aynı seçenek listesi sunucuda "a-1 a_1 a1", tarayıcıda "a-1 a1 a_1"; hata yok, iki taraf ayrı ayrı yeşil.
+**Sebep:** Postgres `ORDER BY` veritabanının sıralamasını (en_US.utf8: noktalama yok sayılır) kullanır; JS `sort()` kod birimi sırası.
+**Ölçüm (2026-11-02, `t2-ozellik-deposu.md`):** ortak örnekli eşlik testi (`OzellikEsligiTest`) ilk koşuda tam bu farkla kırmızı.
+**Doğrusu:** iki dilin karşılaştırdığı sırada `COLLATE "C"`; eşliği ortak örnek dosyasıyla iki tarafta ölç.
+
+## §42 — Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz
+**Belirti:** üst bileşen (ekran) yuvadaki bloğa göre alanını ayarlayacak — birim testi yeşil, düzenleyicide hiçbir şey olmuyor.
+**Sebep:** `resolveData` bileşenin KENDİ verisi değişince/eklenince/yüklenince çağrılır; yuvadaki çocuk değişimi üstü tetiklemez.
+**Ölçüm (2026-11-02, `t1c-tasima-olcumu.md`):** tarayıcıda soru bloğu çokluya çevrildi, ekranın düğmesi gelmedi.
+**Doğrusu:** çocuklara bakan kural düzenleyici bekçisinde (her veri değişiminde saf işlev + `setData`); davranışı tarayıcıda ölç.
+
+## §43 — Puck sayfanın stilini önizleme çerçevesine kopyalar
+**Belirti:** düzenleyici başka bir uygulamanın içine taşınınca önizleme huniden farklı çizilir (koyu zemin, başka yazı tipi, dar içerik); hata yok, testler yeşil.
+**Sebep:** Puck'ın çerçevesi kabuk belgesinin `<style>`/`<link>` düğümlerini kopyalar — kabuğun genel sıfırlaması (Tailwind preflight, `body` kuralları) huniye de uygulanır.
+**Ölçüm (2026-11-03, `p3-duzenleyici-sayfasi.md`):** panel stiliyle önizlemede 16 öğenin 39 özelliği farklı (genişlik 520 → 438 px, zemin koyu), düzenleyici kabuğunda 253 fark.
+**Ters yön (2026-11-03, kullanıcı panelde ölçerken):** tembel yüklenen düzenleyici parçasının CSS'i (Puck + `huni.css`) çıkınca da sayfada kalır; `huni.css`'in `:root --metin`'i panelinkiyle **aynı ad** → düzenleyiciden dönünce panel yazısı koyu zeminde koyu (Kullanıcılar okunmaz). Testler yeşildi; yalnız gerçek gezinme sırasıyla görüldü.
+**Doğrusu:** yalıtım iki yönlü — düzenleyici açıkken kabuğun stil düğümüne `media="not all"` (kopyası da kapalı gelir), çıkınca kabuk geri açılır ve **düzenleyicinin** stil düğümü kapanır (her biri işaret kuralıyla bulunur); eski sayfa koşuluyla hesaplanmış stilleri ve gezinme sırasını (aç → çık → başka sayfa → yeniden aç) gerçek tarayıcıda ölç.
+
+## §44 — happy-dom `step`/`min`'li sayı alanında geçerli değeri reddeder, form gönderilmez
+**Belirti:** testte forma tutar yazılıp gönder düğmesine basılır; hiçbir istek gitmez, hata da yok. Olumlu iddia ("istek gitti") kırmızı; olumsuz iddia ("istek gitmez") **yalancı yeşil**.
+**Sebep:** happy-dom adım geçerliliğini kayan noktayla hesaplar: `step="0.01"` + `min="0.01"` iken (59 − 0,01) / 0,01 tam sayı çıkmaz → alan geçersiz → `submit` olayı hiç oluşmaz. Gerçek tarayıcı bunu ondalık hesapla geçerli sayar.
+**Ölçüm (2026-11-03, `m1a-fiyat-katalogu.md`):** aynı test `step="0.01"` ile 3/4 kırmızı (istek listesi yalnız GET), `step="any"` ile istek gitti.
+**Doğrusu:** ondalık sınırını sunucuda doğrula, alanda `step="any"`; "gönderilmez" testinin önce gönderilebilen bir kontrol grubunu ölçtüğünü gör.
+
+## §45 — Çatı değişince bağlama kökü (`<div id="…">`) flex zincirini sessizce koparır
+**Belirti:** telefonda alta yapışması gereken düğme içeriğin hemen altında durur, ekranın altı boş; hata yok, testler yeşil, düzen "zevk meselesi" gibi görünür.
+**Sebep:** tam yükseklik `main`'den adımlara flex zinciriyle iner (`flex: 1`). Astro'nun `astro-island`'ı `display: contents`'ti (kutu üretmez); Vite + Preact geçişinde yerine konan düz `<div id="huni">` blok kutu üretir, zincir orada kopar.
+**Ölçüm (2026-11-03, `v1-tasarim-dongusu.md`):** ekran ölçümü 16 adımın çoğunda altta %33–58 boşluk; tarayıcıda hesaplanmış stil zinciri `MAIN(flex) → DIV#huni(block) → .adimlar(flex:1)`. `display: contents` sonrası düğme altta (boşluk %4).
+**Doğrusu:** çatı/sarmalayıcı değişince yerleşimi gerçek tarayıcıda ölç (ekran_goruntusu → `olcum`); bağlama kökü düzen zincirindeyse `display: contents` ve onu ölçen test.
+
+## §46 — Bir `display` kuralı tarayıcının `[hidden]` kuralını ezer
+**Belirti:** `hidden` öznitelikli öğe sayfada görünür; HTML'e bakan test özniteliği bulur, yeşil kalır.
+**Sebep:** `[hidden] { display: none }` tarayıcının varsayılan stil sayfasında, en düşük öncelikle; aynı öğeyi seçen herhangi bir yazar kuralı (`.simge img { display: block }`) onu ezer.
+**Ölçüm (2026-11-03, `v3a-fluent-simgeler.md`):** tek renk simgede yoklama için gizlenen siyah SVG maskenin üstünde çizildi — simgeler ana renk yerine siyah (ekran görüntüsünde görüldü).
+**Doğrusu:** `display` veren kuralın yanına `…[hidden] { display: none }`; görünürlüğü öznitelikten değil çizimden ölç (ekran görüntüsü / hesaplanmış stil).
+
+## §47 — Testin sahte verisi denetlenen kodla aynı `memory_limit`'i paylaşır
+**Belirti:** test yerelde yeşil, CI'da `Allowed memory size … exhausted` ile süreç ölür; kod değişmedi.
+**Sebep:** sahte (ör. büyük görsel üreten HTTP sahtesi) ve denetlenen kod (aynı görseli çözen) aynı PHP sürecinde; ikisi birlikte sınıra yakın. Yerelde aynı 128M ile geçmesi şanstı (sıra/çöp toplama).
+**Ölçüm (2026-11-03, `v3b-stok-fotograf.md`):** 1880×2820 sahte JPEG + gerçek çözme → CI'da tam süitte 128 MB aşıldı (test tek başına 78,7 MB — birikmiş süit belleğiyle aştı); 1130×1700 (küçültmeyi yine ölçer) ile 9 testlik sınıf 69 MB.
+**Doğrusu:** sahte veriyi davranışı ölçen en küçük boyda tut, bir kez üret; yerel yeşili "sınıra ne kadar yakın" sorusuyla oku (`Memory:` satırı).
+
+## §48 — Satır içi YAML'da tırnaksız virgül JS üreticisinde metni sessizce keser
+**Belirti:** sözleşmeden üretilen TypeScript tipleri hatasız üretilir, tip denetimi yeşil; ama alanın açıklaması yarıda ("Ana birimde"). PHP tarafındaki sözleşme testleri ise `Malformed inline YAML string` ile düşer.
+**Sebep:** `tutar: { type: number, description: Ana birimde, planın para biriminde }` — akış eşlemesinde virgül ayırıcıdır. JS ayrıştırıcısı (openapi-typescript) metni ilk virgülde bitirip kalanını değersiz bir anahtar sayar; Symfony YAML reddeder.
+**Ölçüm (2026-11-04, `m1b-teklifler.md`):** `npm run uret` EXIT=0, üretilen açıklama `Ana birimde`; aynı dosya PHPUnit'te 10 testte ParseException.
+**Doğrusu:** satır içi eşlemede virgül, iki nokta ya da `#` içeren metni çift tırnağa al; sözleşme değişince yalnız tip üretimine değil PHP sözleşme testlerine de bak (`bin/kontrol` ikisini koşar).
+
+## §49 — Tek tırnaklı satır içi betikte yorumdaki kesme işareti tırnağı kapatır
+**Belirti:** `deploy/dagit.sh` hiç çalışmaz (`syntax error near unexpected token`); hata satırı bir **yorum**. Daha kötüsü: kesme işareti sayısı çiftse `bash -n` geçer, betik çalışır, ama gömülü kodun bir parçası kabuk komutu olur — hata vermeden yanlış kod koşar.
+**Sebep:** `python3 -c '…'` içindeki her şey kabuk için tek tırnaklı dizgedir; içerdeki `#` Python'un yorumudur, kabuğun değil. "`$'ı`" ya da "bash'te" gibi bir kesme işareti dizgeyi bitirir.
+**Ölçüm (2026-11-04, `m1c-cok-para-birimi.md`):** `bash -n` macOS bash 3.2 ve bash 5.2'de 36. satırda hata (2026-10-20'den beri, `028f150`). Düzeltirken iki kesme işareti daha eklendi → `bash -n` 0 döndü; gömülü blok çıkarılıp `compile` edilince eksik olduğu görüldü.
+**Doğrusu:** gömülü kodda kesme işareti kullanma (ya da `<<'EOF'` heredoc'a taşı); ölçüt `bash -n` değil — gömülü bloğu çıkar ve kendi diliyle derle/çalıştır.
+
+## §50 — Para birimi verilmeyen çok para birimli Stripe fiyatı ödemede kendiliğinden yerelleşir
+**Belirti:** paywall ana birimi gösterir (€9,99), ödeme sayfası başka birimde açılır (TRY 349,99); hata yok, testler yeşil.
+**Sebep:** fiyatta `currency_options` varsa ve oturumda `currency` verilmezse Checkout müşterinin konumunu kendisi tahmin edip o para birimini seçer (belgede "You didn't specify a currency" koşulu). Bizim IP tahminimiz bilinmiyor/desteklenmiyor dediğinde Stripe'ınki başka bir şey diyebilir. Testte stripe-mock bunu hiç yapmaz.
+**Ölçüm (2026-11-04, `m2d-gomulu-odeme.md`):** yerel IP (ülke yok) + test e-postası `test+location_TR@…` → oturum `try 34999`; paywall €9,99. `currency` zorlanınca aynı e-postayla `eur 999`.
+**Doğrusu:** paywall'da gösterilen para birimini ödeme oturumunda HER ZAMAN `currency` ile zorla (bilinmeyen ülkede ana birim); "Stripe ana birimi açar" diye varsayma. Stripe'ın `+location_XX` test e-postasıyla gerçek API'de ölç.

@@ -1,0 +1,16 @@
+{# Panel uygulaması (B5): React kabuğu. Sayfaları istemci çizer; Symfony
+   yalnız oturumu doğrular ve derlenmiş betiği verir (Varliklar). #}
+<!DOCTYPE html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <title>MyWeb2Wave panel</title>
+        {% for s in stiller %}<link rel="stylesheet" href="{{ s }}">{% endfor %}
+        <script type="module" src="{{ betik }}"></script>
+    </head>
+    <body>
+        <div id="panel-uygulama" data-jeton="{{ csrf_token(constant('App\\Controller\\PanelUygulamaController::JETON')) }}"></div>
+    </body>
+</html>

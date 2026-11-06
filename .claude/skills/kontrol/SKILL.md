@@ -24,14 +24,15 @@ B3). Ön koşul: Docker Desktop açık.
 |---|---|---|---|
 | 0 | ortam | `df -h .` · `docker compose up -d --wait db stripe-mock` | disk %90+ ise sahte kırmızı riski (tuzak §14) |
 | 1 | core-kur | `composer install` — temiz ortamda `vendor/` yok (CI EXIT=127 dersi) | |
+| 1 | dev-goc (uyarı) | `doctrine:migrations:up-to-date` (dev DB; `$CI` doluysa atlanır) | kapı DEĞİL: `UYARI dev-goc` satırı = yerel tarayıcıda 500 riski (Ç60) |
 | 1 | core-bicim | `php-cs-fixer check --diff` | EXIT≠0 = biçimsiz (kırma K5: EXIT=8) |
 | 1 | funnel-npm / funnel-bicim | `npm ci` · `prettier --check .` | |
 | 1 | sozlesme-kur / sozlesme-guncel | `npm ci` · `openapi-typescript` → `/tmp` + `cmp` depodaki `funnel/src/sozlesme/api.ts` | farklıysa: sözleşme değişmiş, `contract npm run uret` unutulmuş |
 | 2 | core-composer | `composer validate --strict` | |
 | 2 | core-stan | `phpstan analyse` (level **max**) | |
-| 2 | funnel-tip | `astro check` | |
+| 2 | funnel-tip | `tsc --noEmit` | |
 | 3 | core-testdb / core-goc / core-test | `doctrine:database:create --env=test` · `doctrine:migrations:migrate --env=test` · `phpunit` | **passed/skipped sayısı** ayrıca basılır (tuzak §8, §20) |
-| 3 | funnel-derle | `astro build` | |
+| 3 | funnel-derle | `vite build` | |
 
 Kırmızı adımın günlüğünün **son** 40 satırı ekrana basılır (hata sonda; ilk 40 satır CI'da Composer hatasını gizledi); tamamı betiğin
 yazdığı `log:` dizininde.

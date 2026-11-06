@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Atif\Ziyaretler;
+use App\Huni\Deneyler;
 use App\Huni\Tanim;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -23,11 +25,16 @@ final readonly class ZiyaretController
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
+        private RateLimiterFactory $huniZiyaretLimiter,
+        private Deneyler $deneyler,
     ) {
     }
 
     public function __invoke(Request $request): JsonResponse
     {
+        if (!$this->huniZiyaretLimiter->create((string) $request->getClientIp())->consume()->isAccepted()) {
+            return new JsonResponse(['error' => 'too_many_requests'], 429);
+        }
         $govde = $request->toArray();
         $app = $govde['app'] ?? null;
         if (!\is_string($app) || !isset($this->uygulamalar[$app])) {
@@ -45,11 +52,19 @@ final readonly class ZiyaretController
 
         $huni = $govde['huni'] ?? null;
         $surum = $govde['surum'] ?? null;
-        if ((null !== $surum && (!\is_int($surum) || $surum < 1))
+        $izin = $govde['izin'] ?? null;
+        $deneyler = $govde['deneyler'] ?? [];
+        if ((null !== $izin && !\is_bool($izin))
+            || !\is_array($deneyler) || \count($deneyler) > 20
+            || (null !== $surum && (!\is_int($surum) || $surum < 1))
             || (null !== $huni && (!\is_string($huni) || 1 !== preg_match(Tanim::KIMLIK, $huni)))) {
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
 
-        return new JsonResponse(['ziyaret' => $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum)], 201);
+        $ziyaret = $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum, $izin);
+        // M4a: yalnız aktif deneyin bu huniye düşen geçerli varyantı yazılır.
+        $this->deneyler->ziyaretKaydet($ziyaret, $app, null === $surum ? null : $huni, $deneyler);
+
+        return new JsonResponse(['ziyaret' => $ziyaret], 201);
     }
 }
