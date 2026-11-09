@@ -32,7 +32,7 @@ final class OlaylarTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler CASCADE');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler, odeme_faturalari CASCADE');
         $ziyaretler = self::getContainer()->get(Ziyaretler::class);
         self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
         $this->ziyaretler = $ziyaretler;
@@ -63,6 +63,7 @@ final class OlaylarTest extends KernelTestCase
         $this->stripe('checkout.session.completed', ['id' => 'cs_'.$z, 'object' => 'checkout.session', 'mode' => 'subscription',
             'subscription' => 'sub_'.$z, 'customer' => 'cus_1', 'payment_status' => 'paid', 'amount_total' => 999, 'currency' => 'eur',
             'metadata' => ['app' => $app]]);
+        $this->fatura('in_'.$z, $z, 999, 'subscription_create', $app);
         $this->abonelik($z, 'active', 1_800_000_000, $app);
 
         return $z;
@@ -74,6 +75,14 @@ final class OlaylarTest extends KernelTestCase
         $this->sync->apply(Event::constructFrom(['id' => 'evt_'.bin2hex(random_bytes(6)), 'object' => 'event', 'type' => $tur, 'created' => $zaman, 'data' => ['object' => $nesne]]));
     }
 
+    /** M5b: gerçek faturanın biçimi (API 2026-09-30): abonelik ve uygulama parent.subscription_details'te. */
+    private function fatura(string $id, string $z, int $tutar, string $neden, string $app = 'keepchat', int $odendi = 1_800_000_050): void
+    {
+        $this->stripe('invoice.paid', ['id' => $id, 'object' => 'invoice', 'status' => 'paid', 'amount_paid' => $tutar, 'currency' => 'eur',
+            'billing_reason' => $neden, 'metadata' => [], 'status_transitions' => ['paid_at' => $odendi],
+            'parent' => ['type' => 'subscription_details', 'subscription_details' => ['subscription' => 'sub_'.$z, 'metadata' => ['app' => $app]]]]);
+    }
+
     private function abonelik(string $z, string $durum, int $zaman, string $app = 'keepchat'): void
     {
         $this->stripe('customer.subscription.updated', ['id' => 'sub_'.$z, 'object' => 'subscription', 'customer' => 'cus_1', 'status' => $durum, 'metadata' => ['app' => $app]], $zaman);
@@ -82,7 +91,13 @@ final class OlaylarTest extends KernelTestCase
     /** @return list<string> */
     private function adlar(string $z): array
     {
-        return array_map(static fn (array $o): string => $o['ad'].([] === $o['veri'] ? '' : ' '.json_encode($o['veri'], \JSON_UNESCAPED_UNICODE)), $this->olaylar->ziyaretin($z));
+        // JSONB anahtar sırası korunmaz (tuzak §28) — anahtarlar sıralı.
+        return array_map(static function (array $o): string {
+            $veri = $o['veri'];
+            ksort($veri);
+
+            return $o['ad'].([] === $veri ? '' : ' '.json_encode($veri, \JSON_UNESCAPED_UNICODE));
+        }, $this->olaylar->ziyaretin($z));
     }
 
     public function testZiyaretinZamanCizelgesi(): void
@@ -94,13 +109,14 @@ final class OlaylarTest extends KernelTestCase
             'huni.ziyaret {"huni":"genel","surum":1}',
             'izin.verildi',
             'adim.goruldu {"adim":"kiminle","sira":0}',
-            'cevap.verildi {"soru":"kiminle","secenekler":["aile","is"]}',
+            'cevap.verildi {"secenekler":["aile","is"],"soru":"kiminle"}',
             'adim.goruldu {"adim":"not","sira":1}',
             // Serbest yanıt metni olaya girmez (Ç90) — yalnız hangi soru.
             'cevap.verildi {"soru":"not"}',
             'adim.goruldu {"adim":"paywall","sira":2}',
             'odeme.baslatildi',
             'odeme.tamamlandi',
+            'odeme.fatura {"neden":"subscription_create","paraBirimi":"eur","tutar":999}',
             'abonelik.durum {"durum":"active"}',
         ], $this->adlar($z));
         $zamanlar = array_column($this->olaylar->ziyaretin($z), 'zaman');
@@ -135,8 +151,8 @@ final class OlaylarTest extends KernelTestCase
         self::assertSame([
             'huni.ziyaret',
             'adim.goruldu {"adim":"kiminle","sira":0}',
-            'cevap.verildi {"soru":"kiminle","secenekler":["aile"]}',
-            'cevap.verildi {"soru":"kiminle","secenekler":["is"]}',
+            'cevap.verildi {"secenekler":["aile"],"soru":"kiminle"}',
+            'cevap.verildi {"secenekler":["is"],"soru":"kiminle"}',
             'adim.goruldu {"adim":"not","sira":1}',
             'cevap.verildi {"soru":"not"}',
             'cevap.verildi {"soru":"not"}',
@@ -175,6 +191,54 @@ final class OlaylarTest extends KernelTestCase
         }
 
         self::assertSame(['huni.ziyaret', 'izin.verildi', 'odeme.baslatildi', 'odeme.tamamlandi', 'abonelik.durum {"durum":"trialing"}'], $this->adlar($z));
+    }
+
+    /**
+     * M5b (A18): tahsil edilen fatura ziyarete bağlanır. İlk faturanın
+     * invoice.paid'i oturumdan önce gelebilir — bağlanınca çizelgeye girer;
+     * deneme sonrası yenileme de; aynı fatura iki kez gelse tek; tutar 0
+     * (deneme başlangıcı) gelir değil.
+     */
+    public function testFaturaZiyareteBaglanir(): void
+    {
+        $z = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+        self::assertTrue($this->ziyaretler->oturumBagla($z, 'keepchat', 'cs_'.$z, null, null));
+        $this->fatura('in_deneme', $z, 0, 'subscription_create');
+        $this->fatura('in_ilk', $z, 999, 'subscription_create', 'keepchat', 1_800_000_010);
+        self::assertSame(['huni.ziyaret', 'odeme.baslatildi'], $this->adlar($z), 'oturum bağlanmadan olay yok');
+        $this->stripe('checkout.session.completed', ['id' => 'cs_'.$z, 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_'.$z, 'customer' => 'cus_1', 'payment_status' => 'paid', 'amount_total' => 999, 'currency' => 'eur',
+            'metadata' => ['app' => 'keepchat']]);
+        $this->fatura('in_yenileme', $z, 1299, 'subscription_cycle', 'keepchat', 1_802_600_000);
+        $this->fatura('in_yenileme', $z, 1299, 'subscription_cycle', 'keepchat', 1_802_600_000);
+
+        self::assertSame([
+            'huni.ziyaret',
+            'odeme.baslatildi',
+            'odeme.tamamlandi',
+            'odeme.fatura {"neden":"subscription_create","paraBirimi":"eur","tutar":999}',
+            'odeme.fatura {"neden":"subscription_cycle","paraBirimi":"eur","tutar":1299}',
+        ], $this->adlar($z));
+        self::assertSame(
+            [['in_ilk', 'sub_'.$z, 'keepchat', 999, '2027-01-15 08:00:10+00'], ['in_yenileme', 'sub_'.$z, 'keepchat', 1299, '2027-02-14 10:13:20+00']],
+            array_map('array_values', $this->db->fetchAllAssociative("SELECT stripe_invoice_id, stripe_subscription_id, app, tutar_kucuk, to_char(odendi_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS+00') FROM odeme_faturalari ORDER BY odendi_at")),
+        );
+    }
+
+    /**
+     * Uygulama faturanın kendi metadata'sından değil aboneliğinkinden (gerçek
+     * faturada kendi metadata'sı boş — ölçüldü); aboneliksiz fatura yazılmaz.
+     */
+    public function testFaturaUygulamasiAbonelikten(): void
+    {
+        $this->stripe('invoice.paid', ['id' => 'in_ust', 'object' => 'invoice', 'amount_paid' => 999, 'currency' => 'eur', 'metadata' => ['app' => 'keepchat'],
+            'parent' => ['type' => 'subscription_details', 'subscription_details' => ['subscription' => 'sub_x', 'metadata' => []]]]);
+        $this->stripe('invoice.paid', ['id' => 'in_tek', 'object' => 'invoice', 'amount_paid' => 999, 'currency' => 'eur', 'metadata' => [],
+            'parent' => ['type' => 'quote_details', 'quote_details' => ['quote' => 'qt_1'], 'subscription_details' => null]]);
+        $this->stripe('invoice.paid', ['id' => 'in_abonelik', 'object' => 'invoice', 'amount_paid' => 999, 'currency' => 'eur', 'metadata' => [],
+            'parent' => ['type' => 'subscription_details', 'subscription_details' => ['subscription' => 'sub_y', 'metadata' => ['app' => 'keepchat']]]]);
+
+        self::assertSame(['in_abonelik'], $this->db->fetchFirstColumn('SELECT stripe_invoice_id FROM odeme_faturalari'));
     }
 
     /** Yalnız ekleme: geçmiş yeniden yazılamaz (DB kısıtı, uygulamadan bağımsız — tuzak §4). */
@@ -251,7 +315,7 @@ final class OlaylarTest extends KernelTestCase
             self::assertLessThan(10, ++$sayfa);
         } while (null !== $imlec);
 
-        $ziyaret = ['huni.ziyaret', 'izin.verildi', 'adim.goruldu', 'cevap.verildi', 'adim.goruldu', 'cevap.verildi', 'adim.goruldu', 'odeme.baslatildi', 'odeme.tamamlandi', 'abonelik.durum'];
+        $ziyaret = ['huni.ziyaret', 'izin.verildi', 'adim.goruldu', 'cevap.verildi', 'adim.goruldu', 'cevap.verildi', 'adim.goruldu', 'odeme.baslatildi', 'odeme.tamamlandi', 'odeme.fatura', 'abonelik.durum'];
         self::assertSame([
             ...array_map(static fn (string $ad): string => "a {$ad}", $ziyaret),
             ...array_map(static fn (string $ad): string => "b {$ad}", $ziyaret),
@@ -277,7 +341,7 @@ final class OlaylarTest extends KernelTestCase
         } while (null !== $imlec);
 
         self::assertCount(2, array_filter($hepsi, static fn (array $o): bool => 'cevap.verildi' === $o['ad']));
-        self::assertCount(10, $hepsi);
+        self::assertCount(11, $hepsi);
     }
 
     public function testBozukImlecVeKimlik(): void
@@ -307,7 +371,7 @@ final class OlaylarTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $komut->execute(['ziyaret' => $z]));
         $cikti = json_decode($komut->getDisplay(), true, 16, \JSON_THROW_ON_ERROR);
         self::assertIsArray($cikti);
-        self::assertCount(10, $cikti);
+        self::assertCount(11, $cikti);
 
         self::assertSame(Command::SUCCESS, $komut->execute(['--sozluk' => true]));
         self::assertStringContainsString('odeme.tamamlandi', $komut->getDisplay());

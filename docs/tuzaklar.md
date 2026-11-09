@@ -347,3 +347,9 @@ birden çok çekimle ölç.
 **Sebep:** `id` (IDENTITY/sequence) ekleme anında, satırın görünmesi ise commit anında. Önce başlayıp geç biten işlemin küçük id'li olayı, okuyucunun imleci onu geçtikten SONRA görünür — imleç geri gelmez.
 **Ölçüm (2026-11-09, `m5a-olay-deposu.md`):** ikinci bağlantıda açık işlemde olay eklendi, ilk bağlantıda arkasına bir olay daha eklenip bitti; bekçisiz akış büyük id'yi verdi, imleç küçük id'yi kalıcı olarak geçti (kırma E15).
 **Doğrusu:** satıra yazan işlemin kimliğini sakla (`xid8 DEFAULT pg_current_xact_id()`) ve yalnız şu an açık en eski işlemden önce bitenleri oku: `islem < pg_snapshot_xmin(pg_current_snapshot())`. Bedeli: uzun açık bir işlem akışı geciktirir (kaybettirmez). Zaman damgasıyla sıralamak da çözmez — `now()` işlem başlangıcıdır, aynı sorun.
+
+## §54 — Yeni Stripe API'de faturanın `subscription` alanı yok; okuyan kod sessizce "aboneliksiz" der
+**Belirti:** `invoice.paid` işlenir, 200 döner, ama hiçbir fatura aboneliğe / uygulamaya bağlanmaz — kohort geliri 0. Belgelerden ve eski örneklerden hatırlanan `invoice.subscription` ve `invoice.metadata.app` boş gelir; hata yok.
+**Sebep:** API 2026-09-30'da (hesabın sürümü) abonelik ve aboneliğin metadata'sı `invoice.parent.subscription_details` altında; faturanın kendi `metadata`'sı boş. Webhook gövdesi uç noktanın API sürümüyle gelir.
+**Ölçüm (2026-11-09, `m5b-faturalar.md`):** test hesabındaki gerçek 3 fatura: üst düzeyde `subscription` yok, `metadata: []`, `parent.subscription_details.{subscription, metadata.app}` dolu. Gerçek `invoice.paid` olayları imzalı olarak yerel webhook'a verildi → 3 fatura `keepchat` ile yazıldı.
+**Doğrusu:** alanı belgeden değil gerçek nesneden oku; üretim webhook uç noktasının API sürümü hesabınkiyle aynı olsun (Ç120). Kırma F2: üst metadata'dan okumak 7 testi düşürdü.

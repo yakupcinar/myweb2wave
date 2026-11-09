@@ -231,6 +231,12 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - Önce yalnız ekleme yapılan olay deposu (cevap / izin / abonelik geçmişi), sonra cevap
   dağılımı · UTM · kohort geliri, en son Meta harcama → ROAS. Reddedilen: önce raporlar —
   son-hâl verisinden kohort geliri sonra yeniden yazılırdı; giden webhook (M7) de aynı akışı ister.
+- **Kohort geliri Stripe faturalarından** (kullanıcı 2026-11-09): `invoice.paid` aboneliğe → ziyarete
+  bağlanır; deneme sonrası ilk ödeme ve yenilemeler dahil. Reddedilen: yalnız ilk ödeme oturumu
+  (denemeli hunide kohort geliri hep 0). Bölünme: M5b faturalar → M5c raporlar.
+- **M5c raporları** (kullanıcı 2026-11-09, üçü de): UTM kırılımı (kaynak / ortam / kampanya → ödemeye
+  geçti → deneme → ödedi → gelir), cevaba göre dönüşüm (seçenek başına seçen + dönüşüm), kohort
+  tablosu (ziyaret haftası × 0/7/30/60 gün, kişi başı birikimli gelir).
 
 **A17 · M4 deneyler** (2026-11-04, kullanıcı: tür ve sonuç; atama ayrıntısı öneri).
 - **Tür: ikisi de.** Yönlendirme deneyi bir hunin trafiğini varyant hunilerine böler

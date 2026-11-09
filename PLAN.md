@@ -218,6 +218,8 @@
     - [x] Ç118 (1)(2) · 2026-11-09, `docs/decisions/c118-deneme-rapor-reklam.md`: Rapor "ödedi" tutar > 0'dan, kartlı deneme ayrı "deneme başladı", dönüşüm = abone (deneylerle aynı); reklam ağlarına (sunucu + piksel) denemede StartTrial (kullanıcı). Kırma 12/12
   - [ ] M5 · analitik (sıra kullanıcı 2026-11-09, `pre-setup.md` A18): önce Ç92 ekleme-tabanlı olay deposu; ardından cevap dağılımı · UTM raporu · kohort geliri; en son Meta harcama → ROAS ve değer aktarımı. Gerekçe: geçmişi olmayan son-hâl verisinden güvenilir dönüşüm raporu çıkmaz.
     - [x] M5a · 2026-11-09, `docs/decisions/m5a-olay-deposu.md`: yalnız ekleme `olaylar` tablosu (güncelleme tetikleyiciyle reddedilir), yazma yolları aynı işlemde ve yalnız durum değişince; cevap / izin / abonelik geçmişi korunur; akış bitmemiş işlemi bekler (§53); eski 488 olay birebir taşındı. Kırma 18/18. Ç92 kapandı
+    - [x] M5b · 2026-11-09, `docs/decisions/m5b-faturalar.md`: `invoice.paid` (tutar > 0) → `odeme_faturalari` + aboneliğe bağlı her ziyarete `odeme.fatura`; fatura oturumdan önce gelirse bağlanınca; abonelik `parent.subscription_details`'ten (§54). Kırma 7/8 (F8 kod kaldırıldı). Ç118 (3) kapandı, açık Ç120
+    - [ ] M5c · raporlar: UTM kırılımı · cevaba göre dönüşüm · kohort tablosu (0/7/30/60 gün, kişi başı gelir) (A18)
   - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)

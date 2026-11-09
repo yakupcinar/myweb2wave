@@ -44,7 +44,7 @@ final readonly class SubscriptionSync
 
                 $nesne = $event->data->object->toArray();
                 /** @var array<string, mixed> $nesne */
-                $ilgili = \in_array($event->type, ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted'], true);
+                $ilgili = \in_array($event->type, ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted', 'invoice.paid'], true);
                 if ('checkout.session.expired' === $event->type) {
                     // Ç59: ödenmeden kapanan oturumda completed hiç gelmez; eşleşme
                     // verisi (IP/UA) burada silinir — uygulamadan bağımsız.
@@ -58,7 +58,9 @@ final readonly class SubscriptionSync
                 if (!$ilgili) {
                     return;
                 }
-                $metadata = $nesne['metadata'] ?? null;
+                // M5b: faturanın kendi metadata'sı boş; uygulama aboneliğin metadata'sında
+                // (parent.subscription_details — API 2026-09-30, ölçüldü).
+                $metadata = 'invoice.paid' === $event->type ? self::faturaAboneligi($nesne)['metadata'] : ($nesne['metadata'] ?? null);
                 $app = \is_array($metadata) ? ($metadata['app'] ?? null) : null;
                 if (!\is_string($app) || '' === $app) {
                     $this->logger->warning('Stripe olayında metadata.app yok; uygulanmadı', ['event' => $event->id, 'type' => $event->type]);
@@ -68,6 +70,7 @@ final readonly class SubscriptionSync
 
                 match ($event->type) {
                     'checkout.session.completed' => $this->linkEmail($db, $nesne, $app, $event->created),
+                    'invoice.paid' => $this->faturaYaz($db, $nesne, $app, $event->created),
                     default => $this->applyStatus($db, $nesne, $event->created, $app),
                 };
             });
@@ -139,7 +142,71 @@ final readonly class SubscriptionSync
             if (\is_string($durum)) {
                 Olaylar::ekle($db, $bag['ziyaret'], 'abonelik.durum', ['durum' => $durum]);
             }
+            // M5b: ilk faturanın invoice.paid'i çoğu zaman oturumdan önce gelir.
+            foreach ($db->fetchAllAssociative('SELECT tutar_kucuk, para_birimi, neden FROM odeme_faturalari WHERE stripe_subscription_id = :sub ORDER BY odendi_at, stripe_invoice_id', ['sub' => $sub]) as $f) {
+                Olaylar::ekle($db, $bag['ziyaret'], 'odeme.fatura', self::faturaVerisi($f));
+            }
         }
+    }
+
+    /**
+     * M5b (A18): tahsil edilen fatura (tutar > 0) — kohort geliri. Tekrar gelen
+     * fatura bir kez; aboneliğe bağlı her ziyarete olay. Tutar 0 (deneme
+     * başlangıcı) gelir değil, yazılmaz.
+     *
+     * @param array<string, mixed> $fatura
+     */
+    private function faturaYaz(Connection $db, array $fatura, string $app, int $eventTime): void
+    {
+        $sub = self::faturaAboneligi($fatura)['abonelik'];
+        $id = $fatura['id'] ?? null;
+        $tutar = $fatura['amount_paid'] ?? null;
+        $para = $fatura['currency'] ?? null;
+        if (!\is_string($id) || !\is_int($tutar) || $tutar <= 0 || !\is_string($para) || 1 !== preg_match('/^[a-z]{3}$/', $para)) {
+            return;
+        }
+        $gecis = $fatura['status_transitions'] ?? null;
+        $odendi = \is_array($gecis) ? ($gecis['paid_at'] ?? null) : null;
+        $neden = $fatura['billing_reason'] ?? null;
+        $yeni = $db->fetchAssociative(
+            'INSERT INTO odeme_faturalari (stripe_invoice_id, stripe_subscription_id, app, tutar_kucuk, para_birimi, neden, odendi_at)
+             VALUES (:id, :sub, :app, :tutar, :para, :neden, to_timestamp(:odendi))
+             ON CONFLICT (stripe_invoice_id) DO NOTHING RETURNING tutar_kucuk, para_birimi, neden',
+            ['id' => $id, 'sub' => $sub, 'app' => $app, 'tutar' => $tutar, 'para' => $para, 'neden' => \is_string($neden) ? $neden : null,
+                'odendi' => \is_int($odendi) ? $odendi : $eventTime],
+        );
+        if (false === $yeni) {
+            return;
+        }
+        foreach ($db->fetchFirstColumn('SELECT DISTINCT ziyaret_id::text FROM odeme_oturumlari WHERE stripe_subscription_id = :sub', ['sub' => $sub]) as $ziyaret) {
+            \assert(\is_string($ziyaret));
+            Olaylar::ekle($db, $ziyaret, 'odeme.fatura', self::faturaVerisi($yeni));
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $fatura
+     *
+     * @return array{abonelik: ?string, metadata: mixed}
+     */
+    private static function faturaAboneligi(array $fatura): array
+    {
+        $parent = $fatura['parent'] ?? null;
+        $detay = \is_array($parent) ? ($parent['subscription_details'] ?? null) : null;
+        $sub = \is_array($detay) ? ($detay['subscription'] ?? null) : null;
+
+        return ['abonelik' => \is_string($sub) ? $sub : null, 'metadata' => \is_array($detay) ? ($detay['metadata'] ?? null) : null];
+    }
+
+    /**
+     * @param array<string, mixed> $f
+     *
+     * @return array{tutar: int, paraBirimi: string, neden: ?string}
+     */
+    private static function faturaVerisi(array $f): array
+    {
+        return ['tutar' => is_numeric($f['tutar_kucuk']) ? (int) $f['tutar_kucuk'] : 0, 'paraBirimi' => \is_string($f['para_birimi']) ? $f['para_birimi'] : '',
+            'neden' => \is_string($f['neden']) ? $f['neden'] : null];
     }
 
     /** @param array<mixed> $sub */

@@ -23,13 +23,14 @@ final class Olaylar
      */
     public const SOZLUK = [
         'huni.ziyaret' => ['huni?, surum?', 'ziyaret başladı'],
-        'izin.verildi' => ['', 'reklam ölçümü izni verildi (son karar)'],
-        'izin.reddedildi' => ['', 'reklam ölçümü izni reddedildi (son karar)'],
+        'izin.verildi' => ['', 'reklam ölçümü izni verildi (değişince)'],
+        'izin.reddedildi' => ['', 'reklam ölçümü izni reddedildi (değişince)'],
         'adim.goruldu' => ['adim, sira', 'adım ilk kez gösterildi'],
-        'cevap.verildi' => ['soru, secenekler?', 'cevap (son hâli); serbest yanıtta yalnız soru'],
+        'cevap.verildi' => ['soru, secenekler?', 'cevap (değişince — M5a geçmişi tutar); serbest yanıtta yalnız soru'],
         'odeme.baslatildi' => ['', 'ödeme oturumu açıldı'],
         'odeme.tamamlandi' => ['', 'ödeme tamamlandı'],
-        'abonelik.durum' => ['durum', 'Stripe abonelik durumu (son hâli)'],
+        'abonelik.durum' => ['durum', 'Stripe abonelik durumu (değişince)'],
+        'odeme.fatura' => ['tutar, paraBirimi, neden', 'Stripe faturası tahsil edildi (tutar > 0, küçük birim; neden: subscription_create / subscription_cycle …)'],
     ];
 
     private const UUID = '/^[0-9a-f-]{36}$/';
