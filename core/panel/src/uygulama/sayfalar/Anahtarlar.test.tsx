@@ -29,8 +29,10 @@ function kur() {
             olusturma: "2026-10-27T08:00:00+00:00",
             sonKullanim: null,
             iptal: false,
+            yonetim: false,
         },
     ];
+    govdeler = [];
     const istekler: { yontem: string; adres: string; jeton: string | null }[] =
         [];
     vi.stubGlobal(
@@ -47,7 +49,12 @@ function kur() {
             if (adres === "/panel/api/uygulamalar")
                 return j({ uygulamalar: ["keepchat"] });
             if (istek.method === "POST") {
-                const { ad } = (await istek.json()) as { ad: string };
+                const govde = (await istek.json()) as {
+                    ad: string;
+                    yonetim: boolean;
+                };
+                govdeler.push(govde);
+                const { ad } = govde;
                 liste = [
                     {
                         id: 8,
@@ -56,10 +63,14 @@ function kur() {
                         olusturma: "2026-10-27T09:00:00+00:00",
                         sonKullanim: null,
                         iptal: false,
+                        yonetim: govde.yonetim,
                     },
                     ...liste,
                 ];
-                return j({ id: 8, ad, anahtar: ANAHTAR }, 201);
+                return j(
+                    { id: 8, ad, anahtar: ANAHTAR, yonetim: govde.yonetim },
+                    201,
+                );
             }
             if (istek.method === "DELETE") {
                 liste = liste.map((a) =>
@@ -84,6 +95,8 @@ function kur() {
     );
     return istekler;
 }
+
+let govdeler: { ad: string; yonetim: boolean }[] = [];
 
 afterEach(() => {
     cleanup();
@@ -122,6 +135,42 @@ describe("API anahtarları", () => {
             screen.queryByRole("region", { name: "Yeni anahtar" }),
         ).toBeNull();
         expect(document.body.textContent).not.toContain(ANAHTAR);
+    });
+
+    it("M7c2: yönetim izni varsayılan kapalı; işaretlenince gövdede ve listede rozet", async () => {
+        kur();
+        fireEvent.change(await screen.findByLabelText("Ad"), {
+            target: { value: "Okur" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Oluştur" }));
+        await waitFor(() =>
+            expect(govdeler).toEqual([{ ad: "Okur", yonetim: false }]),
+        );
+        await screen.findByRole("region", { name: "Yeni anahtar" });
+        fireEvent.click(
+            screen.getByRole("button", { name: "Kaydettim, kapat" }),
+        );
+
+        fireEvent.change(screen.getByLabelText("Ad"), {
+            target: { value: "Yönetici" },
+        });
+        fireEvent.click(screen.getByRole("checkbox"));
+        fireEvent.click(screen.getByRole("button", { name: "Oluştur" }));
+        await waitFor(() =>
+            expect(govdeler.at(-1)).toEqual({ ad: "Yönetici", yonetim: true }),
+        );
+        const tablo = await screen.findByRole("region", { name: "Anahtarlar" });
+        await waitFor(() =>
+            expect(
+                within(tablo).getByText("Yönetici").closest("tr")?.textContent,
+            ).toContain("yönetim"),
+        );
+        expect(
+            within(tablo).getByText("Okur").closest("tr")?.textContent,
+        ).not.toContain("yönetim");
+        expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(
+            false,
+        );
     });
 
     it("iptal iki adımlı; onaydan önce istek gitmez; sonra durum iptal", async () => {

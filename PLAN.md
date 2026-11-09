@@ -225,11 +225,11 @@
     - [x] M6a · 2026-11-09, `docs/decisions/m6a-iptal-iade.md`: Kullanıcılar satırında dönem sonunda iptal / geri al ve son faturanın kalanını tam iade (iki adımlı onay); webhook dönem sonunu kalemden, iadeyi `charge.refunded` birikimli tutarından (fatura bağı `invoice_payment.paid`); iade gelirden (kırılım, kohort, ROAS) düşülür. Kırma 19/19; gerçek Stripe test modunda iptal / geri al / iade
     - [x] M6b1 · 2026-11-09, `docs/decisions/m6b1-portal.md`: portal ayarı kodda (`app:stripe-portal:kur`, etiketle bulunur, kurulur / güncellenir) + `POST /apps/{app}/kullanicilar/{kullanici}/portal` (uygulama anahtarı; erişim veren abonelik önce). Kırma 9/9; gerçek test hesabında ayar kuruldu / güncellendi, oturum açıldı
     - [x] M6b2 · 2026-11-09, `docs/decisions/m6b2-portal-web.md`: hunide `/keepchat/abonelik/` → `POST /huni/portal-baglantisi` (hep 202, e-posta başına saatte 3) → e-postada tek kullanımlık 1 saatlik bağlantı → onay sayfası (GET jetonu yakmaz) → POST → Stripe portalı. Kırma 11/11 (W8 testi güçlendirdi); gerçek akış dev + Mailpit + Stripe test
-  - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi — kararlar A20
+  - [x] M7 · giden webhook + yönetim API / MCP genişlemesi — kararlar A20, A21
     - [x] M7a · 2026-11-09, `docs/decisions/m7a-giden-webhook.md`: `webhook_hedefleri` + `webhook_teslimleri`, `app:webhook:gonder` (dakikalık cron), hedef başına `(islem, id)` imleci, Standard Webhooks imzası, üstel bekleme (10 deneme), iç ağ adresine gitmez; **§53'ün ilk çözümü yetersizdi** — akış da `(islem, id)`'ye geçti, Ç119 kapandı. Kırma 16/16 (üçü testi güçlendirdi)
     - [x] M7b · 2026-11-09, `docs/decisions/m7b-webhook-paneli.md`: panelde "Webhook'lar" — hedef ekle (https, sözlükten olaylar, sır bir kez, uygulama başına 10), etkin / pasif, iki adımlı sil, teslim günlüğü (son 50) ve yeniden gönder. Kırma 12/12; test gerçek bir çökmeyi buldu (onay kutusu)
     - [x] M7c1 · 2026-11-09, `docs/decisions/m7c1-okuma-araclari.md`: MCP'de 6 salt-okur rapor aracı (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları), Rapor'a uygulama süzgeci; `GET /apps/{app}/olaylar` (uygulama anahtarı, imleç + devam). Kırma 12/12 (biri testi güçlendirdi); gerçek MCP çağrısı dev'de
-    - [ ] M7c2 · yazma: MCP abonelik ve deney araçları, yalnız izinli anahtar (A21)
+    - [x] M7c2 · 2026-11-10, `docs/decisions/m7c2-yazma-araclari.md`: MCP'de abonelik (listele, iptal planla / geri al, son faturayı iade) ve deney (kaydet, durum) araçları — yalnız "yönetim" izinli anahtarda, yıkıcılar işaretli; abonelik uygulamanınsa. Kırma 12/12 (biri testi güçlendirdi)
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
 

@@ -8,8 +8,11 @@ use App\Huni\Huniler;
 use App\Huni\Tanim;
 use App\Huni\Tema;
 use App\Mcp\ApiAnahtarlari;
+use App\Tests\Support\KayitliStripeIstemcisi;
 use App\Tests\Support\SahteEkranCekici;
 use Doctrine\DBAL\Connection;
+use Stripe\ApiRequestor;
+use Stripe\HttpClient\CurlClient;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -155,6 +158,94 @@ final class McpTest extends WebTestCase
         self::assertTrue(self::yol($this->rpc(self::cagri(4, 'deney_sonuclari', ['ad' => 'yok']), $bearer), 'result', 'isError'));
         // Şema dışı aralık araç çalışmadan SDK'da reddedilir (JSON-RPC geçersiz parametre).
         self::assertSame(-32602, self::yol($this->rpc(self::cagri(5, 'rapor_ozet', ['gun' => 5]), $bearer), 'error', 'code'));
+    }
+
+    /**
+     * M7c2 (A21): yazma araçları yalnız yönetim izinli anahtarda — izinsiz
+     * anahtar araçları görmez, çağıramaz. Yıkıcı olanlar işaretli.
+     */
+    public function testYonetimAraclariYalnizIzinliAnahtarda(): void
+    {
+        $yazma = ['abonelikler_listele', 'abonelik_iptal_planla', 'abonelik_iptal_geri_al', 'abonelik_son_fatura_iade', 'deney_kaydet', 'deney_durum'];
+        $izinsiz = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'okur')['anahtar'];
+        $this->elSikis($izinsiz);
+        /** @var list<string> $adlar */
+        $adlar = array_column((array) self::yol($this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $izinsiz), 'result', 'tools'), 'name');
+        self::assertSame([], array_values(array_intersect($yazma, $adlar)));
+        self::assertArrayHasKey('error', $this->rpc(self::cagri(3, 'abonelik_iptal_planla', ['abonelik' => 'sub_1']), $izinsiz), 'izinsiz anahtar çağıramaz');
+
+        $this->oturum = '';
+        $izinli = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'yonetici', true)['anahtar'];
+        $this->elSikis($izinli);
+        $araclar = array_column((array) self::yol($this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $izinli), 'result', 'tools'), null, 'name');
+        self::assertSame($yazma, array_values(array_intersect(array_keys($araclar), $yazma)));
+        self::assertSame([true, true, true, false], [
+            self::yol($araclar, 'abonelik_son_fatura_iade', 'annotations', 'destructiveHint'), self::yol($araclar, 'abonelik_iptal_planla', 'annotations', 'destructiveHint'),
+            self::yol($araclar, 'abonelikler_listele', 'annotations', 'readOnlyHint'), self::yol($araclar, 'deney_kaydet', 'annotations', 'destructiveHint'),
+        ]);
+    }
+
+    /**
+     * Abonelik araçları panelle aynı servis; başka uygulamanın aboneliği "yok"
+     * (Stripe'a gidilmez); liste yalnız bu uygulama, e-posta maskeli.
+     */
+    public function testAbonelikAraclari(): void
+    {
+        $this->db->executeStatement('TRUNCATE subscriptions CASCADE');
+        $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_k', 'stripe_customer_id' => 'cus_k', 'status' => 'active', 'email' => 'ayse@example.com', 'app' => 'keepchat']);
+        $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_b', 'stripe_customer_id' => 'cus_b', 'status' => 'active', 'email' => 'baska@example.com', 'app' => 'baska']);
+        $stripe = new KayitliStripeIstemcisi();
+        $stripe->yanitlar = ['post /v1/subscriptions/sub_k' => ['id' => 'sub_k', 'object' => 'subscription', 'cancel_at_period_end' => true]];
+        ApiRequestor::setHttpClient($stripe);
+        try {
+            $bearer = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'yonetici', true)['anahtar'];
+            $this->elSikis($bearer);
+
+            $liste = $this->rpc(self::cagri(2, 'abonelikler_listele', []), $bearer);
+            /** @var list<array<string, mixed>> $abonelikler */
+            $abonelikler = self::yol($liste, 'result', 'structuredContent', 'abonelikler');
+            self::assertSame([['abonelik' => 'sub_k', 'durum' => 'active', 'email' => 'a***@example.com']], array_map(
+                static fn (array $a): array => array_intersect_key($a, ['abonelik' => 1, 'durum' => 1, 'email' => 1]),
+                $abonelikler,
+            ));
+            self::assertStringNotContainsString('ayse@example.com', (string) json_encode($liste));
+
+            self::assertFalse(self::yol($this->rpc(self::cagri(3, 'abonelik_iptal_planla', ['abonelik' => 'sub_k']), $bearer), 'result', 'isError'));
+            self::assertTrue($this->db->fetchOne("SELECT iptal_donem_sonu FROM subscriptions WHERE stripe_subscription_id = 'sub_k'"));
+            // Stripe'a giden değer (sahte yanıt hep true döner — yazılan durum tek başına ölçmez, kırma Y8).
+            self::assertSame(['cancel_at_period_end' => 'true'], array_intersect_key($stripe->istekler[0]['params'] ?? [], ['cancel_at_period_end' => 1]));
+            $stripe->istekler = [];
+            $baska = $this->rpc(self::cagri(4, 'abonelik_iptal_planla', ['abonelik' => 'sub_b']), $bearer);
+            self::assertSame([true, 'bilinmeyen abonelik'], [self::yol($baska, 'result', 'isError'), self::yol($baska, 'result', 'structuredContent', 'hata')]);
+            self::assertTrue(self::yol($this->rpc(self::cagri(5, 'abonelik_son_fatura_iade', ['abonelik' => 'sub_b']), $bearer), 'result', 'isError'));
+            self::assertSame([], $stripe->istekler, 'başka uygulamanın aboneliğinde Stripe\'a gidilmez');
+            self::assertSame('iade edilecek tahsil edilmiş fatura yok', self::yol($this->rpc(self::cagri(6, 'abonelik_son_fatura_iade', ['abonelik' => 'sub_k']), $bearer), 'result', 'structuredContent', 'hata'));
+            self::assertContains('abonelik_iptal_planla', $this->db->fetchFirstColumn('SELECT arac FROM mcp_cagrilari'));
+        } finally {
+            ApiRequestor::setHttpClient(new CurlClient());
+        }
+    }
+
+    /** Deney araçları: taslak kaydedilir; yayında olmayan huniyle başlatılamaz; olmayan deney hata. */
+    public function testDeneyAraclari(): void
+    {
+        $this->db->executeStatement('TRUNCATE deneyler CASCADE');
+        $bearer = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'yonetici', true)['anahtar'];
+        $this->elSikis($bearer);
+
+        $kayit = $this->rpc(self::cagri(2, 'deney_kaydet', ['ad' => 'baslik', 'tur' => 'icerik', 'huni' => 'genel', 'varyantlar' => [['ad' => 'a', 'pay' => 50], ['ad' => 'b', 'pay' => 50]]]), $bearer);
+        self::assertFalse(self::yol($kayit, 'result', 'isError'));
+        self::assertSame('taslak', $this->db->fetchOne("SELECT durum FROM deneyler WHERE app = 'keepchat' AND ad = 'baslik'"));
+        $hatali = $this->rpc(self::cagri(3, 'deney_kaydet', ['ad' => 'x', 'tur' => 'icerik', 'huni' => 'genel', 'varyantlar' => [['ad' => 'a', 'pay' => 30], ['ad' => 'b', 'pay' => 30]]]), $bearer);
+        self::assertTrue(self::yol($hatali, 'result', 'isError'), 'paylar 100 değil');
+        $yok = $this->rpc(self::cagri(4, 'deney_durum', ['ad' => 'yok', 'durum' => 'aktif']), $bearer);
+        self::assertSame('deney yok: yok', self::yol($yok, 'result', 'structuredContent', 'hata'));
+        $yayinda = $this->rpc(self::cagri(5, 'deney_durum', ['ad' => 'baslik', 'durum' => 'aktif']), $bearer);
+        self::assertSame("'genel' hunisi yayında değil — önce yayınla.", self::yol($yayinda, 'result', 'structuredContent', 'hata'));
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Deney')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'genel'));
+        self::assertFalse(self::yol($this->rpc(self::cagri(6, 'deney_durum', ['ad' => 'baslik', 'durum' => 'aktif']), $bearer), 'result', 'isError'));
+        self::assertSame('aktif', $this->db->fetchOne("SELECT durum FROM deneyler WHERE app = 'keepchat' AND ad = 'baslik'"));
     }
 
     /** Ç72: ekran görüntüsü MCP'de görüntü içeriği (JPEG, base64) olarak döner. */

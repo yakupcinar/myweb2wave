@@ -51,6 +51,8 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
         },
     });
     const [ad, setAd] = useState("");
+    // M7c2 (A21): yazma araçları yalnız bilerek — varsayılan kapalı.
+    const [yonetim, setYonetim] = useState(false);
     const [yeni, setYeni] = useState<{ ad: string; anahtar: string } | null>(
         null,
     );
@@ -59,13 +61,13 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
         istemci.invalidateQueries({ queryKey: ["anahtarlar", app] });
 
     const olustur = useMutation({
-        mutationFn: async (adi: string) => {
+        mutationFn: async ({ adi, izin }: { adi: string; izin: boolean }) => {
             const { data, error } = await api.POST(
                 "/panel/api/uygulamalar/{app}/anahtarlar",
                 {
                     // Sözleşme başlığı zorunlu tutuyor; asıl jetonu api.ts yazar.
                     params: { path: { app }, header: { "X-CSRF-Token": "" } },
-                    body: { ad: adi },
+                    body: { ad: adi, yonetim: izin },
                 },
             );
             if (!data)
@@ -77,6 +79,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
         onSuccess: async (d) => {
             setYeni({ ad: d.ad, anahtar: d.anahtar });
             setAd("");
+            setYonetim(false);
             await yenile();
         },
     });
@@ -127,7 +130,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                     className="flex flex-wrap items-end gap-3 px-4.5 py-4"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        olustur.mutate(ad);
+                        olustur.mutate({ adi: ad, izin: yonetim });
                     }}
                 >
                     <label className="grid gap-1.5">
@@ -139,6 +142,26 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                             onChange={(e) => setAd(e.currentTarget.value)}
                             className="min-h-9 w-72 max-w-full rounded-lg border border-kenar bg-zemin px-3"
                         />
+                    </label>
+                    <label className="flex max-w-md items-start gap-2">
+                        <input
+                            type="checkbox"
+                            checked={yonetim}
+                            onChange={(e) =>
+                                setYonetim(e.currentTarget.checked)
+                            }
+                            className="mt-1"
+                        />
+                        <span>
+                            <span className="font-semibold">
+                                Abonelik ve deney yönetimi
+                            </span>
+                            <span className="block text-[12.5px] text-soluk">
+                                MCP'de iptal planlama, iade ve deney başlat /
+                                durdur araçları açılır. Yalnız güvendiğiniz
+                                istemciye verin.
+                            </span>
+                        </span>
                     </label>
                     <Dugme
                         tur="ana"
@@ -190,7 +213,10 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                                         <Rozet>iptal</Rozet>
                                     ) : (
                                         <Rozet tur="iyi">etkin</Rozet>
-                                    )}
+                                    )}{" "}
+                                    {a.yonetim ? (
+                                        <Rozet tur="uyari">yönetim</Rozet>
+                                    ) : null}
                                 </Td>
                                 <Td className="text-right">
                                     {a.iptal ? null : iptalSor === a.id ? (

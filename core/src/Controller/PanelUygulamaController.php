@@ -92,9 +92,11 @@ final class PanelUygulamaController extends AbstractController
         if ('' === $ad || mb_strlen($ad) > 100) {
             return self::korumali(new JsonResponse(['hatalar' => ['Ad 1–100 karakter olmalı (ör. "Claude Code — dizüstü").']], 422));
         }
-        $yeni = $this->anahtarlar->olustur($app, $ad);
+        // M7c2 (A21): yönetim izni yalnız açıkça true ise.
+        $yonetim = true === ($govde['yonetim'] ?? null);
+        $yeni = $this->anahtarlar->olustur($app, $ad, $yonetim);
 
-        return self::korumali(new JsonResponse(['id' => $yeni['id'], 'ad' => $ad, 'anahtar' => $yeni['anahtar']], 201));
+        return self::korumali(new JsonResponse(['id' => $yeni['id'], 'ad' => $ad, 'anahtar' => $yeni['anahtar'], 'yonetim' => $yonetim], 201));
     }
 
     /** Geri alınamaz; çağrı kaydı kalır. */

@@ -36,7 +36,7 @@ final class Kullanicilar
      *                    reklam: bool, kaynak: ?string, ortam: ?string, kampanya: ?string, huni: ?string, kisi: bool, bagli: bool,
      *                    iptalDonemSonu: bool, donemSonu: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float}|null}>
      */
-    public function liste(string $ara, string $durum): array
+    public function liste(string $ara, string $durum, ?string $app = null): array
     {
         // ILIKE jokerleri yazı olarak aranır (% her şeyi bulmasın).
         $desen = '%'.addcslashes(mb_strtolower(trim($ara)), '\\%_').'%';
@@ -80,11 +80,11 @@ final class Kullanicilar
                  ORDER BY o.created_at LIMIT 1
              ) z ON true
              LEFT JOIN kisiler k ON lower(k.email) = lower(s.email)
-             WHERE (:durum = \'\' OR s.status = :durum)
+             WHERE (:durum = \'\' OR s.status = :durum) AND (CAST(:app AS text) IS NULL OR s.app = CAST(:app AS text))
                AND (:ara = \'\' OR lower(s.email) LIKE :desen OR lower(z.utm_source) LIKE :desen OR lower(z.utm_campaign) LIKE :desen)
              ORDER BY s.updated_at DESC, s.stripe_subscription_id
              LIMIT '.self::AZAMI_SATIR,
-            ['durum' => $durum, 'ara' => trim($ara), 'desen' => $desen],
+            ['durum' => $durum, 'ara' => trim($ara), 'desen' => $desen, 'app' => $app],
         ));
     }
 

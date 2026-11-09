@@ -22,14 +22,19 @@ final readonly class ApiAnahtarlari
     ) {
     }
 
-    /** @return array{id: int, anahtar: string} anahtarın kendisi yalnız burada döner */
-    public function olustur(string $app, string $ad): array
+    /**
+     * M7c2 (A21): $yonetim = abonelik ve deney yazma araçları (yalnız bilerek verilir).
+     *
+     * @return array{id: int, anahtar: string} anahtarın kendisi yalnız burada döner
+     */
+    public function olustur(string $app, string $ad, bool $yonetim = false): array
     {
         $anahtar = self::ONEK.bin2hex(random_bytes(24));
         /** @var int|string $id */
         $id = $this->db->fetchOne(
-            'INSERT INTO api_anahtarlari (app, ad, ozet, onek) VALUES (:app, :ad, :ozet, :onek) RETURNING id',
-            ['app' => $app, 'ad' => $ad, 'ozet' => hash('sha256', $anahtar), 'onek' => substr($anahtar, 0, 11)],
+            'INSERT INTO api_anahtarlari (app, ad, ozet, onek, yonetim) VALUES (:app, :ad, :ozet, :onek, :yonetim) RETURNING id',
+            ['app' => $app, 'ad' => $ad, 'ozet' => hash('sha256', $anahtar), 'onek' => substr($anahtar, 0, 11), 'yonetim' => $yonetim],
+            ['yonetim' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
 
         return ['id' => (int) $id, 'anahtar' => $anahtar];
@@ -38,28 +43,28 @@ final readonly class ApiAnahtarlari
     /**
      * Geçerli (iptal edilmemiş) anahtarın sahibi; son kullanım işlenir.
      *
-     * @return array{id: int, app: string}|null
+     * @return array{id: int, app: string, yonetim: bool}|null
      */
     public function dogrula(string $anahtar): ?array
     {
         if (!str_starts_with($anahtar, self::ONEK)) {
             return null;
         }
-        /** @var array{id: int|string, app: string}|false $satir */
+        /** @var array{id: int|string, app: string, yonetim: bool}|false $satir */
         $satir = $this->db->fetchAssociative(
-            'UPDATE api_anahtarlari SET son_kullanim_at = now() WHERE ozet = :ozet AND iptal_at IS NULL RETURNING id, app',
+            'UPDATE api_anahtarlari SET son_kullanim_at = now() WHERE ozet = :ozet AND iptal_at IS NULL RETURNING id, app, yonetim',
             ['ozet' => hash('sha256', $anahtar)],
         );
 
-        return false === $satir ? null : ['id' => (int) $satir['id'], 'app' => $satir['app']];
+        return false === $satir ? null : ['id' => (int) $satir['id'], 'app' => $satir['app'], 'yonetim' => true === $satir['yonetim']];
     }
 
-    /** @return list<array{id: int, ad: string, onek: string, olusturma: string, sonKullanim: string|null, iptal: bool}> */
+    /** @return list<array{id: int, ad: string, onek: string, olusturma: string, sonKullanim: string|null, iptal: bool, yonetim: bool}> */
     public function liste(string $app): array
     {
-        /** @var list<array{id: int|string, ad: string, onek: string, created_at: string, son_kullanim_at: string|null, iptal_at: string|null}> $satirlar */
+        /** @var list<array{id: int|string, ad: string, onek: string, created_at: string, son_kullanim_at: string|null, iptal_at: string|null, yonetim: bool}> $satirlar */
         $satirlar = $this->db->fetchAllAssociative(
-            'SELECT id, ad, onek, created_at, son_kullanim_at, iptal_at FROM api_anahtarlari WHERE app = :app ORDER BY iptal_at IS NOT NULL, created_at DESC',
+            'SELECT id, ad, onek, created_at, son_kullanim_at, iptal_at, yonetim FROM api_anahtarlari WHERE app = :app ORDER BY iptal_at IS NOT NULL, created_at DESC',
             ['app' => $app],
         );
 
@@ -70,6 +75,7 @@ final readonly class ApiAnahtarlari
             'olusturma' => $s['created_at'],
             'sonKullanim' => $s['son_kullanim_at'],
             'iptal' => null !== $s['iptal_at'],
+            'yonetim' => $s['yonetim'],
         ], $satirlar);
     }
 

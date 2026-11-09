@@ -32,6 +32,7 @@ final readonly class McpSunucusu
     public function __construct(
         private HuniAraclari $araclar,
         private RaporAraclari $raporlar,
+        private YonetimAraclari $yonetim,
         private UrunBaglami $baglam,
         private ApiAnahtarlari $anahtarlar,
         #[Autowire(service: 'mcp.oturumlar')]
@@ -41,7 +42,7 @@ final readonly class McpSunucusu
     ) {
     }
 
-    public function kur(string $app, int $anahtarId): Server
+    public function kur(string $app, int $anahtarId, bool $yonetim = false): Server
     {
         $kapsam = new AracKapsami($app);
         $kurucu = Server::builder()
@@ -89,6 +90,25 @@ final readonly class McpSunucusu
                 name: $ad,
                 description: $t['description'],
                 annotations: new ToolAnnotations(readOnlyHint: true, openWorldHint: false),
+                inputSchema: $t['input_schema'],
+            );
+        }
+
+        // M7c2 (A21): yazma araçları yalnız yönetim izinli anahtarda; yıkıcı olanlar işaretli (istemci onay sorar).
+        foreach ($yonetim ? $this->yonetim->tanimlar() : [] as $t) {
+            $ad = $t['name'];
+            $kurucu->addTool(
+                function (RequestContext $baglam) use ($ad, $app, $anahtarId): CallToolResult {
+                    $istek = $baglam->getRequest();
+                    $girdi = property_exists($istek, 'arguments') && \is_array($istek->arguments) ? $istek->arguments : [];
+                    $s = $this->yonetim->calistir($ad, $girdi, $app);
+                    $this->anahtarlar->cagriKaydet($anahtarId, $ad, $s['hata']);
+
+                    return new CallToolResult([new TextContent(json_encode($s['icerik'], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR))], $s['hata'], $s['icerik']);
+                },
+                name: $ad,
+                description: $t['description'],
+                annotations: new ToolAnnotations(readOnlyHint: $t['okur'], destructiveHint: $t['yikici'], openWorldHint: false),
                 inputSchema: $t['input_schema'],
             );
         }

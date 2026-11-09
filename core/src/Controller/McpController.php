@@ -59,7 +59,7 @@ final class McpController
             $f,
             middleware: [new CorsMiddleware(), new DnsRebindingProtectionMiddleware($this->izinliHostlar)],
         );
-        $yanit = (new HttpFoundationFactory())->createResponse($this->sunucu->kur($sahip['app'], $sahip['id'])->run($transport), true);
+        $yanit = (new HttpFoundationFactory())->createResponse($this->sunucu->kur($sahip['app'], $sahip['id'], $sahip['yonetim'])->run($transport), true);
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

@@ -942,6 +942,7 @@ paths:
               required: [ad]
               properties:
                 ad: { type: string, minLength: 1, maxLength: 100 }
+                yonetim: { type: boolean, default: false, description: "M7c2 (A21) — abonelik (iptal / iade) ve deney araçları; yalnız bilerek" }
       responses:
         "201":
           description: Oluşturuldu
@@ -950,11 +951,12 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [id, ad, anahtar]
+                required: [id, ad, anahtar, yonetim]
                 properties:
                   id: { type: integer }
                   ad: { type: string }
                   anahtar: { type: string, pattern: "^mw2w_[0-9a-f]{48}$" }
+                  yonetim: { type: boolean }
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Ad geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
@@ -1372,7 +1374,7 @@ components:
     ApiAnahtari:
       type: object
       additionalProperties: false
-      required: [id, ad, onek, olusturma, sonKullanim, iptal]
+      required: [id, ad, onek, olusturma, sonKullanim, iptal, yonetim]
       properties:
         id: { type: integer }
         ad: { type: string }
@@ -1380,6 +1382,7 @@ components:
         olusturma: { type: string }
         sonKullanim: { type: [string, "null"] }
         iptal: { type: boolean }
+        yonetim: { type: boolean, description: "M7c2 (A21) — MCP'de abonelik ve deney yazma araçları açık" }
     UrunBaglami:
       description: "A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar"
       type: object

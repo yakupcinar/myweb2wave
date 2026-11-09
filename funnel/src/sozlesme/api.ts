@@ -865,6 +865,8 @@ export interface components {
             olusturma: string;
             sonKullanim: string | null;
             iptal: boolean;
+            /** @description M7c2 (A21) — MCP'de abonelik ve deney yazma araçları açık */
+            yonetim: boolean;
         };
         /** @description A4: yöneticinin yazdığı ürün tanımı; AI metinleri buna göre yazar */
         UrunBaglami: {
@@ -3205,6 +3207,11 @@ export interface operations {
             content: {
                 "application/json": {
                     ad: string;
+                    /**
+                     * @description M7c2 (A21) — abonelik (iptal / iade) ve deney araçları; yalnız bilerek
+                     * @default false
+                     */
+                    yonetim?: boolean;
                 };
             };
         };
@@ -3219,6 +3226,7 @@ export interface operations {
                         id: number;
                         ad: string;
                         anahtar: string;
+                        yonetim: boolean;
                     };
                 };
             };

@@ -64,6 +64,27 @@ final class PanelAnahtarTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    /** M7c2 (A21): yönetim izni yalnız açıkça true ile; varsayılan kapalı, listede görünür. */
+    public function testYonetimIzniYalnizAcikca(): void
+    {
+        $this->girisYap();
+        $jeton = $this->jeton();
+        $this->istek('POST', '/panel/api/uygulamalar/keepchat/anahtarlar', $jeton, ['ad' => 'okur']);
+        $this->istek('POST', '/panel/api/uygulamalar/keepchat/anahtarlar', $jeton, ['ad' => 'metin', 'yonetim' => 'true']);
+        $this->istek('POST', '/panel/api/uygulamalar/keepchat/anahtarlar', $jeton, ['ad' => 'yonetici', 'yonetim' => true]);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/anahtarlar', $this->client->getResponse());
+
+        $this->client->request('GET', '/panel/api/uygulamalar/keepchat/anahtarlar');
+        Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/anahtarlar', $this->client->getResponse());
+        /** @var array{anahtarlar: list<array{ad: string, yonetim: bool}>} $liste */
+        $liste = $this->json();
+        self::assertSame(['metin' => false, 'okur' => false, 'yonetici' => true], (static function (array $a): array {
+            ksort($a);
+
+            return $a;
+        })(array_column($liste['anahtarlar'], 'yonetim', 'ad')));
+    }
+
     public function testCsrfAdVeUygulama(): void
     {
         $this->girisYap();
@@ -87,7 +108,7 @@ final class PanelAnahtarTest extends WebTestCase
         return $this->client->getResponse()->getStatusCode();
     }
 
-    /** @param array<string, string> $govde */
+    /** @param array<string, string|bool> $govde */
     private function istek(string $yontem, string $adres, string $jeton, array $govde = []): void
     {
         $this->client->request($yontem, $adres, server: ['HTTP_X_CSRF_TOKEN' => $jeton], content: [] === $govde ? null : (string) json_encode($govde));
