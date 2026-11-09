@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Billing;
 
 use App\Atif\DonusumAktarimi;
+use App\Olay\Olaylar;
 use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -102,29 +103,42 @@ final readonly class SubscriptionSync
         // M4b (A17): deney dönüşümü abonelik başlamasıdır (deneme dahil).
         // Kartlı denemede Stripe yine "paid" der, tutar 0 (ölçüldü) — "ödedi"
         // tutardan okunur. Tutar gelmezse abonelik yine yazılır.
+        $bag = false;
         if ($odemeTamamlandi || 'no_payment_required' === ($session['payment_status'] ?? null)) {
             $tutar = $session['amount_total'] ?? null;
             $para = $session['currency'] ?? null;
             $tutarli = \is_int($tutar) && $tutar >= 0 && \is_string($para) && 1 === preg_match('/^[a-z]{3}$/', $para);
-            $db->executeStatement(
+            $bag = $db->fetchAssociative(
                 'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, abonelik_at = coalesce(abonelik_at, now()),
                         tutar_kucuk = coalesce(tutar_kucuk, :tutar), para_birimi = coalesce(para_birimi, :para)
-                 WHERE stripe_checkout_session_id = :oturum',
+                 WHERE stripe_checkout_session_id = :oturum
+                 RETURNING ziyaret_id::text AS ziyaret, old.stripe_subscription_id IS DISTINCT FROM new.stripe_subscription_id AS yeni',
                 ['sub' => $sub, 'oturum' => $session['id'] ?? null, 'tutar' => $tutarli ? $tutar : null, 'para' => $tutarli ? $para : null],
             );
         }
         if ($odemeTamamlandi) {
-            $db->executeStatement(
+            $odeme = $db->fetchAssociative(
                 'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, tamamlandi_at = now()
-                 WHERE stripe_checkout_session_id = :oturum',
+                 WHERE stripe_checkout_session_id = :oturum RETURNING ziyaret_id::text AS ziyaret, old.tamamlandi_at IS NULL AS ilk',
                 ['sub' => $sub, 'oturum' => $session['id'] ?? null],
             );
+            if (\is_array($odeme) && \is_string($odeme['ziyaret']) && true === $odeme['ilk']) {
+                Olaylar::ekle($db, $odeme['ziyaret'], 'odeme.tamamlandi');
+            }
             $this->donusum->kuyrugaAl($db, $session, $app, $eventTime);
         } elseif (\is_string($session['id'] ?? null)) {
             $db->executeStatement(
                 'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE stripe_checkout_session_id = :oturum',
                 ['oturum' => $session['id']],
             );
+        }
+        // M5a: abonelik olayı oturumdan önce geldiyse durum zaten yazılı; ziyaret
+        // aboneliğe şimdi bağlandı — durumu o ziyaretin çizelgesine de ekle.
+        if (\is_array($bag) && \is_string($bag['ziyaret']) && true === $bag['yeni']) {
+            $durum = $db->fetchOne('SELECT status FROM subscriptions WHERE stripe_subscription_id = :sub', ['sub' => $sub]);
+            if (\is_string($durum)) {
+                Olaylar::ekle($db, $bag['ziyaret'], 'abonelik.durum', ['durum' => $durum]);
+            }
         }
     }
 
@@ -138,7 +152,8 @@ final readonly class SubscriptionSync
             return;
         }
 
-        $db->executeStatement(
+        // M5a: RETURNING yalnız yazılan satırda; eski olay reddedildiyse satır yok.
+        $degisti = $db->fetchOne(
             'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created, app)
              VALUES (:id, :cus, :status, :created, :app)
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET
@@ -147,9 +162,16 @@ final readonly class SubscriptionSync
                  status_event_created = EXCLUDED.status_event_created,
                  updated_at = now()
              WHERE subscriptions.status_event_created IS NULL
-                OR subscriptions.status_event_created <= EXCLUDED.status_event_created',
+                OR subscriptions.status_event_created <= EXCLUDED.status_event_created
+             RETURNING old.status IS DISTINCT FROM new.status',
             ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated, 'app' => $app],
         );
+        if (true === $degisti) {
+            foreach ($db->fetchFirstColumn('SELECT DISTINCT ziyaret_id::text FROM odeme_oturumlari WHERE stripe_subscription_id = :id', ['id' => $id]) as $ziyaret) {
+                \assert(\is_string($ziyaret));
+                Olaylar::ekle($db, $ziyaret, 'abonelik.durum', ['durum' => $status]);
+            }
+        }
         $this->revenuecat->aboneligiKuyrugaAl($db, $app, $id);
     }
 }

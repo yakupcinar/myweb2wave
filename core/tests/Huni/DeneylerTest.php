@@ -38,7 +38,7 @@ final class DeneylerTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $db->executeStatement('TRUNCATE deneyler, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari CASCADE');
+        $db->executeStatement('TRUNCATE deneyler, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari CASCADE');
         foreach (['genel', 'yeni', 'taslakta'] as $ad) {
             self::assertSame([], $this->huniler()->yeniHuni('keepchat', $ad, null));
             self::assertSame([], $this->huniler()->taslakKaydet('keepchat', $ad, ['sayfaBasligi' => $ad, 'adimlar' => [

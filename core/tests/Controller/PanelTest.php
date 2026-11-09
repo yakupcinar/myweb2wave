@@ -25,7 +25,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -126,13 +126,14 @@ final class PanelTest extends WebTestCase
      */
     public function testGunlukSeriHerGunSifirlaDolu(): void
     {
-        $bugun = $this->ziyaretEkle([], '0 seconds');
-        $dun = $this->ziyaretEkle([], '1 day');
-        $this->ziyaretEkle([], '1 day');
-        $this->ziyaretEkle([], '3 days');
-        $this->ziyaretEkle([], '10 days');
-        $this->db->executeStatement("INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, created_at, tamamlandi_at) VALUES ('cs_dun', :z, now() - interval '1 day', now())", ['z' => $dun]);
-        $this->db->executeStatement("INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, created_at) VALUES ('cs_bugun', :z, now())", ['z' => $bugun]);
+        // M5a: grafik olay deposundan — ziyaretEkle olaysız yazar, olaylar elle ve zamanlarıyla.
+        foreach (['0 seconds', '1 day', '1 day', '3 days', '10 days'] as $once) {
+            $this->olay($this->ziyaretEkle([], $once), 'huni.ziyaret', $once);
+        }
+        $dun = $this->ziyaretEkle([], '40 days');
+        $this->olay($dun, 'odeme.baslatildi', '1 day');
+        $this->olay($dun, 'odeme.tamamlandi', '0 seconds');
+        $this->olay($dun, 'odeme.baslatildi', '0 seconds');
         $this->girisYapmis();
 
         $gun = static fn (int $once): string => gmdate('Y-m-d', time() - $once * 86400);
@@ -320,6 +321,14 @@ final class PanelTest extends WebTestCase
             'abonelik_at' => '2026-10-20 10:00:00+00', 'tutar_kucuk' => 999, 'para_birimi' => 'eur']);
         $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_birakan', 'ziyaret_id' => $birakan]);
         $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_1', 'stripe_customer_id' => 'cus_1', 'status' => 'active', 'email' => 'ayse@example.com', 'app' => 'keepchat']);
+    }
+
+    private function olay(string $ziyaret, string $ad, string $once): void
+    {
+        $this->db->executeStatement(
+            "INSERT INTO olaylar (ziyaret_id, app, ad, zaman) VALUES (:z, 'keepchat', :ad, now() - CAST(:once AS interval))",
+            ['z' => $ziyaret, 'ad' => $ad, 'once' => $once],
+        );
     }
 
     /** @param array<string, string> $alanlar */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Atif;
 
+use App\Olay\Olaylar;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
@@ -51,18 +52,25 @@ final readonly class Ziyaretler
         if (true !== $izin) {
             $alanlar = array_merge($alanlar, array_fill_keys(self::TIKLAMA, null));
         }
-        $id = $this->db->fetchOne(
-            'WITH s AS (SELECT ad, surum FROM huni_surumleri WHERE app = :app AND ad = :huni AND surum = CAST(:surum AS int))
-             INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at, izin_red_at)
-             VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :utm_content, :utm_term, :fbclid, :ttclid,
-                     (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :kabul THEN now() END, CASE WHEN :red THEN now() END)
-             RETURNING id',
-            ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'kabul' => true === $izin, 'red' => false === $izin] + $alanlar,
-            ['kabul' => \Doctrine\DBAL\ParameterType::BOOLEAN, 'red' => \Doctrine\DBAL\ParameterType::BOOLEAN],
-        );
-        \assert(\is_string($id));
 
-        return $id;
+        return $this->db->transactional(function (Connection $db) use ($app, $alanlar, $huni, $surum, $izin): string {
+            $z = $db->fetchAssociative(
+                'WITH s AS (SELECT ad, surum FROM huni_surumleri WHERE app = :app AND ad = :huni AND surum = CAST(:surum AS int))
+                 INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at, izin_red_at)
+                 VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :utm_content, :utm_term, :fbclid, :ttclid,
+                         (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :kabul THEN now() END, CASE WHEN :red THEN now() END)
+                 RETURNING id, huni, surum',
+                ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'kabul' => true === $izin, 'red' => false === $izin] + $alanlar,
+                ['kabul' => \Doctrine\DBAL\ParameterType::BOOLEAN, 'red' => \Doctrine\DBAL\ParameterType::BOOLEAN],
+            );
+            \assert(\is_array($z) && \is_string($z['id']));
+            Olaylar::ekle($db, $z['id'], 'huni.ziyaret', array_filter(['huni' => $z['huni'], 'surum' => $z['surum']], static fn (mixed $d): bool => null !== $d));
+            if (null !== $izin) {
+                Olaylar::ekle($db, $z['id'], $izin ? 'izin.verildi' : 'izin.reddedildi');
+            }
+
+            return $z['id'];
+        });
     }
 
     /**
@@ -77,12 +85,23 @@ final readonly class Ziyaretler
             return false;
         }
 
-        return 1 === $this->db->executeStatement(
-            'UPDATE huni_ziyaretleri SET izin_at = coalesce(izin_at, now()), izin_red_at = NULL,
-                    fbclid = coalesce(:fbclid, fbclid), ttclid = coalesce(:ttclid, ttclid)
-             WHERE id = :id',
-            ['id' => $ziyaret, 'fbclid' => $tiklama['fbclid'] ?? null, 'ttclid' => $tiklama['ttclid'] ?? null],
-        );
+        return $this->db->transactional(function (Connection $db) use ($ziyaret, $tiklama): bool {
+            // M5a: olay yalnız durum değişince (zaten izinliyse tekrar değil).
+            $once = $db->fetchAssociative(
+                'UPDATE huni_ziyaretleri SET izin_at = coalesce(izin_at, now()), izin_red_at = NULL,
+                        fbclid = coalesce(:fbclid, fbclid), ttclid = coalesce(:ttclid, ttclid)
+                 WHERE id = :id RETURNING old.izin_at IS NULL AS yeni',
+                ['id' => $ziyaret, 'fbclid' => $tiklama['fbclid'] ?? null, 'ttclid' => $tiklama['ttclid'] ?? null],
+            );
+            if (false === $once) {
+                return false;
+            }
+            if (true === $once['yeni']) {
+                Olaylar::ekle($db, $ziyaret, 'izin.verildi');
+            }
+
+            return true;
+        });
     }
 
     /** Ölçüm iznini bu ziyarette geri alır ve bekleyen eşleşme verisini siler. */
@@ -97,12 +116,16 @@ final readonly class Ziyaretler
                 'SELECT stripe_checkout_session_id FROM odeme_oturumlari WHERE ziyaret_id = :id',
                 ['id' => $ziyaret],
             );
-            $var = 1 === $db->executeStatement(
-                'UPDATE huni_ziyaretleri SET izin_at = NULL, izin_red_at = now(), fbclid = NULL, ttclid = NULL WHERE id = :id',
+            $once = $db->fetchAssociative(
+                'UPDATE huni_ziyaretleri SET izin_at = NULL, izin_red_at = now(), fbclid = NULL, ttclid = NULL WHERE id = :id
+                 RETURNING old.izin_red_at IS NULL AS yeni',
                 ['id' => $ziyaret],
             );
-            if (!$var) {
+            if (false === $once) {
                 return false;
+            }
+            if (true === $once['yeni']) {
+                Olaylar::ekle($db, $ziyaret, 'izin.reddedildi');
             }
             $db->executeStatement(
                 'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE ziyaret_id = :id',
@@ -128,14 +151,21 @@ final readonly class Ziyaretler
             return false;
         }
 
-        return 1 === $this->db->executeStatement(
-            'INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, ip_adresi, user_agent)
-             SELECT :oturum, id,
-                    CASE WHEN izin_at IS NOT NULL THEN CAST(:ip AS inet) END,
-                    CASE WHEN izin_at IS NOT NULL THEN :ua END
-             FROM huni_ziyaretleri WHERE id = :ziyaret AND app = :app',
-            ['oturum' => $oturum, 'ziyaret' => $ziyaret, 'app' => $app, 'ip' => $ip, 'ua' => null === $userAgent ? null : mb_substr($userAgent, 0, 1000)],
-        );
+        return $this->db->transactional(function (Connection $db) use ($ziyaret, $app, $oturum, $ip, $userAgent): bool {
+            $bagli = 1 === $db->executeStatement(
+                'INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, ip_adresi, user_agent)
+                 SELECT :oturum, id,
+                        CASE WHEN izin_at IS NOT NULL THEN CAST(:ip AS inet) END,
+                        CASE WHEN izin_at IS NOT NULL THEN :ua END
+                 FROM huni_ziyaretleri WHERE id = :ziyaret AND app = :app',
+                ['oturum' => $oturum, 'ziyaret' => $ziyaret, 'app' => $app, 'ip' => $ip, 'ua' => null === $userAgent ? null : mb_substr($userAgent, 0, 1000)],
+            );
+            if ($bagli) {
+                Olaylar::ekle($db, $ziyaret, 'odeme.baslatildi');
+            }
+
+            return $bagli;
+        });
     }
 
     /**
@@ -199,18 +229,30 @@ final readonly class Ziyaretler
             if (false === $db->fetchOne('SELECT 1 FROM huni_ziyaretleri WHERE id = :id', ['id' => $ziyaret])) {
                 return false;
             }
-            $db->executeStatement(
+            $ilk = 1 === $db->executeStatement(
                 'INSERT INTO huni_adimlari (ziyaret_id, sira, adim) VALUES (:z, :sira, :adim)
                  ON CONFLICT (ziyaret_id, sira) DO NOTHING',
                 ['z' => $ziyaret, 'sira' => $sira, 'adim' => $adim],
             );
+            if ($ilk) {
+                Olaylar::ekle($db, $ziyaret, 'adim.goruldu', ['adim' => $adim, 'sira' => $sira]);
+            }
+            // M5a: cevap olayı yalnız cevap değişince (geri gelip aynısını seçmek olay değil);
+            // seçenekler bayt sırasıyla, T4 görünümüyle aynı.
             if (null !== $cevaplar) {
+                $onceki = $db->fetchFirstColumn('SELECT secenek FROM huni_cevaplari WHERE ziyaret_id = :z AND soru = :s ORDER BY secenek COLLATE "C"', ['z' => $ziyaret, 's' => $adim]);
                 $db->delete('huni_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim]);
                 foreach ($cevaplar as $secenek) {
                     $db->insert('huni_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim, 'secenek' => $secenek]);
                 }
+                $yeni = $cevaplar;
+                sort($yeni, \SORT_STRING);
+                if ([] !== $yeni && $yeni !== $onceki) {
+                    Olaylar::ekle($db, $ziyaret, 'cevap.verildi', ['soru' => $adim, 'secenekler' => $yeni]);
+                }
             }
             if (null !== $cevapMetni) {
+                $onceki = $db->fetchOne('SELECT cevap FROM huni_metin_cevaplari WHERE ziyaret_id = :z AND soru = :s', ['z' => $ziyaret, 's' => $adim]);
                 $db->delete('huni_metin_cevaplari', ['ziyaret_id' => $ziyaret, 'soru' => $adim]);
                 if ('' !== trim($cevapMetni)) {
                     $db->insert('huni_metin_cevaplari', [
@@ -218,6 +260,9 @@ final readonly class Ziyaretler
                         'soru' => $adim,
                         'cevap' => $cevapMetni,
                     ]);
+                    if ($cevapMetni !== $onceki) {
+                        Olaylar::ekle($db, $ziyaret, 'cevap.verildi', ['soru' => $adim]);
+                    }
                 }
             }
 

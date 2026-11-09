@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Olay;
 
 use App\Atif\Ziyaretler;
+use App\Billing\SubscriptionSync;
 use App\Huni\Huniler;
 use App\Olay\Olaylar;
 use Doctrine\DBAL\Connection;
+use Stripe\Event;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
@@ -22,6 +24,7 @@ final class OlaylarTest extends KernelTestCase
     private Connection $db;
     private Ziyaretler $ziyaretler;
     private Olaylar $olaylar;
+    private SubscriptionSync $sync;
 
     protected function setUp(): void
     {
@@ -29,11 +32,14 @@ final class OlaylarTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions CASCADE');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler CASCADE');
         $ziyaretler = self::getContainer()->get(Ziyaretler::class);
         self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
         $this->ziyaretler = $ziyaretler;
         $this->olaylar = new Olaylar($db);
+        $sync = self::getContainer()->get(SubscriptionSync::class);
+        self::assertInstanceOf(SubscriptionSync::class, $sync);
+        $this->sync = $sync;
 
         // Ziyaret huni/sürümü yalnız yayınlanmış çiftle yazılır.
         $huniler = self::getContainer()->get(Huniler::class);
@@ -46,43 +52,175 @@ final class OlaylarTest extends KernelTestCase
         self::assertSame(1, $huniler->yayinla('keepchat', 'genel'));
     }
 
-    /** Ziyaret → izin → iki adım + cevaplar → ödeme → abonelik; zamanlar sabit. */
-    private function tamZiyaret(string $app = 'keepchat', string $gun = '2026-11-01'): string
+    /** Ziyaret → izin → iki adım + cevaplar → ödeme → abonelik; gerçek yazma yollarından (M5a). */
+    private function tamZiyaret(string $app = 'keepchat'): string
     {
         $z = $this->ziyaretler->kaydet($app, array_fill_keys(Ziyaretler::ALANLAR, null), 'genel', 1, true);
-        self::assertTrue($this->ziyaretler->ilerle($z, 0, 'kiminle', ['aile', 'is']));
+        self::assertTrue($this->ziyaretler->ilerle($z, 0, 'kiminle', ['is', 'aile']));
         self::assertTrue($this->ziyaretler->ilerle($z, 1, 'not', null, 'Gizli metin'));
         self::assertTrue($this->ziyaretler->ilerle($z, 2, 'paywall', null));
         self::assertTrue($this->ziyaretler->oturumBagla($z, $app, 'cs_'.$z, null, null));
-        $this->db->executeStatement("UPDATE odeme_oturumlari SET tamamlandi_at = '{$gun} 10:06Z', stripe_subscription_id = 'sub_{$z}', created_at = '{$gun} 10:05Z' WHERE ziyaret_id = :z", ['z' => $z]);
-        $this->db->executeStatement("INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, email, app, updated_at) VALUES ('sub_{$z}', 'cus_1', 'active', 'a@example.com', :app, '{$gun} 10:07Z')", ['app' => $app]);
-        $this->db->executeStatement("UPDATE huni_ziyaretleri SET created_at = '{$gun} 10:00Z', izin_at = '{$gun} 10:01Z' WHERE id = :z", ['z' => $z]);
-        foreach (['kiminle' => '10:02', 'not' => '10:03', 'paywall' => '10:04'] as $adim => $saat) {
-            $this->db->executeStatement("UPDATE huni_adimlari SET created_at = '{$gun} {$saat}Z' WHERE ziyaret_id = :z AND adim = :a", ['z' => $z, 'a' => $adim]);
-        }
-        $this->db->executeStatement("UPDATE huni_cevaplari SET updated_at = '{$gun} 10:02:30Z' WHERE ziyaret_id = :z", ['z' => $z]);
-        $this->db->executeStatement("UPDATE huni_metin_cevaplari SET updated_at = '{$gun} 10:03:30Z' WHERE ziyaret_id = :z", ['z' => $z]);
+        $this->stripe('checkout.session.completed', ['id' => 'cs_'.$z, 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_'.$z, 'customer' => 'cus_1', 'payment_status' => 'paid', 'amount_total' => 999, 'currency' => 'eur',
+            'metadata' => ['app' => $app]]);
+        $this->abonelik($z, 'active', 1_800_000_000, $app);
 
         return $z;
+    }
+
+    /** @param array<string, mixed> $nesne */
+    private function stripe(string $tur, array $nesne, int $zaman = 1_800_000_000): void
+    {
+        $this->sync->apply(Event::constructFrom(['id' => 'evt_'.bin2hex(random_bytes(6)), 'object' => 'event', 'type' => $tur, 'created' => $zaman, 'data' => ['object' => $nesne]]));
+    }
+
+    private function abonelik(string $z, string $durum, int $zaman, string $app = 'keepchat'): void
+    {
+        $this->stripe('customer.subscription.updated', ['id' => 'sub_'.$z, 'object' => 'subscription', 'customer' => 'cus_1', 'status' => $durum, 'metadata' => ['app' => $app]], $zaman);
+    }
+
+    /** @return list<string> */
+    private function adlar(string $z): array
+    {
+        return array_map(static fn (array $o): string => $o['ad'].([] === $o['veri'] ? '' : ' '.json_encode($o['veri'], \JSON_UNESCAPED_UNICODE)), $this->olaylar->ziyaretin($z));
     }
 
     public function testZiyaretinZamanCizelgesi(): void
     {
         $z = $this->tamZiyaret();
 
+        // Sıra yazılış sırası (id) — neden önce, sonuç sonra.
         self::assertSame([
-            ['huni.ziyaret', ['huni' => 'genel', 'surum' => 1], '2026-11-01T10:00:00+00:00'],
-            ['izin.verildi', [], '2026-11-01T10:01:00+00:00'],
-            ['adim.goruldu', ['adim' => 'kiminle', 'sira' => 0], '2026-11-01T10:02:00+00:00'],
-            ['cevap.verildi', ['soru' => 'kiminle', 'secenekler' => ['aile', 'is']], '2026-11-01T10:02:30+00:00'],
-            ['adim.goruldu', ['adim' => 'not', 'sira' => 1], '2026-11-01T10:03:00+00:00'],
+            'huni.ziyaret {"huni":"genel","surum":1}',
+            'izin.verildi',
+            'adim.goruldu {"adim":"kiminle","sira":0}',
+            'cevap.verildi {"soru":"kiminle","secenekler":["aile","is"]}',
+            'adim.goruldu {"adim":"not","sira":1}',
             // Serbest yanıt metni olaya girmez (Ç90) — yalnız hangi soru.
-            ['cevap.verildi', ['soru' => 'not'], '2026-11-01T10:03:30+00:00'],
-            ['adim.goruldu', ['adim' => 'paywall', 'sira' => 2], '2026-11-01T10:04:00+00:00'],
-            ['odeme.baslatildi', [], '2026-11-01T10:05:00+00:00'],
-            ['odeme.tamamlandi', [], '2026-11-01T10:06:00+00:00'],
-            ['abonelik.durum', ['durum' => 'active'], '2026-11-01T10:07:00+00:00'],
-        ], array_map(static fn (array $o): array => [$o['ad'], $o['veri'], $o['zaman']], $this->olaylar->ziyaretin($z)));
+            'cevap.verildi {"soru":"not"}',
+            'adim.goruldu {"adim":"paywall","sira":2}',
+            'odeme.baslatildi',
+            'odeme.tamamlandi',
+            'abonelik.durum {"durum":"active"}',
+        ], $this->adlar($z));
+        $zamanlar = array_column($this->olaylar->ziyaretin($z), 'zaman');
+        self::assertMatchesRegularExpression('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00$/', $zamanlar[0]);
+        $sirali = $zamanlar;
+        sort($sirali);
+        self::assertSame($sirali, $zamanlar);
+        self::assertStringNotContainsString('Gizli metin', (string) json_encode($this->olaylar->ziyaretin($z)));
+    }
+
+    /**
+     * Ç92: geçmiş korunur — cevap değişimi, izin geri alma ve yeniden verme
+     * ayrı olay; durum değişmeyen tekrar (aynı cevap, aynı adım, zaten izinli)
+     * olay değil.
+     */
+    public function testGecmisKorunurTekrarOlayDegil(): void
+    {
+        $z = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+        self::assertTrue($this->ziyaretler->ilerle($z, 0, 'kiminle', ['aile']));
+        self::assertTrue($this->ziyaretler->ilerle($z, 0, 'kiminle', ['is']));
+        self::assertTrue($this->ziyaretler->ilerle($z, 0, 'kiminle', ['is']));
+        self::assertTrue($this->ziyaretler->ilerle($z, 0, 'kiminle', []));
+        self::assertTrue($this->ziyaretler->ilerle($z, 1, 'not', null, 'a'));
+        self::assertTrue($this->ziyaretler->ilerle($z, 1, 'not', null, 'a'));
+        self::assertTrue($this->ziyaretler->ilerle($z, 1, 'not', null, 'b'));
+        self::assertTrue($this->ziyaretler->izinVer($z, []));
+        self::assertTrue($this->ziyaretler->izinVer($z, []));
+        self::assertTrue($this->ziyaretler->izinGeriAl($z));
+        self::assertTrue($this->ziyaretler->izinGeriAl($z));
+        self::assertTrue($this->ziyaretler->izinVer($z, []));
+
+        self::assertSame([
+            'huni.ziyaret',
+            'adim.goruldu {"adim":"kiminle","sira":0}',
+            'cevap.verildi {"soru":"kiminle","secenekler":["aile"]}',
+            'cevap.verildi {"soru":"kiminle","secenekler":["is"]}',
+            'adim.goruldu {"adim":"not","sira":1}',
+            'cevap.verildi {"soru":"not"}',
+            'cevap.verildi {"soru":"not"}',
+            'izin.verildi',
+            'izin.reddedildi',
+            'izin.verildi',
+        ], $this->adlar($z));
+    }
+
+    /**
+     * Ç92: abonelik durum geçmişi (active → past_due → canceled); aynı durum
+     * tekrar ya da sıra dışı gelen eski olay (tuzak §13) olay değil.
+     */
+    public function testAbonelikDurumGecmisi(): void
+    {
+        $z = $this->tamZiyaret();
+        $this->abonelik($z, 'active', 1_800_000_100);
+        $this->abonelik($z, 'past_due', 1_800_000_200);
+        $this->abonelik($z, 'active', 1_800_000_150);
+        $this->abonelik($z, 'canceled', 1_800_000_300);
+
+        self::assertSame(['active', 'past_due', 'canceled'], array_column(array_column(array_filter($this->olaylar->ziyaretin($z), static fn (array $o): bool => 'abonelik.durum' === $o['ad']), 'veri'), 'durum'));
+    }
+
+    /** Abonelik olayı ödeme oturumundan önce gelirse durum bağlanınca çizelgeye girer (bir kez). */
+    public function testAbonelikOturumdanOnceGelirse(): void
+    {
+        $z = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, true);
+        self::assertTrue($this->ziyaretler->oturumBagla($z, 'keepchat', 'cs_'.$z, null, null));
+        $this->abonelik($z, 'trialing', 1_800_000_000);
+        // Aynı oturumun tamamlanması iki ayrı olay kimliğiyle gelse de tek olay.
+        foreach ([1, 2] as $_) {
+            $this->stripe('checkout.session.completed', ['id' => 'cs_'.$z, 'object' => 'checkout.session', 'mode' => 'subscription',
+                'subscription' => 'sub_'.$z, 'customer' => 'cus_1', 'payment_status' => 'paid', 'amount_total' => 0, 'currency' => 'eur',
+                'metadata' => ['app' => 'keepchat']]);
+        }
+
+        self::assertSame(['huni.ziyaret', 'izin.verildi', 'odeme.baslatildi', 'odeme.tamamlandi', 'abonelik.durum {"durum":"trialing"}'], $this->adlar($z));
+    }
+
+    /** Yalnız ekleme: geçmiş yeniden yazılamaz (DB kısıtı, uygulamadan bağımsız — tuzak §4). */
+    public function testOlayGuncellenemez(): void
+    {
+        $z = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+
+        $this->expectExceptionMessage('yalnız ekleme');
+        $this->db->executeStatement("UPDATE olaylar SET ad = 'izin.verildi' WHERE ziyaret_id = :z", ['z' => $z]);
+    }
+
+    /**
+     * Akış imleci bitmemiş işlemin olayını atlamaz: id işlem içinde alınır,
+     * görünürlük commit'te. Yarım kalan işlemin (küçük id) arkasındaki biten
+     * olay da beklenir; işlem bitince ikisi sırayla gelir.
+     */
+    public function testBitmemisIslemAkistaBeklenir(): void
+    {
+        $a = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+        $b = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+        $ilk = $this->olaylar->akis('keepchat', null, 10);
+        self::assertNotNull($ilk);
+        self::assertCount(2, $ilk['olaylar']);
+
+        // Ayrı bağlantı = ayrı işlem (aynı test veritabanı).
+        $ikinci = new Connection($this->db->getParams(), $this->db->getDriver(), $this->db->getConfiguration());
+        $ikinci->beginTransaction();
+        Olaylar::ekle($ikinci, $a, 'izin.verildi');
+        Olaylar::ekle($this->db, $b, 'izin.reddedildi');
+
+        $imlec = base64_encode(json_encode([$this->sonId() - 2], \JSON_THROW_ON_ERROR));
+        self::assertSame([], $this->olaylar->akis('keepchat', $imlec, 10)['olaylar'] ?? null, 'yarım işlemin arkası da beklenir');
+        $ikinci->commit();
+        $ikinci->close();
+        self::assertSame(
+            [[$a, 'izin.verildi'], [$b, 'izin.reddedildi']],
+            array_map(static fn (array $o): array => [$o['ziyaret'], $o['ad']], $this->olaylar->akis('keepchat', $imlec, 10)['olaylar'] ?? []),
+        );
+    }
+
+    private function sonId(): int
+    {
+        $id = $this->db->fetchOne('SELECT max(id) FROM olaylar');
+        self::assertIsNumeric($id);
+
+        return (int) $id;
     }
 
     public function testIzniReddedenZiyaret(): void
@@ -95,9 +233,9 @@ final class OlaylarTest extends KernelTestCase
     /** Akış imleçle sayfalanır: her olay tam bir kez, sırayla; başka uygulama yok. */
     public function testAkisImlecleSayfalanir(): void
     {
-        $a = $this->tamZiyaret('keepchat', '2026-11-01');
-        $b = $this->tamZiyaret('keepchat', '2026-11-02');
-        $this->tamZiyaret('baska', '2026-11-01');
+        $a = $this->tamZiyaret('keepchat');
+        $b = $this->tamZiyaret('keepchat');
+        $this->tamZiyaret('baska');
 
         $gorulen = [];
         $imlec = null;
@@ -122,9 +260,10 @@ final class OlaylarTest extends KernelTestCase
 
     public function testAyniAndakiOlaylarAyrilir(): void
     {
+        // Aynı işlemdeki olayların zamanı aynı (now()): ziyaret + izin tek işlemde.
+        // İmleç yine her birini bir kez vermeli.
         $z = $this->tamZiyaret();
-        // İki cevap aynı anda: ad aynı, imleç yine de ikisini de vermeli.
-        $this->db->executeStatement("UPDATE huni_metin_cevaplari SET updated_at = '2026-11-01 10:02:30Z' WHERE ziyaret_id = :z", ['z' => $z]);
+        self::assertSame(1, $this->db->fetchOne("SELECT count(DISTINCT zaman) FROM olaylar WHERE ziyaret_id = :z AND ad IN ('huni.ziyaret', 'izin.verildi')", ['z' => $z]));
 
         $hepsi = [];
         $imlec = null;

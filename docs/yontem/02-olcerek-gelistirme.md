@@ -82,3 +82,8 @@ sordum ("denemede Stripe `no_payment_required` der"); gerçek test oturumu tersi
 gösterdi (`paid`, tutar 0). Soru yine geçerliydi ama gerekçesi yanlıştı — kayda
 düzeltmeyle yazıldı (`decisions/m4b-deney-sonuclari.md`, tuzak §52). Kullanıcıya
 giden iddia da ölçülür.
+
+Tek bağlantılı test, işlemlerin sırayla bittiği bir dünyada koşar; eşzamanlılık
+varsayımı orada hiç sınanmaz. M5a'da akış imlecinin bitmemiş işlemi atlayıp
+atlamadığını ölçmek için test ikinci bir bağlantı açtı ve yarım bir işlem
+kurdu: bekçi kaldırılınca test düştü (`decisions/m5a-olay-deposu.md`, tuzak §53).

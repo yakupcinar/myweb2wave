@@ -57,8 +57,8 @@
 * **Teknoloji:** PostgreSQL `VIEW` (Event Sourcing)
 * **Kaputun Altında Ne Oluyor?**
   * Ziyaretçinin adımları ve cevapları `huni_adimlari` ve `huni_cevaplari` tablolarına sadece "ekleme" (append-only) yapılır.
-  * Paneldeki grafikler ayrı bir tabloya bakmaz; `ziyaret_olaylari` SQL görünümü (VIEW) bu logları birleştirip anlık kronolojik olay akışı üretir (`huni.ziyaret`, `adim.goruldu`, `odeme.tamamlandi`).
-* **⚠️ Kritik Kural:** Analitik için yeni tablo açılmaz; her şey bu iki SQL görünümünden (`ziyaret_olaylari`, `ziyaret_ozellikleri`) okunur.
+  * M5a (2026-11-09, [`Version20261109120000.php`](../core/migrations/Version20261109120000.php)): olaylar yalnız ekleme yapılan `olaylar` tablosuna, kaynak satırla aynı işlemde ve yalnız durum değişince yazılır (`huni.ziyaret`, `adim.goruldu`, `cevap.verildi`, `izin.*`, `odeme.*`, `abonelik.durum`). `ziyaret_olaylari` bu tablonun görünümü (panel grafikleri). Eski T4 görünümü son hâlden türetiyordu — geçmiş kayboluyordu (Ç92).
+* **⚠️ Kritik Kural:** Analitik için başka tablo açılmaz; olaylar `olaylar`dan, özellikler `ziyaret_ozellikleri` görünümünden okunur.
 
 ---
 

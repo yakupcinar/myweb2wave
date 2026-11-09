@@ -5,7 +5,7 @@
 > Bu belge teorik bir taslak veya rastgele bir özet DEĞİLDİR. Doğrudan çalışan Symfony 7 çekirdeği, PostgreSQL 18 veritabanı şeması, `contract/openapi.yaml` sözleşmesi ve `docs/decisions/` altında kayıtlı 100+ mimari karardan damıtılmış **birincil mimari referans belgesidir**.
 > 
 > Bu depoda kod yazan veya refactor yapan herhangi bir AI ajanı şunları KESİNLİKLE varsayamaz:
-> 1. "Veritabanında eksik tablo var, yeni tablo açayım" diyemez; analitik için tablo açılmaz, `ziyaret_olaylari` ve `ziyaret_ozellikleri` görünümleri (VIEW) kullanılır (§2B).
+> 1. "Veritabanında eksik tablo var, yeni tablo açayım" diyemez; analitik için yeni tablo açılmaz — olaylar yalnız ekleme yapılan `olaylar` tablosundan (M5a), özellikler `ziyaret_ozellikleri` görünümünden okunur (§2B).
 > 2. "Stripe webhook'u hemen aboneliği güncellesin" diyemez; idempotency (`processed_webhook_events`) ve zaman damgası kontrolü (`status_event_created`) zorunludur (§4B).
 > 3. "İzin almadan dönüşüm piksellerini tetikleyeyim" diyemez; KVKK/GDPR izin kuralı (H6a) mimarinin değişmez parçasıdır (§4C).
 
@@ -37,8 +37,9 @@ Veritabanı şeması (23 tablo, 2 görünüm) 3 temel tasarım desenine dayanır
 
 ### B. Ziyaret ve Analitik İçin: "Append-Only Event Sourcing & Views" Deseni
 * **Tablolar:** `huni_ziyaretleri`, `huni_adimlari`, `huni_cevaplari`, `huni_metin_cevaplari`, `odeme_oturumlari`.
-* **Görünümler:** `ziyaret_olaylari` (tüm olayların kronolojik akışı), `ziyaret_ozellikleri` (kullanıcının profil özellikleri).
-* **Mantık:** İkinci bir analitik/raporlama tablosu yazılmaz. Ham loglar üzerinden Postgres SQL VIEW'ları dinamik olarak çalışır. Çift yazma (dual-write) yarışları ve tutarsızlıkları imkansızdır.
+* **Olay deposu:** `olaylar` — yalnız ekleme (güncelleme tetikleyiciyle reddedilir), yazma yolları olayı **aynı işlemde** ve yalnız durum değişince ekler (`Olaylar::ekle`); sıra `id`, akış okuyucusu bitmemiş işlemi bekler (`islem` < en eski açık işlem). `ziyaret_olaylari` artık bu tablonun görünümü. Neden: görünüm son hâlden türetiyordu, cevap/izin/abonelik geçmişi kayboluyordu (Ç92, `m5a-olay-deposu.md`).
+* **Görünüm:** `ziyaret_ozellikleri` (kullanıcının profil özellikleri) — son hâl yeterli, görünüm kalır.
+* **Mantık:** Çift yazma yarışı yok: olay kaynak satırla aynı işlemde yazılır, biri düşerse ikisi de düşer.
 
 ### C. Kimlik ve Hak İçin: "Multi-App Tenant" Eşleşmesi
 * **`kisiler`:** Tekil gerçek kişi (`id: UUID`, `email: text UNIQUE`).

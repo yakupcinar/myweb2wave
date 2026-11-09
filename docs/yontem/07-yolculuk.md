@@ -56,3 +56,4 @@
 | 49 | M4a: deneyler (atama + panel) | ilk commit CI kırmızıyla gitmişti — sonraki oturum kapıyı yeniden kurdu: eksik testler, 24 kırma, gerçek istekte testlerin görmediği 404 (doğrudan adres) | `m4a-deneyler.md` |
 | 50 | M4b: deney sonuçları + kazanma olasılığı | olasılık Python'un bağımsız hesabıyla ölçüldü; gerçek denemeli Stripe oturumu kendi varsayımımı çürüttü (deneme "paid", tutar 0); 4 kırma ilk koşuda tutmadı, hepsi testi güçlendirdi | `m4b-deney-sonuclari.md` |
 | 51 | Ç118: denemede rapor + reklam olayı | düzeltme tek yere değil ailenin tamamına: rapor, sayım, satır, panel dönüşümü, sunucu olayı ve tarayıcı pikseli aynı tanıma çekildi; tekilleştirme için iki taraf aynı adı göndermeli | `c118-deneme-rapor-reklam.md` |
+| 52 | M5a: yalnız ekleme olay deposu | taşıma birebir ölçüldü (göçten önce ve sonra parmak izi); akış imlecinin bitmemiş işlemi atlaması testte görünmez — ikinci bağlantıyla yarım işlem kurup ölçüldü | `m5a-olay-deposu.md` |

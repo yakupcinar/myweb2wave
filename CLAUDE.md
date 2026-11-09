@@ -167,6 +167,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§50** | **Para birimi verilmeyen çok para birimli Stripe fiyatı ödemede kendiliğinden yerelleşir** — paywall €, ödeme TRY; paywall'daki birimi `currency` ile hep zorla, `+location_XX` test e-postasıyla ölç. |
 | **§51** | **Panele eklenen sayfanın sunucu rotası yoksa menüden açılır, doğrudan adres / yenileme 404** — bellek yönlendiricili test yeşil; doğrudan adresi ölçen test yaz. |
 | **§52** | **Stripe kartlı denemeyi `payment_status = paid` sayar, tutar 0** — "ödedi" raporu ve reklam olayı denemeyi ödemiş gösterir; "ödedi"yi `amount_total > 0`'dan say, davranışı gerçek test oturumundan oku. |
+| **§53** | **`id >` imleçli olay akışı bitmemiş işlemin küçük id'li olayını kalıcı atlar** (id eklemede, görünürlük commit'te) — sayfalama testi yeşil; işlem kimliğini sakla, `islem < pg_snapshot_xmin(pg_current_snapshot())` ile oku. |
 
 ---
 

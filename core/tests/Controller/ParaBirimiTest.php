@@ -39,7 +39,7 @@ final class ParaBirimiTest extends WebTestCase
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
         $this->sifirla();
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
         $onbellek = static::getContainer()->get('fiyat.onbellegi');
         self::assertInstanceOf(CacheInterface::class, $onbellek);
         self::assertTrue(method_exists($onbellek, 'clear') && $onbellek->clear());

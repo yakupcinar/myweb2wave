@@ -341,3 +341,9 @@ birden çok çekimle ölç.
 **Ölçüm (2026-11-09, `m4b-deney-sonuclari.md`):** Stripe API'de tamamlanmış hiç denemeli oturum yoktu (6'sı denemesiz, `paid`, 999); yerel huniden 7 günlük denemeli oturum test kartıyla tamamlandı → `status=complete payment_status=paid amount_total=0`; gerçek olay yerel webhook'a verildi.
 **Doğrusu:** "ödedi"yi oturumun tutarından (`amount_total > 0`) say; Stripe davranışını sahte olay biçiminden değil gerçek test oturumundan oku. Belgeden hatırlanan alan değeri de ölçülmemiş iddiadır.
 **Uygulandı (2026-11-09, `c118-deneme-rapor-reklam.md`):** Rapor ve deneyler "ödedi"yi tutardan sayar, deneme ayrı; reklam ağlarına tutar 0'da `StartTrial` (sunucu + piksel aynı ad — ağ ad + event ID ile tekilleştirir).
+
+## §53 — Sıra numarasıyla (`id >`) okunan akış bitmemiş işlemin olayını atlar
+**Belirti:** olay akışını `id > son_imlec` ile sayfalayan okuyucu bazı olayları hiç görmez; hata yok, sayfalama testleri yeşil (testte işlemler tek tek ve sırayla biter).
+**Sebep:** `id` (IDENTITY/sequence) ekleme anında, satırın görünmesi ise commit anında. Önce başlayıp geç biten işlemin küçük id'li olayı, okuyucunun imleci onu geçtikten SONRA görünür — imleç geri gelmez.
+**Ölçüm (2026-11-09, `m5a-olay-deposu.md`):** ikinci bağlantıda açık işlemde olay eklendi, ilk bağlantıda arkasına bir olay daha eklenip bitti; bekçisiz akış büyük id'yi verdi, imleç küçük id'yi kalıcı olarak geçti (kırma E15).
+**Doğrusu:** satıra yazan işlemin kimliğini sakla (`xid8 DEFAULT pg_current_xact_id()`) ve yalnız şu an açık en eski işlemden önce bitenleri oku: `islem < pg_snapshot_xmin(pg_current_snapshot())`. Bedeli: uzun açık bir işlem akışı geciktirir (kaybettirmez). Zaman damgasıyla sıralamak da çözmez — `now()` işlem başlangıcıdır, aynı sorun.
