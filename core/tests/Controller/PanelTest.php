@@ -25,7 +25,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, odeme_faturalari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -207,6 +207,104 @@ final class PanelTest extends WebTestCase
         );
     }
 
+    /**
+     * M5c: UTM kırılımı, cevaba göre dönüşüm, kohort. Beklenenler elle
+     * hesaplandı (tuzak §3). A: deneme (tutar 0) + iki fatura (3. ve 35. gün)
+     * → ödedi; B: ilk ödeme + fatura (1. saat); C: yalnız ödemeye geçti
+     * (hepsi meta/cpc/ekim, 70 gün önce). D: deneme, fatura yok (organik);
+     * E: google/cpc/kasim, TRY (2 gün önce). F: tiktok/cpc/ekim, TRY — yalnız
+     * kaynağı farklı grup; G: organik, gelirli (ortam null grubu) — 70 gün.
+     * H: meta/paid/ekim (yalnız ortamı farklı), faturası 3. gün; J: google,
+     * ödemeye geçmedi — 2 gün. I: meta/cpc/ekim ama 100 gün (aralık dışı).
+     */
+    public function testUtmCevapVeKohort(): void
+    {
+        $a = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim', 'fbclid' => 'fb-a'], '70 days');
+        $b = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim', 'fbclid' => 'fb-b'], '70 days');
+        $c = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim', 'fbclid' => 'fb-c'], '70 days');
+        $d = $this->ziyaretEkle([], '2 days');
+        $e = $this->ziyaretEkle(['utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'kasim'], '2 days');
+        $f = $this->ziyaretEkle(['utm_source' => 'tiktok', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim'], '70 days');
+        $g = $this->ziyaretEkle([], '70 days');
+        $h = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'paid', 'utm_campaign' => 'ekim', 'fbclid' => 'fb-h'], '2 days');
+        $this->ziyaretEkle(['utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'kasim'], '2 days');
+        $i = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim', 'fbclid' => 'fb-i'], '100 days');
+        foreach ([[$a, 0, 'eur'], [$b, 999, 'eur'], [$c, null, null], [$d, 0, 'eur'], [$e, 2000, 'try'], [$f, 1500, 'try'], [$g, 450, 'eur'], [$h, 700, 'eur'], [$i, 999, 'eur']] as $n => [$z, $tutar, $para]) {
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => "cs_{$n}", 'ziyaret_id' => $z, 'stripe_subscription_id' => null === $tutar ? null : "sub_{$n}",
+                'abonelik_at' => null === $tutar ? null : '2026-11-01 10:00:00+00', 'tutar_kucuk' => $tutar, 'para_birimi' => $para]);
+        }
+        foreach ([['in_a1', 'sub_0', 999, 'eur', $a, '3 days'], ['in_a2', 'sub_0', 999, 'eur', $a, '35 days'], ['in_b1', 'sub_1', 999, 'eur', $b, '1 hour'], ['in_e', 'sub_4', 2000, 'try', $e, '1 hour'],
+            ['in_f', 'sub_5', 1500, 'try', $f, '1 hour'], ['in_g', 'sub_6', 450, 'eur', $g, '2 days'], ['in_h', 'sub_7', 700, 'eur', $h, '3 days'],
+            ['in_i', 'sub_8', 999, 'eur', $i, '1 hour']] as [$id, $sub, $tutar, $para, $z, $sonra]) {
+            $this->db->executeStatement(
+                "INSERT INTO odeme_faturalari (stripe_invoice_id, stripe_subscription_id, app, tutar_kucuk, para_birimi, odendi_at)
+                 SELECT :id, :sub, 'keepchat', :tutar, :para, created_at + CAST(:sonra AS interval) FROM huni_ziyaretleri WHERE id = :z",
+                ['id' => $id, 'sub' => $sub, 'tutar' => $tutar, 'para' => $para, 'z' => $z, 'sonra' => $sonra],
+            );
+        }
+        foreach ([[$a, 'aile'], [$b, 'aile'], [$c, 'is'], [$d, 'is']] as [$z, $secenek]) {
+            $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => $secenek]);
+        }
+        $this->girisYapmis();
+
+        $r = $this->rapor('?gun=90');
+
+        self::assertSame([
+            ['kaynak' => 'meta', 'ortam' => 'cpc', 'kampanya' => 'ekim', 'reklam' => true, 'ziyaret' => 3, 'odemeye_gecti' => 3, 'deneme' => 0, 'odedi' => 2, 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 29.97]]],
+            ['kaynak' => 'doğrudan', 'ortam' => null, 'kampanya' => null, 'reklam' => false, 'ziyaret' => 2, 'odemeye_gecti' => 2, 'deneme' => 1, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 4.5]]],
+            ['kaynak' => 'google', 'ortam' => 'cpc', 'kampanya' => 'kasim', 'reklam' => true, 'ziyaret' => 2, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'TRY', 'tutar' => 20]]],
+            ['kaynak' => 'meta', 'ortam' => 'paid', 'kampanya' => 'ekim', 'reklam' => true, 'ziyaret' => 1, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 7]]],
+            ['kaynak' => 'tiktok', 'ortam' => 'cpc', 'kampanya' => 'ekim', 'reklam' => true, 'ziyaret' => 1, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'TRY', 'tutar' => 15]]],
+        ], $r['utm']);
+        // A deneme ile başladı ama faturası ödendi → "ödedi" (deneme değil).
+        self::assertSame(['ziyaret' => 7, 'odemeye_gecti' => 6, 'deneme' => 0, 'odedi' => 5], $r['sayimlar']['reklam']);
+        self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'deneme' => 1, 'odedi' => 1], $r['sayimlar']['organik']);
+        self::assertSame([
+            ['app' => 'keepchat', 'soru' => 'kiminle', 'secenek' => 'aile', 'sayi' => 2, 'abone' => 2],
+            ['app' => 'keepchat', 'soru' => 'kiminle', 'secenek' => 'is', 'sayi' => 2, 'abone' => 1],
+        ], $r['cevaplar']);
+
+        // Hafta = UTC pazartesi, PHP saatinden (sorgudan bağımsız).
+        $hafta = static function (int $once): string {
+            $t = time() - $once * 86400;
+
+            return gmdate('Y-m-d', $t - ((int) gmdate('N', $t) - 1) * 86400);
+        };
+        $p = static fn (int $gun, bool $olgun, array $kisiBasi = []): array => ['gun' => $gun, 'olgun' => $olgun, 'kisiBasi' => $kisiBasi];
+        $eur = static fn (int|float $t): array => [['paraBirimi' => 'EUR', 'tutar' => $t]];
+        $try = static fn (int|float $t): array => [['paraBirimi' => 'TRY', 'tutar' => $t]];
+        self::assertSame([
+            // 2 gün (D E H J): yalnız ilk 24 saat olgun; E'nin faturası 1. saatte, 20 TRY / 4 ziyaret; H'ninki 3. gün.
+            ['hafta' => $hafta(2), 'ziyaret' => 4, 'pencereler' => [$p(0, true, $try(5)), $p(7, false), $p(30, false), $p(60, false)]],
+            // 70 gün, 5 ziyaret (A B C F G). EUR: B 1. saat 9,99; A 3. gün +9,99; G 2. gün +4,50; A 35. gün +9,99
+            // → 9,99 / 5 = 2,00 · 24,48 / 5 = 4,90 · 4,90 · 34,47 / 5 = 6,89. TRY: F 1. saat 15 / 5 = 3 her pencerede.
+            ['hafta' => $hafta(70), 'ziyaret' => 5, 'pencereler' => [$p(0, true, [...$eur(2), ...$try(3)]), $p(7, true, [...$eur(4.9), ...$try(3)]),
+                $p(30, true, [...$eur(4.9), ...$try(3)]), $p(60, true, [...$eur(6.89), ...$try(3)])]],
+        ], $r['kohort']);
+    }
+
+    /**
+     * M5c: pencere haftanın EN GENÇ ziyareti için dolmadıysa olgun değil.
+     * Hafta, 30 gün öncesini içeren UTC haftası: ilk ziyaret pazartesi 00:00
+     * (yaşı ≥ 30 gün), ikincisi "30 gün önce" ile hafta sonu arasında (yaşı <
+     * 30 gün) — her gün koşulan test için ikisi de aynı haftada.
+     */
+    public function testKohortOlgunlukHaftaninEnGencZiyaretinden(): void
+    {
+        $simdi = time();
+        $sinir = $simdi - 30 * 86400;
+        $pazartesi = $sinir - ((int) gmdate('N', $sinir) - 1) * 86400 - $sinir % 86400;
+        $genc = intdiv($sinir + $pazartesi + 7 * 86400, 2);
+        foreach ([$pazartesi, $genc] as $t) {
+            $this->ziyaretEkle([], ($simdi - $t).' seconds');
+        }
+        $this->girisYapmis();
+
+        $kohort = $this->rapor('?gun=90')['kohort'];
+        self::assertSame([[gmdate('Y-m-d', $pazartesi), 2]], array_map(static fn (array $k): array => [$k['hafta'], $k['ziyaret']], $kohort));
+        self::assertSame([0 => true, 7 => true, 30 => false, 60 => false], array_column($kohort[0]['pencereler'], 'olgun', 'gun'));
+    }
+
     public function testSatirdaAsamaKaynakVeMaskeliEposta(): void
     {
         $this->veriKur();
@@ -291,8 +389,9 @@ final class PanelTest extends WebTestCase
      *
      * @return array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>,
      *               satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>,
-     *               cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>,
-     *               gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>}
+     *               cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>,
+     *               gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>,
+     *               utm: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>}
      */
     private function rapor(string $sorgu = ''): array
     {
@@ -300,7 +399,7 @@ final class PanelTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $yanit = $this->client->getResponse();
         Sozlesme::yanitiDogrula('GET', '/panel/api/rapor', $yanit);
-        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int}>, metinCevaplari: list<array{cevap: string}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>} $govde */
+        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, utm: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
         $govde = json_decode((string) $yanit->getContent(), true);
 
         return $govde;

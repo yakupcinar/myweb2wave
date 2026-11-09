@@ -169,6 +169,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§52** | **Stripe kartlı denemeyi `payment_status = paid` sayar, tutar 0** — "ödedi" raporu ve reklam olayı denemeyi ödemiş gösterir; "ödedi"yi `amount_total > 0`'dan say, davranışı gerçek test oturumundan oku. |
 | **§53** | **`id >` imleçli olay akışı bitmemiş işlemin küçük id'li olayını kalıcı atlar** (id eklemede, görünürlük commit'te) — sayfalama testi yeşil; işlem kimliğini sakla, `islem < pg_snapshot_xmin(pg_current_snapshot())` ile oku. |
 | **§54** | **Yeni Stripe API'de faturada `subscription` ve `metadata.app` yok** (`parent.subscription_details` altında) — webhook 200, fatura hiçbir aboneliğe bağlanmaz; alanı gerçek nesneden oku, uç nokta API sürümü hesapla aynı. |
+| **§55** | **`x IN (…)` NULL'da NULL döner — boolean ifade `=` ile eşleşme anahtarı olunca satır sessizce düşer** (organik gelir boş, sayımlar doğru); `IS NOT DISTINCT FROM` / tek `GROUP BY`, test verisine NULL kolu. |
 
 ---
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Huni;
 
+use App\Panel\Rapor;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
@@ -204,7 +205,7 @@ final readonly class Deneyler
             'SELECT d.varyant, count(*) AS ziyaret,
                     count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id)) AS gecti,
                     count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id AND o.abonelik_at IS NOT NULL)) AS abone,
-                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id AND o.tutar_kucuk > 0)) AS odedi
+                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id AND '.Rapor::ODEDI.')) AS odedi
              FROM ziyaret_deneyleri d JOIN huni_ziyaretleri z ON z.id = d.ziyaret_id
              WHERE z.app = :app AND d.deney = :ad GROUP BY d.varyant',
             ['app' => $app, 'ad' => $ad],

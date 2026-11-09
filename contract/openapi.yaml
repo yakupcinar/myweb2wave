@@ -1181,11 +1181,19 @@ components:
         ziyaret: { type: integer, minimum: 0 }
         odemeye_gecti: { type: integer, minimum: 0 }
         deneme: { type: integer, minimum: 0, description: "Ç118 — abone oldu ama para çekilmedi (kartlı deneme, tutar 0)" }
-        odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0" }
+        odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0 ya da tahsil edilmiş fatura (M5c)" }
+    PanelTutar:
+      description: Ana birimde tutar (9.99), para birimi başına — çevrilmez
+      type: object
+      additionalProperties: false
+      required: [paraBirimi, tutar]
+      properties:
+        paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
+        tutar: { type: number, minimum: 0 }
     PanelRaporu:
       type: object
       additionalProperties: false
-      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari, gunluk]
+      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari, gunluk, utm, kohort]
       properties:
         gun: { type: integer, enum: [7, 30, 90] }
         gunluk:
@@ -1257,12 +1265,50 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [app, soru, secenek, sayi]
+            required: [app, soru, secenek, sayi, abone]
             properties:
               app: { type: string }
               soru: { type: string }
               secenek: { type: string }
-              sayi: { type: integer, minimum: 0 }
+              sayi: { type: integer, minimum: 0, description: Bu seçeneği seçen ziyaret }
+              abone: { type: integer, minimum: 0, description: "M5c — bunlardan abone olan (deneme dahil)" }
+        utm:
+          description: "M5c — kaynak / ortam / kampanya başına; gelir aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları (en çok ziyaretli azami grup)"
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kaynak, ortam, kampanya, reklam, ziyaret, odemeye_gecti, deneme, odedi, gelir]
+            properties:
+              kaynak: { type: string }
+              ortam: { type: [string, "null"] }
+              kampanya: { type: [string, "null"] }
+              reklam: { type: boolean }
+              ziyaret: { type: integer, minimum: 0 }
+              odemeye_gecti: { type: integer, minimum: 0 }
+              deneme: { type: integer, minimum: 0 }
+              odedi: { type: integer, minimum: 0 }
+              gelir: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
+        kohort:
+          description: "M5c — ziyaretin UTC haftası (pazartesi, en yeni önce); pencerede ziyaret başına birikimli gelir (0 = ilk 24 saat); pencere haftanın son ziyareti için dolmadıysa olgun değil, tutar yok"
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [hafta, ziyaret, pencereler]
+            properties:
+              hafta: { type: string, format: date }
+              ziyaret: { type: integer, minimum: 1 }
+              pencereler:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [gun, olgun, kisiBasi]
+                  properties:
+                    gun: { type: integer, enum: [0, 7, 30, 60] }
+                    olgun: { type: boolean }
+                    kisiBasi: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
         metinCevaplari:
           description: 90 gün içinde, en yeni azami kadar
           type: array
@@ -1378,7 +1424,7 @@ components:
               ziyaret: { type: integer, minimum: 0, description: Varyanta atanan ziyaret }
               odemeyeGecti: { type: integer, minimum: 0, description: Ödeme oturumu açan ziyaret }
               abone: { type: integer, minimum: 0, description: "Abonelik başladı (kartlı deneme dahil) — dönüşüm" }
-              odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0 (Stripe kartlı denemeyi de paid sayar, tutar 0)" }
+              odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0 ya da tahsil edilmiş fatura, deneme sonrası ilk ödeme dahil (Stripe kartlı denemeyi de paid sayar, tutar 0)" }
               kazanmaOlasiligi: { type: number, minimum: 0, maximum: 1, description: "Abone olma oranı en yüksek olma olasılığı (Beta(1,1) önsel)" }
     PanelEkUrunleri:
       type: object

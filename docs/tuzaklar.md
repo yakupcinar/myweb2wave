@@ -353,3 +353,9 @@ birden çok çekimle ölç.
 **Sebep:** API 2026-09-30'da (hesabın sürümü) abonelik ve aboneliğin metadata'sı `invoice.parent.subscription_details` altında; faturanın kendi `metadata`'sı boş. Webhook gövdesi uç noktanın API sürümüyle gelir.
 **Ölçüm (2026-11-09, `m5b-faturalar.md`):** test hesabındaki gerçek 3 fatura: üst düzeyde `subscription` yok, `metadata: []`, `parent.subscription_details.{subscription, metadata.app}` dolu. Gerçek `invoice.paid` olayları imzalı olarak yerel webhook'a verildi → 3 fatura `keepchat` ile yazıldı.
 **Doğrusu:** alanı belgeden değil gerçek nesneden oku; üretim webhook uç noktasının API sürümü hesabınkiyle aynı olsun (Ç120). Kırma F2: üst metadata'dan okumak 7 testi düşürdü.
+
+## §55 — `x IN (…)` NULL'da NULL döner; boolean ifade eşleşme anahtarı olunca satır sessizce düşer
+**Belirti:** organik (ortamsız, tıklamasız) grubun geliri boş; ziyaret sayısı doğru, hata yok.
+**Sebep:** `REKLAM = (fbclid IS NOT NULL OR ttclid IS NOT NULL OR lower(utm_medium) IN (…))` — ortam NULL ve tıklama yoksa sonuç `false` değil **NULL**. Gelir alt sorgusu grubu `v2.reklam = v.reklam` ile eşliyordu; `NULL = NULL` NULL → hiçbir satır eşleşmedi. `GROUP BY` NULL'ları bir grupta topladığı ve PHP `true === null` false verdiği için sayımlar ve çıktı doğru göründü.
+**Ölçüm (2026-11-09, `m5c-raporlar.md`):** organik gelirli ziyaret teste eklenince beklenen EUR 4,50 yerine `[]`.
+**Doğrusu:** eşleşmede `IS NOT DISTINCT FROM` ya da `coalesce(…, false)`; daha iyisi eşleşmeyi tek sorgunun `GROUP BY`'ına bırakmak (M5c bunu yaptı — iki sorgu aynı CTE'den, anahtar PHP'de). Test verisine her NULL kolu için bir satır koy.

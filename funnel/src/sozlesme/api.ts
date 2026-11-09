@@ -742,8 +742,13 @@ export interface components {
             odemeye_gecti: number;
             /** @description Ç118 — abone oldu ama para çekilmedi (kartlı deneme, tutar 0) */
             deneme: number;
-            /** @description Para çekildi — oturum tutarı > 0 */
+            /** @description Para çekildi — oturum tutarı > 0 ya da tahsil edilmiş fatura (M5c) */
             odedi: number;
+        };
+        /** @description Ana birimde tutar (9.99), para birimi başına — çevrilmez */
+        PanelTutar: {
+            paraBirimi: string;
+            tutar: number;
         };
         PanelRaporu: {
             /** @enum {integer} */
@@ -793,7 +798,34 @@ export interface components {
                 app: string;
                 soru: string;
                 secenek: string;
+                /** @description Bu seçeneği seçen ziyaret */
                 sayi: number;
+                /** @description M5c — bunlardan abone olan (deneme dahil) */
+                abone: number;
+            }[];
+            /** @description M5c — kaynak / ortam / kampanya başına; gelir aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları (en çok ziyaretli azami grup) */
+            utm: {
+                kaynak: string;
+                ortam: string | null;
+                kampanya: string | null;
+                reklam: boolean;
+                ziyaret: number;
+                odemeye_gecti: number;
+                deneme: number;
+                odedi: number;
+                gelir: components["schemas"]["PanelTutar"][];
+            }[];
+            /** @description M5c — ziyaretin UTC haftası (pazartesi, en yeni önce); pencerede ziyaret başına birikimli gelir (0 = ilk 24 saat); pencere haftanın son ziyareti için dolmadıysa olgun değil, tutar yok */
+            kohort: {
+                /** Format: date */
+                hafta: string;
+                ziyaret: number;
+                pencereler: {
+                    /** @enum {integer} */
+                    gun: 0 | 7 | 30 | 60;
+                    olgun: boolean;
+                    kisiBasi: components["schemas"]["PanelTutar"][];
+                }[];
             }[];
             /** @description 90 gün içinde, en yeni azami kadar */
             metinCevaplari: {
@@ -871,7 +903,7 @@ export interface components {
                 odemeyeGecti: number;
                 /** @description Abonelik başladı (kartlı deneme dahil) — dönüşüm */
                 abone: number;
-                /** @description Para çekildi — oturum tutarı > 0 (Stripe kartlı denemeyi de paid sayar, tutar 0) */
+                /** @description Para çekildi — oturum tutarı > 0 ya da tahsil edilmiş fatura, deneme sonrası ilk ödeme dahil (Stripe kartlı denemeyi de paid sayar, tutar 0) */
                 odedi: number;
                 /** @description Abone olma oranı en yüksek olma olasılığı (Beta(1,1) önsel) */
                 kazanmaOlasiligi: number;

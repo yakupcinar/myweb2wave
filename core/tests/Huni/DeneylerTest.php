@@ -38,7 +38,7 @@ final class DeneylerTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $db->executeStatement('TRUNCATE deneyler, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari CASCADE');
+        $db->executeStatement('TRUNCATE odeme_faturalari, deneyler, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari CASCADE');
         foreach (['genel', 'yeni', 'taslakta'] as $ad) {
             self::assertSame([], $this->huniler()->yeniHuni('keepchat', $ad, null));
             self::assertSame([], $this->huniler()->taslakKaydet('keepchat', $ad, ['sayfaBasligi' => $ad, 'adimlar' => [
@@ -314,11 +314,15 @@ final class DeneylerTest extends WebTestCase
         $this->db->executeStatement("INSERT INTO huni_ziyaretleri (id, app) VALUES ('00000000-0000-4000-8000-000000000001', 'baska')");
         $this->db->executeStatement("INSERT INTO ziyaret_deneyleri (ziyaret_id, deney, varyant) VALUES ('00000000-0000-4000-8000-000000000001', 'baslik', 'a')");
 
+        // M5c: deneme sonrası tahsil edilen fatura → a2 artık ödedi (Rapor::ODEDI).
+        $this->db->executeStatement("UPDATE odeme_oturumlari SET stripe_subscription_id = 'sub_a2' WHERE stripe_checkout_session_id = 'cs_a2'");
+        $this->db->insert('odeme_faturalari', ['stripe_invoice_id' => 'in_a2', 'stripe_subscription_id' => 'sub_a2', 'app' => 'keepchat', 'tutar_kucuk' => 999, 'para_birimi' => 'eur', 'odendi_at' => '2026-11-16 10:00Z']);
+
         $sonuc = $this->deneyler()->sonuclar('keepchat', 'baslik');
         self::assertNotNull($sonuc);
         self::assertSame(['ad' => 'baslik', 'durum' => 'aktif'], array_intersect_key($sonuc, ['ad' => 1, 'durum' => 1]));
         self::assertSame([
-            ['a', 3, 3, 3, 1],
+            ['a', 3, 3, 3, 2],
             ['b', 1, 1, 0, 0],
             ['c', 0, 0, 0, 0],
         ], array_map(static fn (array $v): array => [$v['ad'], $v['ziyaret'], $v['odemeyeGecti'], $v['abone'], $v['odedi']], $sonuc['varyantlar']));

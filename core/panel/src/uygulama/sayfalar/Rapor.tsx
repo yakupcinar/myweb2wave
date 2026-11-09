@@ -6,7 +6,7 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
-import { yuzde, zaman } from "../bicim";
+import { tutarlar, yuzde, zaman } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 
 // P4: grafik kitaplığı (Recharts) ayrı parça — Huniler/düzenleyici indirmez.
@@ -208,7 +208,7 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
 }
 
 // Ç118: dönüşüm = abone olan ziyaret (deneme dahil) — deneylerle aynı tanım (A17).
-function donusum(s: Sayim): string {
+function donusum(s: Pick<Sayim, "deneme" | "odedi" | "ziyaret">): string {
     return yuzde(s.deneme + s.odedi, s.ziyaret);
 }
 
@@ -348,6 +348,8 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                             <Th>Soru</Th>
                             <Th>Cevap</Th>
                             <Th>Sayı</Th>
+                            <Th>Abone</Th>
+                            <Th>Dönüşüm</Th>
                         </tr>
                     </thead>
                     <tbody>
@@ -356,12 +358,118 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                                 <Td>{c.soru}</Td>
                                 <Td>{c.secenek}</Td>
                                 <Td>{c.sayi}</Td>
+                                <Td>{c.abone}</Td>
+                                {/* M5c: seçen ziyaretten abone olan (deneme dahil, A17). */}
+                                <Td>{yuzde(c.abone, c.sayi)}</Td>
                             </tr>
                         ))}
                         {r.cevaplar.length ? null : (
                             <tr>
-                                <Td colSpan={3} className="text-soluk">
+                                <Td colSpan={5} className="text-soluk">
                                     Henüz cevap yok.
+                                </Td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Tablo>
+            </Kart>
+            <Kart aria-label="Kaynak kırılımı">
+                <KartBasi
+                    baslik="Kaynak kırılımı"
+                    aciklama="Gelir: bu ziyaretlerin bugüne kadar tahsil edilen faturaları"
+                />
+                <Tablo>
+                    <thead>
+                        <tr>
+                            {[
+                                "Kaynak",
+                                "Ortam",
+                                "Kampanya",
+                                "Ziyaret",
+                                "Ödemeye geçti",
+                                "Deneme",
+                                "Ödedi",
+                                "Dönüşüm",
+                                "Gelir",
+                            ].map((b) => (
+                                <Th key={b}>{b}</Th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {r.utm.map((u) => (
+                            <tr
+                                key={`${u.kaynak}/${u.ortam ?? ""}/${u.kampanya ?? ""}/${u.reklam}`}
+                            >
+                                <Td>
+                                    {u.reklam ? (
+                                        <>
+                                            <Rozet tur="uyari">reklam</Rozet>{" "}
+                                            ·{" "}
+                                        </>
+                                    ) : null}
+                                    {u.kaynak}
+                                </Td>
+                                <Td>{u.ortam ?? "—"}</Td>
+                                <Td>{u.kampanya ?? "—"}</Td>
+                                <Td>{u.ziyaret}</Td>
+                                <Td>{u.odemeye_gecti}</Td>
+                                <Td>{u.deneme}</Td>
+                                <Td>{u.odedi}</Td>
+                                <Td>{donusum(u)}</Td>
+                                <Td>{tutarlar(u.gelir)}</Td>
+                            </tr>
+                        ))}
+                        {r.utm.length ? null : (
+                            <tr>
+                                <Td colSpan={9} className="text-soluk">
+                                    Bu aralıkta ziyaret yok.
+                                </Td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Tablo>
+            </Kart>
+            <Kart aria-label="Kohort geliri">
+                <KartBasi
+                    baslik="Kohort geliri"
+                    aciklama="Ziyaret haftası (UTC, pazartesi) · ziyaret başına birikimli gelir · — = pencere henüz dolmadı"
+                />
+                <Tablo>
+                    <thead>
+                        <tr>
+                            {[
+                                "Hafta",
+                                "Ziyaret",
+                                "İlk 24 saat",
+                                "7 gün",
+                                "30 gün",
+                                "60 gün",
+                            ].map((b) => (
+                                <Th key={b}>{b}</Th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {r.kohort.map((k) => (
+                            <tr key={k.hafta}>
+                                <Td>{k.hafta}</Td>
+                                <Td>{k.ziyaret}</Td>
+                                {k.pencereler.map((p) => (
+                                    <Td key={p.gun}>
+                                        {p.olgun
+                                            ? p.kisiBasi.length
+                                                ? tutarlar(p.kisiBasi)
+                                                : "0"
+                                            : "—"}
+                                    </Td>
+                                ))}
+                            </tr>
+                        ))}
+                        {r.kohort.length ? null : (
+                            <tr>
+                                <Td colSpan={6} className="text-soluk">
+                                    Bu aralıkta ziyaret yok.
                                 </Td>
                             </tr>
                         )}

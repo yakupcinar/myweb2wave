@@ -48,7 +48,58 @@ const RAPOR: PanelRaporu = {
         { app: "keepchat", huni: "—", sira: 1, adim: "kiminle", ulasan: 2 },
         { app: "keepchat", huni: "—", sira: 2, adim: "cihaz", ulasan: 1 },
     ],
-    cevaplar: [{ app: "keepchat", soru: "kiminle", secenek: "aile", sayi: 2 }],
+    cevaplar: [
+        {
+            app: "keepchat",
+            soru: "kiminle",
+            secenek: "aile",
+            sayi: 4,
+            abone: 1,
+        },
+    ],
+    utm: [
+        {
+            kaynak: "meta",
+            ortam: "cpc",
+            kampanya: "ekim",
+            reklam: true,
+            ziyaret: 3,
+            odemeye_gecti: 3,
+            deneme: 1,
+            odedi: 1,
+            gelir: [
+                { paraBirimi: "EUR", tutar: 29.97 },
+                { paraBirimi: "TRY", tutar: 20 },
+            ],
+        },
+        {
+            kaynak: "doğrudan",
+            ortam: null,
+            kampanya: null,
+            reklam: false,
+            ziyaret: 1,
+            odemeye_gecti: 0,
+            deneme: 0,
+            odedi: 0,
+            gelir: [],
+        },
+    ],
+    kohort: [
+        {
+            hafta: "2026-11-02",
+            ziyaret: 2,
+            pencereler: [
+                {
+                    gun: 0,
+                    olgun: true,
+                    kisiBasi: [{ paraBirimi: "EUR", tutar: 3.33 }],
+                },
+                { gun: 7, olgun: true, kisiBasi: [] },
+                { gun: 30, olgun: false, kisiBasi: [] },
+                { gun: 60, olgun: false, kisiBasi: [] },
+            ],
+        },
+    ],
     metinCevaplari: [],
     gunluk: [
         {
@@ -153,6 +204,57 @@ describe("Rapor", () => {
             ].map((td) => td.textContent);
         expect(satir(odeme, "2026-11-03")).toEqual(["3 Kasım Sal", "2", "1"]);
         expect(satir(ziyaret, "2026-11-02")).toEqual(["2 Kasım Pzt", "0"]);
+    });
+
+    it("M5c: kaynak kırılımı, cevaba göre dönüşüm, kohort hücreleri", async () => {
+        kur();
+        const hucreler = (bolum: string, satir = 1) =>
+            [
+                ...within(screen.getByRole("region", { name: bolum }))
+                    .getAllByRole("row")
+                    [satir]!.querySelectorAll("td"),
+            ].map((h) => h.textContent);
+        await screen.findByRole("region", { name: "Kaynak kırılımı" });
+        // Dönüşüm (deneme + ödedi) / ziyaret = 2/3; para birimleri toplanmaz.
+        expect(hucreler("Kaynak kırılımı")).toEqual([
+            "reklam · meta",
+            "cpc",
+            "ekim",
+            "3",
+            "3",
+            "1",
+            "1",
+            "66,7 %",
+            "€29,97 · ₺20,00",
+        ]);
+        expect(hucreler("Kaynak kırılımı", 2)).toEqual([
+            "doğrudan",
+            "—",
+            "—",
+            "1",
+            "0",
+            "0",
+            "0",
+            "0,0 %",
+            "—",
+        ]);
+        // 1 / 4 seçen abone.
+        expect(hucreler("Cevaplar")).toEqual([
+            "kiminle",
+            "aile",
+            "4",
+            "1",
+            "25,0 %",
+        ]);
+        // Olgun + gelirsiz "0", olgun değil "—" (yarım pencere sıfır sanılmasın).
+        expect(hucreler("Kohort geliri")).toEqual([
+            "2026-11-02",
+            "2",
+            "€3,33",
+            "0",
+            "—",
+            "—",
+        ]);
     });
 
     it("P4: kayıtsız aralıkta grafik yerine boş durum", async () => {
