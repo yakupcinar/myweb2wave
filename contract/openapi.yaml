@@ -1193,7 +1193,7 @@ components:
     PanelRaporu:
       type: object
       additionalProperties: false
-      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari, gunluk, utm, kohort]
+      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari, gunluk, utm, kohort, kampanyalar]
       properties:
         gun: { type: integer, enum: [7, 30, 90] }
         gunluk:
@@ -1309,6 +1309,20 @@ components:
                     gun: { type: integer, enum: [0, 7, 30, 60] }
                     olgun: { type: boolean }
                     kisiBasi: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
+        kampanyalar:
+          description: "M5d — Meta kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama"
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kampanya, harcama, ziyaret, odedi, gelir, roas]
+            properties:
+              kampanya: { type: string }
+              harcama: { $ref: "#/components/schemas/PanelTutar" }
+              ziyaret: { type: integer, minimum: 0 }
+              odedi: { type: integer, minimum: 0 }
+              gelir: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
+              roas: { type: [number, "null"], minimum: 0 }
         metinCevaplari:
           description: 90 gün içinde, en yeni azami kadar
           type: array

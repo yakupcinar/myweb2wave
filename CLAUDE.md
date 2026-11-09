@@ -170,6 +170,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§53** | **`id >` imleçli olay akışı bitmemiş işlemin küçük id'li olayını kalıcı atlar** (id eklemede, görünürlük commit'te) — sayfalama testi yeşil; işlem kimliğini sakla, `islem < pg_snapshot_xmin(pg_current_snapshot())` ile oku. |
 | **§54** | **Yeni Stripe API'de faturada `subscription` ve `metadata.app` yok** (`parent.subscription_details` altında) — webhook 200, fatura hiçbir aboneliğe bağlanmaz; alanı gerçek nesneden oku, uç nokta API sürümü hesapla aynı. |
 | **§55** | **`x IN (…)` NULL'da NULL döner — boolean ifade `=` ile eşleşme anahtarı olunca satır sessizce düşer** (organik gelir boş, sayımlar doğru); `IS NOT DISTINCT FROM` / tek `GROUP BY`, test verisine NULL kolu. |
+| **§56** | **PHP 8.4 `round()` ön yuvarlamaz — `(float)"1.005" * 100` → 100** (1 kuruş eksik, 2 basamakta görünmez); dış sistemin ondalık metnini metin olarak çevir; savunmayı kaldırmadan testin o yoldan geçtiğini doğrula. |
 
 ---
 

@@ -827,6 +827,15 @@ export interface components {
                     kisiBasi: components["schemas"]["PanelTutar"][];
                 }[];
             }[];
+            /** @description M5d — Meta kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama */
+            kampanyalar: {
+                kampanya: string;
+                harcama: components["schemas"]["PanelTutar"];
+                ziyaret: number;
+                odedi: number;
+                gelir: components["schemas"]["PanelTutar"][];
+                roas: number | null;
+            }[];
             /** @description 90 gün içinde, en yeni azami kadar */
             metinCevaplari: {
                 zaman: string;

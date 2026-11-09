@@ -40,6 +40,22 @@ final class ParaBirimi
         return \in_array(strtoupper($para), self::SIFIR_ONDALIKLI, true) ? $tutar : $tutar / 100;
     }
 
+    /**
+     * M5d: ondalık metin ("5339.5", Meta Insights) → küçük birim, kayan noktasız;
+     * fazla basamak yarım yukarı yuvarlanır. Biçim dışıysa null. kucukBirim()
+     * burada yetmez: 1.005 × 100 = 100.4999… → 100 (PHP 8.4 round ön yuvarlamaz).
+     */
+    public static function metindenKucuk(string $tutar, string $para): ?int
+    {
+        if (1 !== preg_match('/^(\d{1,15})(?:\.(\d{1,9}))?$/', $tutar, $m)) {
+            return null;
+        }
+        $basamak = \in_array(strtoupper($para), self::SIFIR_ONDALIKLI, true) ? 0 : 2;
+        $kesir = str_pad($m[2] ?? '', $basamak + 1, '0');
+
+        return (int) $m[1] * 10 ** $basamak + (int) substr($kesir, 0, $basamak) + ((int) $kesir[$basamak] >= 5 ? 1 : 0);
+    }
+
     /** M1a: panelde yazılan ana birim (9.99) → Stripe'ın küçük birimi (999); kayan nokta yuvarlanır. */
     public static function kucukBirim(int|float $tutar, string $para): int
     {

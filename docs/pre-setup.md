@@ -237,6 +237,11 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - **M5c raporları** (kullanıcı 2026-11-09, üçü de): UTM kırılımı (kaynak / ortam / kampanya → ödemeye
   geçti → deneme → ödedi → gelir), cevaba göre dönüşüm (seçenek başına seçen + dönüşüm), kohort
   tablosu (ziyaret haftası × 0/7/30/60 gün, kişi başı birikimli gelir).
+- **M5d ROAS** (kullanıcı 2026-11-09): harcama Meta Marketing API'den (Insights, ads_read — CAPI
+  anahtarından ayrı `META_INSIGHTS_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID`); eşleşme `utm_campaign =
+  kampanya adı` ve ziyaret Meta'dan (fbclid ya da kaynak meta/facebook/fb/instagram/ig). Reddedilen:
+  elle giriş, kampanya kimliği. **Değer aktarımı (StartTrial tahmini değer) sonraya** — kohort verisi
+  birikmeden LTV tahmini yanlış olur.
 
 **A17 · M4 deneyler** (2026-11-04, kullanıcı: tür ve sonuç; atama ayrıntısı öneri).
 - **Tür: ikisi de.** Yönlendirme deneyi bir hunin trafiğini varyant hunilerine böler

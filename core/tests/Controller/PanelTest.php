@@ -25,7 +25,7 @@ final class PanelTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, odeme_faturalari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler, subscriptions');
+        $this->db->executeStatement('TRUNCATE revenuecat_gidenler, odeme_faturalari, reklam_harcamalari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler, subscriptions');
     }
 
     public function testGirisYapmadanPanelGorunmez(): void
@@ -305,6 +305,42 @@ final class PanelTest extends WebTestCase
         self::assertSame([0 => true, 7 => true, 30 => false, 60 => false], array_column($kohort[0]['pencereler'], 'olgun', 'gun'));
     }
 
+    /**
+     * M5d: Meta kampanyası ROAS. Elle hesap: ekim harcama 10 + 5 = 15 EUR
+     * (40 ve tam 30 gün önceki aralık dışı — 30 gün = bugün dahil son 30); ziyaret V1 (meta), V2 (yalnız fbclid), V4
+     * (facebook, oturumsuz) — V3 aynı adlı Google kampanyası, sayılmaz. Gelir
+     * V1 9,99 EUR + V2 20 TRY; ROAS = 9,99 / 15 = 0,67 (TRY çevrilmez).
+     * yaz → yaz-2 adı değişti: son ad.
+     */
+    public function testMetaKampanyaRoas(): void
+    {
+        foreach ([['c1', 'ekim', 1, 1000], ['c1', 'ekim', 5, 500], ['c1', 'ekim', 40, 9999], ['c1', 'ekim', 30, 7777], ['c2', 'kasim', 1, 2000], ['c3', 'yaz', 10, 300], ['c3', 'yaz-2', 2, 300]] as [$id, $ad, $once, $harcama]) {
+            $this->db->executeStatement(
+                "INSERT INTO reklam_harcamalari (saglayici, kampanya_id, kampanya_adi, gun, harcama_kucuk, para_birimi)
+                 VALUES ('meta', :id, :ad, (now() AT TIME ZONE 'UTC')::date - CAST(:once AS int), :h, 'eur')",
+                ['id' => $id, 'ad' => $ad, 'once' => $once, 'h' => $harcama],
+            );
+        }
+        $v1 = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim', 'fbclid' => 'fb-1'], '3 days');
+        $v2 = $this->ziyaretEkle(['utm_campaign' => 'ekim', 'fbclid' => 'fb-2'], '3 days');
+        $v3 = $this->ziyaretEkle(['utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'ekim'], '3 days');
+        $this->ziyaretEkle(['utm_source' => 'facebook', 'utm_campaign' => 'ekim'], '3 days');
+        foreach ([[$v1, 999, 'eur'], [$v2, 2000, 'try'], [$v3, 5000, 'eur']] as $n => [$z, $tutar, $para]) {
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => "cs_r{$n}", 'ziyaret_id' => $z, 'stripe_subscription_id' => "sub_r{$n}",
+                'abonelik_at' => '2026-11-01 10:00:00+00', 'tutar_kucuk' => $tutar, 'para_birimi' => $para]);
+            $this->db->insert('odeme_faturalari', ['stripe_invoice_id' => "in_r{$n}", 'stripe_subscription_id' => "sub_r{$n}", 'app' => 'keepchat',
+                'tutar_kucuk' => $tutar, 'para_birimi' => $para, 'odendi_at' => '2026-11-01 10:00:00+00']);
+        }
+        $this->girisYapmis();
+
+        self::assertSame([
+            ['kampanya' => 'kasim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 20], 'ziyaret' => 0, 'odedi' => 0, 'gelir' => [], 'roas' => 0],
+            ['kampanya' => 'ekim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 15], 'ziyaret' => 3, 'odedi' => 2,
+                'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 9.99], ['paraBirimi' => 'TRY', 'tutar' => 20]], 'roas' => 0.67],
+            ['kampanya' => 'yaz-2', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 6], 'ziyaret' => 0, 'odedi' => 0, 'gelir' => [], 'roas' => 0],
+        ], $this->rapor()['kampanyalar']);
+    }
+
     public function testSatirdaAsamaKaynakVeMaskeliEposta(): void
     {
         $this->veriKur();
@@ -391,7 +427,7 @@ final class PanelTest extends WebTestCase
      *               satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>,
      *               cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>,
      *               gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>,
-     *               utm: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>}
+     *               utm: list<array<string, mixed>>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>}
      */
     private function rapor(string $sorgu = ''): array
     {
@@ -399,7 +435,7 @@ final class PanelTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $yanit = $this->client->getResponse();
         Sozlesme::yanitiDogrula('GET', '/panel/api/rapor', $yanit);
-        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, utm: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
+        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, utm: list<array<string, mixed>>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
         $govde = json_decode((string) $yanit->getContent(), true);
 
         return $govde;

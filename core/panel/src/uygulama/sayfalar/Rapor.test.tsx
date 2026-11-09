@@ -84,6 +84,27 @@ const RAPOR: PanelRaporu = {
             gelir: [],
         },
     ],
+    kampanyalar: [
+        {
+            kampanya: "ekim",
+            harcama: { paraBirimi: "EUR", tutar: 15 },
+            ziyaret: 3,
+            odedi: 2,
+            gelir: [
+                { paraBirimi: "EUR", tutar: 9.99 },
+                { paraBirimi: "TRY", tutar: 20 },
+            ],
+            roas: 0.67,
+        },
+        {
+            kampanya: "sifir",
+            harcama: { paraBirimi: "EUR", tutar: 0 },
+            ziyaret: 0,
+            odedi: 0,
+            gelir: [],
+            roas: null,
+        },
+    ],
     kohort: [
         {
             hafta: "2026-11-02",
@@ -246,6 +267,16 @@ describe("Rapor", () => {
             "1",
             "25,0 %",
         ]);
+        // M5d: ROAS hesabın para biriminde; harcama 0 → tanımsız "—".
+        expect(hucreler("Meta kampanyaları")).toEqual([
+            "ekim",
+            "€15,00",
+            "3",
+            "2",
+            "€9,99 · ₺20,00",
+            "0,67×",
+        ]);
+        expect(hucreler("Meta kampanyaları", 2).at(-1)).toBe("—");
         // Olgun + gelirsiz "0", olgun değil "—" (yarım pencere sıfır sanılmasın).
         expect(hucreler("Kohort geliri")).toEqual([
             "2026-11-02",

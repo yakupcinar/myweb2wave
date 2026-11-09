@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Panel;
 
 use App\Billing\ParaBirimi;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
 /**
@@ -30,6 +31,12 @@ final readonly class Rapor
 
     /** Satırlar ve UTM kırılımı aynı "kaynak" tanımını kullanır. */
     public const KAYNAK = "coalesce(z.utm_source, CASE WHEN z.fbclid IS NOT NULL THEN 'meta (fbclid)' WHEN z.ttclid IS NOT NULL THEN 'tiktok (ttclid)' ELSE 'doğrudan' END)";
+
+    /**
+     * M5d: ziyaret Meta reklamından mı — tıklama kimliği ya da Meta kaynağı.
+     * Aynı adlı başka ağ kampanyası Meta harcamasına yazılmasın.
+     */
+    public const META = "(z.fbclid IS NOT NULL OR lower(z.utm_source) IN ('meta', 'facebook', 'fb', 'instagram', 'ig'))";
 
     /** Kohort pencereleri (gün); 0 = ilk 24 saat. */
     public const KOHORT_GUNLERI = [0, 7, 30, 60];
@@ -261,6 +268,63 @@ final readonly class Rapor
              LIMIT '.self::AZAMI_SATIR,
             ['gun' => $gun],
         ));
+    }
+
+    /**
+     * M5d: Meta kampanyası başına harcama (aralıktaki günler) ve aynı adlı
+     * utm_campaign ile Meta'dan gelen ziyaretlerin geliri (aralıkta gelen,
+     * bugüne kadar). ROAS yalnız hesabın para biriminde — başka para birimi
+     * gelir listesinde görünür, çevrilmez. Kampanya adı değişirse son ad.
+     *
+     * @return list<array{kampanya: string, harcama: array{paraBirimi: string, tutar: int|float}, ziyaret: int, odedi: int,
+     *                    gelir: list<array{paraBirimi: string, tutar: int|float}>, roas: float|null}>
+     */
+    public function kampanyalar(int $gun): array
+    {
+        $harcamalar = $this->db->fetchAllAssociative(
+            "SELECT (array_agg(kampanya_adi ORDER BY gun DESC))[1] AS ad, para_birimi, sum(harcama_kucuk) AS harcama
+             FROM reklam_harcamalari
+             WHERE saglayici = 'meta' AND gun > (now() AT TIME ZONE 'UTC')::date - CAST(:gun AS int)
+             GROUP BY kampanya_id, para_birimi ORDER BY harcama DESC, kampanya_id COLLATE \"C\"",
+            ['gun' => $gun],
+        );
+        $adlar = array_values(array_unique(array_map(static fn (array $h): string => self::dizge($h['ad']), $harcamalar)));
+        $ziyaret = [];
+        $gelir = [];
+        if ([] !== $adlar) {
+            $v = 'WITH v AS (SELECT z.id, z.utm_campaign AS ad FROM huni_ziyaretleri z
+                   WHERE z.utm_campaign IN (:adlar) AND z.created_at >= now() - make_interval(days => :gun) AND '.self::META.') ';
+            foreach ($this->db->fetchAllAssociative(
+                $v.'SELECT v.ad, count(*) AS ziyaret, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = v.id AND '.self::ODEDI.')) AS odedi FROM v GROUP BY 1',
+                ['adlar' => $adlar, 'gun' => $gun], ['adlar' => ArrayParameterType::STRING],
+            ) as $s) {
+                $ziyaret[self::dizge($s['ad'])] = [self::sayi($s['ziyaret']), self::sayi($s['odedi'])];
+            }
+            foreach ($this->db->fetchAllAssociative(
+                $v.'SELECT v.ad, f.para_birimi, sum(f.tutar_kucuk) AS toplam FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id
+                 JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id GROUP BY 1, 2 ORDER BY 2',
+                ['adlar' => $adlar, 'gun' => $gun], ['adlar' => ArrayParameterType::STRING],
+            ) as $s) {
+                $gelir[self::dizge($s['ad'])][self::dizge($s['para_birimi'])] = self::sayi($s['toplam']);
+            }
+        }
+
+        return array_map(static function (array $h) use ($ziyaret, $gelir): array {
+            $ad = self::dizge($h['ad']);
+            $para = self::dizge($h['para_birimi']);
+            $harcama = self::sayi($h['harcama']);
+            $tutarlar = $gelir[$ad] ?? [];
+
+            return [
+                'kampanya' => $ad,
+                'harcama' => ['paraBirimi' => strtoupper($para), 'tutar' => ParaBirimi::anaBirim($harcama, $para)],
+                'ziyaret' => $ziyaret[$ad][0] ?? 0,
+                'odedi' => $ziyaret[$ad][1] ?? 0,
+                'gelir' => array_map(static fn (string $p, int $t): array => ['paraBirimi' => strtoupper($p), 'tutar' => ParaBirimi::anaBirim($t, $p)], array_keys($tutarlar), $tutarlar),
+                // Aynı para birimindeki gelir / harcama; harcama 0 ise tanımsız.
+                'roas' => $harcama > 0 ? round(($tutarlar[$para] ?? 0) / $harcama, 2) : null,
+            ];
+        }, $harcamalar);
     }
 
     /** @param array<string, mixed> $s */

@@ -430,6 +430,53 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                     </tbody>
                 </Tablo>
             </Kart>
+            <Kart aria-label="Meta kampanyaları">
+                <KartBasi
+                    baslik="Meta kampanyaları"
+                    aciklama="Harcama Meta'dan (günlük çekilir); gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerin faturaları · ROAS hesabın para biriminde"
+                />
+                <Tablo>
+                    <thead>
+                        <tr>
+                            {[
+                                "Kampanya",
+                                "Harcama",
+                                "Ziyaret",
+                                "Ödedi",
+                                "Gelir",
+                                "ROAS",
+                            ].map((b) => (
+                                <Th key={b}>{b}</Th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {r.kampanyalar.map((k) => (
+                            <tr key={`${k.kampanya}/${k.harcama.paraBirimi}`}>
+                                <Td>{k.kampanya}</Td>
+                                <Td>{tutarlar([k.harcama])}</Td>
+                                <Td>{k.ziyaret}</Td>
+                                <Td>{k.odedi}</Td>
+                                <Td>{tutarlar(k.gelir)}</Td>
+                                <Td>
+                                    {k.roas === null
+                                        ? "—"
+                                        : `${k.roas.toFixed(2).replace(".", ",")}×`}
+                                </Td>
+                            </tr>
+                        ))}
+                        {r.kampanyalar.length ? null : (
+                            <tr>
+                                <Td colSpan={6} className="text-soluk">
+                                    Bu aralıkta Meta harcaması yok
+                                    (META_AD_ACCOUNT_ID ayarlı değilse
+                                    çekilmez).
+                                </Td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Tablo>
+            </Kart>
             <Kart aria-label="Kohort geliri">
                 <KartBasi
                     baslik="Kohort geliri"

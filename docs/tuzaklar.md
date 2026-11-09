@@ -359,3 +359,9 @@ birden çok çekimle ölç.
 **Sebep:** `REKLAM = (fbclid IS NOT NULL OR ttclid IS NOT NULL OR lower(utm_medium) IN (…))` — ortam NULL ve tıklama yoksa sonuç `false` değil **NULL**. Gelir alt sorgusu grubu `v2.reklam = v.reklam` ile eşliyordu; `NULL = NULL` NULL → hiçbir satır eşleşmedi. `GROUP BY` NULL'ları bir grupta topladığı ve PHP `true === null` false verdiği için sayımlar ve çıktı doğru göründü.
 **Ölçüm (2026-11-09, `m5c-raporlar.md`):** organik gelirli ziyaret teste eklenince beklenen EUR 4,50 yerine `[]`.
 **Doğrusu:** eşleşmede `IS NOT DISTINCT FROM` ya da `coalesce(…, false)`; daha iyisi eşleşmeyi tek sorgunun `GROUP BY`'ına bırakmak (M5c bunu yaptı — iki sorgu aynı CTE'den, anahtar PHP'de). Test verisine her NULL kolu için bir satır koy.
+
+## §56 — PHP 8.4'te `round()` ön yuvarlama yapmaz: ondalık metni `(float) × 100` ile çevirmek yarım sınırında 1 kuruş eksik verir
+**Belirti:** "1.005" EUR harcama 100 küçük birim yazılır (beklenen 101); hata yok, 2 basamaklı tutarlarda her şey doğru görünür.
+**Sebep:** `1.005 * 100 = 100.49999…`. PHP 8.4'ten önce `round()` 15 anlamlı basamağa ön yuvarlayıp 101 veriyordu; 8.4 bunu kaldırdı. Ezberdeki "PHP round bunu düzeltir" bilgisi artık yanlış.
+**Ölçüm (2026-11-09, `m5d-meta-harcama.md`):** PHP 8.4.26 `round(1.005*100)` → 100. Önce "ön yuvarlama 101 verir" diye yazdım ve özel çeviriciyi gereksiz sanıp kaldırdım (kırma D4 yeşil kalmıştı). Ama test 1.005'i servisten hiç geçirmiyordu. Servis düzeyi test eklenince 100 çıktı, çevirici geri geldi.
+**Doğrusu:** dış sistemin ondalık metnini metin olarak çevir (`ParaBirimi::metindenKucuk`). Kayan noktalı yol yalnız 2 basamaklı panel girdisinde güvenli. Bir savunmayı "gereksiz" diye kaldırmadan önce onu ölçen testin o yoldan geçtiğini doğrula.
