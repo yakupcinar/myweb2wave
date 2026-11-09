@@ -14,7 +14,8 @@ use Doctrine\DBAL\Connection;
  * Ç118: "ödedi" = para çekildi (ODEDI); abone olup para çekilmeyen (kartlı
  * deneme — Stripe bunu da "paid" der, tutar 0) "deneme başladı". Deneyler
  * (M4b) aynı tanımı kullanır: abone = abonelik_at, ödedi = ODEDI.
- * M5c: gelir tahsil edilen faturalardan (M5b), para birimi başına, çevrilmez.
+ * M5c: gelir tahsil edilen faturalardan (M5b), para birimi başına, çevrilmez;
+ * M6a: iade düşülür (kohortta faturanın ödeme anında).
  */
 final readonly class Rapor
 {
@@ -237,7 +238,7 @@ final readonly class Rapor
              ) ';
         $gelir = [];
         foreach ($this->db->fetchAllAssociative(
-            $v.'SELECT v.kaynak, v.ortam, v.kampanya, v.reklam, f.para_birimi, sum(f.tutar_kucuk) AS toplam
+            $v.'SELECT v.kaynak, v.ortam, v.kampanya, v.reklam, f.para_birimi, sum(f.tutar_kucuk - f.iade_kucuk) AS toplam
              FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id
              GROUP BY 1, 2, 3, 4, 5 ORDER BY f.para_birimi',
             ['gun' => $gun],
@@ -301,7 +302,7 @@ final readonly class Rapor
                 $ziyaret[self::dizge($s['ad'])] = [self::sayi($s['ziyaret']), self::sayi($s['odedi'])];
             }
             foreach ($this->db->fetchAllAssociative(
-                $v.'SELECT v.ad, f.para_birimi, sum(f.tutar_kucuk) AS toplam FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id
+                $v.'SELECT v.ad, f.para_birimi, sum(f.tutar_kucuk - f.iade_kucuk) AS toplam FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id
                  JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id GROUP BY 1, 2 ORDER BY 2',
                 ['adlar' => $adlar, 'gun' => $gun], ['adlar' => ArrayParameterType::STRING],
             ) as $s) {
@@ -353,7 +354,7 @@ final readonly class Rapor
         $gelir = [];
         foreach ($this->db->fetchAllAssociative(
             "SELECT to_char(date_trunc('week', z.created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS hafta, f.para_birimi, p.gun,
-                    sum(f.tutar_kucuk) AS toplam
+                    sum(f.tutar_kucuk - f.iade_kucuk) AS toplam
              FROM huni_ziyaretleri z
              JOIN odeme_oturumlari o ON o.ziyaret_id = z.id
              JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id

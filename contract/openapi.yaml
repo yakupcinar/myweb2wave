@@ -494,6 +494,37 @@ paths:
         "422": { description: İstem boş ya da çok uzun, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "429": { description: Saatlik sınır, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "503": { description: AI kapalı (anahtar yok), content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/abonelikler/{abonelik}/iptal:
+    parameters:
+      - { name: abonelik, in: path, required: true, schema: { type: string, pattern: "^sub_[A-Za-z0-9]{1,250}$" } }
+      - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+    post:
+      operationId: panelAbonelikIptal
+      summary: "M6a (A19) — dönem sonunda iptal planla (Stripe cancel_at_period_end)"
+      responses:
+        "204": { description: Planlandı }
+        "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen abonelik, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Stripe reddetti, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    delete:
+      operationId: panelAbonelikIptalGeriAl
+      summary: "M6a — planlı iptali geri al (dönem bitmeden)"
+      responses:
+        "204": { description: Geri alındı }
+        "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen abonelik, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Stripe reddetti, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/abonelikler/{abonelik}/iade:
+    parameters:
+      - { name: abonelik, in: path, required: true, schema: { type: string, pattern: "^sub_[A-Za-z0-9]{1,250}$" } }
+      - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+    post:
+      operationId: panelAbonelikIade
+      summary: "M6a (A19) — son tahsil edilen faturanın kalanını tam iade et"
+      responses:
+        "204": { description: İade edildi }
+        "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: "İade edilecek fatura yok, zaten iade edildi ya da Stripe reddetti", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/kullanicilar:
     get:
       operationId: panelApiKullanicilar
@@ -518,7 +549,7 @@ paths:
                     items:
                       type: object
                       additionalProperties: false
-                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli]
+                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli, iptalDonemSonu, donemSonu, sonFatura]
                       properties:
                         abonelik: { type: string }
                         app: { type: [string, "null"] }
@@ -533,6 +564,19 @@ paths:
                         huni: { type: [string, "null"] }
                         kisi: { type: boolean, description: Kişi kaydı var (e-posta doğrulandı) }
                         bagli: { type: boolean, description: Kişi bu uygulamaya bağlandı (A10) }
+                        iptalDonemSonu: { type: boolean, description: "M6a — dönem sonunda iptal planlı (geri alınabilir)" }
+                        donemSonu: { type: [string, "null"], description: "M6a — geçerli dönemin sonu (UTC); iptal planlıysa erişimin bittiği an" }
+                        sonFatura:
+                          description: "M6a — son tahsil edilen fatura (ana birim); iade = iade edilen kısım"
+                          oneOf:
+                            - type: "null"
+                            - type: object
+                              additionalProperties: false
+                              required: [paraBirimi, tutar, iade]
+                              properties:
+                                paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
+                                tutar: { type: number, minimum: 0 }
+                                iade: { type: number, minimum: 0 }
   /panel/api/uygulamalar:
     get:
       operationId: panelUygulamalari

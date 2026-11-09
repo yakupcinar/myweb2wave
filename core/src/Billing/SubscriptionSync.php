@@ -55,6 +55,18 @@ final readonly class SubscriptionSync
 
                     return;
                 }
+                // M6a: fatura ↔ ödeme bağı ve iade — yalnız kimlikler, uygulamadan bağımsız
+                // (bu nesnelerde metadata.app yok; fatura zaten uygulamasıyla yazılı).
+                if ('invoice_payment.paid' === $event->type) {
+                    $this->odemeBagla($db, $nesne);
+
+                    return;
+                }
+                if ('charge.refunded' === $event->type) {
+                    $this->iadeYaz($db, $nesne);
+
+                    return;
+                }
                 if (!$ilgili) {
                     return;
                 }
@@ -185,6 +197,54 @@ final readonly class SubscriptionSync
     }
 
     /**
+     * M6a: invoice_payment.paid — iade ödemeye (payment_intent) gelir, fatura
+     * ödeme kimliği taşımaz; bağ burada tutulur. Sıra fark etmez (fatura sonra gelebilir).
+     *
+     * @param array<string, mixed> $odeme
+     */
+    private function odemeBagla(Connection $db, array $odeme): void
+    {
+        $fatura = $odeme['invoice'] ?? null;
+        $p = $odeme['payment'] ?? null;
+        $pi = \is_array($p) ? ($p['payment_intent'] ?? null) : null;
+        if (\is_string($fatura) && \is_string($pi)) {
+            $db->executeStatement(
+                'INSERT INTO fatura_odemeleri (stripe_payment_intent_id, stripe_invoice_id) VALUES (:pi, :fatura) ON CONFLICT DO NOTHING',
+                ['pi' => $pi, 'fatura' => $fatura],
+            );
+        }
+    }
+
+    /**
+     * M6a (A19): charge.refunded — faturanın iadesi Stripe'ın birikimli
+     * amount_refunded'ı (tutarla sınırlı); azalmaz, tekrar olay iki kez düşmez.
+     * Artış aboneliğe bağlı her ziyarete odeme.iade olayı.
+     *
+     * @param array<string, mixed> $odeme
+     */
+    public function iadeYaz(Connection $db, array $odeme): void
+    {
+        $pi = $odeme['payment_intent'] ?? null;
+        $iade = $odeme['amount_refunded'] ?? null;
+        if (!\is_string($pi) || !\is_int($iade) || $iade <= 0) {
+            return;
+        }
+        $f = $db->fetchAssociative(
+            'UPDATE odeme_faturalari f SET iade_kucuk = least(f.tutar_kucuk, :iade)
+             FROM fatura_odemeleri m WHERE m.stripe_payment_intent_id = :pi AND f.stripe_invoice_id = m.stripe_invoice_id AND f.iade_kucuk < least(f.tutar_kucuk, :iade)
+             RETURNING f.stripe_subscription_id, f.para_birimi, f.iade_kucuk - old.iade_kucuk AS artis',
+            ['pi' => $pi, 'iade' => $iade],
+        );
+        if (false === $f) {
+            return;
+        }
+        foreach ($db->fetchFirstColumn('SELECT DISTINCT ziyaret_id::text FROM odeme_oturumlari WHERE stripe_subscription_id = :sub', ['sub' => $f['stripe_subscription_id']]) as $ziyaret) {
+            \assert(\is_string($ziyaret));
+            Olaylar::ekle($db, $ziyaret, 'odeme.iade', ['tutar' => is_numeric($f['artis']) ? (int) $f['artis'] : 0, 'paraBirimi' => \is_string($f['para_birimi']) ? $f['para_birimi'] : '']);
+        }
+    }
+
+    /**
      * @param array<string, mixed> $fatura
      *
      * @return array{abonelik: ?string, metadata: mixed}
@@ -219,19 +279,27 @@ final readonly class SubscriptionSync
             return;
         }
 
+        // M6a: dönem sonu aboneliğin kaleminde (API 2026-09-30, ölçüldü); tek kalemli abonelik.
+        $kalemler = $sub['items'] ?? null;
+        $kalem = \is_array($kalemler) && \is_array($kalemler['data'] ?? null) ? ($kalemler['data'][0] ?? null) : null;
+        $donemSonu = \is_array($kalem) && \is_int($kalem['current_period_end'] ?? null) ? $kalem['current_period_end'] : null;
         // M5a: RETURNING yalnız yazılan satırda; eski olay reddedildiyse satır yok.
         $degisti = $db->fetchOne(
-            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created, app)
-             VALUES (:id, :cus, :status, :created, :app)
+            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created, app, iptal_donem_sonu, donem_sonu)
+             VALUES (:id, :cus, :status, :created, :app, :iptal, to_timestamp(CAST(:donem AS bigint)))
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET
                  stripe_customer_id = EXCLUDED.stripe_customer_id,
                  status = EXCLUDED.status,
                  status_event_created = EXCLUDED.status_event_created,
+                 iptal_donem_sonu = EXCLUDED.iptal_donem_sonu,
+                 donem_sonu = EXCLUDED.donem_sonu,
                  updated_at = now()
              WHERE subscriptions.status_event_created IS NULL
                 OR subscriptions.status_event_created <= EXCLUDED.status_event_created
              RETURNING old.status IS DISTINCT FROM new.status',
-            ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated, 'app' => $app],
+            ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated, 'app' => $app,
+                'iptal' => true === ($sub['cancel_at_period_end'] ?? null), 'donem' => $donemSonu],
+            ['iptal' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
         if (true === $degisti) {
             foreach ($db->fetchFirstColumn('SELECT DISTINCT ziyaret_id::text FROM odeme_oturumlari WHERE stripe_subscription_id = :id', ['id' => $id]) as $ziyaret) {

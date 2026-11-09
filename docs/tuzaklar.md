@@ -353,6 +353,7 @@ birden çok çekimle ölç.
 **Sebep:** API 2026-09-30'da (hesabın sürümü) abonelik ve aboneliğin metadata'sı `invoice.parent.subscription_details` altında; faturanın kendi `metadata`'sı boş. Webhook gövdesi uç noktanın API sürümüyle gelir.
 **Ölçüm (2026-11-09, `m5b-faturalar.md`):** test hesabındaki gerçek 3 fatura: üst düzeyde `subscription` yok, `metadata: []`, `parent.subscription_details.{subscription, metadata.app}` dolu. Gerçek `invoice.paid` olayları imzalı olarak yerel webhook'a verildi → 3 fatura `keepchat` ile yazıldı.
 **Doğrusu:** alanı belgeden değil gerçek nesneden oku; üretim webhook uç noktasının API sürümü hesabınkiyle aynı olsun (Ç120). Kırma F2: üst metadata'dan okumak 7 testi düşürdü.
+**Aynı aile (M6a, 2026-11-09, `m6a-iptal-iade.md`):** dönem sonu (`current_period_end`) aboneliğin kendisinde değil kaleminde (`items.data[].current_period_end`). Faturada `payment_intent` / `charge`, ödemede de `invoice` yok; bağ ayrı `InvoicePayment` nesnesinde (`invoice_payment.paid`). İade ödemeye gelir, faturayı bu bağ olmadan bulamazsın.
 
 ## §55 — `x IN (…)` NULL'da NULL döner; boolean ifade eşleşme anahtarı olunca satır sessizce düşer
 **Belirti:** organik (ortamsız, tıklamasız) grubun geliri boş; ziyaret sayısı doğru, hata yok.

@@ -71,9 +71,9 @@ final class PanelKullanicilarTest extends WebTestCase
         $j = $this->liste('');
         self::assertSame(['active', 'canceled', 'past_due'], $j['durumlar']);
         self::assertSame([
-            ['sub_a', 'keepchat', 'active', 'a***@example.com', '2026-11-02T09:00:00+00:00', '2026-11-01T10:00:00+00:00', true, 'meta', 'paid_social', 'ekim-1', 'genel', true, true],
-            ['sub_c', 'keepchat', 'past_due', 'z***@x.com', '2026-11-01T09:00:00+00:00', null, false, 'bulten', null, 'kis', null, false, false],
-            ['sub_b', 'keepchat', 'canceled', 'm***@ornek.com', '2026-10-30T09:00:00+00:00', null, false, null, null, null, null, false, false],
+            ['sub_a', 'keepchat', 'active', 'a***@example.com', '2026-11-02T09:00:00+00:00', '2026-11-01T10:00:00+00:00', true, 'meta', 'paid_social', 'ekim-1', 'genel', true, true, false, null, null],
+            ['sub_c', 'keepchat', 'past_due', 'z***@x.com', '2026-11-01T09:00:00+00:00', null, false, 'bulten', null, 'kis', null, false, false, false, null, null],
+            ['sub_b', 'keepchat', 'canceled', 'm***@ornek.com', '2026-10-30T09:00:00+00:00', null, false, null, null, null, null, false, false, false, null, null],
         ], array_map(static fn (array $s): array => array_values($s), $j['satirlar']));
         self::assertStringNotContainsString('ayse@', (string) $this->client->getResponse()->getContent());
         self::assertResponseHeaderSame('Cache-Control', 'no-store, private');

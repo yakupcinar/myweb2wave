@@ -263,6 +263,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/abonelikler/{abonelik}/iptal": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M6a (A19) — dönem sonunda iptal planla (Stripe cancel_at_period_end) */
+        post: operations["panelAbonelikIptal"];
+        /** M6a — planlı iptali geri al (dönem bitmeden) */
+        delete: operations["panelAbonelikIptalGeriAl"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/abonelikler/{abonelik}/iade": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M6a (A19) — son tahsil edilen faturanın kalanını tam iade et */
+        post: operations["panelAbonelikIade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/kullanicilar": {
         parameters: {
             query?: never;
@@ -2108,6 +2151,144 @@ export interface operations {
             };
         };
     };
+    panelAbonelikIptal: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planlandı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Jeton geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen abonelik */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Stripe reddetti */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelAbonelikIptalGeriAl: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Geri alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Jeton geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen abonelik */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Stripe reddetti */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelAbonelikIade: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İade edildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Jeton geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description İade edilecek fatura yok, zaten iade edildi ya da Stripe reddetti */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
     panelApiKullanicilar: {
         parameters: {
             query?: {
@@ -2155,6 +2336,16 @@ export interface operations {
                             kisi: boolean;
                             /** @description Kişi bu uygulamaya bağlandı (A10) */
                             bagli: boolean;
+                            /** @description M6a — dönem sonunda iptal planlı (geri alınabilir) */
+                            iptalDonemSonu: boolean;
+                            /** @description M6a — geçerli dönemin sonu (UTC); iptal planlıysa erişimin bittiği an */
+                            donemSonu: string | null;
+                            /** @description M6a — son tahsil edilen fatura (ana birim); iade = iade edilen kısım */
+                            sonFatura: null | {
+                                paraBirimi: string;
+                                tutar: number;
+                                iade: number;
+                            };
                         }[];
                     };
                 };

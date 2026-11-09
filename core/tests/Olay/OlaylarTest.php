@@ -32,7 +32,7 @@ final class OlaylarTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler, odeme_faturalari CASCADE');
+        $this->db->executeStatement('TRUNCATE fatura_odemeleri, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler, odeme_faturalari CASCADE');
         $ziyaretler = self::getContainer()->get(Ziyaretler::class);
         self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
         $this->ziyaretler = $ziyaretler;
@@ -241,6 +241,41 @@ final class OlaylarTest extends KernelTestCase
         self::assertSame(['in_abonelik'], $this->db->fetchFirstColumn('SELECT stripe_invoice_id FROM odeme_faturalari'));
     }
 
+    /**
+     * M6a: iade Stripe'ın birikimli amount_refunded'ı — tekrar olay iki kez
+     * düşmez, ikinci kısmi iade farkı kadar olay, tutarı aşamaz. Ödeme bağı
+     * (invoice_payment.paid) faturadan önce de gelebilir; bağı olmayan iade yok sayılır.
+     */
+    public function testIadeBirikimliVeBagdan(): void
+    {
+        $z = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+        self::assertTrue($this->ziyaretler->oturumBagla($z, 'keepchat', 'cs_'.$z, null, null));
+        $this->stripe('checkout.session.completed', ['id' => 'cs_'.$z, 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_'.$z, 'customer' => 'cus_1', 'payment_status' => 'paid', 'amount_total' => 999, 'currency' => 'eur', 'metadata' => ['app' => 'keepchat']]);
+        $iade = fn (int $toplam, string $pi = 'pi_1') => $this->stripe('charge.refunded', ['id' => 'ch_1', 'object' => 'charge', 'payment_intent' => $pi, 'amount_refunded' => $toplam]);
+        $this->stripe('invoice_payment.paid', ['id' => 'inpay_1', 'object' => 'invoice_payment', 'invoice' => 'in_1', 'payment' => ['type' => 'payment_intent', 'payment_intent' => 'pi_1']]);
+        $this->fatura('in_1', $z, 999, 'subscription_create');
+        $iade(300);
+        $iade(300);
+        $iade(500);
+        $iade(5000);
+        $iade(999, 'pi_bilinmeyen');
+
+        self::assertSame(999, $this->db->fetchOne("SELECT iade_kucuk FROM odeme_faturalari WHERE stripe_invoice_id = 'in_1'"));
+        self::assertSame([300, 200, 499], array_column(array_column(array_values(array_filter($this->olaylar->ziyaretin($z), static fn (array $o): bool => 'odeme.iade' === $o['ad'])), 'veri'), 'tutar'));
+    }
+
+    /** M6a: iptal planı ve dönem sonu abonelik olayından — dönem sonu kalemde (API 2026-09-30). */
+    public function testIptalPlaniVeDonemSonu(): void
+    {
+        $this->stripe('customer.subscription.updated', ['id' => 'sub_d', 'object' => 'subscription', 'customer' => 'cus_1', 'status' => 'active', 'cancel_at_period_end' => true,
+            'items' => ['object' => 'list', 'data' => [['id' => 'si_1', 'object' => 'subscription_item', 'current_period_end' => 1_800_000_000]]], 'metadata' => ['app' => 'keepchat']]);
+
+        self::assertSame([true, '2027-01-15 08:00:00'], array_values((array) $this->db->fetchAssociative(
+            "SELECT iptal_donem_sonu, to_char(donem_sonu AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS') FROM subscriptions WHERE stripe_subscription_id = 'sub_d'",
+        )));
+    }
+
     /** Yalnız ekleme: geçmiş yeniden yazılamaz (DB kısıtı, uygulamadan bağımsız — tuzak §4). */
     public function testOlayGuncellenemez(): void
     {
@@ -353,7 +388,10 @@ final class OlaylarTest extends KernelTestCase
     /** Görünümün ürettiği her ad sözlükte (yeni olay türü sözlüğe yazılmadan eklenemez). */
     public function testHerOlaySozlukte(): void
     {
-        $this->tamZiyaret();
+        $z = $this->tamZiyaret();
+        // M6a: iade yolculuğun parçası değil — sözlük için ayrıca (ödeme bağı + charge.refunded).
+        $this->stripe('invoice_payment.paid', ['id' => 'inpay_1', 'object' => 'invoice_payment', 'invoice' => 'in_'.$z, 'payment' => ['type' => 'payment_intent', 'payment_intent' => 'pi_'.$z]]);
+        $this->stripe('charge.refunded', ['id' => 'ch_1', 'object' => 'charge', 'payment_intent' => 'pi_'.$z, 'amount_refunded' => 999]);
         $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, false);
 
         $adlar = array_map(static fn (mixed $a): string => \is_string($a) ? $a : '', $this->db->fetchFirstColumn('SELECT DISTINCT ad FROM ziyaret_olaylari ORDER BY ad'));

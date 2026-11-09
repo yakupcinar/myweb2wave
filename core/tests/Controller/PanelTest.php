@@ -341,6 +341,28 @@ final class PanelTest extends WebTestCase
         ], $this->rapor()['kampanyalar']);
     }
 
+    /** M6a: iade gelirden düşülür — kaynak kırılımı, kohort ve ROAS (999 tam iade + 500 = 5,00 EUR; 5 / 10 = 0,5). */
+    public function testIadeGelirdenDusulur(): void
+    {
+        $z = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_medium' => 'cpc', 'utm_campaign' => 'x', 'fbclid' => 'fb'], '2 days');
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_i', 'ziyaret_id' => $z, 'stripe_subscription_id' => 'sub_i', 'abonelik_at' => '2026-11-01 10:00:00+00', 'tutar_kucuk' => 999, 'para_birimi' => 'eur']);
+        foreach ([['in_1', 999, 999], ['in_2', 500, 0]] as [$id, $tutar, $iade]) {
+            $this->db->executeStatement(
+                "INSERT INTO odeme_faturalari (stripe_invoice_id, stripe_subscription_id, app, tutar_kucuk, iade_kucuk, para_birimi, odendi_at)
+                 SELECT :id, 'sub_i', 'keepchat', :t, :i, 'eur', created_at + interval '1 hour' FROM huni_ziyaretleri WHERE id = :z",
+                ['id' => $id, 't' => $tutar, 'i' => $iade, 'z' => $z],
+            );
+        }
+        $this->db->executeStatement("INSERT INTO reklam_harcamalari (saglayici, kampanya_id, kampanya_adi, gun, harcama_kucuk, para_birimi) VALUES ('meta', 'c', 'x', (now() AT TIME ZONE 'UTC')::date, 1000, 'eur')");
+        $this->girisYapmis();
+        $r = $this->rapor();
+
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['kampanyalar'][0]['gelir']);
+        self::assertSame(0.5, $r['kampanyalar'][0]['roas']);
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['utm'][0]['gelir']);
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['kohort'][0]['pencereler'][0]['kisiBasi']);
+    }
+
     public function testSatirdaAsamaKaynakVeMaskeliEposta(): void
     {
         $this->veriKur();

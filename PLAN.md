@@ -221,7 +221,9 @@
     - [x] M5b · 2026-11-09, `docs/decisions/m5b-faturalar.md`: `invoice.paid` (tutar > 0) → `odeme_faturalari` + aboneliğe bağlı her ziyarete `odeme.fatura`; fatura oturumdan önce gelirse bağlanınca; abonelik `parent.subscription_details`'ten (§54). Kırma 7/8 (F8 kod kaldırıldı). Ç118 (3) kapandı, açık Ç120
     - [x] M5c · 2026-11-09, `docs/decisions/m5c-raporlar.md`: kaynak kırılımı (gelirle) · cevaba göre dönüşüm · kohort (UTC hafta × ilk 24 saat / 7 / 30 / 60 gün, ziyaret başına; olgunluk haftanın en genç ziyaretinden); "ödedi" = ilk ödeme ya da fatura (Rapor + deneyler tek tanım). Kırma 15/15 (4 deneme testi güçlendirdi, biri gerçek hata buldu — §55)
     - [x] M5d · 2026-11-09, `docs/decisions/m5d-meta-harcama.md`: Meta Insights kampanya × gün harcaması (günlük `app:reklam-harcamalari:cek`, son 7 gün yeniden yazılır), panelde "Meta kampanyaları" (harcama · ziyaret · ödedi · gelir · ROAS, utm_campaign = kampanya adı). Kırma 13/13. **Gerçek Meta hesabıyla ölçülmedi** (Ç121). Değer aktarımı sonraya (kullanıcı)
-  - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)
+  - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce) — kararlar A19
+    - [x] M6a · 2026-11-09, `docs/decisions/m6a-iptal-iade.md`: Kullanıcılar satırında dönem sonunda iptal / geri al ve son faturanın kalanını tam iade (iki adımlı onay); webhook dönem sonunu kalemden, iadeyi `charge.refunded` birikimli tutarından (fatura bağı `invoice_payment.paid`); iade gelirden (kırılım, kohort, ROAS) düşülür. Kırma 19/19; gerçek Stripe test modunda iptal / geri al / iade
+    - [ ] M6b · Stripe Customer Portal oturumu (müşteri kendi aboneliğini yönetir)
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)

@@ -28,6 +28,9 @@ const satir = (abonelik: string, ek: object) => ({
     huni: null,
     kisi: false,
     bagli: false,
+    iptalDonemSonu: false,
+    donemSonu: null,
+    sonFatura: null,
     ...ek,
 });
 const SATIRLAR = [
@@ -41,6 +44,7 @@ const SATIRLAR = [
         huni: "genel",
         kisi: true,
         bagli: true,
+        sonFatura: { paraBirimi: "EUR", tutar: 9.99, iade: 3 },
     }),
     satir("sub_c", {
         durum: "past_due",
@@ -48,6 +52,9 @@ const SATIRLAR = [
         guncelleme: "2026-11-01T09:00:00+00:00",
         kaynak: "bulten",
         kampanya: "kis",
+        iptalDonemSonu: true,
+        donemSonu: "2026-12-01T10:00:00+00:00",
+        sonFatura: { paraBirimi: "EUR", tutar: 9.99, iade: 9.99 },
     }),
     satir("sub_b", {
         durum: "canceled",
@@ -59,12 +66,21 @@ const SATIRLAR = [
 
 let yonlendirici: ReturnType<typeof createMemoryRouter>;
 let istenen: string[] = [];
+let islemler: string[] = [];
+let islemYaniti: Response | null = null;
 
 function kur(satirlar = SATIRLAR, adres = "/panel/kullanicilar") {
     istenen = [];
+    islemler = [];
     vi.stubGlobal(
         "fetch",
         vi.fn(async (istek: Request) => {
+            if (istek.method !== "GET") {
+                islemler.push(
+                    `${istek.method} ${new URL(istek.url, "http://x").pathname} ${istek.headers.has("X-CSRF-Token")}`,
+                );
+                return islemYaniti ?? new Response(null, { status: 204 });
+            }
             istenen.push(new URL(istek.url, "http://x").search);
             return new Response(
                 JSON.stringify({
@@ -96,6 +112,88 @@ const sira = (): string[] =>
 afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    islemYaniti = null;
+});
+
+const islemHucresi = (abonelik: string): HTMLElement =>
+    document.querySelector<HTMLElement>(
+        `tr[data-abonelik="${abonelik}"] td:last-child`,
+    )!;
+
+describe("M6a — abonelik işlemleri", () => {
+    it("düğmeler duruma göre: sürende iptal, planlıda geri al, kalan iade tutarıyla", async () => {
+        kur();
+        await screen.findAllByRole("row");
+        const metin = (a: string) =>
+            [...islemHucresi(a).querySelectorAll("button")].map(
+                (b) => b.textContent,
+            );
+        // 9,99 − 3 = 6,99 kalan; tam iade edilmiş faturada iade düğmesi yok.
+        expect(metin("sub_a")).toEqual([
+            "Dönem sonunda iptal et",
+            "Son faturayı iade et (€6,99)",
+        ]);
+        expect(metin("sub_c")).toEqual(["İptali geri al"]);
+        expect(islemHucresi("sub_c").textContent).toContain(
+            "İptal planlı — 2026-12-01 10:00",
+        );
+        expect(metin("sub_b")).toEqual([]);
+    });
+
+    it("iki adımlı onay: Vazgeç istek göndermez, Evet jetonla gönderir ve listeyi yeniler", async () => {
+        kur();
+        await screen.findAllByRole("row");
+        const hucre = within(islemHucresi("sub_a"));
+        fireEvent.click(
+            hucre.getByRole("button", { name: "Dönem sonunda iptal et" }),
+        );
+        expect(hucre.getByText(/emin misiniz/)).toBeTruthy();
+        fireEvent.click(hucre.getByRole("button", { name: "Vazgeç" }));
+        expect(islemler).toEqual([]);
+
+        const once = istenen.length;
+        fireEvent.click(
+            hucre.getByRole("button", { name: /Son faturayı iade et/ }),
+        );
+        fireEvent.click(hucre.getByRole("button", { name: "Evet" }));
+        await waitFor(() =>
+            expect(islemler).toEqual([
+                "POST /panel/api/abonelikler/sub_a/iade true",
+            ]),
+        );
+        await waitFor(() => expect(istenen.length).toBeGreaterThan(once));
+
+        fireEvent.click(
+            within(islemHucresi("sub_c")).getByRole("button", {
+                name: "İptali geri al",
+            }),
+        );
+        fireEvent.click(
+            within(islemHucresi("sub_c")).getByRole("button", { name: "Evet" }),
+        );
+        await waitFor(() =>
+            expect(islemler.at(-1)).toBe(
+                "DELETE /panel/api/abonelikler/sub_c/iptal true",
+            ),
+        );
+    });
+
+    it("Stripe reddederse sunucunun mesajı satırda", async () => {
+        islemYaniti = new Response(
+            JSON.stringify({ hatalar: ["Stripe isteği reddetti: x"] }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+        );
+        kur();
+        await screen.findAllByRole("row");
+        const hucre = within(islemHucresi("sub_a"));
+        fireEvent.click(
+            hucre.getByRole("button", { name: "Dönem sonunda iptal et" }),
+        );
+        fireEvent.click(hucre.getByRole("button", { name: "Evet" }));
+        expect((await hucre.findByRole("alert")).textContent).toBe(
+            "Stripe isteği reddetti: x",
+        );
+    });
 });
 
 describe("P5: Kullanıcılar", () => {

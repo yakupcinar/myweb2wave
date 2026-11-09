@@ -227,6 +227,14 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
 - **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
 
+**A19 · M6 abonelik yönetimi** (2026-11-09, kullanıcı).
+- **İptal dönem sonunda** (`cancel_at_period_end`); dönem bitene kadar geri alınabilir; denemede deneme
+  sonunda biter, ücret çekilmez. Reddedilen: hemen iptal, yöneticiye seçtirmek.
+- **İade: son tahsil edilen faturanın tamamı**, tek düğme; iade gelirden (kohort, kaynak, ROAS) düşülür.
+  Reddedilen: kısmi / tutar seçmeli iade, iadeyi yalnız Stripe panelinde bırakmak.
+- **Müşteri yönetimi Stripe Customer Portal'da** (kart, iptal, faturalar); kendi sayfamız reddedildi
+  (iş ve risk). Bölünme: M6a panel iptal + iade → M6b portal.
+
 **A18 · M5 sırası: önce olay deposu (Ç92)** (2026-11-09, kullanıcı).
 - Önce yalnız ekleme yapılan olay deposu (cevap / izin / abonelik geçmişi), sonra cevap
   dağılımı · UTM · kohort geliri, en son Meta harcama → ROAS. Reddedilen: önce raporlar —

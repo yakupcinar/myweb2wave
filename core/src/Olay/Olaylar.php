@@ -30,6 +30,7 @@ final class Olaylar
         'odeme.baslatildi' => ['', 'ödeme oturumu açıldı'],
         'odeme.tamamlandi' => ['', 'ödeme tamamlandı'],
         'abonelik.durum' => ['durum', 'Stripe abonelik durumu (değişince)'],
+        'odeme.iade' => ['tutar, paraBirimi', 'faturanın iadesi (artış, küçük birim) — M6a'],
         'odeme.fatura' => ['tutar, paraBirimi, neden', 'Stripe faturası tahsil edildi (tutar > 0, küçük birim; neden: subscription_create / subscription_cycle …)'],
     ];
 

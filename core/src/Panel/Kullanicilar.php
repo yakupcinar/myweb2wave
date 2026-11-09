@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Panel;
 
+use App\Billing\ParaBirimi;
 use Doctrine\DBAL\Connection;
 
 /**
@@ -32,7 +33,8 @@ final class Kullanicilar
      * @phpstan-impure
      *
      * @return list<array{abonelik: string, app: ?string, durum: string, email: ?string, guncelleme: string, odeme: ?string,
-     *                    reklam: bool, kaynak: ?string, ortam: ?string, kampanya: ?string, huni: ?string, kisi: bool, bagli: bool}>
+     *                    reklam: bool, kaynak: ?string, ortam: ?string, kampanya: ?string, huni: ?string, kisi: bool, bagli: bool,
+     *                    iptalDonemSonu: bool, donemSonu: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float}|null}>
      */
     public function liste(string $ara, string $durum): array
     {
@@ -54,13 +56,23 @@ final class Kullanicilar
             'huni' => self::dizgeYaDaNull($s['huni']),
             'kisi' => true === $s['kisi'],
             'bagli' => true === $s['bagli'],
+            // M6a: iptal planı ve iade düğmesi için son tahsil edilen fatura.
+            'iptalDonemSonu' => true === $s['iptal_donem_sonu'],
+            'donemSonu' => self::dizgeYaDaNull($s['donem_sonu']),
+            'sonFatura' => \is_string($s['f_para']) ? ['paraBirimi' => strtoupper($s['f_para']), 'tutar' => ParaBirimi::anaBirim(self::sayi($s['f_tutar']), $s['f_para']),
+                'iade' => ParaBirimi::anaBirim(self::sayi($s['f_iade']), $s['f_para'])] : null,
         ], $this->db->fetchAllAssociative(
             'SELECT s.stripe_subscription_id AS abonelik, s.app, s.status AS durum, s.email,
                     '.$zaman('s.updated_at').' AS guncelleme, '.$zaman('s.odeme_tamamlandi_at').' AS odeme,
                     z.utm_source, z.utm_medium, z.utm_campaign, z.huni, COALESCE('.Rapor::REKLAM.', false) AS reklam,
                     k.id IS NOT NULL AS kisi,
-                    EXISTS (SELECT 1 FROM baglantilar b WHERE b.kisi_id = k.id AND b.app = s.app) AS bagli
+                    EXISTS (SELECT 1 FROM baglantilar b WHERE b.kisi_id = k.id AND b.app = s.app) AS bagli,
+                    s.iptal_donem_sonu, '.$zaman('s.donem_sonu').' AS donem_sonu, f.para_birimi AS f_para, f.tutar_kucuk AS f_tutar, f.iade_kucuk AS f_iade
              FROM subscriptions s
+             LEFT JOIN LATERAL (
+                 SELECT para_birimi, tutar_kucuk, iade_kucuk FROM odeme_faturalari
+                 WHERE stripe_subscription_id = s.stripe_subscription_id ORDER BY odendi_at DESC, stripe_invoice_id DESC LIMIT 1
+             ) f ON true
              LEFT JOIN LATERAL (
                  SELECT z.* FROM odeme_oturumlari o JOIN huni_ziyaretleri z ON z.id = o.ziyaret_id
                  WHERE o.stripe_subscription_id = s.stripe_subscription_id
@@ -74,6 +86,11 @@ final class Kullanicilar
              LIMIT '.self::AZAMI_SATIR,
             ['durum' => $durum, 'ara' => trim($ara), 'desen' => $desen],
         ));
+    }
+
+    private static function sayi(mixed $d): int
+    {
+        return is_numeric($d) ? (int) $d : 0;
     }
 
     private static function dizgeYaDaNull(mixed $d): ?string

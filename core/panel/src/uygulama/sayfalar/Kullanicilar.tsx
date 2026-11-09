@@ -2,11 +2,17 @@
 // ödemeyi başlatan ziyaretin kaynağı/kampanyası, kişi ve uygulama bağlantısı.
 // Arama ve durum adreste (?ara=&durum=), sunucuda süzülür; sıralama istemcide
 // (en çok 200 satır — tablo kitaplığı gerekmedi).
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+// M6a (A19): satırda dönem sonunda iptal / geri al ve son faturanın iadesi —
+// iki adımlı onay sayfada (tarayıcı iletişim kutusu yok).
+import {
+    keepPreviousData,
+    useQuery,
+    useQueryClient,
+} from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { api } from "../api";
-import { zaman } from "../bicim";
+import { tutarlar, zaman } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
@@ -191,6 +197,7 @@ function Liste({
                         ))}
                         <Th>Huni</Th>
                         <Th>Kişi</Th>
+                        <Th>İşlem</Th>
                     </tr>
                 </thead>
                 <tbody>
@@ -219,11 +226,14 @@ function Liste({
                                       ? "kayıtlı"
                                       : "—"}
                             </Td>
+                            <Td>
+                                <Islemler s={s} />
+                            </Td>
                         </tr>
                     ))}
                     {satirlar.length ? null : (
                         <tr>
-                            <Td colSpan={8} className="text-soluk">
+                            <Td colSpan={9} className="text-soluk">
                                 Eşleşen abonelik yok.
                             </Td>
                         </tr>
@@ -231,5 +241,100 @@ function Liste({
                 </tbody>
             </Tablo>
         </Kart>
+    );
+}
+
+type Is = "iptal" | "geriAl" | "iade";
+
+const SURER = ["active", "trialing", "past_due"];
+
+function Islemler({ s }: { s: Satir }): ReactNode {
+    const istemci = useQueryClient();
+    const [onay, setOnay] = useState<Is | null>(null);
+    const [hata, setHata] = useState("");
+    const [calisiyor, setCalisiyor] = useState(false);
+    const kalan = s.sonFatura
+        ? Math.round((s.sonFatura.tutar - s.sonFatura.iade) * 100) / 100
+        : 0;
+    const islemler: [Is, string][] = [
+        ...(s.iptalDonemSonu
+            ? ([["geriAl", "İptali geri al"]] as [Is, string][])
+            : SURER.includes(s.durum)
+              ? ([["iptal", "Dönem sonunda iptal et"]] as [Is, string][])
+              : []),
+        ...(s.sonFatura && kalan > 0
+            ? ([
+                  [
+                      "iade",
+                      `Son faturayı iade et (${tutarlar([{ paraBirimi: s.sonFatura.paraBirimi, tutar: kalan }])})`,
+                  ],
+              ] as [Is, string][])
+            : []),
+    ];
+    const yap = async (is: Is): Promise<void> => {
+        setHata("");
+        setCalisiyor(true);
+        const yol = {
+            params: {
+                path: { abonelik: s.abonelik },
+                header: { "X-CSRF-Token": "" },
+            },
+        };
+        const { error, response } =
+            is === "iade"
+                ? await api.POST("/panel/api/abonelikler/{abonelik}/iade", yol)
+                : is === "iptal"
+                  ? await api.POST(
+                        "/panel/api/abonelikler/{abonelik}/iptal",
+                        yol,
+                    )
+                  : await api.DELETE(
+                        "/panel/api/abonelikler/{abonelik}/iptal",
+                        yol,
+                    );
+        setCalisiyor(false);
+        setOnay(null);
+        if (response.status !== 204)
+            return setHata((error?.hatalar ?? ["İşlem yapılamadı."]).join(" "));
+        await istemci.invalidateQueries({ queryKey: ["kullanicilar"] });
+    };
+    return (
+        <div className="grid gap-1.5">
+            {s.iptalDonemSonu ? (
+                <span className="text-[12.5px] text-soluk">
+                    İptal planlı
+                    {s.donemSonu ? ` — ${zaman(s.donemSonu)}` : ""}
+                </span>
+            ) : null}
+            {onay ? (
+                <span className="flex flex-wrap items-center gap-2">
+                    <span>
+                        {islemler.find(([i]) => i === onay)?.[1]} — emin
+                        misiniz?
+                    </span>
+                    <Dugme
+                        tur="ana"
+                        disabled={calisiyor}
+                        onClick={() => void yap(onay)}
+                    >
+                        Evet
+                    </Dugme>
+                    <Dugme disabled={calisiyor} onClick={() => setOnay(null)}>
+                        Vazgeç
+                    </Dugme>
+                </span>
+            ) : (
+                islemler.map(([is, ad]) => (
+                    <Dugme key={is} onClick={() => setOnay(is)}>
+                        {ad}
+                    </Dugme>
+                ))
+            )}
+            {hata ? (
+                <span role="alert" className="text-tehlike">
+                    {hata}
+                </span>
+            ) : null}
+        </div>
     );
 }
