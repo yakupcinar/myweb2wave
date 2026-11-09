@@ -328,3 +328,9 @@ birden çok çekimle ölç.
 **Sebep:** fiyatta `currency_options` varsa ve oturumda `currency` verilmezse Checkout müşterinin konumunu kendisi tahmin edip o para birimini seçer (belgede "You didn't specify a currency" koşulu). Bizim IP tahminimiz bilinmiyor/desteklenmiyor dediğinde Stripe'ınki başka bir şey diyebilir. Testte stripe-mock bunu hiç yapmaz.
 **Ölçüm (2026-11-04, `m2d-gomulu-odeme.md`):** yerel IP (ülke yok) + test e-postası `test+location_TR@…` → oturum `try 34999`; paywall €9,99. `currency` zorlanınca aynı e-postayla `eur 999`.
 **Doğrusu:** paywall'da gösterilen para birimini ödeme oturumunda HER ZAMAN `currency` ile zorla (bilinmeyen ülkede ana birim); "Stripe ana birimi açar" diye varsayma. Stripe'ın `+location_XX` test e-postasıyla gerçek API'de ölç.
+
+## §51 — İstemci yönlendirmeli panelde yeni sayfa menüden açılır, doğrudan adresle 404
+**Belirti:** panelde menüden "Deneyler"e tıklanınca sayfa çizilir; aynı adres yenilenince ya da yeni sekmede açılınca 404. Bileşen testi (bellek yönlendiricisi) ve API testleri yeşil.
+**Sebep:** React yönlendiricisi istemcide `/panel/deneyler`'i tanır, ama ilk HTML'i sunan Symfony rotası (`PanelController::uygulama` üzerindeki `#[Route]` listesi) her sayfa için ayrıca yazılmalı. Bellek yönlendiricisiyle koşan bileşen testi sunucuya hiç gitmez.
+**Ölçüm (2026-11-09, `m4a-deneyler.md`):** `curl localhost:8081/panel/deneyler` → 404, komşu `/panel/planlar` → 302 (girişe). Rota eklendi; kırma K24 (rota yok) 🔴.
+**Doğrusu:** panele sayfa eklerken sunucu rotasını da ekle ve doğrudan adresi ölçen bir test yaz (girişsiz → `/panel/giris`, girişli → 200 + `#panel-uygulama`).

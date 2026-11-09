@@ -227,6 +227,23 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
 - **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
 
+**A17 · M4 deneyler** (2026-11-04, kullanıcı: tür ve sonuç; atama ayrıntısı öneri).
+- **Tür: ikisi de.** Yönlendirme deneyi bir hunin trafiğini varyant hunilerine böler
+  (ilk varyant = kontrol = deneyin hunisi); içerik deneyi aynı hunide koşulda
+  `deney.<ad>` olur (T3 motoru, yeni alan yok). Reddedilen: yalnız biri.
+- **Atama:** `sha256(deney|tohum)` ilk 8 hex mod 100 → payların birikimli dilimi; tohum
+  hunin sekme deposunda (ziyaret kimliğiyle aynı sınıf, Ç34 — çerez/yeni izin yüzeyi
+  yok). Bedeli: sekme ve gün arası yapışık değil. Tohumsuz (engelli depo) ziyaretçi ve
+  `?huni=` doğrudan adresi deney dışı. Reddedilen: sunucuda saklanan atama (her
+  ziyarette yazım + kimlik), çerez (izin şeridine yük).
+- **Durum:** taslak → aktif ↔ durdu → bitti; taslak dışında varyantlar kilitli, taslağa
+  dönüş yok (sonuçlar karışmasın); hunide tek aktif yönlendirme (DB kısıtı); aktife
+  geçerken huniler yayında olmalı.
+- **Kayıt:** atama ziyaretle `ziyaret_deneyleri`'ne — istemciden gelir, yalnız ziyaretin
+  hunisindeki aktif deneyin geçerli varyantı yazılır.
+- **Sonuç: oranlar + kazanma olasılığı (Bayes).** Bölünme: M4a atama + panel yönetimi →
+  M4b sonuçlar.
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.

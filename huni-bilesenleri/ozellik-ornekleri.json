@@ -24,12 +24,7 @@
                 {
                     "sira": 1,
                     "adim": "ilgi",
-                    "cevaplar": [
-                        "a_1",
-                        "a2",
-                        "a-1",
-                        "a1"
-                    ]
+                    "cevaplar": ["a_1", "a2", "a-1", "a1"]
                 },
                 {
                     "sira": 2,
@@ -43,23 +38,13 @@
                 {
                     "sira": 1,
                     "adim": "ilgi",
-                    "cevaplar": [
-                        "a1",
-                        "a_1",
-                        "a-1"
-                    ]
+                    "cevaplar": ["a1", "a_1", "a-1"]
                 }
             ],
             "beklenen": {
                 "adim.son": "not",
-                "cevap.ilgi": [
-                    "a-1",
-                    "a1",
-                    "a_1"
-                ],
-                "cevap.kiminle": [
-                    "aile"
-                ],
+                "cevap.ilgi": ["a-1", "a1", "a_1"],
+                "cevap.kiminle": ["aile"],
                 "cevap.not": "Daha az bildirim",
                 "huni": "genel",
                 "huni.surum": 1,
@@ -99,9 +84,7 @@
             ],
             "beklenen": {
                 "adim.son": "not",
-                "cevap.kiminle": [
-                    "aile"
-                ],
+                "cevap.kiminle": ["aile"],
                 "huni": "genel",
                 "huni.surum": 1,
                 "izin.reklam": "hayir"

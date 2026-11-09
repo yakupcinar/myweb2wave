@@ -70,3 +70,9 @@ Karar kayıtları ajanın kendi yanlışlarını da tutar: yalan yorum ("hata
 günlüğe yazılıyor" — yazılmıyordu), yanlış sürüm filtresi (bakımlı
 kütüphaneyi bakımsız sandı), tutmayan tahmin (E5: Stripe ilk ödemede
 `incomplete` üretmedi). Gizlenen yanlış bir sonraki oturumda tekrarlanır.
+
+M4a'da başka bir oturum işi CI kırmızıyken commit etti; bir sonraki oturum
+kapıyı yeniden açmak için önce kırmızıyı yerelde üretti, yarım kalan işi
+yedekleyip ayırdı, eksik kırmaları koştu ve kaydı "kapı açılmadan commit"
+başlığıyla yazdı (`decisions/m4a-deneyler.md`). Sormayan akışta tek kapı
+ölçümdür; kapıyı atlayan commit de kayda girer.

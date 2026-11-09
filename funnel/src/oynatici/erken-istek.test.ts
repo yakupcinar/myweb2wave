@@ -20,7 +20,44 @@ it("kaynağından yeniden kurulunca da aynı isteği atar", async () => {
     kok: string,
   ) => Promise<unknown>;
   expect(await yalitik("keepchat", "http://cekirdek")).toEqual({ tamam: true });
-  expect(istenen).toEqual(["http://cekirdek/huni/keepchat?k=fitness"]);
+  expect(istenen).toEqual([
+    `http://cekirdek/huni/keepchat?k=fitness&tohum=${sessionStorage.getItem("huni-tohum")}`,
+  ]);
+});
+
+// M4a (A17): varyant tohumdan hesaplanır — aynı sekmede aynı tohum, yoksa
+// yenilemede başka varyant görülür. Çekirdeğin kalıbına uymalı.
+it("tohum sekme deposunda kalır, çekirdeğin kalıbına uyar", async () => {
+  const istenen: string[] = [];
+  vi.stubGlobal("fetch", (adres: string) => {
+    istenen.push(adres);
+    return Promise.resolve(Response.json({}));
+  });
+  sessionStorage.removeItem("huni-tohum");
+  history.replaceState(null, "", "/keepchat/");
+  await tanimIstegi("keepchat", "http://cekirdek");
+  await tanimIstegi("keepchat", "http://cekirdek");
+  const tohumlar = istenen.map((a) => new URL(a).searchParams.get("tohum"));
+  expect(tohumlar[0]).toMatch(/^[A-Za-z0-9-]{8,64}$/);
+  expect(tohumlar[1]).toBe(tohumlar[0]);
+  expect(sessionStorage.getItem("huni-tohum")).toBe(tohumlar[0]);
+});
+
+it("depo engelliyse tohum gitmez, istek yine atılır", async () => {
+  const istenen: string[] = [];
+  vi.stubGlobal("fetch", (adres: string) => {
+    istenen.push(adres);
+    return Promise.resolve(Response.json({}));
+  });
+  const engel = vi
+    .spyOn(window, "sessionStorage", "get")
+    .mockImplementation(() => {
+      throw new DOMException("engelli", "SecurityError");
+    });
+  history.replaceState(null, "", "/keepchat/?k=a");
+  await tanimIstegi("keepchat", "http://cekirdek");
+  engel.mockRestore();
+  expect(istenen).toEqual(["http://cekirdek/huni/keepchat?k=a"]);
 });
 
 it("yayin=1 önizlemesi taslak ucuna yayin parametresini taşır", async () => {

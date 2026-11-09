@@ -201,12 +201,14 @@ describe("D5 — seçim parametreleri", () => {
     );
     await yuklendi();
     const [g] = istekler("GET", "/huni/keepchat");
+    // M4a: sekme tohumu da gider (ayrıca erken-istek.test.ts).
     expect(Object.fromEntries(new URLSearchParams(g?.sorgu))).toEqual({
       k: "fitness",
       utm_source: "meta",
       utm_campaign: "c",
       utm_content: "i",
       huni: "h".repeat(200),
+      tohum: sessionStorage.getItem("huni-tohum"),
     });
   });
   it("M1c: ülke testi (?ulke=TR) tanım isteğine gider; biçimsizse gitmez", async () => {
@@ -216,11 +218,19 @@ describe("D5 — seçim parametreleri", () => {
       Object.fromEntries(
         new URLSearchParams(istekler("GET", "/huni/keepchat")[0]?.sorgu),
       ),
-    ).toEqual({ k: "fitness", ulke: "TR" });
+    ).toEqual({
+      k: "fitness",
+      ulke: "TR",
+      tohum: sessionStorage.getItem("huni-tohum"),
+    });
     cleanup();
     kur("?ulke=tr");
     await yuklendi();
-    expect(istekler("GET", "/huni/keepchat").at(-1)?.sorgu ?? "").toBe("");
+    expect(
+      new URLSearchParams(istekler("GET", "/huni/keepchat").at(-1)?.sorgu).has(
+        "ulke",
+      ),
+    ).toBe(false);
   });
   it("sayfadaki erken istek varsa oynatıcı tanımı yeniden istemez", async () => {
     window.huniTanimi = Promise.resolve(yayin());
@@ -1689,6 +1699,69 @@ describe("H5 — dallanma (yalnız ileri)", () => {
     await screen.findByText("Kiminle?");
     fireEvent.click(screen.getByText("Ailemle"));
     expect(gorunenBaslik()).toBe("Aile");
+  });
+
+  // M4a (A17): içerik deneyi — çekirdeğin tanımla verdiği varyant koşulda
+  // deney.<ad> olur ve ziyaret kaydına aynı atamayla gider.
+  const deneyli = (varyant: string): Yanit => {
+    const y = yayin();
+    const [karsilama, ...kalan] = y.tanim.adimlar;
+    return {
+      durum: 200,
+      govde: {
+        ...y,
+        deneyler: { baslik: varyant },
+        tanim: {
+          ...y.tanim,
+          adimlar: [
+            {
+              ...(karsilama as Extract<TanimAdimi, { tur: "ekran" }>),
+              yonlendirme: [
+                {
+                  kosullar: [
+                    { ozellik: "deney.baslik", islem: "esit", deger: "b" },
+                  ],
+                  hedef: "paywall",
+                },
+              ],
+            },
+            ...kalan,
+          ],
+        },
+      },
+    };
+  };
+  it("M4a: deney varyantı koşulda deney.<ad>; ziyarete aynı atama gider", async () => {
+    tanim = deneyli("b");
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(gorunenBaslik()).toBe("Pro");
+    await waitFor(() =>
+      expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+    );
+    expect(istekler("POST", "/huni/ziyaretler")[0]?.govde).toMatchObject({
+      huni: "varsayilan",
+      surum: 4,
+      deneyler: { baslik: "b" },
+    });
+  });
+  it("M4a: öteki varyant kuralı tutmaz, sıradaki adım", async () => {
+    tanim = deneyli("a");
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(gorunenBaslik()).toBe("Kiminle?");
+  });
+  it("M4a: atamasız tanımda ziyaret gövdesinde deneyler yok", async () => {
+    kur();
+    await yuklendi();
+    await waitFor(() =>
+      expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+    );
+    expect(istekler("POST", "/huni/ziyaretler")[0]?.govde).not.toHaveProperty(
+      "deneyler",
+    );
   });
 
   // T3b: koşulu tutmayan ekran atlanır (ardışık iki ekran da), geçmişe

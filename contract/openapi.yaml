@@ -970,6 +970,62 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Geçersiz alan ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/deneyler:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiDeneyler
+      summary: M4a — deneyler (yeniden eskiye)
+      responses:
+        "200": { description: Liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelDeneyleri" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiDeneyKaydet
+      summary: M4a — yeni deney ya da taslaktakini güncelle (taslak dışı kilitli)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ad, tur, huni, varyantlar]
+              properties:
+                ad: { $ref: "#/components/schemas/HuniKimligi" }
+                tur: { type: string, enum: [yonlendirme, icerik] }
+                huni: { $ref: "#/components/schemas/HuniKimligi" }
+                varyantlar: { type: array, minItems: 2, maxItems: 4, items: { $ref: "#/components/schemas/DeneyVaryanti" } }
+      responses:
+        "201": { description: Kaydedildi; güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelDeneyleri" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz alan ya da deney taslak değil, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/deneyler/{ad}/durum:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: ad, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: panelApiDeneyDurum
+      summary: "M4a — durum geçişi: taslak → aktif ↔ durdu → bitti; aktife geçerken huniler yayında olmalı"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [durum]
+              properties:
+                durum: { type: string, enum: [aktif, durdu, bitti] }
+      responses:
+        "200": { description: Güncel liste, content: { application/json: { schema: { $ref: "#/components/schemas/PanelDeneyleri" } } } }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da deney, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: "Geçiş yok, huni yayında değil ya da hunide zaten aktif yönlendirme deneyi var", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1264,6 +1320,34 @@ components:
               fiyat:
                 description: Stripe'tan; okunamazsa null
                 oneOf: [{ $ref: "#/components/schemas/PlanFiyati" }, { type: "null" }]
+    DeneyVaryanti:
+      description: "M4a: pay yüzde (toplam 100); huni yalnız yönlendirmede, ilk varyant deneyin hunisi (kontrol)"
+      type: object
+      additionalProperties: false
+      required: [ad, pay]
+      properties:
+        ad: { type: string, pattern: "^[A-Za-z0-9_-]{1,20}$" }
+        pay: { type: integer, minimum: 1, maximum: 99 }
+        huni: { $ref: "#/components/schemas/HuniKimligi" }
+    PanelDeneyleri:
+      type: object
+      additionalProperties: false
+      required: [deneyler]
+      properties:
+        deneyler:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [ad, tur, huni, varyantlar, durum, baslangic, bitis]
+            properties:
+              ad: { type: string }
+              tur: { type: string, enum: [yonlendirme, icerik] }
+              huni: { type: string }
+              varyantlar: { type: array, items: { $ref: "#/components/schemas/DeneyVaryanti" } }
+              durum: { type: string, enum: [taslak, aktif, durdu, bitti] }
+              baslangic: { type: [string, "null"], description: İlk aktif oluş (UTC) }
+              bitis: { type: [string, "null"], description: Bitiş (UTC) }
     PanelEkUrunleri:
       type: object
       additionalProperties: false

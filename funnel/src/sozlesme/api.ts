@@ -573,6 +573,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/deneyler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** M4a — deneyler (yeniden eskiye) */
+        get: operations["panelApiDeneyler"];
+        put?: never;
+        /** M4a — yeni deney ya da taslaktakini güncelle (taslak dışı kilitli) */
+        post: operations["panelApiDeneyKaydet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/deneyler/{ad}/durum": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** M4a — durum geçişi: taslak → aktif ↔ durdu → bitti; aktife geçerken huniler yayında olmalı */
+        put: operations["panelApiDeneyDurum"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri": {
         parameters: {
             query?: never;
@@ -773,6 +813,27 @@ export interface components {
                 stripeFiyat: string;
                 /** @description Stripe'tan; okunamazsa null */
                 fiyat: components["schemas"]["PlanFiyati"] | null;
+            }[];
+        };
+        /** @description M4a: pay yüzde (toplam 100); huni yalnız yönlendirmede, ilk varyant deneyin hunisi (kontrol) */
+        DeneyVaryanti: {
+            ad: string;
+            pay: number;
+            huni?: components["schemas"]["HuniKimligi"];
+        };
+        PanelDeneyleri: {
+            deneyler: {
+                ad: string;
+                /** @enum {string} */
+                tur: "yonlendirme" | "icerik";
+                huni: string;
+                varyantlar: components["schemas"]["DeneyVaryanti"][];
+                /** @enum {string} */
+                durum: "taslak" | "aktif" | "durdu" | "bitti";
+                /** @description İlk aktif oluş (UTC) */
+                baslangic: string | null;
+                /** @description Bitiş (UTC) */
+                bitis: string | null;
             }[];
         };
         PanelEkUrunleri: {
@@ -2966,6 +3027,157 @@ export interface operations {
                 };
             };
             /** @description Geçersiz alan ya da Stripe yanıt vermedi */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiDeneyler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelDeneyleri"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiDeneyKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ad: components["schemas"]["HuniKimligi"];
+                    /** @enum {string} */
+                    tur: "yonlendirme" | "icerik";
+                    huni: components["schemas"]["HuniKimligi"];
+                    varyantlar: components["schemas"]["DeneyVaryanti"][];
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedildi; güncel liste */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelDeneyleri"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz alan ya da deney taslak değil */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiDeneyDurum: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    durum: "aktif" | "durdu" | "bitti";
+                };
+            };
+        };
+        responses: {
+            /** @description Güncel liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelDeneyleri"];
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da deney */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçiş yok, huni yayında değil ya da hunide zaten aktif yönlendirme deneyi var */
             422: {
                 headers: {
                     [name: string]: unknown;

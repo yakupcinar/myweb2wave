@@ -29,25 +29,24 @@ final readonly class Deneyler
     }
 
     /**
+     * Veritabanından canlı okur — iki çağrı farklı sonuç verebilir.
+     *
+     * @phpstan-impure
+     *
      * @return list<array{ad: string, tur: string, huni: string, varyantlar: list<array{ad: string, pay: int, huni?: string}>, durum: string, baslangic: string|null, bitis: string|null}>
      */
     public function liste(string $app): array
     {
-        return array_map(static fn (array $s): array => [
-            'ad' => (string) $s['ad'],
-            'tur' => (string) $s['tur'],
-            'huni' => (string) $s['huni'],
-            'varyantlar' => self::varyantlar($s['varyantlar']),
-            'durum' => (string) $s['durum'],
-            'baslangic' => \is_string($s['baslangic'] ?? null) ? $s['baslangic'] : null,
-            'bitis' => \is_string($s['bitis'] ?? null) ? $s['bitis'] : null,
-        ], $this->db->fetchAllAssociative(
+        /** @var list<array{ad: string, tur: string, huni: string, varyantlar: string, durum: string, baslangic: string|null, bitis: string|null}> $satirlar */
+        $satirlar = $this->db->fetchAllAssociative(
             "SELECT ad, tur, huni, varyantlar, durum,
                     to_char(baslangic_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS baslangic,
                     to_char(bitis_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS bitis
              FROM deneyler WHERE app = :app ORDER BY created_at DESC, ad",
             ['app' => $app],
-        ));
+        );
+
+        return array_map(static fn (array $s): array => ['varyantlar' => self::varyantlar($s['varyantlar'])] + $s, $satirlar);
     }
 
     /**
@@ -72,7 +71,7 @@ final readonly class Deneyler
             return $h;
         }
         $mevcut = $this->db->fetchOne('SELECT durum FROM deneyler WHERE app = :app AND ad = :ad', ['app' => $app, 'ad' => $ad]);
-        if (false !== $mevcut && 'taslak' !== $mevcut) {
+        if (\is_string($mevcut) && 'taslak' !== $mevcut) {
             return ["'{$ad}' deneyi {$mevcut} — yalnız taslak düzenlenir (sonuçlar karışmasın)."];
         }
         $this->db->executeStatement(
@@ -129,21 +128,24 @@ final readonly class Deneyler
      */
     public function yonlendir(string $app, string $huni, string $tohum): array
     {
+        /** @var array{ad: string, varyantlar: string}|false $d */
         $d = $this->db->fetchAssociative("SELECT ad, varyantlar FROM deneyler WHERE app = :app AND huni = :huni AND tur = 'yonlendirme' AND durum = 'aktif'", ['app' => $app, 'huni' => $huni]);
         if (false === $d) {
             return ['huni' => $huni, 'atama' => []];
         }
-        $v = self::sec(self::varyantlar($d['varyantlar']), (string) $d['ad'], $tohum);
+        $v = self::sec(self::varyantlar($d['varyantlar']), $d['ad'], $tohum);
 
-        return ['huni' => $v['huni'] ?? $huni, 'atama' => [(string) $d['ad'] => $v['ad']]];
+        return ['huni' => $v['huni'] ?? $huni, 'atama' => [$d['ad'] => $v['ad']]];
     }
 
     /** @return array<string, string> içerik deneyi adı → varyant (bu hunin aktifleri) */
     public function icerik(string $app, string $huni, string $tohum): array
     {
+        /** @var list<array{ad: string, varyantlar: string}> $satirlar */
+        $satirlar = $this->db->fetchAllAssociative("SELECT ad, varyantlar FROM deneyler WHERE app = :app AND huni = :huni AND tur = 'icerik' AND durum = 'aktif' ORDER BY ad", ['app' => $app, 'huni' => $huni]);
         $atama = [];
-        foreach ($this->db->fetchAllAssociative("SELECT ad, varyantlar FROM deneyler WHERE app = :app AND huni = :huni AND tur = 'icerik' AND durum = 'aktif' ORDER BY ad", ['app' => $app, 'huni' => $huni]) as $d) {
-            $atama[(string) $d['ad']] = self::sec(self::varyantlar($d['varyantlar']), (string) $d['ad'], $tohum)['ad'];
+        foreach ($satirlar as $d) {
+            $atama[$d['ad']] = self::sec(self::varyantlar($d['varyantlar']), $d['ad'], $tohum)['ad'];
         }
 
         return $atama;
@@ -226,6 +228,7 @@ final readonly class Deneyler
         }
         $h = [];
         $adlar = [];
+        $huniler = [];
         $toplam = 0;
         foreach ($varyantlar as $i => $v) {
             $yer = 'Varyant '.($i + 1);
@@ -249,6 +252,8 @@ final readonly class Deneyler
                     $h[] = "{$yer}: huni bu uygulamada yok.";
                 } elseif (0 === $i && $v['huni'] !== $huni) {
                     $h[] = "{$yer}: ilk varyant deneyin hunisi olmalı (kontrol grubu).";
+                } else {
+                    $huniler[] = $v['huni'];
                 }
             }
         }
@@ -258,7 +263,7 @@ final readonly class Deneyler
         if ([] === $h && 100 !== $toplam) {
             $h[] = "Payların toplamı 100 olmalı (şu an {$toplam}).";
         }
-        if ('yonlendirme' === $tur && [] === $h && \count(array_unique(array_column($varyantlar, 'huni'))) !== \count($varyantlar)) {
+        if ('yonlendirme' === $tur && [] === $h && \count(array_unique($huniler)) !== \count($varyantlar)) {
             $h[] = 'Yönlendirme varyantlarının hunileri farklı olmalı.';
         }
 
