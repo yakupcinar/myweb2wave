@@ -127,6 +127,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/huni/portal-baglantisi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M6b2 (A19) — e-postaya tek kullanımlık müşteri portalı bağlantısı; abonelik olsun olmasın 202 (hesap sızdırmaz), e-posta başına saatte en çok 3 */
+        post: operations["requestPortalLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/huni/giris-baglantisi": {
         parameters: {
             query?: never;
@@ -1797,6 +1814,49 @@ export interface operations {
             };
             /** @description Ziyaret yok */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    requestPortalLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    app: "keepchat";
+                    /** Format: email */
+                    eposta: string;
+                };
+            };
+        };
+        responses: {
+            /** @description İstek alındı (abonelik varsa e-posta gider) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gövde JSON değil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bilinmeyen uygulama ya da geçersiz e-posta */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

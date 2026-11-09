@@ -74,6 +74,7 @@ export default defineConfig(({ mode }) => ({
         huni: sayfa("./keepchat/index.html"),
         basarili: sayfa("./keepchat/basarili/index.html"),
         iptal: sayfa("./keepchat/iptal/index.html"),
+        abonelik: sayfa("./keepchat/abonelik/index.html"),
       },
     },
   },

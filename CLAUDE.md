@@ -150,7 +150,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | **§33** | Testing Library'de **metnin görünmesi `useEffect`'in koştuğunu garanti etmez** — effect'e bağlı iddia aralıklı kırmızı, olumsuz iddia yalancı yeşil; `waitFor`. |
 | **§34** | **Gizli sekmede animasyon zaman çizelgesi durur** — opaklık 0'da "takılı" görünür, FCP/LCP yok; önce `visibilityState` + `document.timeline.currentTime` oku. |
 | **§35** | **Betikle doldurulan alanın DOM değeri uygulamanın durumu değildir** — olay görünmeyen kopyaya gitmiş olabilir; önce uygulamanın kendi göstergesini oku. |
-| **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi. |
+| **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi, kökenle birlikte **izinli yöntemi** de ölç (yol başka desene uyabilir). |
 | **§37** | **iCloud'daki masaüstünde** üretilen dizinler (`var/cache`…) " 2" çakışma kopyası alır — `cache:clear` kod değişmeden kırmızı; önce `find . -name "* 2"`. |
 | **§38** | **Docker'daki Vite sunucusu macOS'taki dosya değişikliğini görmeyebilir** — tarayıcı eski stili hatasız çizer; önce sunulan dosyayı `curl` ile oku, eskiyse kabı yeniden başlat. |
 | **§39** | Testing Library **metin sorgusu `hidden` öğeyi de bulur** — "adım görünüyor" testi yalancı yeşil; görünürlüğü ayrıca ölç (`closest("[hidden]")`). |

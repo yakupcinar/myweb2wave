@@ -220,6 +220,7 @@ POST/DELETE'i **503** gösterdi (`ilerleme`, `izin`; 2026-10-26).
 günlüğünde rota eşleşti + işlem commit edildi; DB'de satır var; aynı istek
 sayfadan `fetch` ile 204. **Doğrusu:** uzantının durum kodunu kanıt sayma;
 sunucu günlüğü ya da DB'den oku.
+**Aynı aile (M6b2, 2026-11-09, `m6b2-portal-web.md`):** yeni uç yalnız kökene bakan testten listede yokken de geçti. `/huni/portal-baglantisi` alttaki yalnız-GET huni tanımı desenine (`^/huni/[a-z0-9_-]+`) de uyuyor; köken başlığı yine geliyor, ama POST izinli değil. Ön istek testinde `Access-Control-Allow-Methods` da ölçülür (kırma W8).
 
 ## §37 — iCloud'daki masaüstünde üretilen dizin çakışma kopyası alır
 **Belirti:** `composer install` → `cache:clear` aralıksız kırmızı:

@@ -50,6 +50,8 @@ Sol menü sırasıyla:
 | `…&adim=<kimlik>&ekran=1` | AI ekran görüntüsü için: belirli adımdan, şeritsiz |
 | http://localhost:4321/keepchat/basarili | Ödeme sonrası |
 | http://localhost:4321/keepchat/iptal | Ödemeden vazgeçince |
+| http://localhost:4321/keepchat/abonelik/ | M6b2: "Aboneliğimi yönet" — e-postaya tek kullanımlık portal bağlantısı |
+| http://localhost:8081/portal/{jeton} | M6b2: e-postadaki bağlantı — onay sayfası (GET), "Portalı aç" → Stripe portalı (POST) |
 
 ## 4. API uçları (çekirdek, :8081)
 
@@ -57,9 +59,9 @@ Sözleşme: `contract/openapi.yaml`.
 
 | Grup | Uçlar | Kim çağırır |
 |---|---|---|
-| Huni | `GET /huni/{app}` · `GET /huni/{app}/taslak` · `POST /huni/ziyaretler` · `POST /huni/ziyaretler/{ziyaret}/ilerleme` · `POST /huni/ziyaretler/{ziyaret}/eposta` (E1) · `POST·DELETE /huni/ziyaretler/{ziyaret}/izin` · `POST /huni/giris-baglantisi` | huni sayfası (anahtarsız) |
+| Huni | `GET /huni/{app}` · `GET /huni/{app}/taslak` · `POST /huni/ziyaretler` · `POST /huni/ziyaretler/{ziyaret}/ilerleme` · `POST /huni/ziyaretler/{ziyaret}/eposta` (E1) · `POST·DELETE /huni/ziyaretler/{ziyaret}/izin` · `POST /huni/giris-baglantisi` · `POST /huni/portal-baglantisi` (M6b2) | huni sayfası (anahtarsız) |
 | Ödeme | `POST /checkout/sessions` · `POST /webhooks/stripe` | huni · Stripe |
-| Uygulama | `POST /apps/{app}/baglama/kod` · `POST /apps/{app}/baglama/dogrula` · `POST /apps/{app}/giris/kullan` · `GET /apps/{app}/kullanicilar/{kullanici}/hak` | mobil uygulama sunucusu (uygulama anahtarı) |
-| Panel API | `/panel/api/rapor` · `/panel/api/kullanicilar` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/anahtarlar` · `…/{app}/huniler` (+ `/{ad}`, `/{ad}/varsayilan`, `/{ad}/duzenleyici`) · `…/{app}/kurallar` (+ `/{id}`, `/{id}/tasi`) · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` | panel (oturum + CSRF) |
+| Uygulama | `POST /apps/{app}/baglama/kod` · `POST /apps/{app}/baglama/dogrula` · `POST /apps/{app}/giris/kullan` · `GET /apps/{app}/kullanicilar/{kullanici}/hak` · `POST /apps/{app}/kullanicilar/{kullanici}/portal` (M6b1) | mobil uygulama sunucusu (uygulama anahtarı) |
+| Panel API | `/panel/api/rapor` · `/panel/api/kullanicilar` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/anahtarlar` · `…/{app}/huniler` (+ `/{ad}`, `/{ad}/varsayilan`, `/{ad}/duzenleyici`) · `…/{app}/kurallar` (+ `/{id}`, `/{id}/tasi`) · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` · `…/{app}/deneyler` (+ `/{ad}/durum`, `/{ad}/sonuclar`) · `POST·DELETE /panel/api/abonelikler/{sub}/iptal` · `POST …/iade` (M6a) | panel (oturum + CSRF) |
 | Panel huni işlemleri | `/panel/huniler/{app}/…` (yeni, taslak, durum, yayinla, sürüm geri yükle, varsayılan, kaldır, kurallar) · `/panel/medya/{app}` | panel (oturum + CSRF) |
 | Diğer | `GET /medya/{id}.webp` · `GET /health` · `/mcp` | herkes · izleme · Claude |

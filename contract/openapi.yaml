@@ -270,6 +270,29 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /huni/portal-baglantisi:
+    post:
+      operationId: requestPortalLink
+      summary: "M6b2 (A19) — e-postaya tek kullanımlık müşteri portalı bağlantısı; abonelik olsun olmasın 202 (hesap sızdırmaz), e-posta başına saatte en çok 3"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [app, eposta]
+              properties:
+                app: { type: string, enum: [keepchat] }
+                eposta: { type: string, format: email, maxLength: 254 }
+      responses:
+        "202": { description: İstek alındı (abonelik varsa e-posta gider) }
+        "400": { description: Gövde JSON değil }
+        "422":
+          description: Bilinmeyen uygulama ya da geçersiz e-posta
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /huni/giris-baglantisi:
     post:
       operationId: createLoginLink

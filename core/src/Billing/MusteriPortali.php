@@ -85,16 +85,21 @@ final readonly class MusteriPortali
         if (!\is_string($email)) {
             return 'unknown_user';
         }
+        $musteri = $this->musteri($app, $email);
+
+        return null === $musteri ? 'no_subscription' : $this->musteriIcin($musteri, $app);
+    }
+
+    /** E-postanın bu uygulamadaki aboneliğinin müşterisi: erişim veren önce (Hak ile aynı sıra), yoksa en son. */
+    public function musteri(string $app, string $email): ?string
+    {
         $musteri = $this->db->fetchOne(
-            "SELECT stripe_customer_id FROM subscriptions WHERE app = ? AND lower(email) = lower(?)
+            "SELECT stripe_customer_id FROM subscriptions WHERE app = ? AND lower(email) = lower(?) AND stripe_customer_id IS NOT NULL
              ORDER BY status IN ('".implode("', '", Hak::ERISIM_VEREN)."') DESC NULLS LAST, updated_at DESC LIMIT 1",
             [$app, $email],
         );
-        if (!\is_string($musteri)) {
-            return 'no_subscription';
-        }
 
-        return $this->musteriIcin($musteri, $app);
+        return \is_string($musteri) ? $musteri : null;
     }
 
     /** @return array{adres: string}|'portal_not_configured'|'stripe_error' */
