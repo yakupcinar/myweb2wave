@@ -46,15 +46,20 @@ final readonly class GirisBaglantisi
     /**
      * Başarı sayfası için.
      *
-     * @return array{uygulama_adresi: string, son_kullanma: string}|'hazir_degil'|'pencere_kapandi'|'cok_istek'
+     * Ç118: deneme = oturum tutarı 0 (kartlı deneme) — sayfanın reklam pikseli
+     * sunucu olayıyla aynı adı (StartTrial / Purchase) seçsin; tutar aynı
+     * webhook işleminde yazılır.
+     *
+     * @return array{uygulama_adresi: string, son_kullanma: string, deneme: bool}|'hazir_degil'|'pencere_kapandi'|'cok_istek'
      */
     public function sayfaIcin(string $app, string $oturum): array|string
     {
-        /* @var array{uygulama_adresi: string, son_kullanma: string}|'hazir_degil'|'pencere_kapandi'|'cok_istek' */
+        /* @var array{uygulama_adresi: string, son_kullanma: string, deneme: bool}|'hazir_degil'|'pencere_kapandi'|'cok_istek' */
         return $this->db->transactional(function (Connection $db) use ($app, $oturum): array|string {
             $satir = $db->fetchAssociative(
-                "SELECT email, odeme_tamamlandi_at > now() - interval '".self::PENCERE_DK." minutes' AS acik
-                 FROM subscriptions
+                "SELECT email, odeme_tamamlandi_at > now() - interval '".self::PENCERE_DK." minutes' AS acik,
+                        EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.stripe_checkout_session_id = s.stripe_checkout_session_id AND o.tutar_kucuk = 0) AS deneme
+                 FROM subscriptions s
                  WHERE stripe_checkout_session_id = ? AND app = ? AND odeme_tamamlandi_at IS NOT NULL AND email IS NOT NULL
                  FOR UPDATE",
                 [$oturum, $app],
@@ -70,7 +75,7 @@ final readonly class GirisBaglantisi
                 return 'cok_istek';
             }
 
-            return $this->uret($db, $app, $satir['email'], $oturum);
+            return $this->uret($db, $app, $satir['email'], $oturum) + ['deneme' => true === $satir['deneme']];
         });
     }
 

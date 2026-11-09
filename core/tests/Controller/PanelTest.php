@@ -114,8 +114,8 @@ final class PanelTest extends WebTestCase
 
         $r = $this->rapor();
 
-        self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'odedi' => 1], $r['sayimlar']['reklam']);
-        self::assertSame(['ziyaret' => 1, 'odemeye_gecti' => 0, 'odedi' => 0], $r['sayimlar']['organik']);
+        self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'deneme' => 0, 'odedi' => 1], $r['sayimlar']['reklam']);
+        self::assertSame(['ziyaret' => 1, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0], $r['sayimlar']['organik']);
         self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
@@ -171,6 +171,39 @@ final class PanelTest extends WebTestCase
         self::assertSame(90, $r['gun']);
         self::assertSame(2, $r['sayimlar']['organik']['ziyaret']);
         self::assertSame(30, $this->rapor('?gun=5')['gun']);
+    }
+
+    /**
+     * Ç118 (tuzak §52): kartlı denemede Stripe "paid" der, tutar 0 — "ödedi"
+     * değil "deneme başladı". Ziyaret başına: denemesi de ödemesi de olan
+     * ziyaret yalnız ödedi; abonelik anı olmayan "paid" oturum (eski kayıt)
+     * ödedi sayılmaz. deneme + ödedi = abone olan ziyaret (deneylerle aynı).
+     */
+    public function testDenemeOdediSayilmazAyriSayilir(): void
+    {
+        $deneme = $this->ziyaretEkle(['fbclid' => 'fb-d'], '1 minute');
+        $ikisi = $this->ziyaretEkle(['fbclid' => 'fb-i'], '2 minutes');
+        $etiket = $this->ziyaretEkle(['fbclid' => 'fb-e'], '3 minutes');
+        $oturum = function (string $id, string $ziyaret, ?int $tutar, string $sub): void {
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => $id, 'ziyaret_id' => $ziyaret, 'stripe_subscription_id' => $sub,
+                'tamamlandi_at' => '2026-11-09 10:00:00+00', 'abonelik_at' => null === $tutar ? null : '2026-11-09 10:00:00+00', 'tutar_kucuk' => $tutar, 'para_birimi' => null === $tutar ? null : 'eur']);
+        };
+        $oturum('cs_deneme', $deneme, 0, 'sub_d');
+        $oturum('cs_ikisi_deneme', $ikisi, 0, 'sub_i1');
+        $oturum('cs_ikisi_odedi', $ikisi, 999, 'sub_i2');
+        $oturum('cs_etiket', $etiket, null, 'sub_e');
+        // Ödeme denemeden önce: "en yeni oturum" seçimi ödemeyi kaçırır.
+        $this->db->executeStatement("UPDATE odeme_oturumlari SET abonelik_at = abonelik_at - interval '1 day' WHERE stripe_checkout_session_id = 'cs_ikisi_odedi'");
+        $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_d', 'stripe_customer_id' => 'cus_d', 'status' => 'trialing', 'email' => 'deniz@example.com', 'app' => 'keepchat']);
+        $this->girisYapmis();
+
+        $r = $this->rapor();
+
+        self::assertSame(['ziyaret' => 3, 'odemeye_gecti' => 3, 'deneme' => 1, 'odedi' => 1], $r['sayimlar']['reklam']);
+        self::assertSame(
+            [['deneme başladı', 'trialing', 'd***@example.com'], ['ödedi', null, null], ['ödemeye geçti', null, null]],
+            array_map(static fn (array $s): array => [$s['asama'], $s['durum'], $s['email']], $r['satirlar']),
+        );
     }
 
     public function testSatirdaAsamaKaynakVeMaskeliEposta(): void
@@ -283,7 +316,8 @@ final class PanelTest extends WebTestCase
         $this->ziyaretEkle([], '3 hours');
         $this->ziyaretEkle([], '40 days');
 
-        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_odeyen', 'ziyaret_id' => $odeyen, 'stripe_subscription_id' => 'sub_1', 'tamamlandi_at' => '2026-10-20 10:00:00+00']);
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_odeyen', 'ziyaret_id' => $odeyen, 'stripe_subscription_id' => 'sub_1', 'tamamlandi_at' => '2026-10-20 10:00:00+00',
+            'abonelik_at' => '2026-10-20 10:00:00+00', 'tutar_kucuk' => 999, 'para_birimi' => 'eur']);
         $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_birakan', 'ziyaret_id' => $birakan]);
         $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_1', 'stripe_customer_id' => 'cus_1', 'status' => 'active', 'email' => 'ayse@example.com', 'app' => 'keepchat']);
     }

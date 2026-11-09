@@ -740,6 +740,9 @@ export interface components {
         PanelSayimi: {
             ziyaret: number;
             odemeye_gecti: number;
+            /** @description Ç118 — abone oldu ama para çekilmedi (kartlı deneme, tutar 0) */
+            deneme: number;
+            /** @description Para çekildi — oturum tutarı > 0 */
             odedi: number;
         };
         PanelRaporu: {
@@ -774,7 +777,7 @@ export interface components {
                 kampanya: string | null;
                 reklam: boolean;
                 /** @enum {string} */
-                asama: "sayfayı gördü" | "ödemeye geçti" | "ödedi";
+                asama: "sayfayı gördü" | "ödemeye geçti" | "deneme başladı" | "ödedi";
                 durum: string | null;
                 /** @description Maskeli (a***@example.com); açık e-posta panele hiç gelmez */
                 email: string | null;
@@ -1731,6 +1734,8 @@ export interface operations {
                         uygulama_adresi: string;
                         /** Format: date-time */
                         son_kullanma: string;
+                        /** @description Ç118 — oturum tutarı 0 (kartlı deneme); reklam pikseli Purchase yerine StartTrial gönderir */
+                        deneme: boolean;
                     };
                 };
             };

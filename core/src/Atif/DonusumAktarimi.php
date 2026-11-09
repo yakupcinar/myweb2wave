@@ -81,6 +81,10 @@ final readonly class DonusumAktarimi
 
         $url = rtrim($this->huniAdresi, '/').'/'.rawurlencode($app).'/basarili';
         $eventId = $oturum; // H6c tarayıcı Purchase olayı da aynı Stripe oturumunu kullanır.
+        // Ç118: kartlı denemede Stripe "paid" der, tutar 0 — satın alma değil deneme
+        // başlangıcı. Tarayıcı aynı adı giris-baglantisi yanıtındaki deneme'den seçer
+        // (tekilleştirme ad + event ID ile).
+        $deneme = 0 === $tutar;
         $anaBirimTutar = ParaBirimi::anaBirim($tutar, $para);
         $metaUser = ['client_ip_address' => $ip, 'client_user_agent' => $ua];
         $fbclid = $ziyaret['fbclid'] ?? null;
@@ -93,7 +97,7 @@ final readonly class DonusumAktarimi
         }
         $meta = [
             'data' => [[
-                'event_name' => 'Purchase',
+                'event_name' => $deneme ? 'StartTrial' : 'Purchase',
                 'event_time' => $eventTime,
                 'event_id' => $eventId,
                 'action_source' => 'website',
@@ -113,7 +117,7 @@ final readonly class DonusumAktarimi
             'event_source' => 'web',
             'event_source_id' => $this->tiktokPixel,
             'data' => [[
-                'event' => 'CompletePayment',
+                'event' => $deneme ? 'StartTrial' : 'CompletePayment',
                 'event_time' => $eventTime,
                 'event_id' => $eventId,
                 'user' => $tiktokUser,

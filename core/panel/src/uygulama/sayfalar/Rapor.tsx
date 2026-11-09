@@ -86,6 +86,7 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
     const toplam: Sayim = {
         ziyaret: reklam.ziyaret + organik.ziyaret,
         odemeye_gecti: reklam.odemeye_gecti + organik.odemeye_gecti,
+        deneme: reklam.deneme + organik.deneme,
         odedi: reklam.odedi + organik.odedi,
     };
     const izinToplam = r.izinler.kabul + r.izinler.red + r.izinler.secmeyen;
@@ -97,11 +98,9 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
             >
                 <Ozet ad="Sayfayı gördü" deger={toplam.ziyaret} />
                 <Ozet ad="Ödemeye geçti" deger={toplam.odemeye_gecti} />
+                <Ozet ad="Deneme başladı" deger={toplam.deneme} />
                 <Ozet ad="Ödedi" deger={toplam.odedi} />
-                <Ozet
-                    ad="Dönüşüm"
-                    deger={yuzde(toplam.odedi, toplam.ziyaret)}
-                />
+                <Ozet ad="Dönüşüm" deger={donusum(toplam)} />
             </section>
 
             <Suspense
@@ -208,6 +207,11 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
     );
 }
 
+// Ç118: dönüşüm = abone olan ziyaret (deneme dahil) — deneylerle aynı tanım (A17).
+function donusum(s: Sayim): string {
+    return yuzde(s.deneme + s.odedi, s.ziyaret);
+}
+
 function Ozet({
     ad,
     deger,
@@ -237,8 +241,9 @@ function SayimKarti({ baslik, s }: { baslik: string; s: Sayim }): ReactNode {
                 satirlar={[
                     ["Sayfayı gördü", String(s.ziyaret)],
                     ["Ödemeye geçti", String(s.odemeye_gecti)],
+                    ["Deneme başladı", String(s.deneme)],
                     ["Ödedi", String(s.odedi)],
-                    ["Dönüşüm", yuzde(s.odedi, s.ziyaret)],
+                    ["Dönüşüm", donusum(s)],
                 ]}
             />
         </Kart>

@@ -51,6 +51,28 @@ final class GirisBaglantisiTest extends WebTestCase
         self::assertSame(1, $this->say("SELECT count(*) FROM giris_jetonlari WHERE ozet = ? AND email = 'ayse@example.com'", [hash('sha256', $this->jeton($adres))]));
     }
 
+    /**
+     * Ç118: sayfa pikseli sunucu olayıyla aynı adı seçsin — kartlı deneme
+     * (Stripe "paid", tutar 0) deneme: true; ücretli ödeme ve huni oturumu
+     * olmayan ödeme false.
+     */
+    public function testDenemeAlaniOturumTutarindan(): void
+    {
+        foreach (['cs_deneme' => 0, 'cs_odedi' => 999] as $oturum => $tutar) {
+            $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app) VALUES ('keepchat') RETURNING id");
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => $oturum, 'ziyaret_id' => $ziyaret]);
+            $this->odemeTamamlandi($oturum, 'ayse@example.com', ['payment_status' => 'paid', 'amount_total' => $tutar, 'currency' => 'eur']);
+        }
+        $this->odemeTamamlandi('cs_hunisiz', 'ayse@example.com', ['payment_status' => 'paid', 'amount_total' => 0, 'currency' => 'eur']);
+
+        foreach (['cs_deneme' => true, 'cs_odedi' => false, 'cs_hunisiz' => false] as $oturum => $beklenen) {
+            $this->sayfaIster($oturum);
+            self::assertResponseStatusCodeSame(201);
+            Sozlesme::yanitiDogrula('POST', '/huni/giris-baglantisi', $this->client->getResponse());
+            self::assertSame($beklenen, $this->govde()['deneme'] ?? null, $oturum);
+        }
+    }
+
     public function testWebhookGelmedenSayfaBeklemedeKalir(): void
     {
         $this->sayfaIster('cs_yok');
@@ -197,14 +219,15 @@ final class GirisBaglantisiTest extends WebTestCase
 
     // --- yardımcılar ---
 
-    private function odemeTamamlandi(string $oturum, string $email): void
+    /** @param array<string, mixed> $ek */
+    private function odemeTamamlandi(string $oturum, string $email, array $ek = []): void
     {
         $this->webhook('evt_'.$oturum, 'checkout.session.completed', [
             'id' => $oturum, 'object' => 'checkout.session', 'mode' => 'subscription',
             'subscription' => 'sub_'.$oturum, 'customer' => 'cus_1',
             'customer_details' => ['email' => $email],
             'metadata' => ['app' => 'keepchat'],
-        ]);
+        ] + $ek);
         self::assertResponseStatusCodeSame(200);
     }
 

@@ -298,10 +298,11 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [uygulama_adresi, son_kullanma]
+                required: [uygulama_adresi, son_kullanma, deneme]
                 properties:
                   uygulama_adresi: { type: string, description: "<şema>://giris?jeton=… — uygulamayı açar" }
                   son_kullanma: { type: string, format: date-time }
+                  deneme: { type: boolean, description: "Ç118 — oturum tutarı 0 (kartlı deneme); reklam pikseli Purchase yerine StartTrial gönderir" }
         "400": { description: Gövde JSON değil }
         "404":
           description: Ödeme henüz işlenmedi (webhook gelmedi) ya da yok — sayfa yeniden dener
@@ -1175,11 +1176,12 @@ components:
     PanelSayimi:
       type: object
       additionalProperties: false
-      required: [ziyaret, odemeye_gecti, odedi]
+      required: [ziyaret, odemeye_gecti, deneme, odedi]
       properties:
         ziyaret: { type: integer, minimum: 0 }
         odemeye_gecti: { type: integer, minimum: 0 }
-        odedi: { type: integer, minimum: 0 }
+        deneme: { type: integer, minimum: 0, description: "Ç118 — abone oldu ama para çekilmedi (kartlı deneme, tutar 0)" }
+        odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0" }
     PanelRaporu:
       type: object
       additionalProperties: false
@@ -1233,7 +1235,7 @@ components:
               kaynak: { type: string }
               kampanya: { type: [string, "null"] }
               reklam: { type: boolean }
-              asama: { type: string, enum: ["sayfayı gördü", "ödemeye geçti", "ödedi"] }
+              asama: { type: string, enum: ["sayfayı gördü", "ödemeye geçti", "deneme başladı", "ödedi"] }
               durum: { type: [string, "null"] }
               email:
                 description: Maskeli (a***@example.com); açık e-posta panele hiç gelmez

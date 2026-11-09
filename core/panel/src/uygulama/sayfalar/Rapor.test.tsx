@@ -26,8 +26,8 @@ const RAPOR: PanelRaporu = {
     gunler: [7, 30, 90],
     azami: 200,
     sayimlar: {
-        reklam: { ziyaret: 2, odemeye_gecti: 2, odedi: 1 },
-        organik: { ziyaret: 1, odemeye_gecti: 0, odedi: 0 },
+        reklam: { ziyaret: 3, odemeye_gecti: 3, deneme: 1, odedi: 1 },
+        organik: { ziyaret: 1, odemeye_gecti: 0, deneme: 0, odedi: 0 },
     },
     izinler: { kabul: 2, red: 1, secmeyen: 1 },
     satirlar: [
@@ -108,12 +108,13 @@ describe("Rapor", () => {
     it("özet reklam + organik; kaynak kartları ve izin oranı", async () => {
         kur();
         const ozet = await screen.findByRole("region", { name: "Özet" });
-        // 2+1, 2+0, 1+0; 1/3 = 33,3 %
+        // 3+1, 3+0, 1+0, 1+0; Ç118: dönüşüm = (deneme + ödedi) / ziyaret —
+        // yalnız ödedi'den 1/4 = 25 % olurdu, 2/4 = 50 %.
         expect(
             [...ozet.querySelectorAll("strong")].map((s) => s.textContent),
-        ).toEqual(["3", "2", "1", "33,3 %"]);
-        expect(dd("Reklamdan gelen")).toEqual(["2", "2", "1", "50,0 %"]);
-        expect(dd("Organik / doğrudan")).toEqual(["1", "0", "0", "0,0 %"]);
+        ).toEqual(["4", "3", "1", "1", "50,0 %"]);
+        expect(dd("Reklamdan gelen")).toEqual(["3", "3", "1", "1", "66,7 %"]);
+        expect(dd("Organik / doğrudan")).toEqual(["1", "0", "0", "0", "0,0 %"]);
         expect(dd("Reklam ölçümü izni")).toEqual([
             "2 · 50,0 %",
             "1 · 25,0 %",
@@ -134,7 +135,7 @@ describe("Rapor", () => {
         ).toBeTruthy();
         expect(
             odeme.getByText(
-                "3 gün (UTC) · toplam başlatılan ödeme 3, tamamlanan ödeme 1",
+                "3 gün (UTC) · toplam başlatılan ödeme 3, tamamlanan ödeme (deneme dahil) 1",
             ),
         ).toBeTruthy();
         expect(ziyaret.queryByRole("list", { name: "Gösterge" })).toBeNull();
@@ -142,7 +143,7 @@ describe("Rapor", () => {
             within(odeme.getByRole("list", { name: "Gösterge" }))
                 .getAllByRole("listitem")
                 .map((l) => l.textContent),
-        ).toEqual(["Başlatılan ödeme", "Tamamlanan ödeme"]);
+        ).toEqual(["Başlatılan ödeme", "Tamamlanan ödeme (deneme dahil)"]);
         const satir = (k: ReturnType<typeof within>, gun: string) =>
             [
                 ...k

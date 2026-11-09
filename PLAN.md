@@ -215,6 +215,7 @@
   - [x] M4 · deneyler (kararlar `pre-setup.md` A17, kullanıcı 2026-11-04):
     - [x] M4a · 2026-11-09, `docs/decisions/m4a-deneyler.md`: yönlendirme + içerik (`deney.<ad>`), sekme tohumundan atama (A17), panelden taslak/başlat/durdur/bitir; ilk commit `296a78c` CI kırmızıydı → düzeltildi. Kırma 24/24. Açık Ç117
     - [x] M4b · 2026-11-09, `docs/decisions/m4b-deney-sonuclari.md`: varyant başına ziyaret / ödemeye geçti / abone oldu (dönüşüm, deneme dahil — kullanıcı) / ödedi (tutar > 0) + kazanma olasılığı (Beta, belirlenimci); deneme Stripe'ta "paid", tutar 0 (§52). Kırma 15/16 (B10 kod kaldırıldı). Açık Ç118
+    - [x] Ç118 (1)(2) · 2026-11-09, `docs/decisions/c118-deneme-rapor-reklam.md`: Rapor "ödedi" tutar > 0'dan, kartlı deneme ayrı "deneme başladı", dönüşüm = abone (deneylerle aynı); reklam ağlarına (sunucu + piksel) denemede StartTrial (kullanıcı). Kırma 12/12
   - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla
   - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi

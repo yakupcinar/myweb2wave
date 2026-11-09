@@ -248,6 +248,10 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   oturum tutarı > 0'dan — Stripe kartlı denemeyi de `paid` sayar (ölçüldü, tuzak §52).
   Olasılık: Beta(1,1) önsel, P(en iyi) belirlenimci ızgara tümlevi (Monte Carlo reddedildi:
   test edilemez).
+- **Rapor ve reklam olayı aynı tanıma** (kullanıcı 2026-11-09, Ç118): panel Rapor'da "ödedi"
+  tutar > 0, kartlı deneme ayrı "deneme başladı", dönüşüm = abone. Reklam ağlarına denemede
+  `StartTrial` gider (değer 0); tarayıcı pikseli adı `giris-baglantisi` yanıtının `deneme`
+  alanından seçer. Reddedilen: tahmini değerle `Purchase` (değer M5 LTV'sine kaldı).
 
 ## §B — Yığın
 

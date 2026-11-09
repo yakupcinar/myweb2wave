@@ -95,11 +95,15 @@ function tiktokHazirla(pixelId: string): TikTokPixel {
 export function satinAlmaOlayiGonder({
   izin,
   oturum,
+  deneme,
   metaPixelId,
   tiktokPixelId,
 }: {
   izin: boolean;
   oturum: string | null;
+  // Ç118: kartlı deneme (tutar 0) satın alma değil — sunucu olayıyla aynı ad,
+  // yoksa ağ ikisini tekilleştirmez.
+  deneme: boolean;
   metaPixelId: string;
   tiktokPixelId: string;
 }): void {
@@ -108,11 +112,17 @@ export function satinAlmaOlayiGonder({
   if (metaPixelId) {
     const fbq = metaHazirla();
     fbq("init", metaPixelId);
-    fbq("track", "Purchase", {}, { eventID: oturum });
+    fbq("track", deneme ? "StartTrial" : "Purchase", {}, { eventID: oturum });
   }
 
   if (tiktokPixelId) {
     const ttq = tiktokHazirla(tiktokPixelId);
-    ttq.track?.("CompletePayment", {}, { event_id: oturum });
+    ttq.track?.(
+      deneme ? "StartTrial" : "CompletePayment",
+      {},
+      {
+        event_id: oturum,
+      },
+    );
   }
 }

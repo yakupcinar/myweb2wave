@@ -49,7 +49,9 @@ const goster = (id: string) => {
 };
 const durum = document.getElementById("durum");
 
-async function iste(): Promise<string | undefined> {
+async function iste(): Promise<
+  { uygulama_adresi: string; deneme: boolean } | undefined
+> {
   if (!oturum?.startsWith("cs_")) return undefined;
   for (let i = 0; i < DENEME; i++) {
     const { data, response } = await cekirdek
@@ -57,7 +59,7 @@ async function iste(): Promise<string | undefined> {
         body: { app: "keepchat", oturum },
       })
       .catch(() => ({ data: undefined, response: undefined }));
-    if (data) return data.uygulama_adresi;
+    if (data) return data;
     // Yalnız "webhook henüz gelmedi" yeniden denenir.
     if (response?.status !== 404) return undefined;
     await new Promise((r) => setTimeout(r, ARALIK_MS));
@@ -65,7 +67,8 @@ async function iste(): Promise<string | undefined> {
   return undefined;
 }
 
-void iste().then((adres) => {
+void iste().then((baglanti) => {
+  const adres = baglanti?.uygulama_adresi;
   if (durum) durum.textContent = "Ödemeniz alındı.";
   const a = document.getElementById("giris-baglantisi");
   if (adres && a) {
@@ -74,6 +77,7 @@ void iste().then((adres) => {
     satinAlmaOlayiGonder({
       izin: izinOku() === "evet",
       oturum,
+      deneme: baglanti?.deneme ?? false,
       metaPixelId: import.meta.env.PUBLIC_META_PIXEL_ID,
       tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID,
     });

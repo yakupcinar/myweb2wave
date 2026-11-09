@@ -36,7 +36,8 @@ const ODEME: Seri[] = [
     },
     {
         anahtar: "odemeTamamlandi",
-        ad: "Tamamlanan ödeme",
+        // Ç118: olay Stripe'ın "paid" anı — kartlı deneme de (tutar 0) burada.
+        ad: "Tamamlanan ödeme (deneme dahil)",
         renk: "var(--seri-2)",
     },
 ];

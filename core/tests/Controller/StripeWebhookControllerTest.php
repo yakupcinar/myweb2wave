@@ -192,6 +192,36 @@ final class StripeWebhookControllerTest extends WebTestCase
         self::assertCount(2, $this->db->fetchFirstColumn('SELECT id FROM reklam_donusumleri WHERE gonderildi_at IS NOT NULL AND payload IS NULL'));
     }
 
+    /**
+     * Ç118 (tuzak §52): kartlı deneme "paid" + tutar 0 — reklam ağlarına satın
+     * alma değil StartTrial gider (aynı event ID; tarayıcı pikseli aynı adı
+     * giris-baglantisi yanıtının deneme alanından seçer).
+     */
+    public function testKartliDenemeReklamAglarinaStartTrialGider(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, fbclid, ttclid, izin_at) VALUES ('keepchat', 'tiklama-fb', 'tiklama-tt', now()) RETURNING id");
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_deneme', 'ziyaret_id' => $ziyaret, 'ip_adresi' => '192.0.2.22', 'user_agent' => 'Test tarayıcı']);
+
+        $this->gonder($this->olay('evt_deneme', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_deneme', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_deneme', 'customer' => 'cus_deneme', 'payment_status' => 'paid',
+            'amount_total' => 0, 'currency' => 'eur', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(2, SahteRevenueCat::sayi());
+        $metaGovde = SahteRevenueCat::govde(0)['data'] ?? null;
+        $tiktokGovde = SahteRevenueCat::govde(1)['data'] ?? null;
+        self::assertIsArray($metaGovde);
+        self::assertIsArray($tiktokGovde);
+        $meta = $metaGovde[0] ?? null;
+        $tiktok = $tiktokGovde[0] ?? null;
+        self::assertIsArray($meta);
+        self::assertIsArray($tiktok);
+        self::assertSame(['StartTrial', 'cs_deneme', ['value' => 0, 'currency' => 'EUR']], [$meta['event_name'] ?? null, $meta['event_id'] ?? null, $meta['custom_data'] ?? null]);
+        self::assertSame(['StartTrial', 'cs_deneme', ['value' => 0, 'currency' => 'EUR']], [$tiktok['event'] ?? null, $tiktok['event_id'] ?? null, $tiktok['properties'] ?? null]);
+    }
+
     public function testIzinsizZiyaretReklamAglarinaGonderilmez(): void
     {
         $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app) VALUES ('keepchat') RETURNING id");

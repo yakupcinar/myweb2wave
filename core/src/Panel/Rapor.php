@@ -9,6 +9,9 @@ use Doctrine\DBAL\Connection;
 /**
  * Panelin verisi (A6/2): huni ziyareti → ödeme oturumu → abonelik.
  * Satırlar ve sayımlar aynı "reklam mı" tanımını kullanır (tek yer: REKLAM).
+ * Ç118: "ödedi" = oturum tutarı > 0; abone olup para çekilmeyen (kartlı
+ * deneme — Stripe bunu da "paid" der, tutar 0) "deneme başladı". Deneyler
+ * (M4b) aynı tanımı kullanır: abone = abonelik_at, ödedi = tutar_kucuk > 0.
  */
 final readonly class Rapor
 {
@@ -33,13 +36,13 @@ final readonly class Rapor
         $satirlar = $this->db->fetchAllAssociative(
             'SELECT z.created_at, z.app, z.huni, z.utm_source, z.utm_campaign, z.fbclid, z.ttclid, '.self::REKLAM.' AS reklam,
                     EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id) AS odemeye_gecti,
-                    od.ziyaret_id IS NOT NULL AS odedi, od.status, od.email
+                    od.ziyaret_id IS NOT NULL AS abone, coalesce(od.odedi, false) AS odedi, od.status, od.email
              FROM huni_ziyaretleri z
              LEFT JOIN LATERAL (
-                 SELECT o.ziyaret_id, s.status, s.email FROM odeme_oturumlari o
+                 SELECT o.ziyaret_id, o.tutar_kucuk > 0 AS odedi, s.status, s.email FROM odeme_oturumlari o
                  LEFT JOIN subscriptions s ON s.stripe_subscription_id = o.stripe_subscription_id
-                 WHERE o.ziyaret_id = z.id AND o.tamamlandi_at IS NOT NULL
-                 ORDER BY o.tamamlandi_at DESC LIMIT 1
+                 WHERE o.ziyaret_id = z.id AND o.abonelik_at IS NOT NULL
+                 ORDER BY o.tutar_kucuk > 0 DESC NULLS LAST, o.abonelik_at DESC LIMIT 1
              ) od ON true
              WHERE z.created_at >= now() - make_interval(days => :gun)
              ORDER BY z.created_at DESC
@@ -54,21 +57,31 @@ final readonly class Rapor
             'kaynak' => self::kaynak($s),
             'kampanya' => self::dizgeYaDaNull($s['utm_campaign']),
             'reklam' => true === $s['reklam'],
-            'asama' => true === $s['odedi'] ? 'ödedi' : (true === $s['odemeye_gecti'] ? 'ödemeye geçti' : 'sayfayı gördü'),
+            'asama' => true === $s['odedi'] ? 'ödedi' : (true === $s['abone'] ? 'deneme başladı' : (true === $s['odemeye_gecti'] ? 'ödemeye geçti' : 'sayfayı gördü')),
             'durum' => self::dizgeYaDaNull($s['status']),
             'email' => self::maskele(self::dizgeYaDaNull($s['email'])),
         ], $satirlar);
     }
 
-    /** @return array{reklam: array{ziyaret: int, odemeye_gecti: int, odedi: int}, organik: array{ziyaret: int, odemeye_gecti: int, odedi: int}} */
+    /**
+     * Ziyaret başına: deneme = abone ama hiçbir oturumunda para çekilmedi;
+     * deneme + odedi = abone olan ziyaret.
+     *
+     * @return array{reklam: array{ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int}, organik: array{ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int}}
+     */
     public function sayimlar(int $gun): array
     {
-        $sayim = ['reklam' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'odedi' => 0], 'organik' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'odedi' => 0]];
+        $sayim = ['reklam' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0], 'organik' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0]];
         $satirlar = $this->db->fetchAllAssociative(
             'SELECT '.self::REKLAM.' AS reklam, count(*) AS ziyaret,
                     count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id)) AS odemeye_gecti,
-                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id AND o.tamamlandi_at IS NOT NULL)) AS odedi
+                    count(*) FILTER (WHERE od.abone AND NOT od.odedi) AS deneme,
+                    count(*) FILTER (WHERE od.odedi) AS odedi
              FROM huni_ziyaretleri z
+             CROSS JOIN LATERAL (
+                 SELECT coalesce(bool_or(o.abonelik_at IS NOT NULL), false) AS abone, coalesce(bool_or(o.tutar_kucuk > 0), false) AS odedi
+                 FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id
+             ) od
              WHERE z.created_at >= now() - make_interval(days => :gun)
              GROUP BY 1',
             ['gun' => $gun],
@@ -77,6 +90,7 @@ final readonly class Rapor
             $sayim[true === $s['reklam'] ? 'reklam' : 'organik'] = [
                 'ziyaret' => self::sayi($s['ziyaret']),
                 'odemeye_gecti' => self::sayi($s['odemeye_gecti']),
+                'deneme' => self::sayi($s['deneme']),
                 'odedi' => self::sayi($s['odedi']),
             ];
         }
