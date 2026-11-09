@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Billing\MusteriPortali;
 use App\Kimlik\DogrulamaKodu;
 use App\Kimlik\GirisBaglantisi;
 use App\Kimlik\Hak;
@@ -16,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Uygulamanın SUNUCUSU için uçlar (A5): bağlama kodu, doğrulama, giriş
- * bağlantısı jetonu (Ç46), hak.
+ * bağlantısı jetonu (Ç46), hak, müşteri portalı (M6b).
  * Hepsi uygulama anahtarı ister; tarayıcıya açık değil (CORS yok).
  */
 final readonly class KimlikController
@@ -27,6 +28,7 @@ final readonly class KimlikController
         private GirisBaglantisi $giris,
         private Hak $hak,
         private Aktarim $revenuecat,
+        private MusteriPortali $portal,
     ) {
     }
 
@@ -103,6 +105,22 @@ final readonly class KimlikController
         $hak = $this->hak->sorgula($app, $kullanici);
 
         return null === $hak ? self::hata('unknown_user', 404) : new JsonResponse($hak);
+    }
+
+    /** M6b (A19): uygulamadaki "Aboneliği yönet" — kişinin Stripe portal oturumu. */
+    #[Route('/apps/{app}/kullanicilar/{kullanici}/portal', name: 'portal', methods: ['POST'])]
+    public function portal(Request $request, string $app, string $kullanici): Response
+    {
+        if (!$this->yetki->izinli($request, $app)) {
+            return self::hata('unauthorized', 401);
+        }
+        $sonuc = $this->portal->oturum($app, $kullanici);
+
+        return match ($sonuc) {
+            'unknown_user', 'no_subscription' => self::hata($sonuc, 404),
+            'portal_not_configured', 'stripe_error' => self::hata($sonuc, 503),
+            default => new JsonResponse($sonuc, 201),
+        };
     }
 
     private static function hata(string $kod, int $durum): JsonResponse

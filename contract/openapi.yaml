@@ -435,6 +435,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /apps/{app}/kullanicilar/{kullanici}/portal:
+    post:
+      operationId: createPortalSession
+      summary: "M6b (A19) — kişinin Stripe müşteri portalı oturumu (kart, iptal dönem sonunda, faturalar); adres kısa ömürlü, bir kez açılır"
+      security: [{ uygulamaAnahtari: [] }]
+      parameters:
+        - $ref: "#/components/parameters/App"
+        - { name: kullanici, in: path, required: true, schema: { type: string } }
+      responses:
+        "201":
+          description: Portal adresi (Stripe)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [adres]
+                properties:
+                  adres: { type: string, format: uri }
+        "401": { $ref: "#/components/responses/Yetkisiz" }
+        "404":
+          description: "unknown_user: kullanıcı kişiye bağlanmamış; no_subscription: bu uygulamada aboneliği yok"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
+        "503":
+          description: "portal_not_configured (app:stripe-portal:kur koşulmadı) ya da stripe_error"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /panel/api/rapor:
     get:
       operationId: panelRaporu
@@ -2068,4 +2098,4 @@ components:
       properties:
         error:
           type: string
-          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit, forbidden, not_ready, link_window_closed, invalid_token, expired_token]
+          enum: [unknown_app, unknown_plan, payment_provider_unavailable, unauthorized, invalid_request, invalid_code, expired_code, too_many_attempts, too_many_requests, unknown_user, unknown_visit, forbidden, not_ready, link_window_closed, invalid_token, expired_token, no_subscription, portal_not_configured, stripe_error]

@@ -212,6 +212,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/apps/{app}/kullanicilar/{kullanici}/portal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M6b (A19) — kişinin Stripe müşteri portalı oturumu (kart, iptal dönem sonunda, faturalar); adres kısa ömürlü, bir kez açılır */
+        post: operations["createPortalSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/rapor": {
         parameters: {
             query?: never;
@@ -1343,7 +1360,7 @@ export interface components {
         HuniKimligi: string;
         Hata: {
             /** @enum {string} */
-            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit" | "forbidden" | "not_ready" | "link_window_closed" | "invalid_token" | "expired_token";
+            error: "unknown_app" | "unknown_plan" | "payment_provider_unavailable" | "unauthorized" | "invalid_request" | "invalid_code" | "expired_code" | "too_many_attempts" | "too_many_requests" | "unknown_user" | "unknown_visit" | "forbidden" | "not_ready" | "link_window_closed" | "invalid_token" | "expired_token" | "no_subscription" | "portal_not_configured" | "stripe_error";
         };
     };
     responses: {
@@ -2022,6 +2039,51 @@ export interface operations {
             401: components["responses"]["Yetkisiz"];
             /** @description Kullanıcı hiçbir kişiye bağlanmamış */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    createPortalSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+                kullanici: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Portal adresi (Stripe) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        adres: string;
+                    };
+                };
+            };
+            401: components["responses"]["Yetkisiz"];
+            /** @description unknown_user: kullanıcı kişiye bağlanmamış; no_subscription: bu uygulamada aboneliği yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+            /** @description portal_not_configured (app:stripe-portal:kur koşulmadı) ya da stripe_error */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

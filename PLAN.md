@@ -223,7 +223,8 @@
     - [x] M5d · 2026-11-09, `docs/decisions/m5d-meta-harcama.md`: Meta Insights kampanya × gün harcaması (günlük `app:reklam-harcamalari:cek`, son 7 gün yeniden yazılır), panelde "Meta kampanyaları" (harcama · ziyaret · ödedi · gelir · ROAS, utm_campaign = kampanya adı). Kırma 13/13. **Gerçek Meta hesabıyla ölçülmedi** (Ç121). Değer aktarımı sonraya (kullanıcı)
   - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce) — kararlar A19
     - [x] M6a · 2026-11-09, `docs/decisions/m6a-iptal-iade.md`: Kullanıcılar satırında dönem sonunda iptal / geri al ve son faturanın kalanını tam iade (iki adımlı onay); webhook dönem sonunu kalemden, iadeyi `charge.refunded` birikimli tutarından (fatura bağı `invoice_payment.paid`); iade gelirden (kırılım, kohort, ROAS) düşülür. Kırma 19/19; gerçek Stripe test modunda iptal / geri al / iade
-    - [ ] M6b · Stripe Customer Portal oturumu (müşteri kendi aboneliğini yönetir)
+    - [x] M6b1 · 2026-11-09, `docs/decisions/m6b1-portal.md`: portal ayarı kodda (`app:stripe-portal:kur`, etiketle bulunur, kurulur / güncellenir) + `POST /apps/{app}/kullanicilar/{kullanici}/portal` (uygulama anahtarı; erişim veren abonelik önce). Kırma 9/9; gerçek test hesabında ayar kuruldu / güncellendi, oturum açıldı
+    - [ ] M6b2 · web yolu: hunide "Aboneliğimi yönet" → tek kullanımlık e-posta bağlantısı → portal
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)

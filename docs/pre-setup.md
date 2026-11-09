@@ -234,6 +234,11 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: kısmi / tutar seçmeli iade, iadeyi yalnız Stripe panelinde bırakmak.
 - **Müşteri yönetimi Stripe Customer Portal'da** (kart, iptal, faturalar); kendi sayfamız reddedildi
   (iş ve risk). Bölünme: M6a panel iptal + iade → M6b portal.
+- **Portala iki yol** (kullanıcı 2026-11-09): uygulama sunucusu çekirdekten kişi için portal adresi ister
+  (uygulama anahtarı) **ve** web: hunide "Aboneliğimi yönet" → tek kullanımlık e-posta bağlantısı →
+  portal (uygulamayı silen müşteri için de). **Portal ayarları kodda**, Stripe API'siyle kurulur:
+  dönem sonunda iptal (A19 ile aynı), kart güncelleme, fatura geçmişi; plan değiştirme kapalı. Reddedilen:
+  tek yol, ayarları Stripe panelinde elle tutmak. Bölünme: M6b1 ayar + uygulama ucu → M6b2 web yolu.
 
 **A18 · M5 sırası: önce olay deposu (Ç92)** (2026-11-09, kullanıcı).
 - Önce yalnız ekleme yapılan olay deposu (cevap / izin / abonelik geçmişi), sonra cevap
