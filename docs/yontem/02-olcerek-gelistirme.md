@@ -87,3 +87,9 @@ Tek bağlantılı test, işlemlerin sırayla bittiği bir dünyada koşar; eşza
 varsayımı orada hiç sınanmaz. M5a'da akış imlecinin bitmemiş işlemi atlayıp
 atlamadığını ölçmek için test ikinci bir bağlantı açtı ve yarım bir işlem
 kurdu: bekçi kaldırılınca test düştü (`decisions/m5a-olay-deposu.md`, tuzak §53).
+
+Bir çözümü kırma denemesiyle kanıtlamak, o çözümün DOĞRU olduğunu değil, test edilen
+senaryoyu kapattığını gösterir. M5a'nın akış bekçisi (§53) kendi testini geçiyordu;
+M7a'da aynı imleci yeniden kullanırken senaryoların sırasını yeniden düşünmek ikinci
+bir açık buldu. Önce o açığı düşüren test yazıldı, sonra düzeltildi; eski "doğrusu"
+kayıtta düzeltmeyle duruyor (`decisions/m7a-giden-webhook.md`).

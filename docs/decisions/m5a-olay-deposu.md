@@ -27,7 +27,7 @@ tablonun görünümü olarak kaldı (Rapor P4 grafiği değişmedi). Sözlük ve
 | 1 | Tablo, yazma yolunda PHP'den | DB tetikleyicisi | "Değişti mi" kararı (silip yeniden yazılan cevaplar) tetikleyicide satır satır görülmez; komşu kod açık SQL |
 | 2 | Yalnız durum değişince olay | her istek olay | Geri gelip aynı cevabı seçmek ve tekrar izin vermek geçmiş değil, gürültü |
 | 3 | Sıra `id`; aynı işlemdeki olayların zamanı aynı (`now()`) | zaman + ad sırası (T4) | T4'te `abonelik.durum`, `odeme.tamamlandi`'dan önce geliyordu; id yazılış sırası, yani neden önce |
-| 4 | Akış yalnız şu an açık en eski işlemden önce bitenleri okur (`islem xid8`) | düz `id >` imleci | Bitmemiş işlemin küçük id'si sonradan görünür, imleç onu geçmiş olur (tuzak §53). Bedeli: uzun açık işlem akışı geciktirir |
+| 4 | Akış yalnız şu an açık en eski işlemden önce bitenleri okur (`islem xid8`) | düz `id >` imleci | Bitmemiş işlemin küçük id'si sonradan görünür, imleç onu geçmiş olur (tuzak §53). Bedeli: uzun açık işlem akışı geciktirir. **⚠️ M7a'da yetersiz çıktı:** imleç `id` kaldıkça eski işlemin büyük id'li olayı yarım işleminkini atlatıyordu — imleç ve sıra `(islem, id)` oldu (`m7a-giden-webhook.md`) |
 | 5 | Güncelleme tetikleyiciyle reddedilir; silme açık | silmeyi de yasaklamak | Ziyaret silinince (CASCADE) olay da gitmeli |
 | 6 | Eski olaylar görünümden bir kez kopyalandı, T4 sırasıyla | boş başlamak | Rapor grafiği geçmişsiz kalırdı; geçmiş zaten yoktu, son hâl korunur |
 | 7 | İmleç biçimi değişti (`[id]`) | eskisini okumak | Akışın dış tüketicisi henüz yok (M7) |

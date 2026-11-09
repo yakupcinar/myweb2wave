@@ -36,6 +36,17 @@ final class Olaylar
 
     private const UUID = '/^[0-9a-f-]{36}$/';
 
+    /**
+     * Akış ve giden webhook yalnız BİTMİŞ işlemlerin olaylarını, (işlem, id)
+     * sırasında okur (tuzak §53). id sırası yetmez: id eklemede, görünürlük
+     * commit'te alınır — eski işlem (küçük işlem kimliği) olayını yarım bir
+     * işlemden sonra ekleyip bitirirse büyük id'yle bekçiyi geçer, id imleci
+     * yarım işlemin küçük id'li olayını kalıcı atlar (ölçüldü). Şu an açık en
+     * eski işlemden (xmin) küçük işlemlerin hepsi bitmiştir; sonradan görünecek
+     * her satırın işlemi ≥ xmin, yani imlecin ötesinde kalır.
+     */
+    public const BITMIS = 'islem < pg_snapshot_xmin(pg_current_snapshot())';
+
     public function __construct(private readonly Connection $db)
     {
     }
@@ -74,42 +85,42 @@ final class Olaylar
 
     /**
      * Uygulamanın olayları imleçten sonra, en çok $sinir tane; imleç null =
-     * baştan. Dönen imleç null ise akış bitti. Bozuk imleçte null.
+     * baştan. Dönen imleç son verilen olayın yeri (olay yoksa gelen imleç) —
+     * sonraki çağrı oradan sürer; devam = hemen ardından daha var. Bozuk
+     * imleçte null.
      *
      * @phpstan-impure
      *
-     * @return array{olaylar: list<array{ziyaret: string, ad: string, veri: array<string, mixed>, zaman: string}>, imlec: ?string}|null
+     * @return array{olaylar: list<array{ziyaret: string, ad: string, veri: array<string, mixed>, zaman: string}>, imlec: ?string, devam: bool}|null
      */
     public function akis(string $app, ?string $imlec, int $sinir): ?array
     {
         $sinir = max(1, min(1000, $sinir));
-        // M5a: sıra id. id işlem içinde alınır, görünürlük commit'te: bitmemiş bir
-        // işlemin küçük id'li olayı sonradan görünür, imleç onu çoktan geçmiş
-        // olurdu. Yalnız şu an çalışan en eski işlemden önce bitenler okunur.
-        $kosul = 'app = :app AND islem < pg_snapshot_xmin(pg_current_snapshot())';
+        $kosul = 'app = :app AND '.self::BITMIS;
         $p = ['app' => $app, 'n' => $sinir + 1];
         if (null !== $imlec) {
             $son = json_decode((string) base64_decode($imlec, true), true);
-            if (!\is_array($son) || 1 !== \count($son) || !array_is_list($son) || !\is_int($son[0])) {
+            if (!\is_array($son) || 2 !== \count($son) || !array_is_list($son) || !\is_string($son[0]) || 1 !== preg_match('/^\d{1,20}$/', $son[0]) || !\is_int($son[1])) {
                 return null;
             }
-            $kosul .= ' AND id > :son';
-            $p['son'] = $son[0];
+            $kosul .= ' AND (islem, id) > (CAST(:islem AS xid8), :son)';
+            [$p['islem'], $p['son']] = $son;
         }
-        $satirlar = self::satirlar($this->db->fetchAllAssociative(self::secim()." WHERE {$kosul} ORDER BY id LIMIT :n", $p));
+        $satirlar = self::satirlar($this->db->fetchAllAssociative(self::secim()." WHERE {$kosul} ORDER BY islem, id LIMIT :n", $p));
         $devam = \count($satirlar) > $sinir;
         $satirlar = \array_slice($satirlar, 0, $sinir);
         $sonuncu = end($satirlar);
 
         return [
             'olaylar' => array_map(static fn (array $o): array => ['ziyaret' => $o['ziyaret'], 'ad' => $o['ad'], 'veri' => $o['veri'], 'zaman' => $o['zaman']], $satirlar),
-            'imlec' => $devam && false !== $sonuncu ? base64_encode(json_encode([$sonuncu['id']], \JSON_THROW_ON_ERROR)) : null,
+            'imlec' => false !== $sonuncu ? base64_encode(json_encode([$sonuncu['islem'], $sonuncu['id']], \JSON_THROW_ON_ERROR)) : $imlec,
+            'devam' => $devam,
         ];
     }
 
     private static function secim(): string
     {
-        return "SELECT id, ziyaret_id::text AS ziyaret, ad, veri::text AS veri,
+        return "SELECT id, islem::text AS islem, ziyaret_id::text AS ziyaret, ad, veri::text AS veri,
                 to_char(zaman AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"+00:00\"') AS zaman
                 FROM olaylar";
     }
@@ -117,18 +128,18 @@ final class Olaylar
     /**
      * @param list<array<string, mixed>> $satirlar
      *
-     * @return list<array{id: int, ziyaret: string, ad: string, veri: array<string, mixed>, zaman: string}>
+     * @return list<array{id: int, islem: string, ziyaret: string, ad: string, veri: array<string, mixed>, zaman: string}>
      */
     private static function satirlar(array $satirlar): array
     {
         return array_map(static function (array $s): array {
-            \assert(is_numeric($s['id']) && \is_string($s['ziyaret']) && \is_string($s['ad']) && \is_string($s['veri']) && \is_string($s['zaman']));
+            \assert(is_numeric($s['id']) && \is_string($s['islem']) && \is_string($s['ziyaret']) && \is_string($s['ad']) && \is_string($s['veri']) && \is_string($s['zaman']));
             $veri = [];
             foreach ((array) json_decode($s['veri'], true, 16, \JSON_THROW_ON_ERROR) as $k => $d) {
                 $veri[(string) $k] = $d;
             }
 
-            return ['id' => (int) $s['id'], 'ziyaret' => $s['ziyaret'], 'ad' => $s['ad'], 'veri' => $veri, 'zaman' => $s['zaman']];
+            return ['id' => (int) $s['id'], 'islem' => $s['islem'], 'ziyaret' => $s['ziyaret'], 'ad' => $s['ad'], 'veri' => $veri, 'zaman' => $s['zaman']];
         }, $satirlar);
     }
 }

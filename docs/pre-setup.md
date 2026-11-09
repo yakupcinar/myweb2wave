@@ -227,6 +227,15 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
 - **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
 
+**A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
+- Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
+  dosyası, yalnız çekme (akış API).
+- Gövde yalnız kimlikler ve sözlük verisi (`{id, ad, ziyaret, veri, zaman}`; e-posta yok, Ç90). Reddedilen: abonelik
+  olaylarında e-posta.
+- Teslim en az bir kez, üstel bekleme; imza Standard Webhooks biçimi (`webhook-id`, `webhook-timestamp`,
+  `webhook-signature: v1,<base64 HMAC-SHA256>`) — alıcılar hazır kitaplıkla doğrular. Bölünme: M7a motor →
+  M7b panel ekranı.
+
 **A19 · M6 abonelik yönetimi** (2026-11-09, kullanıcı).
 - **İptal dönem sonunda** (`cancel_at_period_end`); dönem bitene kadar geri alınabilir; denemede deneme
   sonunda biter, ücret çekilmez. Reddedilen: hemen iptal, yöneticiye seçtirmek.

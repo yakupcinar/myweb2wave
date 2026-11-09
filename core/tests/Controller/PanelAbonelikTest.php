@@ -30,7 +30,7 @@ final class PanelAbonelikTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE subscriptions, odeme_faturalari, fatura_odemeleri, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari CASCADE');
+        $this->db->executeStatement('TRUNCATE subscriptions, odeme_faturalari, fatura_odemeleri, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari CASCADE');
         $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_x', 'stripe_customer_id' => 'cus_x', 'status' => 'active', 'email' => 'a@example.com', 'app' => 'keepchat']);
         $this->stripe = new KayitliStripeIstemcisi();
         ApiRequestor::setHttpClient($this->stripe);

@@ -68,7 +68,7 @@ final class GomuluOdemeTest extends WebTestCase
         // Ziyaret huniyi yalnız yayınlanmış sürümüyle kaydeder.
         $db = static::getContainer()->get(\Doctrine\DBAL\Connection::class);
         self::assertInstanceOf(\Doctrine\DBAL\Connection::class, $db);
-        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
+        $db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari');
         $huniler = static::getContainer()->get(\App\Huni\Huniler::class);
         self::assertInstanceOf(\App\Huni\Huniler::class, $huniler);
         self::assertSame([], $huniler->yeniHuni('keepchat', 'fitness-2', null, 'fitness'));

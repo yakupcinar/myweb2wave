@@ -32,7 +32,7 @@ final class OlaylarTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE fatura_odemeleri, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler, odeme_faturalari CASCADE');
+        $this->db->executeStatement('TRUNCATE fatura_odemeleri, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, subscriptions, processed_webhook_events, reklam_donusumleri, revenuecat_gidenler, odeme_faturalari CASCADE');
         $ziyaretler = self::getContainer()->get(Ziyaretler::class);
         self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
         $this->ziyaretler = $ziyaretler;
@@ -287,8 +287,9 @@ final class OlaylarTest extends KernelTestCase
 
     /**
      * Akış imleci bitmemiş işlemin olayını atlamaz: id işlem içinde alınır,
-     * görünürlük commit'te. Yarım kalan işlemin (küçük id) arkasındaki biten
-     * olay da beklenir; işlem bitince ikisi sırayla gelir.
+     * görünürlük commit'te. Yarım işlemden (küçük id) sonra başlayıp biten
+     * işlemin olayı da beklenir; yarım işlem bitince ikisi de gelir, sıra
+     * işlem sırası (önce başlayan önce).
      */
     public function testBitmemisIslemAkistaBeklenir(): void
     {
@@ -304,7 +305,7 @@ final class OlaylarTest extends KernelTestCase
         Olaylar::ekle($ikinci, $a, 'izin.verildi');
         Olaylar::ekle($this->db, $b, 'izin.reddedildi');
 
-        $imlec = base64_encode(json_encode([$this->sonId() - 2], \JSON_THROW_ON_ERROR));
+        $imlec = $ilk['imlec'];
         self::assertSame([], $this->olaylar->akis('keepchat', $imlec, 10)['olaylar'] ?? null, 'yarım işlemin arkası da beklenir');
         $ikinci->commit();
         $ikinci->close();
@@ -314,12 +315,87 @@ final class OlaylarTest extends KernelTestCase
         );
     }
 
-    private function sonId(): int
+    /**
+     * İki BİTMİŞ işlem: eski işlem (A) büyük id'yle, yeni işlem (T) küçük id'yle.
+     * Sayfa 1 ile okununca sıra işlem sırası olmalı — id sırasıyla okuyan
+     * imleç (T'den sonra) A'yı (eski işlem) geride bırakıp atlar.
+     */
+    public function testIkiBitmisIslemIslemSirasiyla(): void
     {
-        $id = $this->db->fetchOne('SELECT max(id) FROM olaylar');
-        self::assertIsNumeric($id);
+        $z = $this->ziyaret();
+        $a = new Connection($this->db->getParams(), $this->db->getDriver(), $this->db->getConfiguration());
+        $t = new Connection($this->db->getParams(), $this->db->getDriver(), $this->db->getConfiguration());
+        $a->beginTransaction();
+        $a->fetchOne('SELECT pg_current_xact_id()');
+        $t->beginTransaction();
+        $t->fetchOne('SELECT pg_current_xact_id()');
+        Olaylar::ekle($t, $z, 'izin.verildi');
+        Olaylar::ekle($a, $z, 'izin.reddedildi');
+        $t->commit();
+        $a->commit();
+        $a->close();
+        $t->close();
 
-        return (int) $id;
+        $gorulen = [];
+        $imlec = null;
+        do {
+            $sonuc = $this->olaylar->akis('keepchat', $imlec, 1);
+            self::assertNotNull($sonuc);
+            array_push($gorulen, ...array_column($sonuc['olaylar'], 'ad'));
+            $imlec = $sonuc['imlec'];
+            self::assertLessThan(10, \count($gorulen));
+        } while ($sonuc['devam']);
+
+        self::assertSame(['huni.ziyaret', 'izin.reddedildi', 'izin.verildi'], $gorulen);
+    }
+
+    private function ziyaret(): string
+    {
+        return $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+    }
+
+    /**
+     * Tuzak §53'ün ikinci kolu: işlem kimliği DAHA ESKİ olan işlem (A) olayını
+     * yarım işlemden (T) SONRA ekleyip biter — A'nın id'si büyük, işlemi eski,
+     * bekçiyi geçer. id imleci A'yı verip T'nin küçük id'li olayını kalıcı
+     * atlar; imleç (işlem, id) sırasında olmalı.
+     */
+    public function testEskiIslemBuyukIdIleYarimIsleminOlayiniAtlatmaz(): void
+    {
+        $z = $this->ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), null, null, null);
+        $bas = $this->olaylar->akis('keepchat', null, 100);
+        self::assertNotNull($bas);
+        $once = \count($bas['olaylar']);
+        $a = new Connection($this->db->getParams(), $this->db->getDriver(), $this->db->getConfiguration());
+        $t = new Connection($this->db->getParams(), $this->db->getDriver(), $this->db->getConfiguration());
+        $a->beginTransaction();
+        $a->fetchOne('SELECT pg_current_xact_id()');
+        $t->beginTransaction();
+        $t->fetchOne('SELECT pg_current_xact_id()');
+        Olaylar::ekle($t, $z, 'izin.verildi');
+        Olaylar::ekle($a, $z, 'izin.reddedildi');
+        $a->commit();
+
+        $gorulen = [];
+        $imlec = null;
+        $okut = function () use (&$imlec, &$gorulen): void {
+            do {
+                $sonuc = $this->olaylar->akis('keepchat', $imlec, 1);
+                self::assertNotNull($sonuc);
+                foreach ($sonuc['olaylar'] as $o) {
+                    $gorulen[] = $o['ad'];
+                }
+                $imlec = $sonuc['imlec'];
+            } while ($sonuc['devam']);
+        };
+        $okut();
+        $t->commit();
+        $okut();
+        $a->close();
+        $t->close();
+
+        // Her olay tam bir kez; A (eski işlem) önce okunur, T bitince gelir.
+        self::assertSame(['huni.ziyaret', 'izin.reddedildi', 'izin.verildi'], \array_slice($gorulen, $once - 1), implode(', ', $gorulen));
     }
 
     public function testIzniReddedenZiyaret(): void
@@ -342,13 +418,13 @@ final class OlaylarTest extends KernelTestCase
         do {
             $sonuc = $this->olaylar->akis('keepchat', $imlec, 3);
             self::assertNotNull($sonuc);
-            ['olaylar' => $olaylar, 'imlec' => $imlec] = $sonuc;
+            ['olaylar' => $olaylar, 'imlec' => $imlec, 'devam' => $devam] = $sonuc;
             self::assertLessThanOrEqual(3, \count($olaylar));
             foreach ($olaylar as $o) {
                 $gorulen[] = ($o['ziyaret'] === $a ? 'a ' : ($o['ziyaret'] === $b ? 'b ' : '? ')).$o['ad'];
             }
             self::assertLessThan(10, ++$sayfa);
-        } while (null !== $imlec);
+        } while ($devam);
 
         $ziyaret = ['huni.ziyaret', 'izin.verildi', 'adim.goruldu', 'cevap.verildi', 'adim.goruldu', 'cevap.verildi', 'adim.goruldu', 'odeme.baslatildi', 'odeme.tamamlandi', 'odeme.fatura', 'abonelik.durum'];
         self::assertSame([
@@ -369,11 +445,11 @@ final class OlaylarTest extends KernelTestCase
         do {
             $sonuc = $this->olaylar->akis('keepchat', $imlec, 1);
             self::assertNotNull($sonuc);
-            ['olaylar' => $olaylar, 'imlec' => $imlec] = $sonuc;
+            ['olaylar' => $olaylar, 'imlec' => $imlec, 'devam' => $devam] = $sonuc;
             array_push($hepsi, ...$olaylar);
             // İmleç ilerlemezse sonsuz döngü yerine düşsün.
             self::assertLessThan(20, \count($hepsi));
-        } while (null !== $imlec);
+        } while ($devam);
 
         self::assertCount(2, array_filter($hepsi, static fn (array $o): bool => 'cevap.verildi' === $o['ad']));
         self::assertCount(11, $hepsi);

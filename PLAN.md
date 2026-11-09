@@ -225,7 +225,10 @@
     - [x] M6a · 2026-11-09, `docs/decisions/m6a-iptal-iade.md`: Kullanıcılar satırında dönem sonunda iptal / geri al ve son faturanın kalanını tam iade (iki adımlı onay); webhook dönem sonunu kalemden, iadeyi `charge.refunded` birikimli tutarından (fatura bağı `invoice_payment.paid`); iade gelirden (kırılım, kohort, ROAS) düşülür. Kırma 19/19; gerçek Stripe test modunda iptal / geri al / iade
     - [x] M6b1 · 2026-11-09, `docs/decisions/m6b1-portal.md`: portal ayarı kodda (`app:stripe-portal:kur`, etiketle bulunur, kurulur / güncellenir) + `POST /apps/{app}/kullanicilar/{kullanici}/portal` (uygulama anahtarı; erişim veren abonelik önce). Kırma 9/9; gerçek test hesabında ayar kuruldu / güncellendi, oturum açıldı
     - [x] M6b2 · 2026-11-09, `docs/decisions/m6b2-portal-web.md`: hunide `/keepchat/abonelik/` → `POST /huni/portal-baglantisi` (hep 202, e-posta başına saatte 3) → e-postada tek kullanımlık 1 saatlik bağlantı → onay sayfası (GET jetonu yakmaz) → POST → Stripe portalı. Kırma 11/11 (W8 testi güçlendirdi); gerçek akış dev + Mailpit + Stripe test
-  - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi
+  - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi — kararlar A20
+    - [x] M7a · 2026-11-09, `docs/decisions/m7a-giden-webhook.md`: `webhook_hedefleri` + `webhook_teslimleri`, `app:webhook:gonder` (dakikalık cron), hedef başına `(islem, id)` imleci, Standard Webhooks imzası, üstel bekleme (10 deneme), iç ağ adresine gitmez; **§53'ün ilk çözümü yetersizdi** — akış da `(islem, id)`'ye geçti, Ç119 kapandı. Kırma 16/16 (üçü testi güçlendirdi)
+    - [ ] M7b · panel: hedef ekle / kaldır, olay seçimi, teslim günlüğü, yeniden gönder
+    - [ ] M7c · yönetim API / MCP genişlemesi (kapsam sorulacak)
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
 
