@@ -613,6 +613,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/deneyler/{ad}/sonuclar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        /** M4b — varyant başına ziyaret, ödemeye geçen, abone olan (deneme dahil), ödeyen; abone olma oranının kazanma olasılığı */
+        get: operations["panelApiDeneySonuclari"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri": {
         parameters: {
             query?: never;
@@ -834,6 +854,24 @@ export interface components {
                 baslangic: string | null;
                 /** @description Bitiş (UTC) */
                 bitis: string | null;
+            }[];
+        };
+        PanelDeneySonuclari: {
+            ad: string;
+            /** @enum {string} */
+            durum: "taslak" | "aktif" | "durdu" | "bitti";
+            varyantlar: {
+                ad: string;
+                /** @description Varyanta atanan ziyaret */
+                ziyaret: number;
+                /** @description Ödeme oturumu açan ziyaret */
+                odemeyeGecti: number;
+                /** @description Abonelik başladı (kartlı deneme dahil) — dönüşüm */
+                abone: number;
+                /** @description Para çekildi — oturum tutarı > 0 (Stripe kartlı denemeyi de paid sayar, tutar 0) */
+                odedi: number;
+                /** @description Abone olma oranı en yüksek olma olasılığı (Beta(1,1) önsel) */
+                kazanmaOlasiligi: number;
             }[];
         };
         PanelEkUrunleri: {
@@ -3179,6 +3217,38 @@ export interface operations {
             };
             /** @description Geçiş yok, huni yayında değil ya da hunide zaten aktif yönlendirme deneyi var */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiDeneySonuclari: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sonuçlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelDeneySonuclari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da deney */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

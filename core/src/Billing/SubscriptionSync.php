@@ -99,6 +99,20 @@ final readonly class SubscriptionSync
         $this->revenuecat->aboneligiKuyrugaAl($db, $app, $sub);
         // Atıf (A6): bu oturum bir huni ziyaretinden açıldıysa ödendi say.
         $odemeTamamlandi = 'paid' === ($session['payment_status'] ?? null);
+        // M4b (A17): deney dönüşümü abonelik başlamasıdır (deneme dahil).
+        // Kartlı denemede Stripe yine "paid" der, tutar 0 (ölçüldü) — "ödedi"
+        // tutardan okunur. Tutar gelmezse abonelik yine yazılır.
+        if ($odemeTamamlandi || 'no_payment_required' === ($session['payment_status'] ?? null)) {
+            $tutar = $session['amount_total'] ?? null;
+            $para = $session['currency'] ?? null;
+            $tutarli = \is_int($tutar) && $tutar >= 0 && \is_string($para) && 1 === preg_match('/^[a-z]{3}$/', $para);
+            $db->executeStatement(
+                'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, abonelik_at = coalesce(abonelik_at, now()),
+                        tutar_kucuk = coalesce(tutar_kucuk, :tutar), para_birimi = coalesce(para_birimi, :para)
+                 WHERE stripe_checkout_session_id = :oturum',
+                ['sub' => $sub, 'oturum' => $session['id'] ?? null, 'tutar' => $tutarli ? $tutar : null, 'para' => $tutarli ? $para : null],
+            );
+        }
         if ($odemeTamamlandi) {
             $db->executeStatement(
                 'UPDATE odeme_oturumlari SET stripe_subscription_id = :sub, tamamlandi_at = now()

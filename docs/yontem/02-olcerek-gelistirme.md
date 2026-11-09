@@ -76,3 +76,9 @@ kapıyı yeniden açmak için önce kırmızıyı yerelde üretti, yarım kalan 
 yedekleyip ayırdı, eksik kırmaları koştu ve kaydı "kapı açılmadan commit"
 başlığıyla yazdı (`decisions/m4a-deneyler.md`). Sormayan akışta tek kapı
 ölçümdür; kapıyı atlayan commit de kayda girer.
+
+M4b'de kullanıcıya bir karar sorusunu belgeden hatırladığım bir alan değeriyle
+sordum ("denemede Stripe `no_payment_required` der"); gerçek test oturumu tersini
+gösterdi (`paid`, tutar 0). Soru yine geçerliydi ama gerekçesi yanlıştı — kayda
+düzeltmeyle yazıldı (`decisions/m4b-deney-sonuclari.md`, tuzak §52). Kullanıcıya
+giden iddia da ölçülür.

@@ -243,6 +243,11 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   hunisindeki aktif deneyin geçerli varyantı yazılır.
 - **Sonuç: oranlar + kazanma olasılığı (Bayes).** Bölünme: M4a atama + panel yönetimi →
   M4b sonuçlar.
+- **Dönüşüm = abone oldu, deneme dahil** (kullanıcı 2026-11-09). Reddedilen: yalnız para
+  ödeyen (denemeli hunide günlerce 0), ikisine ayrı olasılık (kalabalık). "Ödedi" ayrı sütun,
+  oturum tutarı > 0'dan — Stripe kartlı denemeyi de `paid` sayar (ölçüldü, tuzak §52).
+  Olasılık: Beta(1,1) önsel, P(en iyi) belirlenimci ızgara tümlevi (Monte Carlo reddedildi:
+  test edilemez).
 
 ## §B — Yığın
 

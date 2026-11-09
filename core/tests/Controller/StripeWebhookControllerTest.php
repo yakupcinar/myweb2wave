@@ -103,6 +103,52 @@ final class StripeWebhookControllerTest extends WebTestCase
         );
     }
 
+    /**
+     * M4b (A17): abone oldu (deney dönüşümü) = paid ya da no_payment_required;
+     * "ödedi" tutardan — Stripe kartlı denemede de "paid" der, tutar 0
+     * (gerçek oturumda ölçüldü, m4b-deney-sonuclari.md). Ödenmemiş (unpaid)
+     * abone de sayılmaz. Tutar gelmezse abonelik yine yazılır. Tekrar gelen
+     * olay anı ve tutarı değiştirmez.
+     */
+    public function testAbonelikAniVeTutarYazilir(): void
+    {
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app) VALUES ('keepchat') RETURNING id");
+        $oturumlar = [
+            'cs_deneme' => ['paid', 0, 'eur'],
+            'cs_odendi' => ['paid', 999, 'eur'],
+            'cs_gereksiz' => ['no_payment_required', 0, 'eur'],
+            'cs_bekliyor' => ['unpaid', 999, 'eur'],
+            'cs_tutarsiz' => ['paid', null, null],
+        ];
+        $i = 0;
+        foreach ($oturumlar as $id => [$durum, $tutar, $para]) {
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => $id, 'ziyaret_id' => $ziyaret]);
+            $this->gonder($this->olay('evt_m4b_'.$i++, 'checkout.session.completed', 1_800_000_000, [
+                'id' => $id, 'object' => 'checkout.session', 'mode' => 'subscription',
+                'subscription' => "sub_{$id}", 'customer' => 'cus_m4b', 'payment_status' => $durum,
+                'amount_total' => $tutar, 'currency' => $para, 'metadata' => ['app' => 'keepchat'],
+            ]));
+            self::assertResponseStatusCodeSame(200);
+        }
+        $this->db->executeStatement("UPDATE odeme_oturumlari SET abonelik_at = abonelik_at - interval '1 day' WHERE stripe_checkout_session_id = 'cs_deneme'");
+        $once = $this->db->fetchOne("SELECT abonelik_at FROM odeme_oturumlari WHERE stripe_checkout_session_id = 'cs_deneme'");
+        $this->gonder($this->olay('evt_m4b_tekrar', 'checkout.session.completed', 1_800_000_001, [
+            'id' => 'cs_deneme', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_cs_deneme', 'customer' => 'cus_m4b', 'payment_status' => 'paid',
+            'amount_total' => 5, 'currency' => 'usd', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertSame(
+            [['stripe_checkout_session_id' => 'cs_bekliyor', 'stripe_subscription_id' => null, 'abone' => false, 'tutar_kucuk' => null, 'para_birimi' => null],
+                ['stripe_checkout_session_id' => 'cs_deneme', 'stripe_subscription_id' => 'sub_cs_deneme', 'abone' => true, 'tutar_kucuk' => 0, 'para_birimi' => 'eur'],
+                ['stripe_checkout_session_id' => 'cs_gereksiz', 'stripe_subscription_id' => 'sub_cs_gereksiz', 'abone' => true, 'tutar_kucuk' => 0, 'para_birimi' => 'eur'],
+                ['stripe_checkout_session_id' => 'cs_odendi', 'stripe_subscription_id' => 'sub_cs_odendi', 'abone' => true, 'tutar_kucuk' => 999, 'para_birimi' => 'eur'],
+                ['stripe_checkout_session_id' => 'cs_tutarsiz', 'stripe_subscription_id' => 'sub_cs_tutarsiz', 'abone' => true, 'tutar_kucuk' => null, 'para_birimi' => null]],
+            $this->db->fetchAllAssociative('SELECT stripe_checkout_session_id, stripe_subscription_id, abonelik_at IS NOT NULL AS abone, tutar_kucuk, para_birimi FROM odeme_oturumlari ORDER BY 1'),
+        );
+        self::assertSame($once, $this->db->fetchOne("SELECT abonelik_at FROM odeme_oturumlari WHERE stripe_checkout_session_id = 'cs_deneme'"));
+    }
+
     public function testYalnizIzinliOdenmisZiyaretIcinIkiAgaAyniOlayKimligiGider(): void
     {
         $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, fbclid, ttclid, izin_at) VALUES ('keepchat', 'tiklama-fb', 'tiklama-tt', now()) RETURNING id");

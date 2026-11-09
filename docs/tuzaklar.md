@@ -334,3 +334,9 @@ birden çok çekimle ölç.
 **Sebep:** React yönlendiricisi istemcide `/panel/deneyler`'i tanır, ama ilk HTML'i sunan Symfony rotası (`PanelController::uygulama` üzerindeki `#[Route]` listesi) her sayfa için ayrıca yazılmalı. Bellek yönlendiricisiyle koşan bileşen testi sunucuya hiç gitmez.
 **Ölçüm (2026-11-09, `m4a-deneyler.md`):** `curl localhost:8081/panel/deneyler` → 404, komşu `/panel/planlar` → 302 (girişe). Rota eklendi; kırma K24 (rota yok) 🔴.
 **Doğrusu:** panele sayfa eklerken sunucu rotasını da ekle ve doğrudan adresi ölçen bir test yaz (girişsiz → `/panel/giris`, girişli → 200 + `#panel-uygulama`).
+
+## §52 — Stripe kartlı denemeyi `payment_status = paid` sayar (tutar 0)
+**Belirti:** "ödedi" sayan rapor ve dönüşüm olayı denemeyle abone olanı da ödemiş gösterir; reklam ağına değeri 0 olan `Purchase` gider. Hata yok, testler yeşil (sahte olaylar denemede `no_payment_required` varsayıyordu).
+**Sebep:** kart toplanan (kartlı deneme) Checkout aboneliğinde Stripe `checkout.session.completed` olayında `payment_status = paid`, `amount_total = 0` döndürür. `no_payment_required` yalnız kart toplanmayan oturumda beklenir. "paid" para çekildi demek değildir.
+**Ölçüm (2026-11-09, `m4b-deney-sonuclari.md`):** Stripe API'de tamamlanmış hiç denemeli oturum yoktu (6'sı denemesiz, `paid`, 999); yerel huniden 7 günlük denemeli oturum test kartıyla tamamlandı → `status=complete payment_status=paid amount_total=0`; gerçek olay yerel webhook'a verildi.
+**Doğrusu:** "ödedi"yi oturumun tutarından (`amount_total > 0`) say; Stripe davranışını sahte olay biçiminden değil gerçek test oturumundan oku. Belgeden hatırlanan alan değeri de ölçülmemiş iddiadır.

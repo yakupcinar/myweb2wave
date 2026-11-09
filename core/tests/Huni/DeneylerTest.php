@@ -258,6 +258,107 @@ final class DeneylerTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    /**
+     * M4b: beklenenler bu koddan değil Python'dan (tuzak §3) — iki varyant
+     * Evan Miller'ın kapalı toplamıyla (lgamma), üç varyant 2 milyon örnekli
+     * Monte Carlo (std. hata ≈ 0,0003).
+     */
+    public function testKazanmaOlasiligiBagimsizHesaplaAyni(): void
+    {
+        $iki = static fn (int $sA, int $nA, int $sB, int $nB): float => Deneyler::kazanmaOlasiliklari([[$sA, $nA], [$sB, $nB]])[1];
+        self::assertEqualsWithDelta(1 / 6, $iki(1, 1, 0, 1), 0.001);
+        self::assertEqualsWithDelta(0.853284, $iki(10, 100, 15, 100), 0.001);
+        self::assertEqualsWithDelta(0.960623, $iki(30, 1000, 45, 1000), 0.001);
+        self::assertEqualsWithDelta(0.928017, $iki(200, 10000, 230, 10000), 0.001);
+        // Az ziyaretli geniş dağılım ↔ çok ziyaretli dar (ızgara çözünürlüğü).
+        self::assertEqualsWithDelta(0.164664, $iki(3, 20, 40, 400), 0.001);
+        self::assertEqualsWithDelta(0.5, $iki(5, 10, 50000, 100000), 0.002);
+        self::assertEqualsWithDelta(0.921074, $iki(100000, 1000000, 100600, 1000000), 0.002);
+        // 10 milyon ziyaret: sapma ≈ 1e-4 — tam [0, 1] ızgarada adım 5e-5,
+        // dağılım iki noktaya düşer; daraltılmış ızgara çözer.
+        self::assertEqualsWithDelta(0.868144, $iki(1000000, 10000000, 1001500, 10000000), 0.002);
+
+        $uc = Deneyler::kazanmaOlasiliklari([[10, 100], [15, 100], [12, 100]]);
+        self::assertEqualsWithDelta(0.0970, $uc[0], 0.003);
+        self::assertEqualsWithDelta(0.6644, $uc[1], 0.003);
+        self::assertEqualsWithDelta(0.2386, $uc[2], 0.003);
+        self::assertEqualsWithDelta(1.0, array_sum($uc), 1e-9);
+        // Veri yokken eşit; eşit veride eşit.
+        foreach (Deneyler::kazanmaOlasiliklari([[0, 0], [0, 0], [0, 0], [0, 0]]) as $p) {
+            self::assertEqualsWithDelta(0.25, $p, 1e-6);
+        }
+        self::assertEqualsWithDelta(0.5, Deneyler::kazanmaOlasiliklari([[7, 50], [7, 50]])[0], 1e-6);
+    }
+
+    /**
+     * M4b (A17): sayım ziyaret başına; dönüşüm = abone oldu (deneme dahil),
+     * ödedi ayrı; başka uygulamanın ziyareti sayılmaz; ziyaretsiz varyant 0.
+     */
+    public function testSonuclarZiyaretBasinaSayar(): void
+    {
+        $this->ekle('baslik', 'icerik', 'genel', [['ad' => 'a', 'pay' => 50], ['ad' => 'b', 'pay' => 30], ['ad' => 'c', 'pay' => 20]]);
+        $a1 = $this->ziyaret('genel', ['baslik' => 'a']);
+        $a2 = $this->ziyaret('genel', ['baslik' => 'a']);
+        $a3 = $this->ziyaret('genel', ['baslik' => 'a']);
+        $b1 = $this->ziyaret('genel', ['baslik' => 'b']);
+        // a1: iki oturum (biri terk, biri ödedi) → bir ziyaret, abone + ödedi.
+        $this->oturum('cs_a1_terk', $a1, null);
+        $this->oturum('cs_a1', $a1, 999);
+        // a2: kartlı deneme — Stripe "paid" der ama tutar 0: abone, ödemedi.
+        $this->oturum('cs_a2', $a2, 0);
+        // a3: Stripe no_payment_required — abone oldu, "paid" değil, tutar 0.
+        $this->oturum('cs_a3', $a3, 0, paid: false);
+        // b1: ödemeye geçti, tamamlamadı.
+        $this->oturum('cs_b1', $b1, null);
+        // Başka uygulamanın aynı adlı deneyi sayılmaz.
+        $this->db->executeStatement("INSERT INTO huni_ziyaretleri (id, app) VALUES ('00000000-0000-4000-8000-000000000001', 'baska')");
+        $this->db->executeStatement("INSERT INTO ziyaret_deneyleri (ziyaret_id, deney, varyant) VALUES ('00000000-0000-4000-8000-000000000001', 'baslik', 'a')");
+
+        $sonuc = $this->deneyler()->sonuclar('keepchat', 'baslik');
+        self::assertNotNull($sonuc);
+        self::assertSame(['ad' => 'baslik', 'durum' => 'aktif'], array_intersect_key($sonuc, ['ad' => 1, 'durum' => 1]));
+        self::assertSame([
+            ['a', 3, 3, 3, 1],
+            ['b', 1, 1, 0, 0],
+            ['c', 0, 0, 0, 0],
+        ], array_map(static fn (array $v): array => [$v['ad'], $v['ziyaret'], $v['odemeyeGecti'], $v['abone'], $v['odedi']], $sonuc['varyantlar']));
+        self::assertEqualsWithDelta(1.0, array_sum(array_column($sonuc['varyantlar'], 'kazanmaOlasiligi')), 0.001);
+        // Olasılık abone / ziyaret sayılarından (ödemeye geçen ya da ödeyenden değil).
+        self::assertSame(
+            array_map(static fn (float $p): float => round($p, 4), Deneyler::kazanmaOlasiliklari([[3, 3], [0, 1], [0, 0]])),
+            array_column($sonuc['varyantlar'], 'kazanmaOlasiligi'),
+        );
+        self::assertNull($this->deneyler()->sonuclar('keepchat', 'yok'));
+        self::assertNull($this->deneyler()->sonuclar('baska', 'baslik'));
+    }
+
+    public function testPanelSonuclarUcu(): void
+    {
+        $this->ekle('baslik', 'icerik', 'genel', [['ad' => 'a', 'pay' => 50], ['ad' => 'b', 'pay' => 50]]);
+        $this->istemci->request('GET', '/panel/api/uygulamalar/keepchat/deneyler/baslik/sonuclar');
+        self::assertResponseRedirects('/panel/giris');
+        $saglayici = static::getContainer()->get(YoneticiSaglayici::class);
+        self::assertInstanceOf(YoneticiSaglayici::class, $saglayici);
+        $this->istemci->loginUser($saglayici->loadUserByIdentifier('yonetici'), 'panel');
+        $this->istemci->request('GET', '/panel/api/uygulamalar/keepchat/deneyler/baslik/sonuclar');
+        self::assertResponseIsSuccessful();
+        Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/deneyler/{ad}/sonuclar', $this->istemci->getResponse());
+        self::assertSame('no-store, private', $this->istemci->getResponse()->headers->get('Cache-Control'));
+        $this->istemci->request('GET', '/panel/api/uygulamalar/keepchat/deneyler/yok/sonuclar');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * Webhook'un yazdığı biçim: tamamlanan oturumda abonelik anı + tutar;
+     * Stripe "paid" dediyse tamamlandi_at da. null tutar = tamamlanmadı.
+     */
+    private function oturum(string $id, string $ziyaret, ?int $tutar, bool $paid = true): void
+    {
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => $id, 'ziyaret_id' => $ziyaret] + (null === $tutar ? [] : [
+            'abonelik_at' => '2026-11-09 10:00Z', 'tutar_kucuk' => $tutar, 'para_birimi' => 'eur',
+        ] + ($paid ? ['tamamlandi_at' => '2026-11-09 10:00Z'] : [])));
+    }
+
     /** @return array{huni: mixed, deneyler: mixed} */
     private function tanim(string $sorgu): array
     {

@@ -62,6 +62,30 @@ function kur(yanit422?: string) {
                 new Response(JSON.stringify(o), { status: durum });
             if (adres === "/panel/api/uygulamalar")
                 return j({ uygulamalar: ["keepchat"] });
+            // M4b: sonuçlar — calisan ve biten deneyler için.
+            if (adres.endsWith("/sonuclar"))
+                return j({
+                    ad: adres.split("/").at(-2),
+                    durum: "aktif",
+                    varyantlar: [
+                        {
+                            ad: "a",
+                            ziyaret: 200,
+                            odemeyeGecti: 40,
+                            abone: 20,
+                            odedi: 12,
+                            kazanmaOlasiligi: 0.0917,
+                        },
+                        {
+                            ad: "b",
+                            ziyaret: 0,
+                            odemeyeGecti: 0,
+                            abone: 0,
+                            odedi: 0,
+                            kazanmaOlasiligi: 0.9083,
+                        },
+                    ],
+                });
             if (yanit422 && istek.method !== "GET")
                 return j({ hatalar: [yanit422] }, 422);
             if (istek.method === "POST") {
@@ -99,6 +123,46 @@ const satir = async (ad: string) =>
     within((await screen.findByText(ad)).closest("div")!);
 
 describe("Deneyler", () => {
+    it("M4b: taslak dışı deneyde sonuç tablosu; dönüşüm abone/ziyaret, olasılık yüzde", async () => {
+        const istekler = kur();
+        const tablo = within(
+            await screen.findByRole("table", { name: "calisan sonuçları" }),
+        );
+        const satirlar = tablo
+            .getAllByRole("row")
+            .map((r) =>
+                [...r.querySelectorAll("th,td")].map((h) => h.textContent),
+            );
+        expect(satirlar).toEqual([
+            [
+                "Varyant",
+                "Ziyaret",
+                "Ödemeye geçti",
+                "Abone oldu",
+                "Dönüşüm",
+                "Ödedi",
+                "Kazanma olasılığı",
+            ],
+            ["a", "200", "40", "20", "10,0 %", "12", "9,2 %"],
+            ["b", "0", "0", "0", "—", "0", "90,8 %"],
+        ]);
+        expect(
+            await screen.findByRole("table", { name: "biten sonuçları" }),
+        ).toBeTruthy();
+        expect(
+            screen.queryByRole("table", { name: "taslakta sonuçları" }),
+        ).toBeNull();
+        expect(
+            istekler
+                .filter((i) => i.adres.endsWith("/sonuclar"))
+                .map((i) => i.adres)
+                .sort(),
+        ).toEqual([
+            "/panel/api/uygulamalar/keepchat/deneyler/biten/sonuclar",
+            "/panel/api/uygulamalar/keepchat/deneyler/calisan/sonuclar",
+        ]);
+    });
+
     it("durum düğmeleri geçişlere uyar", async () => {
         kur();
         const taslak = await satir("taslakta");

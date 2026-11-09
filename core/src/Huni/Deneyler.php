@@ -186,6 +186,106 @@ final readonly class Deneyler
     }
 
     /**
+     * M4b (A17): varyant başına sayılar + abone olma oranının kazanma
+     * olasılığı. Sayım ziyaret başına (bir ziyaret iki oturum açsa da bir).
+     * "Ödedi" tutardan: Stripe kartlı denemeyi de "paid" sayar (tutar 0).
+     *
+     * @return array{ad: string, durum: string, varyantlar: list<array{ad: string, ziyaret: int, odemeyeGecti: int, abone: int, odedi: int, kazanmaOlasiligi: float}>}|null
+     */
+    public function sonuclar(string $app, string $ad): ?array
+    {
+        /** @var array{ad: string, durum: string, varyantlar: string}|false $d */
+        $d = $this->db->fetchAssociative('SELECT ad, durum, varyantlar FROM deneyler WHERE app = :app AND ad = :ad', ['app' => $app, 'ad' => $ad]);
+        if (false === $d) {
+            return null;
+        }
+        /** @var array<string, array{ziyaret: int, gecti: int, abone: int, odedi: int}> $sayim */
+        $sayim = array_column($this->db->fetchAllAssociative(
+            'SELECT d.varyant, count(*) AS ziyaret,
+                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id)) AS gecti,
+                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id AND o.abonelik_at IS NOT NULL)) AS abone,
+                    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = d.ziyaret_id AND o.tutar_kucuk > 0)) AS odedi
+             FROM ziyaret_deneyleri d JOIN huni_ziyaretleri z ON z.id = d.ziyaret_id
+             WHERE z.app = :app AND d.deney = :ad GROUP BY d.varyant',
+            ['app' => $app, 'ad' => $ad],
+        ), null, 'varyant');
+        $satirlar = array_map(static fn (array $v): array => [
+            'ad' => $v['ad'],
+            'ziyaret' => (int) ($sayim[$v['ad']]['ziyaret'] ?? 0),
+            'odemeyeGecti' => (int) ($sayim[$v['ad']]['gecti'] ?? 0),
+            'abone' => (int) ($sayim[$v['ad']]['abone'] ?? 0),
+            'odedi' => (int) ($sayim[$v['ad']]['odedi'] ?? 0),
+        ], self::varyantlar($d['varyantlar']));
+        $olasilik = self::kazanmaOlasiliklari(array_map(static fn (array $s): array => [$s['abone'], $s['ziyaret']], $satirlar));
+
+        return ['ad' => $d['ad'], 'durum' => $d['durum'], 'varyantlar' => array_map(
+            static fn (array $s, float $p): array => $s + ['kazanmaOlasiligi' => round($p, 4)],
+            $satirlar,
+            $olasilik,
+        )];
+    }
+
+    /**
+     * Her varyantın oranı en yüksek olma olasılığı: tekdüze önsel → sonsal
+     * Beta(1 + başarı, 1 + başarısız); P(i en iyi) = ∫ fᵢ(x) Π Fⱼ(x) dx,
+     * ızgarada sayısal (örnekleme yok, sonuç belirlenimci). Izgara yoğunluğun
+     * olduğu bölgeye (ortalama ± 10 sapma) daraltılır — çok ziyaretli dar
+     * dağılımlar da çözülür.
+     *
+     * @param list<array{int, int}> $sayilar [başarı, deneme]
+     *
+     * @return list<float>
+     */
+    public static function kazanmaOlasiliklari(array $sayilar): array
+    {
+        $ab = array_map(static fn (array $s): array => [1 + $s[0], 1 + max(0, $s[1] - $s[0])], $sayilar);
+        $alt = 1.0;
+        $ust = 0.0;
+        foreach ($ab as [$a, $b]) {
+            $ort = $a / ($a + $b);
+            $sapma = sqrt($a * $b / (($a + $b) ** 2 * ($a + $b + 1)));
+            $alt = min($alt, max(0.0, $ort - 10 * $sapma));
+            $ust = max($ust, min(1.0, $ort + 10 * $sapma));
+        }
+        $n = 20000;
+        $adim = ($ust - $alt) / $n;
+        $agirlik = [];
+        $birikim = [];
+        foreach ($ab as $i => [$a, $b]) {
+            $log = [];
+            for ($k = 0; $k < $n; ++$k) {
+                $x = $alt + ($k + 0.5) * $adim;
+                $log[$k] = ($a - 1) * log($x) + ($b - 1) * log(1 - $x);
+            }
+            $enBuyuk = max($log);
+            $w = array_map(static fn (float $l): float => exp($l - $enBuyuk), $log);
+            $toplam = array_sum($w);
+            $toplamaKadar = 0.0;
+            foreach ($w as $k => $v) {
+                $agirlik[$i][$k] = $v / $toplam;
+                $toplamaKadar += $agirlik[$i][$k];
+                $birikim[$i][$k] = $toplamaKadar;
+            }
+        }
+        $p = [];
+        foreach (array_keys($ab) as $i) {
+            $p[$i] = 0.0;
+            for ($k = 0; $k < $n; ++$k) {
+                $carpim = $agirlik[$i][$k];
+                foreach (array_keys($ab) as $j) {
+                    if ($j !== $i) {
+                        $carpim *= $birikim[$j][$k];
+                    }
+                }
+                $p[$i] += $carpim;
+            }
+        }
+        $toplam = array_sum($p);
+
+        return array_values(array_map(static fn (float $x): float => $x / $toplam, $p));
+    }
+
+    /**
      * Tohum + deney adının özeti → 0–99 kova → payların birikimli dilimi.
      *
      * @param list<array{ad: string, pay: int, huni?: string}> $varyantlar

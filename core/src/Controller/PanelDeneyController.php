@@ -69,6 +69,18 @@ final class PanelDeneyController extends AbstractController
             : self::korumali(new JsonResponse(['hatalar' => $hatalar], 422));
     }
 
+    /** M4b: varyant başına sayılar + kazanma olasılığı (abone olma oranı). */
+    #[Route('/{ad}/sonuclar', name: 'panel_api_deney_sonuclar', methods: ['GET'])]
+    public function sonuclar(string $app, string $ad): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::hata("bilinmeyen uygulama: {$app}", 404);
+        }
+        $sonuc = $this->deneyler->sonuclar($app, $ad);
+
+        return null === $sonuc ? self::hata("deney yok: {$ad}", 404) : self::korumali(new JsonResponse($sonuc));
+    }
+
     private function kapi(Request $request, string $app): ?JsonResponse
     {
         if (!isset($this->uygulamalar[$app])) {

@@ -1026,6 +1026,16 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama ya da deney, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: "Geçiş yok, huni yayında değil ya da hunide zaten aktif yönlendirme deneyi var", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/deneyler/{ad}/sonuclar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: ad, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiDeneySonuclari
+      summary: "M4b — varyant başına ziyaret, ödemeye geçen, abone olan (deneme dahil), ödeyen; abone olma oranının kazanma olasılığı"
+      responses:
+        "200": { description: Sonuçlar, content: { application/json: { schema: { $ref: "#/components/schemas/PanelDeneySonuclari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da deney, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/planlar/{anahtar}/para-birimleri:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1348,6 +1358,26 @@ components:
               durum: { type: string, enum: [taslak, aktif, durdu, bitti] }
               baslangic: { type: [string, "null"], description: İlk aktif oluş (UTC) }
               bitis: { type: [string, "null"], description: Bitiş (UTC) }
+    PanelDeneySonuclari:
+      type: object
+      additionalProperties: false
+      required: [ad, durum, varyantlar]
+      properties:
+        ad: { type: string }
+        durum: { type: string, enum: [taslak, aktif, durdu, bitti] }
+        varyantlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [ad, ziyaret, odemeyeGecti, abone, odedi, kazanmaOlasiligi]
+            properties:
+              ad: { type: string }
+              ziyaret: { type: integer, minimum: 0, description: Varyanta atanan ziyaret }
+              odemeyeGecti: { type: integer, minimum: 0, description: Ödeme oturumu açan ziyaret }
+              abone: { type: integer, minimum: 0, description: "Abonelik başladı (kartlı deneme dahil) — dönüşüm" }
+              odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0 (Stripe kartlı denemeyi de paid sayar, tutar 0)" }
+              kazanmaOlasiligi: { type: number, minimum: 0, maximum: 1, description: "Abone olma oranı en yüksek olma olasılığı (Beta(1,1) önsel)" }
     PanelEkUrunleri:
       type: object
       additionalProperties: false

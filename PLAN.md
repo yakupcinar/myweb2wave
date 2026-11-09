@@ -212,9 +212,9 @@
     - [x] M3a · 2026-11-04, `docs/decisions/m3a-downsell.md`: geri tuşu / panel kapatma → bir kez downsell penceresi (katalog planı, fiyat + koşul Stripe'tan, şart onayı korunur). Kırma 10/10 (K6 testi buldu). Açık Ç114
     - [x] M3b · 2026-11-04, `docs/decisions/m3b-odeme-sonrasi.md`: tanım kökünde `sonrasi` (başlık + bloklar + düğme metni), giriş alanı sabit; dönüş adresi huniyi taşır; düzenleyicide "Ödeme sonrası ekran". Kırma 9/9 (K6 testi buldu). Açık Ç115
     - [x] M3c · 2026-11-04, `docs/decisions/m3c-ek-urun-upsell.md`: ek ürün kataloğu (tek seferlik fiyat), ödeme sonrası tek tık upsell (on-session, kayıtlı kart, oturum + ürün başına bir, ≤ 1 sa, 3D Secure sayfada). Kırma 16/16 (K10 testi buldu). Açık Ç116
-  - [ ] M4 · deneyler (kararlar `pre-setup.md` A17, kullanıcı 2026-11-04):
+  - [x] M4 · deneyler (kararlar `pre-setup.md` A17, kullanıcı 2026-11-04):
     - [x] M4a · 2026-11-09, `docs/decisions/m4a-deneyler.md`: yönlendirme + içerik (`deney.<ad>`), sekme tohumundan atama (A17), panelden taslak/başlat/durdur/bitir; ilk commit `296a78c` CI kırmızıydı → düzeltildi. Kırma 24/24. Açık Ç117
-    - [ ] M4b · sonuçlar: varyant başına oranlar + kazanma olasılığı (Bayes)
+    - [x] M4b · 2026-11-09, `docs/decisions/m4b-deney-sonuclari.md`: varyant başına ziyaret / ödemeye geçti / abone oldu (dönüşüm, deneme dahil — kullanıcı) / ödedi (tutar > 0) + kazanma olasılığı (Beta, belirlenimci); deneme Stripe'ta "paid", tutar 0 (§52). Kırma 15/16 (B10 kod kaldırıldı). Açık Ç118
   - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla
   - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi

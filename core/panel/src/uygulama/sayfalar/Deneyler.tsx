@@ -3,9 +3,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { api } from "../api";
+import { yuzde } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import type { components } from "../../sozlesme";
 import { Kart, KartBasi } from "../ui/Kart";
+import { Tablo, Td, Th } from "../ui/Tablo";
 
 type Liste = components["schemas"]["PanelDeneyleri"];
 type Deney = Liste["deneyler"][number];
@@ -158,6 +160,9 @@ function DeneyListesi({ app }: { app: string }): ReactNode {
                                 </button>
                             ) : null}
                         </div>
+                        {d.durum !== "taslak" ? (
+                            <Sonuclar app={app} ad={d.ad} />
+                        ) : null}
                     </div>
                 ))}
                 {!sorgu.isLoading && !sorgu.data?.deneyler.length ? (
@@ -256,5 +261,57 @@ function DeneyListesi({ app }: { app: string }): ReactNode {
                 </form>
             </Kart>
         </>
+    );
+}
+
+/**
+ * M4b (A17): dönüşüm = abone oldu (kartlı deneme dahil); kazanma olasılığı
+ * bu oranın en yüksek olma olasılığı. "Ödedi" yalnız tutar çekilen (deneme 0).
+ */
+function Sonuclar({ app, ad }: { app: string; ad: string }): ReactNode {
+    const sorgu = useQuery({
+        queryKey: ["deney-sonuclari", app, ad],
+        queryFn: async () => {
+            const { data } = await api.GET(
+                "/panel/api/uygulamalar/{app}/deneyler/{ad}/sonuclar",
+                { params: { path: { app, ad } } },
+            );
+            if (!data) throw new Error("Sonuçlar yüklenemedi.");
+            return data;
+        },
+    });
+    if (sorgu.isError) return <p role="alert">Sonuçlar yüklenemedi.</p>;
+    if (!sorgu.data) return null;
+    return (
+        <Tablo aria-label={`${ad} sonuçları`}>
+            <thead>
+                <tr>
+                    {[
+                        "Varyant",
+                        "Ziyaret",
+                        "Ödemeye geçti",
+                        "Abone oldu",
+                        "Dönüşüm",
+                        "Ödedi",
+                        "Kazanma olasılığı",
+                    ].map((b) => (
+                        <Th key={b}>{b}</Th>
+                    ))}
+                </tr>
+            </thead>
+            <tbody>
+                {sorgu.data.varyantlar.map((v) => (
+                    <tr key={v.ad}>
+                        <Td>{v.ad}</Td>
+                        <Td>{v.ziyaret}</Td>
+                        <Td>{v.odemeyeGecti}</Td>
+                        <Td>{v.abone}</Td>
+                        <Td>{yuzde(v.abone, v.ziyaret)}</Td>
+                        <Td>{v.odedi}</Td>
+                        <Td>{yuzde(v.kazanmaOlasiligi, 1)}</Td>
+                    </tr>
+                ))}
+            </tbody>
+        </Tablo>
     );
 }

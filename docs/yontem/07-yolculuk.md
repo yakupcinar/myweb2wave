@@ -54,3 +54,4 @@
 | 47 | M3b: ödeme sonrası ekran düzenlenebilir | kritik işlev (giriş bağlantısı) yöneticinin silebileceği bir blok yapılmadı, sabit kaldı; tek uygulamalı yapılandırmada uçtan ölçülemeyen kural servis düzeyinde ölçüldü | `m3b-odeme-sonrasi.md` |
 | 48 | M3c: ek ürün + tek tık upsell | gerçek parayla (test modu) uçtan uca: abonelik → kayıtlı kartla ikinci ödeme → ikinci istek yeni çekim yapmadı; bir kırma, adın başka bir CORS desenine de uyması yüzünden tutmadı | `m3c-ek-urun-upsell.md` |
 | 49 | M4a: deneyler (atama + panel) | ilk commit CI kırmızıyla gitmişti — sonraki oturum kapıyı yeniden kurdu: eksik testler, 24 kırma, gerçek istekte testlerin görmediği 404 (doğrudan adres) | `m4a-deneyler.md` |
+| 50 | M4b: deney sonuçları + kazanma olasılığı | olasılık Python'un bağımsız hesabıyla ölçüldü; gerçek denemeli Stripe oturumu kendi varsayımımı çürüttü (deneme "paid", tutar 0); 4 kırma ilk koşuda tutmadı, hepsi testi güçlendirdi | `m4b-deney-sonuclari.md` |
