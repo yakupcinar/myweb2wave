@@ -227,6 +227,11 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
 - **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
 
+**A18 · M5 sırası: önce olay deposu (Ç92)** (2026-11-09, kullanıcı).
+- Önce yalnız ekleme yapılan olay deposu (cevap / izin / abonelik geçmişi), sonra cevap
+  dağılımı · UTM · kohort geliri, en son Meta harcama → ROAS. Reddedilen: önce raporlar —
+  son-hâl verisinden kohort geliri sonra yeniden yazılırdı; giden webhook (M7) de aynı akışı ister.
+
 **A17 · M4 deneyler** (2026-11-04, kullanıcı: tür ve sonuç; atama ayrıntısı öneri).
 - **Tür: ikisi de.** Yönlendirme deneyi bir hunin trafiğini varyant hunilerine böler
   (ilk varyant = kontrol = deneyin hunisi); içerik deneyi aynı hunide koşulda

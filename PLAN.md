@@ -212,16 +212,46 @@
     - [x] M3a · 2026-11-04, `docs/decisions/m3a-downsell.md`: geri tuşu / panel kapatma → bir kez downsell penceresi (katalog planı, fiyat + koşul Stripe'tan, şart onayı korunur). Kırma 10/10 (K6 testi buldu). Açık Ç114
     - [x] M3b · 2026-11-04, `docs/decisions/m3b-odeme-sonrasi.md`: tanım kökünde `sonrasi` (başlık + bloklar + düğme metni), giriş alanı sabit; dönüş adresi huniyi taşır; düzenleyicide "Ödeme sonrası ekran". Kırma 9/9 (K6 testi buldu). Açık Ç115
     - [x] M3c · 2026-11-04, `docs/decisions/m3c-ek-urun-upsell.md`: ek ürün kataloğu (tek seferlik fiyat), ödeme sonrası tek tık upsell (on-session, kayıtlı kart, oturum + ürün başına bir, ≤ 1 sa, 3D Secure sayfada). Kırma 16/16 (K10 testi buldu). Açık Ç116
-  - [x] M4 · deneyler (kararlar `pre-setup.md` A17, kullanıcı 2026-11-04):
+  - [x] M4 · deneyler (kararlar `pre-setup.md` A17, kullanıcı 2026-11-04): M4a tamamı sonuç okumadan işe yaramaz; sonuçlar ayrı, ölçülebilir blokta kalır.
     - [x] M4a · 2026-11-09, `docs/decisions/m4a-deneyler.md`: yönlendirme + içerik (`deney.<ad>`), sekme tohumundan atama (A17), panelden taslak/başlat/durdur/bitir; ilk commit `296a78c` CI kırmızıydı → düzeltildi. Kırma 24/24. Açık Ç117
     - [x] M4b · 2026-11-09, `docs/decisions/m4b-deney-sonuclari.md`: varyant başına ziyaret / ödemeye geçti / abone oldu (dönüşüm, deneme dahil — kullanıcı) / ödedi (tutar > 0) + kazanma olasılığı (Beta, belirlenimci); deneme Stripe'ta "paid", tutar 0 (§52). Kırma 15/16 (B10 kod kaldırıldı). Açık Ç118
     - [x] Ç118 (1)(2) · 2026-11-09, `docs/decisions/c118-deneme-rapor-reklam.md`: Rapor "ödedi" tutar > 0'dan, kartlı deneme ayrı "deneme başladı", dönüşüm = abone (deneylerle aynı); reklam ağlarına (sunucu + piksel) denemede StartTrial (kullanıcı). Kırma 12/12
-  - [ ] M5 · analitik: cevap dağılımı · UTM raporu · kohort geliri; Meta harcama → ROAS sunucuyla
+  - [ ] M5 · analitik (sıra kullanıcı 2026-11-09, `pre-setup.md` A18): önce Ç92 ekleme-tabanlı olay deposu; ardından cevap dağılımı · UTM raporu · kohort geliri; en son Meta harcama → ROAS ve değer aktarımı. Gerekçe: geçmişi olmayan son-hâl verisinden güvenilir dönüşüm raporu çıkmaz.
   - [ ] M6 · abonelik yönetimi: panelden iptal/iade + müşteri portalı (ücretli trafikten önce)
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
 
-## 2. Backlog
+## 2. Açılmamış Görevler & Gelecek Yol Haritası (Backlog)
 
-- _—_
+> **Not:** Zamanı geldikçe önceliklendirilip aktif sprint bölümüne taşınacak açılmamış görev havuzudur.
+
+### A. Ürün Özellikleri (Ciro, Dönüşüm & Büyüme)
+- [ ] **M8 ilk dizi: terk edilen ödeme kurtarma.** İzinli e-posta için 15 dk / 6 sa / 24 sa serisi; durdurma koşulu ödeme, indirim ise açık teklif kuralıyla. SMS ayrı sağlayıcı, izin ve maliyet kararıdır. Önkoşul: M7 outbox + M8 sağlayıcı/double opt-in kararı.
+- [ ] **Ç9: uygulamaya geçiş.** Deferred deep link (Branch/AppsFlyer) e-posta koduna ek yol olabilir; her zaman e-posta/sihirli bağlantı yedeği kalır. Parmak iziyle eşleştirme yapılmaz. Önkoşul: ilk iOS uygulaması ve sağlayıcı kararı.
+- [ ] **M6 alt akışı: iptal önleme ve dunning.** İptal mikro anketi, dönem sonu iptal/duraklatma/indirim teklifi ve başarısız ödeme bildirimleri; kolay iptal yolu korunur. Önkoşul: M6 abonelik ve hukuk metinleri.
+- [ ] **AI pazarlama operasyonları (sonra).** Kullanıcının yetkili App Store URL'sinden taslak bağlamı ve sahip olunan huni varlıklarından reklam kreatifi; scraping kapsamı, varlık hakları ve reklam politikası ayrıca kararlaştırılır.
+- [ ] **M5 ileri analitik (sonra).** Temel kohort raporundan sonra yeterli veriyle LTV 30/60/90 tahmini ve Meta CAPI dinamik değer. Önkoşul: Ç92 olay deposu, tanımlı başarı metriği ve veri hacmi.
+
+### B. Canlı Sonrası Ölçeklenme (Deploy ve gerçek trafik sonrasında)
+- [ ] **Multi-Armed Bandit.** Sabit deney sonuçları güvenilir ve yeterli örneklemli olduktan sonra, koruma bantlarıyla kazanana trafik kaydırma. Gerekçe: M4b + M5 ve gerçek trafik olmadan otomasyon yanlış kazanana kilitlenebilir.
+- [ ] **Entegrasyon bağlayıcıları.** Çekirdek M7 outbox'ı tamamlandıktan sonra Zapier/Klaviyo/CRM bağlayıcıları eklenir. Gerekçe: önce kendi teslim günlüğü ve yeniden deneme davranışı canlıda kanıtlanmalıdır.
+- [ ] **Chargeback otomasyonu.** Stripe Radar ve gerekli 3D Secure canlıya çıkış kapısında kurulur; Chargeflow gibi üçüncü taraf otomasyonu gerçek hacim kanıtlanmadan eklenmez. Gerekçe: sahte pozitif ve sağlayıcı maliyeti ancak gerçek işlem verisiyle değerlendirilir.
+- [ ] **Özel alan adı.** Proje/tenant sınırı ve alan adı sahipliği netleştikten sonra Cloudflare for SaaS ile doğrulama, sertifika durumu, geri alma ve host-başına huni eşlemesi eklenir. Gerekçe: tek marka/alan adı varken operasyonel bedeli faydasından yüksektir.
+
+### C. Canlıya Geçiş (Dağıtım Hazırlıkları — özellik değil, sürüm kapısı)
+- [ ] **Alan adı, TLS ve gerçek HTTP kanıtı:** DNS, HTTPS, CORS ön isteği ve webhook imza doğrulaması canlı alan adında ölçülür.
+- [ ] **Stripe canlıya geçiş:** canlı anahtarlar, canlı webhook, şirket/banka doğrulaması; gerçek düşük tutarlı uçtan uca ödeme ve iade denemesi.
+- [ ] **Gerçek posta sağlayıcısı:** Resend/Postmark/SES seçimi, SPF/DKIM/DMARC, unsubscribe ve teslim/geri dönüş ölçümü. M8 gönderim açılmadan tamamlanır.
+- [ ] **Statik huni sunumu:** Vite `dist` üretim kökeninden/CDN'den sunulur; içerik özetli varlık önbelleği, ödeme dönüş adresleri ve CORS canlıda ölçülür.
+- [ ] **Sunucu yüzeyini kapat:** PostgreSQL, Mailpit ve dahili servisler internete kapalı; yalnız reverse proxy gerekli portları dinler; firewall ve erişim geri dönüş testi yapılır.
+- [ ] **Uzak ve geri dönülebilir yedek:** var olan yerel günlük dump'a ek olarak şifreli S3/R2 kopyası, saklama politikası ve düzenli geri yükleme tatbikatı.
+
+### D. Huni Builder İyileştirmeleri & Eksikler (Builder Gaps)
+- [ ] **Görsel Akış Şeması (Node Graph / Canvas View):** `core/panel` içine `@xyflow/react` entegrasyonu; `akis.ts` verisinden ekranlar arası geçişleri, koşullu dallanmaları (`yonlendirme`) ve ulaşılamayan adımları görselleştiren kuşbakışı harita sekmesi. Düğüme tıklayınca Puck editörüne odaklanma.
+- [ ] **Ağırlıklı Puanlama & Skorlama Motoru (Quiz Scoring):** `SoruSecenegi` şemasına `puanlar` (ör. `{"stres": 3}`) eklenmesi, oynatıcıda skor toplama ve `T3` koşul motorunda `skor:kategori >= X` kurallarıyla dinamik sonuç/teşhis ekranlarına yönlendirme.
+- [ ] **İnteraktif Niş Bileşenler:** 
+  1. *Vücut Haritası:* SVG tabanlı tıklanabilir silüet (bölge seçimi, çoklu seçim yanıtı üretir).
+  2. *Sayısal Kaydırıcı & Hesaplayıcı:* Boy/kilo slider'ları ve anlık BMI/metabolik yaş hesaplama ara ekranı.
+  3. *Sosyal Kanıt Bildirimi:* Huni altında periyodik çıkan güven toast'ları ("X kullanıcısı 4 dk önce katıldı").
+- [ ] **App Store Kazıyıcı & AI Reklam Kreatifleri:** iTunes API ile App Store linkinden uygulama açıklaması, puanlar ve ekran görüntülerini çekip `HuniAsistani`'na brief olarak verme; huni acı noktalarından TikTok/Reels video senaryosu ve kanca (hook) metinleri üretme CLI komutu.
