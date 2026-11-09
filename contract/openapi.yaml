@@ -458,6 +458,44 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+  /apps/{app}/olaylar:
+    get:
+      operationId: listEvents
+      summary: "M7c1 (A21) — uygulamanın olay akışı, imleçle; kişisel veri yok (sözlük). Yarım işlemler beklenir; sıra işlem sırası"
+      security: [{ uygulamaAnahtari: [] }]
+      parameters:
+        - $ref: "#/components/parameters/App"
+        - { name: imlec, in: query, required: false, description: "Önceki yanıtın imleci; yoksa baştan", schema: { type: string } }
+        - { name: sinir, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+      responses:
+        "200":
+          description: Olaylar
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [olaylar, imlec, devam]
+                properties:
+                  olaylar:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [ziyaret, ad, veri, zaman]
+                      properties:
+                        ziyaret: { type: string, format: uuid }
+                        ad: { type: string }
+                        veri: { type: object }
+                        zaman: { type: string }
+                  imlec: { type: [string, "null"], description: "Son verilen olayın yeri; olay yoksa gönderilen imleç (baştansa null)" }
+                  devam: { type: boolean, description: "Hemen ardından daha var (tekrar iste)" }
+        "401": { $ref: "#/components/responses/Yetkisiz" }
+        "422":
+          description: Bozuk imleç
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hata" }
   /apps/{app}/kullanicilar/{kullanici}/portal:
     post:
       operationId: createPortalSession

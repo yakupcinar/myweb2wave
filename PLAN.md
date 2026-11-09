@@ -228,7 +228,8 @@
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi — kararlar A20
     - [x] M7a · 2026-11-09, `docs/decisions/m7a-giden-webhook.md`: `webhook_hedefleri` + `webhook_teslimleri`, `app:webhook:gonder` (dakikalık cron), hedef başına `(islem, id)` imleci, Standard Webhooks imzası, üstel bekleme (10 deneme), iç ağ adresine gitmez; **§53'ün ilk çözümü yetersizdi** — akış da `(islem, id)`'ye geçti, Ç119 kapandı. Kırma 16/16 (üçü testi güçlendirdi)
     - [x] M7b · 2026-11-09, `docs/decisions/m7b-webhook-paneli.md`: panelde "Webhook'lar" — hedef ekle (https, sözlükten olaylar, sır bir kez, uygulama başına 10), etkin / pasif, iki adımlı sil, teslim günlüğü (son 50) ve yeniden gönder. Kırma 12/12; test gerçek bir çökmeyi buldu (onay kutusu)
-    - [ ] M7c · yönetim API / MCP genişlemesi (kapsam sorulacak)
+    - [x] M7c1 · 2026-11-09, `docs/decisions/m7c1-okuma-araclari.md`: MCP'de 6 salt-okur rapor aracı (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları), Rapor'a uygulama süzgeci; `GET /apps/{app}/olaylar` (uygulama anahtarı, imleç + devam). Kırma 12/12 (biri testi güçlendirdi); gerçek MCP çağrısı dev'de
+    - [ ] M7c2 · yazma: MCP abonelik ve deney araçları, yalnız izinli anahtar (A21)
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
 

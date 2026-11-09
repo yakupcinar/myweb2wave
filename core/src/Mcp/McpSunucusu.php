@@ -13,6 +13,7 @@ use App\Huni\Tema;
 use Mcp\Schema\Content\ImageContent;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Result\CallToolResult;
+use Mcp\Schema\ToolAnnotations;
 use Mcp\Server;
 use Mcp\Server\RequestContext;
 use Mcp\Server\Session\Psr16SessionStore;
@@ -30,6 +31,7 @@ final readonly class McpSunucusu
 {
     public function __construct(
         private HuniAraclari $araclar,
+        private RaporAraclari $raporlar,
         private UrunBaglami $baglam,
         private ApiAnahtarlari $anahtarlar,
         #[Autowire(service: 'mcp.oturumlar')]
@@ -72,6 +74,25 @@ final readonly class McpSunucusu
             );
         }
 
+        // M7c1 (A21): yalnız okuyan rapor araçları — anahtarın uygulamasıyla sınırlı.
+        foreach ($this->raporlar->tanimlar() as $t) {
+            $ad = $t['name'];
+            $kurucu->addTool(
+                function (RequestContext $baglam) use ($ad, $app, $anahtarId): CallToolResult {
+                    $istek = $baglam->getRequest();
+                    $girdi = property_exists($istek, 'arguments') && \is_array($istek->arguments) ? $istek->arguments : [];
+                    $s = $this->raporlar->calistir($ad, $girdi, $app);
+                    $this->anahtarlar->cagriKaydet($anahtarId, $ad, $s['hata']);
+
+                    return new CallToolResult([new TextContent(json_encode($s['icerik'], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR))], $s['hata'], $s['icerik']);
+                },
+                name: $ad,
+                description: $t['description'],
+                annotations: new ToolAnnotations(readOnlyHint: true, openWorldHint: false),
+                inputSchema: $t['input_schema'],
+            );
+        }
+
         return $kurucu->build();
     }
 
@@ -80,6 +101,7 @@ final readonly class McpSunucusu
         $metin = <<<METIN
             MyWeb2Wave huni platformu, uygulama: {$app}. Huni = reklamdan gelen ziyaretçinin gördüğü adımlar (bloklardan ekran — karşılama, soru, yorum, bilgi hepsi ekran; "planın hazırlanıyor" yükleme — düğmesiz, süre dolunca geçer, ödemeden hemen önce iyi durur; ödeme ekranı).
             Çalışma: huniler_listele ile bak; değiştirmeden önce huni_oku ile tanımı ve imzayı al; TAM tanımı taslak_kaydet ile yaz (imza zorunlu). Hata dönerse düzeltip yeniden kaydet. Sonuçta onizleme_adresi ile bağlantı ver.
+            Raporlar (rapor_ozet, rapor_kaynaklar, rapor_kohort, rapor_kampanyalar, rapor_cevaplar, deney_sonuclari) yalnız okur; tutarlar para birimi başına, çevrilmez — farklı para birimlerini toplama.
             Yalnız TASLAĞA yazarsın; yayınlamak panelde insanın işi. Gerçek olmayan müşteri yorumu uydurma (unvana "Örnek — yayından önce gerçeğiyle değiştir"); fiyat yazma (ödeme ekranı Stripe'tan gösterir); kesin sonuç vaadi yazma.
             METIN;
         $metin .= "\n".Tanim::EKRAN_YONERGESI."\n".Tema::aiYonergesi()."\n".TasarimYonergesi::METIN;

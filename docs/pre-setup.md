@@ -227,6 +227,14 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
 - **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
 
+**A21 · M7c yönetim API / MCP** (2026-11-09, kullanıcı: dördü de).
+- Okuma: MCP rapor araçları (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları) — anahtarın uygulamasıyla
+  sınırlı; olay akışı API'si (`GET /apps/{app}/olaylar`, uygulama anahtarı, imleçli).
+- Yazma: MCP'de abonelik (iptal planla / geri al / iade) ve deney (oluştur / başlat / durdur) araçları — **yalnız
+  izinli anahtar** (panelde anahtar oluşturulurken "Abonelik ve deney yönetimi"; var olanlar izinsiz kalır), araçlar
+  yıkıcı işaretli (istemci her çağrıda onay sorar). Reddedilen: tüm anahtarlar, iadeyi MCP dışında tutmak.
+  Bölünme: M7c1 okuma → M7c2 yazma.
+
 **A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
 - Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
   dosyası, yalnız çekme (akış API).

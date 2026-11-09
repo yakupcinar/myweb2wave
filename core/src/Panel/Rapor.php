@@ -92,7 +92,7 @@ final readonly class Rapor
      *
      * @return array{reklam: array{ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int}, organik: array{ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int}}
      */
-    public function sayimlar(int $gun): array
+    public function sayimlar(int $gun, ?string $app = null): array
     {
         $sayim = ['reklam' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0], 'organik' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0]];
         $satirlar = $this->db->fetchAllAssociative(
@@ -105,9 +105,9 @@ final readonly class Rapor
                  SELECT coalesce(bool_or(o.abonelik_at IS NOT NULL), false) AS abone, coalesce(bool_or('.self::ODEDI.'), false) AS odedi
                  FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id
              ) od
-             WHERE z.created_at >= now() - make_interval(days => :gun)
+             WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
              GROUP BY 1',
-            ['gun' => $gun],
+            ['gun' => $gun, 'app' => $app],
         );
         foreach ($satirlar as $s) {
             $sayim[true === $s['reklam'] ? 'reklam' : 'organik'] = [
@@ -127,7 +127,7 @@ final readonly class Rapor
      *
      * @return list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>
      */
-    public function gunluk(int $gun): array
+    public function gunluk(int $gun, ?string $app = null): array
     {
         return array_map(static fn (array $s): array => [
             'gun' => \is_string($s['gun']) ? $s['gun'] : '',
@@ -144,8 +144,9 @@ final readonly class Rapor
              LEFT JOIN ziyaret_olaylari o
                ON o.ad IN ('huni.ziyaret', 'odeme.baslatildi', 'odeme.tamamlandi')
               AND o.zaman >= d AT TIME ZONE 'UTC' AND o.zaman < (d + interval '1 day') AT TIME ZONE 'UTC'
+              AND (CAST(:app AS text) IS NULL OR o.app = CAST(:app AS text))
              GROUP BY d ORDER BY d",
-            ['gun' => $gun],
+            ['gun' => $gun, 'app' => $app],
         ));
     }
 
@@ -154,14 +155,15 @@ final readonly class Rapor
      *
      * @return array{kabul: int, red: int, secmeyen: int}
      */
-    public function izinler(int $gun): array
+    public function izinler(int $gun, ?string $app = null): array
     {
         $s = $this->db->fetchAssociative(
             'SELECT count(*) FILTER (WHERE izin_at IS NOT NULL) AS kabul,
                     count(*) FILTER (WHERE izin_red_at IS NOT NULL) AS red,
                     count(*) FILTER (WHERE izin_at IS NULL AND izin_red_at IS NULL) AS secmeyen
-             FROM huni_ziyaretleri WHERE created_at >= now() - make_interval(days => :gun)',
-            ['gun' => $gun],
+             FROM huni_ziyaretleri WHERE created_at >= now() - make_interval(days => :gun)
+               AND (CAST(:app AS text) IS NULL OR app = CAST(:app AS text))',
+            ['gun' => $gun, 'app' => $app],
         );
 
         return [
@@ -201,7 +203,7 @@ final readonly class Rapor
      *
      * @return list<array{app: string, soru: string, secenek: string, sayi: int, abone: int}>
      */
-    public function cevaplar(int $gun): array
+    public function cevaplar(int $gun, ?string $app = null): array
     {
         return array_map(static fn (array $s): array => [
             'app' => self::dizge($s['app']),
@@ -213,10 +215,10 @@ final readonly class Rapor
             'SELECT z.app, c.soru, c.secenek, count(*) AS sayi,
                     count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = c.ziyaret_id AND o.abonelik_at IS NOT NULL)) AS abone
              FROM huni_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
-             WHERE z.created_at >= now() - make_interval(days => :gun)
+             WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
              GROUP BY z.app, c.soru, c.secenek
              ORDER BY z.app, c.soru, sayi DESC, c.secenek',
-            ['gun' => $gun],
+            ['gun' => $gun, 'app' => $app],
         ));
     }
 
@@ -228,20 +230,20 @@ final readonly class Rapor
      * @return list<array{kaynak: string, ortam: string|null, kampanya: string|null, reklam: bool, ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int,
      *                    gelir: list<array{paraBirimi: string, tutar: int|float}>}>
      */
-    public function utm(int $gun): array
+    public function utm(int $gun, ?string $app = null): array
     {
         // Gelir ayrı sorguda, grup anahtarıyla PHP'de birleşir (ilişkili alt sorgu
         // grup × ziyaret tarardı). REKLAM organikte NULL olabilir — iki sorguda aynı.
         $v = 'WITH v AS (
                  SELECT z.id, '.self::KAYNAK.' AS kaynak, z.utm_medium AS ortam, z.utm_campaign AS kampanya, '.self::REKLAM.' AS reklam
-                 FROM huni_ziyaretleri z WHERE z.created_at >= now() - make_interval(days => :gun)
+                 FROM huni_ziyaretleri z WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
              ) ';
         $gelir = [];
         foreach ($this->db->fetchAllAssociative(
             $v.'SELECT v.kaynak, v.ortam, v.kampanya, v.reklam, f.para_birimi, sum(f.tutar_kucuk - f.iade_kucuk) AS toplam
              FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id
              GROUP BY 1, 2, 3, 4, 5 ORDER BY f.para_birimi',
-            ['gun' => $gun],
+            ['gun' => $gun, 'app' => $app],
         ) as $s) {
             $para = self::dizge($s['para_birimi']);
             $gelir[self::grup($s)][] = ['paraBirimi' => strtoupper($para), 'tutar' => ParaBirimi::anaBirim(self::sayi($s['toplam']), $para)];
@@ -267,7 +269,7 @@ final readonly class Rapor
              GROUP BY 1, 2, 3, 4
              ORDER BY ziyaret DESC, v.kaynak COLLATE "C", v.ortam COLLATE "C" NULLS FIRST, v.kampanya COLLATE "C" NULLS FIRST
              LIMIT '.self::AZAMI_SATIR,
-            ['gun' => $gun],
+            ['gun' => $gun, 'app' => $app],
         ));
     }
 
@@ -280,7 +282,7 @@ final readonly class Rapor
      * @return list<array{kampanya: string, harcama: array{paraBirimi: string, tutar: int|float}, ziyaret: int, odedi: int,
      *                    gelir: list<array{paraBirimi: string, tutar: int|float}>, roas: float|null}>
      */
-    public function kampanyalar(int $gun): array
+    public function kampanyalar(int $gun, ?string $app = null): array
     {
         $harcamalar = $this->db->fetchAllAssociative(
             "SELECT (array_agg(kampanya_adi ORDER BY gun DESC))[1] AS ad, para_birimi, sum(harcama_kucuk) AS harcama
@@ -294,17 +296,17 @@ final readonly class Rapor
         $gelir = [];
         if ([] !== $adlar) {
             $v = 'WITH v AS (SELECT z.id, z.utm_campaign AS ad FROM huni_ziyaretleri z
-                   WHERE z.utm_campaign IN (:adlar) AND z.created_at >= now() - make_interval(days => :gun) AND '.self::META.') ';
+                   WHERE z.utm_campaign IN (:adlar) AND z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text)) AND '.self::META.') ';
             foreach ($this->db->fetchAllAssociative(
                 $v.'SELECT v.ad, count(*) AS ziyaret, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = v.id AND '.self::ODEDI.')) AS odedi FROM v GROUP BY 1',
-                ['adlar' => $adlar, 'gun' => $gun], ['adlar' => ArrayParameterType::STRING],
+                ['adlar' => $adlar, 'gun' => $gun, 'app' => $app], ['adlar' => ArrayParameterType::STRING],
             ) as $s) {
                 $ziyaret[self::dizge($s['ad'])] = [self::sayi($s['ziyaret']), self::sayi($s['odedi'])];
             }
             foreach ($this->db->fetchAllAssociative(
                 $v.'SELECT v.ad, f.para_birimi, sum(f.tutar_kucuk - f.iade_kucuk) AS toplam FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id
                  JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id GROUP BY 1, 2 ORDER BY 2',
-                ['adlar' => $adlar, 'gun' => $gun], ['adlar' => ArrayParameterType::STRING],
+                ['adlar' => $adlar, 'gun' => $gun, 'app' => $app], ['adlar' => ArrayParameterType::STRING],
             ) as $s) {
                 $gelir[self::dizge($s['ad'])][self::dizge($s['para_birimi'])] = self::sayi($s['toplam']);
             }
@@ -342,14 +344,14 @@ final readonly class Rapor
      *
      * @return list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<array{paraBirimi: string, tutar: int|float}>}>}>
      */
-    public function kohort(int $gun): array
+    public function kohort(int $gun, ?string $app = null): array
     {
         $haftalar = $this->db->fetchAllAssociative(
             "SELECT to_char(date_trunc('week', z.created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS hafta, count(*) AS ziyaret,
                     extract(epoch FROM now() - max(z.created_at)) AS en_genc_sn
-             FROM huni_ziyaretleri z WHERE z.created_at >= now() - make_interval(days => :gun)
+             FROM huni_ziyaretleri z WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
              GROUP BY 1 ORDER BY 1 DESC",
-            ['gun' => $gun],
+            ['gun' => $gun, 'app' => $app],
         );
         $gelir = [];
         foreach ($this->db->fetchAllAssociative(
@@ -359,10 +361,10 @@ final readonly class Rapor
              JOIN odeme_oturumlari o ON o.ziyaret_id = z.id
              JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id
              CROSS JOIN unnest(CAST(:pencereler AS int[])) AS p(gun)
-             WHERE z.created_at >= now() - make_interval(days => :gun)
+             WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
                AND f.odendi_at < z.created_at + make_interval(days => greatest(p.gun, 1))
              GROUP BY 1, 2, 3",
-            ['gun' => $gun, 'pencereler' => '{'.implode(',', self::KOHORT_GUNLERI).'}'],
+            ['gun' => $gun, 'app' => $app, 'pencereler' => '{'.implode(',', self::KOHORT_GUNLERI).'}'],
         ) as $s) {
             $gelir[self::dizge($s['hafta'])][self::sayi($s['gun'])][self::dizge($s['para_birimi'])] = self::sayi($s['toplam']);
         }

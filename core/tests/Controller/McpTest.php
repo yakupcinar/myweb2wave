@@ -32,7 +32,7 @@ final class McpTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya, uygulama_baglamlari, api_anahtarlari, mcp_cagrilari');
+        $this->db->executeStatement('TRUNCATE odeme_faturalari, reklam_harcamalari, huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya, uygulama_baglamlari, api_anahtarlari, mcp_cagrilari');
         $sinir = static::getContainer()->get('cache.rate_limiter');
         self::assertTrue(method_exists($sinir, 'clear') && $sinir->clear());
         $huniler = static::getContainer()->get(Huniler::class);
@@ -98,7 +98,8 @@ final class McpTest extends WebTestCase
         $liste = $this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $bearer);
         $araclar = self::yol($liste, 'result', 'tools');
         self::assertIsArray($araclar);
-        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al', 'yeni_huni'], array_column($araclar, 'name'));
+        self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al', 'yeni_huni',
+            'rapor_ozet', 'rapor_kaynaklar', 'rapor_kohort', 'rapor_kampanyalar', 'rapor_cevaplar', 'deney_sonuclari'], array_column($araclar, 'name'));
         $sema = array_column($araclar, 'inputSchema', 'name')['taslak_kaydet'] ?? null;
         self::assertIsArray(self::yol($sema, '$defs', 'HuniTanimi'));
 
@@ -115,6 +116,45 @@ final class McpTest extends WebTestCase
             array_map(static fn (array $s): array => [$s['arac'], $s['hata']], $this->db->fetchAllAssociative('SELECT arac, hata FROM mcp_cagrilari ORDER BY id')),
         );
         self::assertNotNull($this->db->fetchOne('SELECT son_kullanim_at FROM api_anahtarlari'));
+    }
+
+    /**
+     * M7c1 (A21): rapor araçları yalnız okur ve anahtarın uygulamasıyla
+     * sınırlı — başka uygulamanın ziyaret, cevap ve geliri sayılmaz. Meta
+     * harcaması hesap düzeyinde (bölünmez), gelir bölünür.
+     */
+    public function testRaporAraclariUygulamayaSinirli(): void
+    {
+        foreach (['keepchat', 'keepchat', 'baska'] as $i => $app) {
+            // 2 gün önce: kohortun ilk 24 saati dolmuş olsun (gelir ölçülsün).
+            $z = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, fbclid, izin_at, created_at) VALUES (:app, 'meta', 'cpc', 'ekim', 'fb', now(), now() - interval '2 days') RETURNING id::text", ['app' => $app]);
+            $this->db->insert('olaylar', ['ziyaret_id' => $z, 'app' => $app, 'ad' => 'huni.ziyaret']);
+            $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => 'aile']);
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => "cs_{$i}", 'ziyaret_id' => $z, 'stripe_subscription_id' => "sub_{$i}", 'abonelik_at' => '2026-11-01 10:00Z', 'tutar_kucuk' => 999, 'para_birimi' => 'eur']);
+            $this->db->executeStatement("INSERT INTO odeme_faturalari (stripe_invoice_id, stripe_subscription_id, app, tutar_kucuk, para_birimi, odendi_at) VALUES (:i, :s, :app, 1000, 'eur', now() - interval '2 days' + interval '1 hour')", ['i' => "in_{$i}", 's' => "sub_{$i}", 'app' => $app]);
+        }
+        $this->db->executeStatement("INSERT INTO reklam_harcamalari (saglayici, kampanya_id, kampanya_adi, gun, harcama_kucuk, para_birimi) VALUES ('meta', 'c', 'ekim', (now() AT TIME ZONE 'UTC')::date, 4000, 'eur')");
+        $bearer = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'rapor')['anahtar'];
+        $this->elSikis($bearer);
+
+        $liste = $this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $bearer);
+        $araclar = array_column((array) self::yol($liste, 'result', 'tools'), null, 'name');
+        self::assertTrue(self::yol($araclar, 'rapor_ozet', 'annotations', 'readOnlyHint'));
+        $sonuc = fn (string $ad): mixed => self::yol($this->rpc(self::cagri(3, $ad, ['gun' => 30]), $bearer), 'result', 'structuredContent');
+
+        self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'deneme' => 0, 'odedi' => 2], self::yol($sonuc('rapor_ozet'), 'sayimlar', 'reklam'));
+        self::assertSame(['kabul' => 2, 'red' => 0, 'secmeyen' => 0], self::yol($sonuc('rapor_ozet'), 'izinler'));
+        self::assertSame(2, array_sum(array_column((array) self::yol($sonuc('rapor_ozet'), 'gunluk'), 'ziyaret')));
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 20]], self::yol($sonuc('rapor_kaynaklar'), 'kaynaklar', 0, 'gelir'));
+        self::assertSame(2, self::yol($sonuc('rapor_kohort'), 'kohort', 0, 'ziyaret'));
+        // 2 × 10 EUR / 2 ziyaret — başka uygulamanın faturası eklenseydi 15.
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 10]], self::yol($sonuc('rapor_kohort'), 'kohort', 0, 'pencereler', 0, 'kisiBasi'));
+        self::assertSame(2, self::yol($sonuc('rapor_cevaplar'), 'cevaplar', 0, 'sayi'));
+        // Harcama 40 EUR (hesap düzeyi), gelir yalnız bu uygulamanın 20 EUR → 0,5.
+        self::assertSame([2, 0.5], [self::yol($sonuc('rapor_kampanyalar'), 'kampanyalar', 0, 'ziyaret'), self::yol($sonuc('rapor_kampanyalar'), 'kampanyalar', 0, 'roas')]);
+        self::assertTrue(self::yol($this->rpc(self::cagri(4, 'deney_sonuclari', ['ad' => 'yok']), $bearer), 'result', 'isError'));
+        // Şema dışı aralık araç çalışmadan SDK'da reddedilir (JSON-RPC geçersiz parametre).
+        self::assertSame(-32602, self::yol($this->rpc(self::cagri(5, 'rapor_ozet', ['gun' => 5]), $bearer), 'error', 'code'));
     }
 
     /** Ç72: ekran görüntüsü MCP'de görüntü içeriği (JPEG, base64) olarak döner. */

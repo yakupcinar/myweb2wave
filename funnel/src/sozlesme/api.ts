@@ -229,6 +229,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/apps/{app}/olaylar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** M7c1 (A21) — uygulamanın olay akışı, imleçle; kişisel veri yok (sözlük). Yarım işlemler beklenir; sıra işlem sırası */
+        get: operations["listEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/apps/{app}/kullanicilar/{kullanici}/portal": {
         parameters: {
             query?: never;
@@ -2197,6 +2214,54 @@ export interface operations {
             401: components["responses"]["Yetkisiz"];
             /** @description Kullanıcı hiçbir kişiye bağlanmamış */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hata"];
+                };
+            };
+        };
+    };
+    listEvents: {
+        parameters: {
+            query?: {
+                /** @description Önceki yanıtın imleci; yoksa baştan */
+                imlec?: string;
+                sinir?: number;
+            };
+            header?: never;
+            path: {
+                app: components["parameters"]["App"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Olaylar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        olaylar: {
+                            /** Format: uuid */
+                            ziyaret: string;
+                            ad: string;
+                            veri: Record<string, never>;
+                            zaman: string;
+                        }[];
+                        /** @description Son verilen olayın yeri; olay yoksa gönderilen imleç (baştansa null) */
+                        imlec: string | null;
+                        /** @description Hemen ardından daha var (tekrar iste) */
+                        devam: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["Yetkisiz"];
+            /** @description Bozuk imleç */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
