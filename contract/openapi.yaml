@@ -1068,6 +1068,125 @@ paths:
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Geçersiz alan ya da Stripe yanıt vermedi, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/webhooklar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelApiWebhooklar
+      summary: "M7b (A20) — giden webhook hedefleri ve seçilebilir olay adları (sözlük)"
+      responses:
+        "200":
+          description: Liste
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [hedefler, olaylar]
+                properties:
+                  hedefler: { type: array, items: { $ref: "#/components/schemas/WebhookHedefi" } }
+                  olaylar: { type: array, items: { type: string } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    post:
+      operationId: panelApiWebhookEkle
+      summary: "M7b — hedef ekle; sır (whsec_…) YALNIZ bu yanıtta"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [adres, olaylar]
+              properties:
+                adres: { type: string, pattern: "^https://", maxLength: 2000 }
+                olaylar: { type: array, minItems: 1, uniqueItems: true, items: { type: string } }
+      responses:
+        "201":
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [id, sir]
+                properties:
+                  id: { type: string, format: uuid }
+                  sir: { type: string, pattern: "^whsec_" }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: "Adres https değil, olay sözlükte yok ya da hedef sınırı", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/webhooklar/{id}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+    put:
+      operationId: panelApiWebhookDurum
+      summary: M7b — etkin / pasif (pasif hedefe teslim yapılmaz, sıraya alma da yok)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: false, required: [aktif], properties: { aktif: { type: boolean } } }
+      responses:
+        "204": { description: Değişti }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Hedef yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz gövde, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    delete:
+      operationId: panelApiWebhookSil
+      summary: M7b — hedefi ve teslim günlüğünü sil
+      responses:
+        "204": { description: Silindi }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Hedef yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/webhooklar/{id}/teslimler:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: panelApiWebhookTeslimleri
+      summary: M7b — son 50 teslim (yeniden eskiye)
+      responses:
+        "200":
+          description: Günlük
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [teslimler]
+                properties:
+                  teslimler:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [id, olay, durum, deneme, sonHata, zaman]
+                      properties:
+                        id: { type: integer }
+                        olay: { type: string }
+                        durum: { type: string, enum: [bekliyor, teslim, vazgecildi] }
+                        deneme: { type: integer, minimum: 0 }
+                        sonHata: { type: [string, "null"] }
+                        zaman: { type: string }
+        "404": { description: Hedef yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/webhooklar/{id}/teslimler/{teslim}/yeniden:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: teslim, in: path, required: true, schema: { type: integer } }
+      - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+    post:
+      operationId: panelApiWebhookYeniden
+      summary: M7b — teslimi yeniden sıraya koy (deneme sıfırlanır, hemen)
+      responses:
+        "204": { description: Sırada }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Teslim yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/deneyler:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1279,6 +1398,19 @@ components:
         odemeye_gecti: { type: integer, minimum: 0 }
         deneme: { type: integer, minimum: 0, description: "Ç118 — abone oldu ama para çekilmedi (kartlı deneme, tutar 0)" }
         odedi: { type: integer, minimum: 0, description: "Para çekildi — oturum tutarı > 0 ya da tahsil edilmiş fatura (M5c)" }
+    WebhookHedefi:
+      type: object
+      additionalProperties: false
+      required: [id, adres, olaylar, aktif, sirSonu, bekleyen, teslim, vazgecildi]
+      properties:
+        id: { type: string, format: uuid }
+        adres: { type: string }
+        olaylar: { type: array, items: { type: string } }
+        aktif: { type: boolean }
+        sirSonu: { type: string, description: Sırrın son 4 hanesi (sır yalnız eklemede gösterilir) }
+        bekleyen: { type: integer, minimum: 0 }
+        teslim: { type: integer, minimum: 0 }
+        vazgecildi: { type: integer, minimum: 0 }
     PanelTutar:
       description: Ana birimde tutar (9.99), para birimi başına — çevrilmez
       type: object

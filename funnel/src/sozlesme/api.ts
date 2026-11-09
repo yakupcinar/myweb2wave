@@ -650,6 +650,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/webhooklar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** M7b (A20) — giden webhook hedefleri ve seçilebilir olay adları (sözlük) */
+        get: operations["panelApiWebhooklar"];
+        put?: never;
+        /** M7b — hedef ekle; sır (whsec_…) YALNIZ bu yanıtta */
+        post: operations["panelApiWebhookEkle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/webhooklar/{id}": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** M7b — etkin / pasif (pasif hedefe teslim yapılmaz, sıraya alma da yok) */
+        put: operations["panelApiWebhookDurum"];
+        post?: never;
+        /** M7b — hedefi ve teslim günlüğünü sil */
+        delete: operations["panelApiWebhookSil"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/webhooklar/{id}/teslimler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** M7b — son 50 teslim (yeniden eskiye) */
+        get: operations["panelApiWebhookTeslimleri"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/webhooklar/{id}/teslimler/{teslim}/yeniden": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: string;
+                teslim: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M7b — teslimi yeniden sıraya koy (deneme sıfırlanır, hemen) */
+        post: operations["panelApiWebhookYeniden"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/deneyler": {
         parameters: {
             query?: never;
@@ -821,6 +907,18 @@ export interface components {
             deneme: number;
             /** @description Para çekildi — oturum tutarı > 0 ya da tahsil edilmiş fatura (M5c) */
             odedi: number;
+        };
+        WebhookHedefi: {
+            /** Format: uuid */
+            id: string;
+            adres: string;
+            olaylar: string[];
+            aktif: boolean;
+            /** @description Sırrın son 4 hanesi (sır yalnız eklemede gösterilir) */
+            sirSonu: string;
+            bekleyen: number;
+            teslim: number;
+            vazgecildi: number;
         };
         /** @description Ana birimde tutar (9.99), para birimi başına — çevrilmez */
         PanelTutar: {
@@ -3425,6 +3523,283 @@ export interface operations {
             };
             /** @description Geçersiz alan ya da Stripe yanıt vermedi */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiWebhooklar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        hedefler: components["schemas"]["WebhookHedefi"][];
+                        olaylar: string[];
+                    };
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiWebhookEkle: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    adres: string;
+                    olaylar: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Eklendi */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        sir: string;
+                    };
+                };
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Adres https değil, olay sözlükte yok ya da hedef sınırı */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiWebhookDurum: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    aktif: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Değişti */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Hedef yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz gövde */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiWebhookSil: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Silindi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Hedef yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiWebhookTeslimleri: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Günlük */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        teslimler: {
+                            id: number;
+                            olay: string;
+                            /** @enum {string} */
+                            durum: "bekliyor" | "teslim" | "vazgecildi";
+                            deneme: number;
+                            sonHata: string | null;
+                            zaman: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Hedef yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiWebhookYeniden: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: string;
+                teslim: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sırada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Teslim yok */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -227,7 +227,7 @@
     - [x] M6b2 · 2026-11-09, `docs/decisions/m6b2-portal-web.md`: hunide `/keepchat/abonelik/` → `POST /huni/portal-baglantisi` (hep 202, e-posta başına saatte 3) → e-postada tek kullanımlık 1 saatlik bağlantı → onay sayfası (GET jetonu yakmaz) → POST → Stripe portalı. Kırma 11/11 (W8 testi güçlendirdi); gerçek akış dev + Mailpit + Stripe test
   - [ ] M7 · giden webhook + yönetim API / MCP genişlemesi — kararlar A20
     - [x] M7a · 2026-11-09, `docs/decisions/m7a-giden-webhook.md`: `webhook_hedefleri` + `webhook_teslimleri`, `app:webhook:gonder` (dakikalık cron), hedef başına `(islem, id)` imleci, Standard Webhooks imzası, üstel bekleme (10 deneme), iç ağ adresine gitmez; **§53'ün ilk çözümü yetersizdi** — akış da `(islem, id)`'ye geçti, Ç119 kapandı. Kırma 16/16 (üçü testi güçlendirdi)
-    - [ ] M7b · panel: hedef ekle / kaldır, olay seçimi, teslim günlüğü, yeniden gönder
+    - [x] M7b · 2026-11-09, `docs/decisions/m7b-webhook-paneli.md`: panelde "Webhook'lar" — hedef ekle (https, sözlükten olaylar, sır bir kez, uygulama başına 10), etkin / pasif, iki adımlı sil, teslim günlüğü (son 50) ve yeniden gönder. Kırma 12/12; test gerçek bir çökmeyi buldu (onay kutusu)
     - [ ] M7c · yönetim API / MCP genişlemesi (kapsam sorulacak)
   - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)

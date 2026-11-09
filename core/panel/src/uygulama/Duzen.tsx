@@ -9,6 +9,7 @@ import {
     Sparkles,
     Tags,
     Users,
+    Webhook,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router";
@@ -55,6 +56,10 @@ export function Duzen(): ReactNode {
                 <NavLink to="/panel/deneyler" className={ogeSinifi}>
                     <FlaskConical aria-hidden="true" className="size-4.5" />
                     Deneyler
+                </NavLink>
+                <NavLink to="/panel/webhooklar" className={ogeSinifi}>
+                    <Webhook aria-hidden="true" className="size-4.5" />
+                    Webhook'lar
                 </NavLink>
                 <NavLink to="/panel/baglam" className={ogeSinifi}>
                     <Sparkles aria-hidden="true" className="size-4.5" />

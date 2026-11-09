@@ -10,6 +10,7 @@ import { Duzen } from "./Duzen";
 import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Baglam } from "./sayfalar/Baglam";
 import { Deneyler } from "./sayfalar/Deneyler";
+import { Webhooklar } from "./sayfalar/Webhooklar";
 import { Huniler } from "./sayfalar/Huniler";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
 import { Planlar } from "./sayfalar/Planlar";
@@ -30,6 +31,7 @@ export const yollar = [
             { path: "kullanicilar", element: <Kullanicilar /> },
             { path: "planlar", element: <Planlar /> },
             { path: "deneyler", element: <Deneyler /> },
+            { path: "webhooklar", element: <Webhooklar /> },
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
         ],

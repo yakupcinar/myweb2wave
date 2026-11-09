@@ -64,3 +64,4 @@
 | 57 | M6b1: müşteri portalı — ayar kodda + uygulama ucu | portal ayarı kodda tutulup tek komutla her ortama aynı uygulanıyor (gerçek hesapta kur → güncelle); ölçüm betiğinde adres biçimini varsayıp maskelemeyi kaçırdım — test oturum adresi çıktıya düştü, kayda geçti | `m6b1-portal.md` |
 | 58 | M6b2: web yolundan müşteri portalı | tek kullanımlık bağlantı GET'te değil POST'ta harcanır (e-posta tarayıcıları); CORS testi yalnız kökene bakınca yalancı yeşildi — yol başka bir desene de uyuyordu | `m6b2-portal-web.md` |
 | 59 | M7a: giden webhook motoru | motoru yazarken kendi M5a çözümümdeki (tuzak §53) bir açığı akıl yürütmeyle buldum, önce onu düşüren testi yazdım, sonra düzelttim — kayıtta eski "doğrusu" düzeltmeyle duruyor; imza beklentisi spesifikasyonun örneğinden | `m7a-giden-webhook.md` |
+| 60 | M7b: webhook paneli | sayfa testi gerçek bir çökmeyi buldu (durum güncelleyicisinde olay hedefini okumak) — tip denetimi ve derleme yeşildi | `m7b-webhook-paneli.md` |
