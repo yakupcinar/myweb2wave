@@ -148,3 +148,60 @@ Kullanıcı: "ana özellik eklendi ve test edildi (sunucu hazır değil, dış i
 | **M11** | Çeviri (isteğe bağlı) | huni metinlerinin dil sürümleri + tarayıcı diline göre seçim (T3 koşulu) | — | — |
 
 **Neden bu sıra:** M1–M3 doğrudan dönüşüm/gelir (web2wave'in paywall ağırlığı bunu gösteriyor: ~20 paywall bloğu, downsell, upsell, çok para birimi); M4 bunları **ölçerek** iyileştirmenin aracı ve paywall varlığı olmadan yarım kalır; M5 ücretli trafikte karar verdiren rapor; M6 canlı ödemenin ön koşulu; M7–M11 sunucu/dış girdiye bağlı ya da tek şirkette düşük öncelik. Sunucu gelmeden yapılabilen: M1–M4, M5 (a)–(c), M6 (hukuk metni hariç), M7.
+
+## Ek 2026-11-10 — M5–M9a sonrası: web2wave ile kalan farklar
+
+Kullanıcı: "web2wave araştırması yap, bizim app bunun tek şirket için yapılmış hâli, referans al". Kaynak:
+`docs.web2wave.com/llms.txt` (2026-11-10, 392 satır, 271 sayfa: 2 bölüm "Instructions" + "web2Wave API") ve
+şu sayfalar: `auto-redirect-user-guide-language-country-based-redirects`, `project-setup`,
+`handling-failed-payments-in-stripe`, `emails-after-subscriptions`, `emails`, `generate-email-sequences-with-ai`,
+`post_creatives-generate`, `post_reports-quiz-answers-insights-generate`, `get_reports-chart-builder-catalog`,
+`get_reports-overview`, `support-desk-setup`, `put_subscription-pause`, `upsell-subscription-with-cancellation-refund`.
+Belge = üreticinin beyanı; panel çalıştırılmadı. Eski dizin kopyası saklanmadığı için "yeni" denen yalnız 11-03
+notunda geçmeyenler.
+
+**11-03'ten sonra görünen / o notta geçmeyen:**
+- **Creatives** (19 uç): reklam istihbaratı (kategori trendleri, markalar, "market movers", alan adının açılış
+  sayfaları) + AI ile görsel / video reklam üretimi (brief, kitle, senaryo, biçim, isteğe bağlı quiz ekranı); ön
+  ödemeli cüzdan.
+- **Rapor genel bakışı:** önceki dönem karşılaştırması; tahmini gelir (32–367 gün, platform LTV modeli), pROAS,
+  geri ödeme günü. Süzgeçler: quiz, paywall, 5 UTM, ülke, platform, kullanıcı özelliği, ödeme sistemi, deney varyantı.
+  **Chart builder** (metrik × boyut kataloğu); **cevap içgörüsü** (quiz cevapları üzerinde LLM, kuyruklu).
+- **Dışa aktarım:** abonelikler, quiz cevapları, ziyaretler, deney kullanıcıları.
+- **E-posta:**
+  - panelde işlem şablonları (fiyat başına da);
+  - yer tutucular: indirme bağlantısı, portal bağlantısı, plan / fiyat / sonraki ödeme, logo, destek e-postası, yasal
+    adres, abonelikten çıkma;
+  - diziler: başlatıcı "e-posta bırakıp gitti / herhangi bir satın alma / uygulama kuruldu", durdurucu
+    "satın alma / uygulama kuruldu", gecikme;
+  - **AI dizi üretimi:** Push to Purchase / Install / Upsell şablonları, stil paketi, taslak olarak kaydedilir;
+  - harici ESP (Mailchimp, Sendpulse, Braze).
+- **Dil / ülke yönlendirmesi:** ana quiz / paywall başına "dile göre" (tarayıcı) ya da "ülkeye göre" (IP); çeviriler
+  ana içeriğin `Source` bağlı kopyaları. Ayrıca elle "çeviri değiştirici" bloğu. Eşleşme yoksa ne olduğu belgede yok.
+- **Abonelik:** duraklat (Stripe `pause_collection`, sürdür ayrı uç), ek ücret çekme, iptal planlama; upsell'de eski
+  aboneliği iptal + son faturayı iade tarifi.
+- **Destek kutusu:** paylaşılan alan (`…@gethelpwithapps.com`) ya da kendi alt alan adı (MX + DKIM) ya da yönlendirme;
+  e-postaların Reply-To'su buraya. Konuşma, AI yanıt taslağı, otomatik yanıtlar, şablonlar, atama / durum, günlük
+  özet, sessize alma; ayrı ücretli.
+- **Ödeme hatası:** paywall'da hata koduna göre eylem (açılır ekran / JS). Dunning belgede yok (Stripe'ın kendi ayarı).
+
+### Bizde karşılığı (2026-11-10)
+
+| Alan | web2wave | Bizde | Fark → öneri |
+|---|---|---|---|
+| Rapor | Önceki dönem, tahmini LTV / pROAS / geri ödeme, 12+ süzgeç, chart builder | 7/30/90 gün, UTM kırılımı, cevaba göre dönüşüm, kohort, Meta ROAS; **süzgeç ve önceki dönem yok** | **R1:** süzgeçler (huni, UTM, ülke, deney varyantı) + önceki dönem. LTV tahmini veri birikince (A1: platform verisi yok). Chart builder kapsam dışı |
+| Cevap içgörüsü | LLM, quiz cevapları | Cevap dağılımı + dönüşüm; MCP `cevaplar` aracı Claude'a açık | Claude MCP ile zaten yapılabiliyor; ayrı özellik gerekmez (ölçülmedi) |
+| Dışa aktarım | 4 tür CSV | Yok (olay akışı API'si + MCP var) | **R2:** panelden CSV (abonelikler, cevaplar, ziyaretler); kişisel veri maskesi kararı ister |
+| E-posta şablonları | Panelde, yer tutucu, fiyat başına | 5 e-posta kodda sabit metin, yalnız Türkçe; ad / Reply-To ayarlardan (M9a) | **E1:** panelde şablon (konu + metin, tr/en, yer tutucu: indirme, portal, plan) — yasal metinlerin kalıbıyla |
+| Diziler | Tetik / durdurma / gecikme panelden, AI üretim | Aktivasyon + kurtarma kodda (A22), adımlar sabit | E1 ile birlikte gecikme ve metin panelden; AI taslak huni asistanıyla aynı döngü |
+| Dil / ülke | Çeviri kopyası + otomatik yönlendirme + değiştirici | Yönlendirme kuralları UTM'e bakıyor; para birimi IP ülkesinden (M1c) | **M9d** web2wave modeline uygun: kurala `ulke` ve `dil` koşulu, çeviri = ayrı huni. Eşleşmezse varsayılan huni (bizim kararımız) |
+| Abonelik | Duraklat / sürdür, ek ücret, hemen iptal | Dönem sonu iptal / geri al, son fatura iadesi | **M6c:** duraklat / sürdür (Stripe `pause_collection`); ek ücret ve hemen iptal ihtiyaç olunca |
+| Destek | Gelen kutusu + AI taslak + otomatik yanıt | Reply-To = destek e-postası (M9a) | **M10:** Postmark gelen e-posta webhook'u → konuşma + kullanıcı kartı + Claude taslağı |
+| Ödeme hatası | Hata koduna göre paywall eylemi | Paywall'da hata metinleri (502 / ağ) | Küçük; M9c varsayılan paywall ile birlikte bakılabilir |
+| Creatives | Reklam istihbaratı + AI reklam üretimi, kredi | Yok (backlog "AI pazarlama operasyonları — sonra") | Kapsam dışı: dış reklam verisi + görsel / video üretimi ayrı ürün; kullanıcı kararı |
+| Kullanıcı API'si | identify, properties / events yazma, auth link | Hak, olay akışı, portal; yazma yok | İhtiyaç olunca |
+
+**Sıra önerisi (M9'dan sonra):** M9b2 → M9c → M9d → R1 → E1 → M6c → R2 → M10 → M11. Gerekçe: M9 kalanları
+canlıya geçişin önkoşulu (yasal bağlantı, varsayılan paywall, dil); R1 ücretli trafikte karar vermenin aracı
+(süzgeçsiz rapor tek kampanyayı ayıramıyor); E1 kod değiştirmeden metin düzeltmeyi açar; M10 en büyük iş ve gelen
+e-posta yolu ister.
