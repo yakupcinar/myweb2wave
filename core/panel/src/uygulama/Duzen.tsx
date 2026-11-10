@@ -6,6 +6,7 @@ import {
     Filter,
     KeyRound,
     LogOut,
+    Scale,
     Settings,
     Sparkles,
     Tags,
@@ -73,6 +74,10 @@ export function Duzen(): ReactNode {
                 <NavLink to="/panel/ayarlar" className={ogeSinifi}>
                     <Settings aria-hidden="true" className="size-4.5" />
                     Ayarlar
+                </NavLink>
+                <NavLink to="/panel/yasal" className={ogeSinifi}>
+                    <Scale aria-hidden="true" className="size-4.5" />
+                    Yasal metinler
                 </NavLink>
                 <a
                     href="/panel/cikis"

@@ -212,6 +212,26 @@ yazarken bunu okur; boş alan gönderilmez.
 
 ---
 
+### 2.10 Yasal metinler — `/panel/yasal`
+
+**Ne görürsün / yapabilirsin**
+- Şirket unvanı, adres, kayıt no.
+- Dört belge (kullanım şartları, gizlilik, KVKK, çerez) × iki dil (tr, en). Kaydedilmemiş belge **taslaktır, yayında
+  değildir**; "Kaydet ve yayınla" yayınlar.
+- Metinde geçen ama değeri boş yer tutucular uyarı olarak görünür.
+
+**Arkada ne çalışıyor**
+- `yasal_metinler` tablosu ve `uygulama_ayarlari`'ndaki yasal sütunlar; servis `YasalMetinler`.
+- Taslaklar `Taslaklar.php`'de, sistemin ölçülmüş davranışını anlatır: 90 gün, 48 saat, izinle piksel, tarayıcıda ne
+  tutulduğu. **Davranış değişirse taslak da değişir.**
+- Herkese açık sayfa: `GET /yasal/{app}/{belge}/{dil}` (Twig, dış betik yok). Yer tutucular (`{{unvan}}` …) çizilirken
+  dolar; boş değer "—" görünür. HTML yorumlanmaz.
+
+**Henüz ölçülmeyen:** hukuk görüşü, huninin bu sayfalara bağlanması (M9b2), sayfanın tarayıcıda denenmesi. Kayıt:
+`m9b1-yasal-metinler.md`.
+
+---
+
 ## 3. Ziyaretçi ve uygulama tarafı (panel dışı)
 
 | Yüz | Ne | Kayıt |

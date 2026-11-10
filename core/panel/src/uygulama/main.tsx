@@ -12,6 +12,7 @@ import { Ayarlar } from "./sayfalar/Ayarlar";
 import { Baglam } from "./sayfalar/Baglam";
 import { Deneyler } from "./sayfalar/Deneyler";
 import { Webhooklar } from "./sayfalar/Webhooklar";
+import { Yasal } from "./sayfalar/Yasal";
 import { Huniler } from "./sayfalar/Huniler";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
 import { Planlar } from "./sayfalar/Planlar";
@@ -36,6 +37,7 @@ export const yollar = [
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
             { path: "ayarlar", element: <Ayarlar /> },
+            { path: "yasal", element: <Yasal /> },
         ],
     },
     {

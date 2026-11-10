@@ -7,12 +7,15 @@ namespace App\Controller;
 use App\Ai\UrunBaglami;
 use App\Mcp\ApiAnahtarlari;
 use App\Uygulama\UygulamaAyarlari;
+use App\Yasal\Taslaklar;
+use App\Yasal\YasalMetinler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Panel: uygulamalar ve ürün bağlamı (A4) — sözleşme /panel/api/uygulamalar*.
@@ -29,6 +32,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly array $uygulamalar,
         private readonly UrunBaglami $baglam,
         private readonly UygulamaAyarlari $ayarlar,
+        private readonly YasalMetinler $yasal,
         private readonly ApiAnahtarlari $anahtarlar,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
@@ -93,6 +97,57 @@ final class PanelUygulamaController extends AbstractController
         return self::korumali([] === $hatalar
             ? new JsonResponse($this->ayarlar->oku($app))
             : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** M9b1 (A23): yasal veriler + belge × dil metinleri (kaydedilmemişse taslak) ve herkese açık adresleri. */
+    #[Route('/{app}/yasal', name: 'panel_api_yasal', methods: ['GET'])]
+    public function yasal(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->yasalYaniti($app)));
+    }
+
+    #[Route('/{app}/yasal/veriler', name: 'panel_api_yasal_veriler', methods: ['PUT'])]
+    public function yasalVeriler(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $hatalar = $this->yasal->verileriKaydet($app, json_decode($request->getContent(), true));
+
+        return self::korumali([] === $hatalar ? new JsonResponse($this->yasalYaniti($app)) : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** Kaydetmek = yayınlamak (A23: taslak yayında değildir). */
+    #[Route('/{app}/yasal/{belge}/{dil}', name: 'panel_api_yasal_metin', methods: ['PUT'])]
+    public function yasalMetin(Request $request, string $app, string $belge, string $dil): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app]) || !\in_array($belge, Taslaklar::BELGELER, true) || !\in_array($dil, Taslaklar::DILLER, true)) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen belge: {$app}/{$belge}/{$dil}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $hatalar = $this->yasal->kaydet($app, $belge, $dil, json_decode($request->getContent(), true));
+
+        return self::korumali([] === $hatalar ? new JsonResponse($this->yasalYaniti($app)) : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** @return array{veriler: array{unvan: string, adres: string, kayitNo: string}, belgeler: list<array<string, mixed>>} */
+    private function yasalYaniti(string $app): array
+    {
+        return [
+            'veriler' => $this->yasal->veriler($app),
+            'belgeler' => array_map(fn (array $b): array => $b + [
+                'adres' => $this->generateUrl('yasal_sayfa', ['app' => $app, 'belge' => $b['belge'], 'dil' => $b['dil']], UrlGeneratorInterface::ABSOLUTE_URL),
+            ], $this->yasal->belgeler($app)),
+        ];
     }
 
     /** A5a: kişisel API anahtarları (MCP) — liste; anahtarın kendisi yok, önek var. */

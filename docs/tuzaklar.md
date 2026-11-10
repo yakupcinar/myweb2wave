@@ -374,6 +374,7 @@ birden çok çekimle ölç.
 **Sebep:** `tutar: { type: number, description: Ana birimde, planın para biriminde }` — akış eşlemesinde virgül ayırıcıdır. JS ayrıştırıcısı (openapi-typescript) metni ilk virgülde bitirip kalanını değersiz bir anahtar sayar; Symfony YAML reddeder.
 **Ölçüm (2026-11-04, `m1b-teklifler.md`):** `npm run uret` EXIT=0, üretilen açıklama `Ana birimde`; aynı dosya PHPUnit'te 10 testte ParseException.
 **Doğrusu:** satır içi eşlemede virgül, iki nokta ya da `#` içeren metni çift tırnağa al; sözleşme değişince yalnız tip üretimine değil PHP sözleşme testlerine de bak (`bin/kontrol` ikisini koşar).
+**Yeniden ölçüldü (2026-11-10, M9b1):** `description: Kaydedilmişse kaydedilen, değilse taslak` → üretilen TS'de yalnız "Kaydedilmişse kaydedilen" (uret EXIT=0); PHP sözleşme testi `Malformed inline YAML` ile düştü. Tırnaklayınca ikisi de düzeldi.
 
 ## §49 — Tek tırnaklı satır içi betikte yorumdaki kesme işareti tırnağı kapatır
 **Belirti:** `deploy/dagit.sh` hiç çalışmaz (`syntax error near unexpected token`); hata satırı bir **yorum**. Daha kötüsü: kesme işareti sayısı çiftse `bash -n` geçer, betik çalışır, ama gömülü kodun bir parçası kabuk komutu olur — hata vermeden yanlış kod koşar.

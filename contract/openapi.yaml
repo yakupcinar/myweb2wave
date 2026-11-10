@@ -731,6 +731,53 @@ paths:
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Alan geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/yasal:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelYasal
+      summary: "M9b1 (A23): yasal veriler + belge × dil metinleri (kaydedilmemişse taslak) ve herkese açık adresleri"
+      responses:
+        "200": { description: Yasal veriler ve belgeler, content: { application/json: { schema: { $ref: "#/components/schemas/PanelYasal" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/yasal/veriler:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: panelYasalVerileriKaydet
+      summary: Şirket unvanı, adres, kayıt no (tamamı)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, description: Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u), schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/YasalVeriler" }
+      responses:
+        "200": { description: Güncel yasal veriler ve belgeler, content: { application/json: { schema: { $ref: "#/components/schemas/PanelYasal" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Alan geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/yasal/{belge}/{dil}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: belge, in: path, required: true, schema: { type: string, enum: [sartlar, gizlilik, kvkk, cerez] } }
+      - { name: dil, in: path, required: true, schema: { type: string, enum: [tr, en] } }
+    put:
+      operationId: panelYasalMetinKaydet
+      summary: Metni kaydeder ve yayınlar (kaydedilmemiş belge yayında değildir)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, description: Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u), schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/YasalMetin" }
+      responses:
+        "200": { description: Güncel yasal veriler ve belgeler, content: { application/json: { schema: { $ref: "#/components/schemas/PanelYasal" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da belge, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Alan geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/huniler:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1428,6 +1475,41 @@ components:
         sema: { type: string, maxLength: 32, description: "Özel URL şeması (<şema>://giris?jeton=…), iOS Info.plist ile aynı" }
         magazaAdresi: { type: string, maxLength: 300, description: "App Store adresi (https://) ya da boş" }
         destekEpostasi: { type: string, maxLength: 254, description: E-postalarda yanıt adresi ya da boş }
+    YasalVeriler:
+      type: object
+      additionalProperties: false
+      required: [unvan, adres, kayitNo]
+      properties:
+        unvan: { type: string, maxLength: 200, description: Şirket unvanı (veri sorumlusu) }
+        adres: { type: string, maxLength: 500 }
+        kayitNo: { type: string, maxLength: 100, description: "Vergi / MERSİS / şirket kayıt numarası; isteğe bağlı" }
+    YasalMetin:
+      type: object
+      additionalProperties: false
+      required: [metin]
+      properties:
+        metin: { type: string, minLength: 1, maxLength: 50000, description: "## başlık, - madde, **kalın**, boş satır paragraf; yer tutucular uygulama, unvan, adres, kayitNo, eposta (çift süslü ayraçla)" }
+    PanelYasal:
+      type: object
+      additionalProperties: false
+      required: [veriler, belgeler]
+      properties:
+        veriler: { $ref: "#/components/schemas/YasalVeriler" }
+        belgeler:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [belge, dil, baslik, metin, kayitli, guncellendi, eksikler, adres]
+            properties:
+              belge: { type: string, enum: [sartlar, gizlilik, kvkk, cerez] }
+              dil: { type: string, enum: [tr, en] }
+              baslik: { type: string }
+              metin: { type: string, description: "Kaydedilmişse kaydedilen, değilse taslak" }
+              kayitli: { type: boolean, description: true = yayında }
+              guncellendi: { type: [string, "null"], format: date-time }
+              eksikler: { type: array, items: { type: string }, description: Metinde geçen ama değeri boş yer tutucular }
+              adres: { type: string, format: uri, description: Herkese açık sayfa (yalnız kayitli iken açılır) }
     PanelHatalari:
       type: object
       additionalProperties: false

@@ -431,6 +431,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/yasal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** M9b1 (A23): yasal veriler + belge × dil metinleri (kaydedilmemişse taslak) ve herkese açık adresleri */
+        get: operations["panelYasal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/yasal/veriler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Şirket unvanı, adres, kayıt no (tamamı) */
+        put: operations["panelYasalVerileriKaydet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/yasal/{belge}/{dil}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                belge: "sartlar" | "gizlilik" | "kvkk" | "cerez";
+                dil: "tr" | "en";
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Metni kaydeder ve yayınlar (kaydedilmemiş belge yayında değildir) */
+        put: operations["panelYasalMetinKaydet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/huniler": {
         parameters: {
             query?: never;
@@ -910,6 +969,40 @@ export interface components {
             magazaAdresi: string;
             /** @description E-postalarda yanıt adresi ya da boş */
             destekEpostasi: string;
+        };
+        YasalVeriler: {
+            /** @description Şirket unvanı (veri sorumlusu) */
+            unvan: string;
+            adres: string;
+            /** @description Vergi / MERSİS / şirket kayıt numarası; isteğe bağlı */
+            kayitNo: string;
+        };
+        YasalMetin: {
+            /** @description ## başlık, - madde, **kalın**, boş satır paragraf; yer tutucular uygulama, unvan, adres, kayitNo, eposta (çift süslü ayraçla) */
+            metin: string;
+        };
+        PanelYasal: {
+            veriler: components["schemas"]["YasalVeriler"];
+            belgeler: {
+                /** @enum {string} */
+                belge: "sartlar" | "gizlilik" | "kvkk" | "cerez";
+                /** @enum {string} */
+                dil: "tr" | "en";
+                baslik: string;
+                /** @description Kaydedilmişse kaydedilen, değilse taslak */
+                metin: string;
+                /** @description true = yayında */
+                kayitli: boolean;
+                /** Format: date-time */
+                guncellendi: string | null;
+                /** @description Metinde geçen ama değeri boş yer tutucular */
+                eksikler: string[];
+                /**
+                 * Format: uri
+                 * @description Herkese açık sayfa (yalnız kayitli iken açılır)
+                 */
+                adres: string;
+            }[];
         };
         PanelHatalari: {
             hatalar: string[];
@@ -2847,6 +2940,151 @@ export interface operations {
                 };
             };
             /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Alan geçersiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelYasal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Yasal veriler ve belgeler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelYasal"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelYasalVerileriKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["YasalVeriler"];
+            };
+        };
+        responses: {
+            /** @description Güncel yasal veriler ve belgeler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelYasal"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Alan geçersiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelYasalMetinKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                belge: "sartlar" | "gizlilik" | "kvkk" | "cerez";
+                dil: "tr" | "en";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["YasalMetin"];
+            };
+        };
+        responses: {
+            /** @description Güncel yasal veriler ve belgeler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelYasal"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da belge */
             404: {
                 headers: {
                     [name: string]: unknown;

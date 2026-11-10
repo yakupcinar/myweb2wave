@@ -252,6 +252,9 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - M9a: ad, URL şeması, App Store adresi, destek e-postası panelde (`uygulama_ayarlari`); yaml / .env'den taşındı.
   Uygulama listesi yaml'da kalır (sözleşme enum'u). Reddedilen: yaml'da bırakmak (panelden değişmez), DB + yaml
   yedeği (§12, hangisinin geçerli olduğu belirsizleşir). Reddedilen roller: ikinci kişi yokken ölçülmemiş ihtiyaç.
+- M9b (kullanıcı: taslak + düzenlenebilir; şartlar, gizlilik, KVKK, çerez; tr + en): metinler çekirdekten
+  `/yasal/{app}/{belge}/{dil}`, kaydedilmeden yayında değil, yer tutucularla. Reddedilen: yalnız kullanıcının metni
+  (boş başlangıç), dış adres (sistemle eşleşmez), taslağı otomatik yayınlamak (hukuki görüş değil).
 
 **A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
 - Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
