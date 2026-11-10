@@ -205,3 +205,5 @@ notunda geçmeyenler.
 canlıya geçişin önkoşulu (yasal bağlantı, varsayılan paywall, dil); R1 ücretli trafikte karar vermenin aracı
 (süzgeçsiz rapor tek kampanyayı ayıramıyor); E1 kod değiştirmeden metin düzeltmeyi açar; M10 en büyük iş ve gelen
 e-posta yolu ister.
+
+**Karar (kullanıcı, 2026-11-10):** önerilen sıra kabul (M9b2 → M9c → M9d → R1 → E1 → M6c → R2 → M10 → M11); Creatives **kapsam dışı** (backlog'da "sonra").
