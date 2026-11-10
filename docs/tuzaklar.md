@@ -1,12 +1,69 @@
 # Tuzaklar — hata vermeden YANLIŞ CEVAP üretenler
 
-> CLAUDE.md §4'teki her satırın tam metni burada. Yeni tuzak: **belirti**
+> CLAUDE.md §4'teki her anahtarın tam metni burada. Yeni tuzak: **belirti**
 > (ne gördün) · **sebep** · **ölçüm** (nasıl kanıtladın) · **doğrusu**.
 > İkisine birden yazılır.
 
 ## §1 — Boru çıkış kodunu yutar
 **Belirti:** kırmızı süit yeşil görünür. **Sebep:** `$?` borunun son
 komutunundur. **Doğrusu:** `komut > log 2>&1; echo EXIT=$?`.
+
+
+## §2 — (özet; ayrıntılı kayıt yok)
+
+`grep -i` Türkçe `ı`/`İ` ile **yanlış "bulunamadı"** der. Harf sınıfı kullan ya da `-i`'siz ara.
+
+## §3 — (özet; ayrıntılı kayıt yok)
+
+Bir iddiayı **ölçtüğü kodun kendisiyle** hesaplama — beklenti de bozulur, test yeşil kalır. Bekleneni bağımsız hesapla.
+
+## §4 — (özet; ayrıntılı kayıt yok)
+
+Uygulamadaki "bu ad alınmış mı" kontrolü, arkasındaki **DB kısıtını görünmez kılar**; kısıtı doğrudan ölçen ikinci test yaz.
+
+## §5 — (özet; ayrıntılı kayıt yok)
+
+Biçimlendirici "liste" kipinde biçimsiz dosyada da **çıkış kodu 0** dönebilir (`gofmt -l`); ölçüt çıktının boş olması.
+
+## §6 — (özet; ayrıntılı kayıt yok)
+
+"Hata döndü mü" yetmez — **hangi hata**: zaman aşımı da hatadır. Türüyle/koduyla karşılaştır.
+
+## §7 — (özet; ayrıntılı kayıt yok)
+
+Bir yapılandırmayı **bildirmek, uygulandığı anlamına gelmez** (göç dosyası, CI yaml, deploy yaml). Etkisini çalışan sistemden oku.
+
+## §8 — (özet; ayrıntılı kayıt yok)
+
+Uygulanmamış bir **kırma denemesi** testi suçsuz yere "ölçmüyor" ilan ettirir: yama tutmadıysa sonuç "yeşil" değil **KOŞULMADI**'dır. Derleme hatasıyla kırmızı olan deneme de sahtedir. Atlanan test (`skip`) BAŞARI görünür — `passed` mı `skipped` mi oku.
+
+## §9 — (özet; ayrıntılı kayıt yok)
+
+**Çift tırnak içindeki ters tırnak kabukta KOMUT olarak çalışır** — `echo "… \`make test\` …"` gerçekten süiti başlatır, commit mesajı metni yer.
+
+## §10 — (özet; ayrıntılı kayıt yok)
+
+*"Bu satır ŞART"* yorumu **ölçülmediyse büyük ihtimalle yanlıştır.** Savunmayı tek başına kaldır ve koştur; yorumu ölçümle yaz.
+
+## §12 — (özet; ayrıntılı kayıt yok)
+
+**Yedek zincir kusuru maskeler**: alanın dolu olması asıl yolun çalıştığını kanıtlamaz. Bir sütunun DOLU olması da doğru olduğunu göstermez — *içinde ne var* diye sor.
+
+## §13 — (özet; ayrıntılı kayıt yok)
+
+Yeşil bir süit **ölçülmemiş bir sıra/zaman varsayımı** taşıyabilir; yeni iş onu bozmaz, açığa çıkarır. Kırmızının üç şıkkı: yarış · mantık · **zaman aşımı**.
+
+## §14 — (özet; ayrıntılı kayıt yok)
+
+Ölçümden önce **ortamı say**: dolu disk, eşzamanlı ağır koşum, iki test aynı simülatörde/DB'de — hepsi kodu suçlayan sahte kırmızı üretir. `df -h` ilk komut.
+
+## §15 — (özet; ayrıntılı kayıt yok)
+
+`kill $!` alt kabuğu öldürür, içindeki komutu değil (öksüz süreç sonraki koşuyu bozar) — alt kabukta `exec`. `pkill -f <desen>` kendi kabuğunu da öldürür.
+
+## §17 — (özet; ayrıntılı kayıt yok)
+
+Log'da "yok" sonucu çoğu zaman **soru** hatasıdır (yanlış etiket, varsayılan zaman penceresi, yanlış log biçimi). Önce log'a yazıldığı bilinen bir kontrol grubunu ara.
 
 ## §18 — Boş kapsayıcıya bağlı değiştirici koşmaz (SwiftUI)
 **Belirti:** profil fotoğrafı hiç yüklenmedi, hata/istek yok.

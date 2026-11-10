@@ -67,3 +67,4 @@
 | 60 | M7b: webhook paneli | sayfa testi gerçek bir çökmeyi buldu (durum güncelleyicisinde olay hedefini okumak) — tip denetimi ve derleme yeşildi | `m7b-webhook-paneli.md` |
 | 61 | M7c1: MCP rapor araçları + olay akışı API'si | çok uygulamalı süzgeç her sorguya tek tek eklendi ve her biri ayrı kırmayla ölçüldü; kohortun gelir kolu ölçülmüyordu (pencere dolmamış veri) — tutmayan kırma gösterdi | `m7c1-okuma-araclari.md` |
 | 62 | M7c2: MCP yazma araçları | yetki yapıyla: izinsiz anahtar aracı hiç görmez (yalnız istemci onayına güvenilmedi); sahte Stripe yanıtı sabit olduğunda yazılan durum, gönderilen değeri ölçmüyordu — tutmayan kırma gösterdi | `m7c2-yazma-araclari.md` |
+| 63 | CLAUDE.md kısaltma | her promptta yüklenen dosya 20 KB → 11 KB: tuzak tablosu anahtara indi, tam metin `tuzaklar.md`de; 14 tuzağın metni yalnız tabloda yaşıyormuş, silmeden önce taşındı; docs seçici okunur (grep + sed) | `CLAUDE.md` §4 |

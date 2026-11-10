@@ -5,18 +5,10 @@
 **Yığın:** Vite + Preact (statik huni, CDN) · Symfony (çekirdek API) · Postgres ·
 Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 
-> **Bu dosya bir YÖNLENDİRİCİ (router).** İçinde yalnızca **her oturumda
-> geçerli olan değişmezler** durur: yığın, komutlar, kurallar, tuzak
-> indeksi. Ayrıntı — ölçümler, kararların gerekçeleri — § Referanslar'daki
-> dosyalarda.
->
-> ⚠️ **SATIR BÜTÇESİ: 300.** CLAUDE.md her oturumda VE her alt ajanda
-> otomatik yükleniyor; büyümesi her prompta bedel yazar. Ölçüm:
-> `wc -l CLAUDE.md`.
->
-> Bu çalışma biçimi KeepChat projesinde (2026-09 → 2026-10) ~40 blokta
-> oturdu; aşağıdaki kuralların her biri orada bir ölçümden ya da bir
-> kayıptan doğdu.
+> **Bu dosya bir yönlendirici.** Yalnız her oturumda geçerli değişmezler
+> burada; ayrıntı § Referanslar'daki dosyalarda. Her oturumda ve her alt
+> ajanda yükleniyor — her satır her prompta bedel yazar. Docs dosyalarını
+> tam okuma; `grep -n` + `sed -n` ile yalnız ilgili aralığı oku.
 
 ---
 
@@ -109,68 +101,16 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 
 ## 4. Tuzak indeksi — hata vermeden YANLIŞ CEVAP üretenler
 
-> Her satır **iddiayı** taşır, yalnız başlığı değil. Tam metin ve yenileri:
-> **[docs/tuzaklar.md](docs/tuzaklar.md)**. Yeni tuzak bulunca ikisine
-> birden yazılır (kural 7).
+> Burada yalnız anahtar var; belirti, ölçüm ve doğrusu
+> **[docs/tuzaklar.md](docs/tuzaklar.md)**'de. Konuya girerken yalnız o
+> bölümü oku: `grep -n "^## §N " docs/tuzaklar.md`. Yeni tuzak bulunca tam
+> metni oraya, anahtarı buraya yaz (kural 7).
 
-| § | Tuzak — tek cümlede |
-|---|---|
-| **§1** | Bir kontrolü `\| tail`'a borulamak **çıkış kodunu yok eder**. |
-| **§2** | `grep -i` Türkçe `ı`/`İ` ile **yanlış "bulunamadı"** der. Harf sınıfı kullan ya da `-i`'siz ara. |
-| **§3** | Bir iddiayı **ölçtüğü kodun kendisiyle** hesaplama — beklenti de bozulur, test yeşil kalır. Bekleneni bağımsız hesapla. |
-| **§4** | Uygulamadaki "bu ad alınmış mı" kontrolü, arkasındaki **DB kısıtını görünmez kılar**; kısıtı doğrudan ölçen ikinci test yaz. |
-| **§5** | Biçimlendirici "liste" kipinde biçimsiz dosyada da **çıkış kodu 0** dönebilir (`gofmt -l`); ölçüt çıktının boş olması. |
-| **§6** | "Hata döndü mü" yetmez — **hangi hata**: zaman aşımı da hatadır. Türüyle/koduyla karşılaştır. |
-| **§7** | Bir yapılandırmayı **bildirmek, uygulandığı anlamına gelmez** (göç dosyası, CI yaml, deploy yaml). Etkisini çalışan sistemden oku. |
-| **§8** | Uygulanmamış bir **kırma denemesi** testi suçsuz yere "ölçmüyor" ilan ettirir: yama tutmadıysa sonuç "yeşil" değil **KOŞULMADI**'dır. Derleme hatasıyla kırmızı olan deneme de sahtedir. Atlanan test (`skip`) BAŞARI görünür — `passed` mı `skipped` mi oku. |
-| **§9** | **Çift tırnak içindeki ters tırnak kabukta KOMUT olarak çalışır** — `echo "… \`make test\` …"` gerçekten süiti başlatır, commit mesajı metni yer. |
-| **§10** | *"Bu satır ŞART"* yorumu **ölçülmediyse büyük ihtimalle yanlıştır.** Savunmayı tek başına kaldır ve koştur; yorumu ölçümle yaz. |
-| **§11** | Bir **aracın** yanıtı, ölçtüğün şeyin yanıtı sanılır (vekil ping'e kendisi cevap verir). Yanıtın kimden geldiğini işaretle (başlık, iz kimliği). |
-| **§12** | **Yedek zincir kusuru maskeler**: alanın dolu olması asıl yolun çalıştığını kanıtlamaz. Bir sütunun DOLU olması da doğru olduğunu göstermez — *içinde ne var* diye sor. |
-| **§13** | Yeşil bir süit **ölçülmemiş bir sıra/zaman varsayımı** taşıyabilir; yeni iş onu bozmaz, açığa çıkarır. Kırmızının üç şıkkı: yarış · mantık · **zaman aşımı**. |
-| **§14** | Ölçümden önce **ortamı say**: dolu disk, eşzamanlı ağır koşum, iki test aynı simülatörde/DB'de — hepsi kodu suçlayan sahte kırmızı üretir. `df -h` ilk komut. |
-| **§15** | `kill $!` alt kabuğu öldürür, içindeki komutu değil (öksüz süreç sonraki koşuyu bozar) — alt kabukta `exec`. `pkill -f <desen>` kendi kabuğunu da öldürür. |
-| **§16** | macOS'ta `timeout` yok; `sh` macOS'ta bash, Ubuntu'da dash; BSD `sed` `\|`'yi tanımaz, düzenli ifadeli `grep` sabit metni **bulamayabilir** (`-F` kullan); zsh `$K …`'yı bölmez, tek tırnakta `\u00a0`'ı karaktere çevirir — hiçbiri hata vermez. |
-| **§17** | Log'da "yok" sonucu çoğu zaman **soru** hatasıdır (yanlış etiket, varsayılan zaman penceresi, yanlış log biçimi). Önce log'a yazıldığı bilinen bir kontrol grubunu ara. |
-| **§18** | SwiftUI (ve benzeri bildirimsel UI): değiştirici **boş bir kapsayıcıya** (`Group { if … }`) bağlanırsa koşmaz — `.task`/`onAppear` hiç çalışmaz, hata yoktur. Gerçek kapsayıcı (`ZStack`) kullan. |
-| **§19** | PHPUnit `<server>` gerçek ortam değişkenine **yenilir** (Symfony önce `$_ENV`) — `<env force>` kullan. |
-| **§20** | Renkli çıktıda `grep '^OK'` satırı **sessizce kaybeder**; önce ANSI kodunu ayıkla. |
-| **§21** | CI sonucunu SHA ile ararken push **olmadıysa eski koşu** gelir; önce "uygulandı mı" + "SHA yeni mi". |
-| **§22** | `docker compose run -d` **0 döner**, içindeki süreç çoktan ölmüş olabilir — `docker ps` + "hazır" satırını bekle. |
-| **§23** | `curl -s` + `[...]`'lı adres **sessizce boş** döner (glob) — `curl -g`. |
-| **§24** | `MAILER_DSN=null://null` e-postayı **sessizce atar**, uç yine 202 — geliştirmede Mailpit. |
-| **§25** | TypeScript **nesne yaymada (`...`) fazla alanı denetlemez** — yanlış alan adı tip denetiminden geçer; gövdeyi üretilen tipten kur. |
-| **§26** | Şifre özetindeki **`$` tırnaksız ortam dosyasında sessizce bozulur** (dotenv ve compose) — giriş yalnız "yanlış şifre" der; tek tırnak. |
-| **§27** | Astro bileşen **stili yuvadan (slot) gelen öğeye uygulanmaz** — derleme yeşil, düğme stilsiz; `is:global` ya da stili yuvayı dolduran dosyaya. _(Astro dönemi; Astro 2026-11-03 kaldırıldı)_ |
-| **§28** | Postgres **JSONB nesne anahtarlarının sırasını değiştirir** — sıraya bakan karşılaştırma geri okunan geçerli veriyi reddeder; anahtarı küme olarak karşılaştır. |
-| **§29** | Twig'e **`app` adlı değişken geçmek global `app`'i ezer** — üretimde flaşlar sessizce kaybolur (testte 500); başka ad. |
-| **§30** | **Cache-Control'süz statik dosya** tarayıcıda eski hâliyle çalışır (dağıtımdan sonra da) — adrese içerik özeti. |
-| **§31** | PHP **`upload_max_filesize` (2M)** isteği uygulamadan önce keser — kodda yazan büyük sınıra hiç ulaşılmaz; PHP sınırını ölç ve ayarla. |
-| **§32** | Vitest CSS içe aktarmasını (**`?raw` dahil**) **boş dizgeye** çevirir — CSS'te "yok" diyen test hep yeşil; `test.css.include`. |
-| **§33** | Testing Library'de **metnin görünmesi `useEffect`'in koştuğunu garanti etmez** — effect'e bağlı iddia aralıklı kırmızı, olumsuz iddia yalancı yeşil; `waitFor`. |
-| **§34** | **Gizli sekmede animasyon zaman çizelgesi durur** — opaklık 0'da "takılı" görünür, FCP/LCP yok; önce `visibilityState` + `document.timeline.currentTime` oku. |
-| **§35** | **Betikle doldurulan alanın DOM değeri uygulamanın durumu değildir** — olay görünmeyen kopyaya gitmiş olabilir; önce uygulamanın kendi göstergesini oku. |
-| **§36** | **CORS listesine eklenmeyen yeni uç tarayıcıda sessizce düşer** (durum 0; huni hatayı yutar) — sunucu ve happy-dom testleri görmez; önce `OPTIONS`+`Origin` testi, kökenle birlikte **izinli yöntemi** de ölç (yol başka desene uyabilir). |
-| **§37** | **iCloud'daki masaüstünde** üretilen dizinler (`var/cache`…) " 2" çakışma kopyası alır — `cache:clear` kod değişmeden kırmızı; önce `find . -name "* 2"`. |
-| **§38** | **Docker'daki Vite sunucusu macOS'taki dosya değişikliğini görmeyebilir** — tarayıcı eski stili hatasız çizer; önce sunulan dosyayı `curl` ile oku, eskiyse kabı yeniden başlat. |
-| **§39** | Testing Library **metin sorgusu `hidden` öğeyi de bulur** — "adım görünüyor" testi yalancı yeşil; görünürlüğü ayrıca ölç (`closest("[hidden]")`). |
-| **§40** | **Boyamadan sonra (`useEffect`) yazılan tema + CSS geçişi** ilk görünümü ara renkte çizer — jsdom görmez; `useLayoutEffect`, ölçüm gerçek tarayıcıda. |
-| **§41** | **Postgres sıralaması (en_US) JS `sort()` ile aynı değil** — iki taraf aynı listeyi farklı sırada üretir, ikisi de yeşil; `COLLATE "C"` + ortak örnekli eşlik testi. |
-| **§42** | **Puck yuvadaki blok değişince üst bileşenin `resolveData`'sı koşmaz** — birim testi yeşil, düzenleyicide etkisiz; kural bekçide, ölçüm tarayıcıda. |
-| **§43** | **Puck kabuk sayfasının stilini önizleme çerçevesine kopyalar; tembel düzenleyici CSS'i de çıkınca sayfada kalır** — panel ↔ huni aynı CSS değişken adları birbirini ezer, testler yeşil; yalıtım iki yönlü (`media="not all"`), ölçüm tarayıcıda gezinme sırasıyla. |
-| **§44** | **happy-dom `step="0.01"`+`min`'li sayı alanında geçerli tutarı reddeder, form sessizce gönderilmez** — "istek gitmez" testi yalancı yeşil; ondalık sınırı sunucuda, alanda `step="any"`. |
-| **§45** | **Çatı değişince bağlama kökü (`<div id>`) flex zincirini koparır** — telefonda yapışık düğme içeriğin altında kalır, hata yok; kök `display: contents`, ölçüm gerçek tarayıcıda. |
-| **§46** | **`display` veren yazar kuralı `[hidden]`'ı ezer** — gizli öğe görünür, özniteliğe bakan test yeşil; yanına `[hidden] { display: none }`, ölçüm çizimde. |
-| **§47** | **Testin sahtesi denetlenen kodla aynı `memory_limit`'i paylaşır** — yerelde yeşil, CI'da bellekten ölür; sahte veriyi en küçük ölçen boyda tut, `Memory:` satırını oku. |
-| **§48** | **Satır içi YAML'da tırnaksız virgül JS tip üreticisinde metni sessizce keser** (EXIT=0), PHP ayrıştırıcısı reddeder — virgüllü metni çift tırnağa al. |
-| **§49** | **Tek tırnaklı satır içi betikte (`python3 -c '…'`) yorumdaki kesme işareti tırnağı kapatır** — tek sayıda: betik hiç çalışmaz; çift sayıda: `bash -n` geçer, kod sessizce bölünür; gömülü bloğu kendi diliyle derle. |
-| **§50** | **Para birimi verilmeyen çok para birimli Stripe fiyatı ödemede kendiliğinden yerelleşir** — paywall €, ödeme TRY; paywall'daki birimi `currency` ile hep zorla, `+location_XX` test e-postasıyla ölç. |
-| **§51** | **Panele eklenen sayfanın sunucu rotası yoksa menüden açılır, doğrudan adres / yenileme 404** — bellek yönlendiricili test yeşil; doğrudan adresi ölçen test yaz. |
-| **§52** | **Stripe kartlı denemeyi `payment_status = paid` sayar, tutar 0** — "ödedi" raporu ve reklam olayı denemeyi ödemiş gösterir; "ödedi"yi `amount_total > 0`'dan say, davranışı gerçek test oturumundan oku. |
-| **§53** | **`id >` imleçli olay akışı bitmemiş işlemin küçük id'li olayını kalıcı atlar** (id eklemede, görünürlük commit'te) — sayfalama testi yeşil; `islem < xmin` bekçisi TEK BAŞINA yetmez: imleç ve sıra `(islem, id)`. |
-| **§54** | **Yeni Stripe API'de faturada `subscription` ve `metadata.app` yok** (`parent.subscription_details` altında); dönem sonu kalemde, fatura ↔ ödeme bağı `InvoicePayment`'ta — webhook 200, bağ sessizce kurulmaz; alanı gerçek nesneden oku, uç nokta API sürümü hesapla aynı. |
-| **§55** | **`x IN (…)` NULL'da NULL döner — boolean ifade `=` ile eşleşme anahtarı olunca satır sessizce düşer** (organik gelir boş, sayımlar doğru); `IS NOT DISTINCT FROM` / tek `GROUP BY`, test verisine NULL kolu. |
-| **§56** | **PHP 8.4 `round()` ön yuvarlamaz — `(float)"1.005" * 100` → 100** (1 kuruş eksik, 2 basamakta görünmez); dış sistemin ondalık metnini metin olarak çevir; savunmayı kaldırmadan testin o yoldan geçtiğini doğrula. |
+- **Kabuk ve ölçüm:** §1 `| tail` çıkış kodunu yutar · §2 `grep -i` ile ı/İ · §5 biçimlendiricinin liste kipi 0 döner · §8 yama tutmadıysa KOŞULMADI, skip geçmiş sayılmaz · §9 çift tırnak içindeki ters tırnak çalışır · §14 önce ortamı say (`df -h`) · §15 `kill $!` / `pkill -f` · §16 macOS'ta timeout / sed / grep / zsh farkları · §20 ANSI'li çıktıda `grep '^OK'` · §21 CI'da eski SHA · §22 `compose run -d` 0 döner · §23 `curl -g` · §49 `python3 -c '…'` içinde kesme işareti
+- **Test yöntemi:** §3 bekleneni bağımsız hesapla · §4 DB kısıtını ayrı ölç · §6 "hangi hata" · §10 "ŞART" yorumunu ölç · §12 yedek zincir ve dolu sütun · §13 gizli sıra/zaman varsayımı · §47 sahte de aynı memory_limit'i paylaşır
+- **Sistem ve araç:** §7 bildirmek uygulamak değil · §11 yanıt kimden geldi · §17 log'da "yok" = sorgu hatası · §19 PHPUnit `<env force>` · §24 `null://null` postayı atar · §26 ortam dosyasında `$` · §29 Twig'de `app` adı · §31 `upload_max_filesize` · §37 iCloud " 2" kopyaları · §38 Docker'daki Vite dosya değişikliğini görmez · §48 YAML'da tırnaksız virgül
+- **Ön yüz:** §18 SwiftUI boş kapsayıcı · §25 TS nesne yaymada fazla alan · §27 Astro slot stili (eski) · §30 Cache-Control · §32 Vitest CSS boş · §33 `waitFor` · §34 gizli sekmede animasyon · §35 betikle doldurulan alan · §36 CORS: köken + yöntem · §39 `hidden` öğe metin sorgusunda · §40 tema `useLayoutEffect` · §42 Puck `resolveData` · §43 Puck stil sızıntısı · §44 happy-dom `step` · §45 bağlama kökü flex · §46 `display` `[hidden]`'ı ezer · §51 panel sayfasına sunucu rotası
+- **Veri ve para:** §28 JSONB anahtar sırası · §41 PG sıralama ≠ JS (`COLLATE "C"`) · §50 Stripe fiyatında `currency`'yi zorla · §52 kartlı deneme `paid`, tutar 0 · §53 olay imleci `(islem, id)` · §54 yeni Stripe API'de fatura bağları `parent` / kalem / `InvoicePayment` · §55 `IN` NULL'da NULL · §56 PHP 8.4 `round()` ön yuvarlamaz
 
 ---
 
@@ -181,7 +121,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | [PLAN.md](PLAN.md) | **Aktif sprint**: şu anki 3-4 görev, backlog. Bitmiş iş `docs/decisions/`e taşınır |
 | [docs/pre-setup.md](docs/pre-setup.md) | **Kararlar ve NEDEN'leri** + reddedilen alternatifler + risk tablosu |
 | [docs/decisions/acik-uclar.md](docs/decisions/acik-uclar.md) | Karara dönüşmemiş gözlemler (Ç-no) |
-| [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzakların tam metni, ölçümü ve doğrusu |
+| [docs/tuzaklar.md](docs/tuzaklar.md) | §4'teki tuzak anahtarlarının tam metni, ölçümü ve doğrusu |
 | [docs/adresler.md](docs/adresler.md) | Panel sayfaları, huni sayfaları, portlar ve API uçları (yerel) |
 | [docs/backend-mimarisi.md](docs/backend-mimarisi.md) | **Backend mimarisi & veri akışları**: teknoloji rolleri, şema felsefesi, uçtan uca akışlar |
 | [docs/teknik-mimari-notu.md](docs/teknik-mimari-notu.md) | **Sıralı teknik mimari notu**: 8 sıralı adım, dosya yolları, veri mekanizmaları, tuzaklar |
@@ -199,7 +139,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | Yazdığın şey | Gideceği yer |
 |---|---|
 | Her oturumda geçerli **değişmez** kural | bu dosya (§2), **tek madde** |
-| Hata vermeden yanlış sonuç üreten şey | `docs/tuzaklar.md` + bu dosyada §4'e **tek satır** |
+| Hata vermeden yanlış sonuç üreten şey | `docs/tuzaklar.md` + bu dosyada §4'e **tek anahtar** |
 | Karar + reddedilen alternatif + sebep | `docs/pre-setup.md` |
 | Blok kaydı (ölçüm, kırma denemesi, CI koşumu) | `docs/decisions/<konu>.md` |
 | Şu an yapılan / sıradaki iş | `PLAN.md` §1-§2 |

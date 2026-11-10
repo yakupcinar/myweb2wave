@@ -25,7 +25,7 @@ blok bitmemiştir. Yerlerin tablosu: CLAUDE.md §6.
 metni PLAN'da durmaz, 1. adımdaki dosyaya bağlantı verilir.
 
 **3 · Yeni tuzak var mı?** Ölçüt: *hata vermeden yanlış sonuç* üretti mi?
-Ürettiyse tam metin `docs/tuzaklar.md`'ye, **tek satırlık iddia** CLAUDE.md
+Ürettiyse tam metin `docs/tuzaklar.md`'ye, **tek anahtar** (birkaç sözcük) CLAUDE.md
 §4'e — ikisi birden (kural 7).
 
 Tuzak **belirtiyle** yazılır ("500 dönüyor" değil, "sayfa 200 dönüyor ama
