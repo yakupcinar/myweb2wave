@@ -281,3 +281,56 @@ başlığı yapışkan değil (`position: static`).
   edilir, kit büyük bağımlılık ve yeniden yazım getirir.
 - Taslak: Design tuvali (claude.ai artifact, özel) — Rapor, Aboneler, Uygulama ayarları; örnek veri. Kullanıcı
   yorumundan sonra bloklara bölünecek.
+
+## Ek 2026-11-11 — başlık başlık ihtiyaç değerlendirmesi ve menü önerisi
+
+**Soru (kullanıcı):** web2wave'in başlıklarına tek tek bak; bizde işe yarar mı, biz bunları hangi başlıklarla
+sunalım?
+
+**Kaynak:**
+- Menü 2026-11-10 tarayıcı gezintisinden.
+- Görülmemiş başlıklar `docs.web2wave.com` belgelerinden (2026-11-11): `chargebackhit-integration`,
+  `get_reports-chart-builder-catalog`, `project-members`, `ltv-predictions`, `support-desk`.
+- Chrome eklentisi bağlı değildi; bu başlıkların paneli açılmadı.
+
+| web2wave başlığı | Ne yapıyor | Bizde | Karar önerisi → bizim başlık |
+|---|---|---|---|
+| MCP | AI istemcileri için sunucu | Var (A5a) | Entegrasyonlar → Claude bağlantısı |
+| Analytics | KPI kartları, önceki dönem, süzgeçler, sekmeler | Var (P7b) | **Rapor**; süzgeçler R1 |
+| Chart builder | Metrik × boyut seçip grafik | Yok | Gerek yok: tek şirket, serbest soru Claude MCP ile; Rapor'un sabit bölümleri yeter |
+| Table Report | UTM tablosu (pLTV/pROAS) | Kaynaklar tablosu | Rapor → Kaynaklar |
+| A/B Tests | Yönlendirme + içerik deneyi | Var (M4) | **Deneyler** |
+| Quizzes | Huni listesi; yasal sayfa ve portal da birer "quiz" | Var | **Huniler** |
+| Paywalls | Quiz'den ayrı varlık | Hunide son adım | Ayrı başlık gereksiz; Huniler içinde |
+| Email Sequences | Tetik / gecikme / durdurma, AI üretim | Kodda (A22) | **E-postalar** (E1: şablon + dizi panelden) |
+| User Visits | Ziyaret listesi, kullanıcı kartı | Rapor → Ziyaretler | Rapor içinde kalır; kişi kartı Aboneler'de satır ayrıntısı olarak (sonra) |
+| Subscriptions | Liste, iptal, iade, duraklat | Var (P5, M6a) | **Aboneler**; duraklat M6c |
+| Support Desk | Gelen kutusu, kullanıcı kartı, AI taslak, otomatik yanıt, analitik | Yok (M10 planlı) | **Destek** (M10 gelince) |
+| Chargebacks | ChargebackHit ile itiraz panosu (salt okunur, ayrı servis + anahtar) | Yok | Şimdi gerek yok: dış ücretli servis, düşük hacim; Stripe panosu yeter. Rapor'da itiraz sayısı ihtiyaç olunca |
+| Trends / AI Creatives | Reklam istihbaratı, AI reklam üretimi | Yok | Kapsam dışı (kullanıcı 2026-11-10) |
+| Growth & Marketing, Agency Ad Accounts, Paid Ads Financing | web2wave'in kendi ticari hizmetleri | — | Karşılığı yok; gerek yok |
+| Projects (ayarlar) | Genel, yasal veri, varsayılanlar, 0/8 kurulum listesi | Uygulama (M9) | **Uygulama** + Canlıya geçiş listesi (P7c) |
+| Plans & Prices | Planlar, para birimleri, giriş teklifi | Var (M1) | **Planlar ve fiyatlar** |
+| Pricing | web2wave'in kendi abonelik ücreti | — | Gerek yok |
+| Files | Proje dosyaları, yazı tipleri | Medya kütüphanesi düzenleyicide | Ayrı menü gerekmez |
+| Exports | Ziyaret / abonelik / cevap dosyası (asenkron) | Yok (R2) | Ayrı sayfa değil: ilgili tabloda "CSV indir" |
+| Documentation | Belge sitesi | Depoda rehber | Panelde gerekmez |
+| Ayar sekmesi: Members | 6 rol (Owner, Admin, Analyst, Editor, Project Editor, Support Manager) | Tek yönetici (A23) | Şimdi yok; ikinci kişi gelince |
+| Ayar sekmesi: Ad Accounts / Pixels | Meta hesabı → harcama, piksel | Meta harcaması .env ile (M5d) | Entegrasyonlar → Reklam hesabı (panelden bağlama, Ç121) |
+| Ayar sekmesi: Deeplinks & Billing | Ertelenmiş derin bağlantı, RevenueCat… | KeepChat bağlama + hak (A4) | Entegrasyonlar → Uygulama bağlantısı |
+| Ayar sekmesi: Translations | AI / Crowdin çeviri kopyaları | Yok (M9d) | Huniler içinde dil kopyası (M9d) |
+| Analytics sekmesi: Install Conversion | Ödeme → uygulama kurulumu dönüşümü | Bağlama verisi var | Rapor → Ziyaretten aboneliğe tablosuna "Uygulamaya bağlandı" adımı (öneri) |
+| LTV tahmini | 1–12 ay pLTV, platform verisiyle | Yok | Veri birikince; platform verisi yok (A1) |
+| Answer Insights | Cevaplarda LLM özeti | Claude MCP `cevaplar` aracı | Ayrı özellik gerekmez |
+
+**Menü önerisi (11 → 9 öğe):**
+- **Analiz:** Rapor · Deneyler
+- **Satış:** Huniler · Planlar ve fiyatlar · E-postalar
+- **Müşteriler:** Aboneler · Destek
+- **Ayarlar:** Uygulama · Yasal metinler · Entegrasyonlar
+
+Kaldırılan öğeler:
+- Webhook'lar, API anahtarları ve Ürün bağlamı (AI) → Entegrasyonlar (A25).
+- E-postalar ve Destek, ilgili blok gelince görünür.
+
+Karar bekliyor (Ç132).
