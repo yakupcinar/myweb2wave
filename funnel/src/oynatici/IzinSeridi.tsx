@@ -9,10 +9,15 @@ export default function IzinSeridi({
   onSec,
   bekliyor = false,
   hata,
+  cerez,
+  gizlilik,
 }: {
   onSec: (izin: Izin) => void;
   bekliyor?: boolean;
   hata?: string;
+  /** M9b2: yayındaki çerez bildirimi ve gizlilik politikası (yoksa bağlantı yok). */
+  cerez?: string | undefined;
+  gizlilik?: string | undefined;
 }): ReactNode {
   return (
     <aside className="izin-seridi" aria-label="Reklam ölçümü izni">
@@ -22,6 +27,21 @@ export default function IzinSeridi({
         geldiğin ve abone olursan bu satın alma onlarla paylaşılır. İzin
         vermesen de her şey aynı çalışır.
       </p>
+      {cerez || gizlilik ? (
+        <p className="izin-baglantilari">
+          {cerez ? (
+            <a href={cerez} target="_blank" rel="noopener noreferrer">
+              Çerez ve izleme bildirimi
+            </a>
+          ) : null}
+          {cerez && gizlilik ? " · " : null}
+          {gizlilik ? (
+            <a href={gizlilik} target="_blank" rel="noopener noreferrer">
+              Gizlilik politikası
+            </a>
+          ) : null}
+        </p>
+      ) : null}
       {hata ? <p role="alert">{hata}</p> : null}
       <div className="izin-dugmeleri">
         <button

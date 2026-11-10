@@ -142,6 +142,18 @@ final readonly class YasalMetinler
         return ['baslik' => Taslaklar::BASLIKLAR[$belge][$dil], 'bloklar' => self::ayristir($dolu), 'guncellendi' => new \DateTimeImmutable($r['updated_at'])];
     }
 
+    /**
+     * Yayında (kaydedilmiş) belgeler, Taslaklar sırasıyla.
+     *
+     * @return list<string>
+     */
+    public function yayindakiler(string $app, string $dil): array
+    {
+        $kayitli = $this->db->fetchFirstColumn('SELECT belge FROM yasal_metinler WHERE app = ? AND dil = ?', [$app, $dil]);
+
+        return array_values(array_filter(Taslaklar::BELGELER, static fn (string $b): bool => \in_array($b, $kayitli, true)));
+    }
+
     /** @return array<string, string> */
     private function degerler(string $app): array
     {

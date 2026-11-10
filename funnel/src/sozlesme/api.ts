@@ -1173,6 +1173,17 @@ export interface components {
             surum: number | null;
             tanim: components["schemas"]["HuniTanimi"];
             deneyler?: components["schemas"]["DeneyAtamasi"];
+            /** @description M9b2: yalnız yayındaki (kaydedilmiş) yasal sayfaların adresi; paywall adımında adres yoksa ve izin şeridinde kullanılır */
+            yasal?: {
+                /** Format: uri */
+                sartlar?: string;
+                /** Format: uri */
+                gizlilik?: string;
+                /** Format: uri */
+                kvkk?: string;
+                /** Format: uri */
+                cerez?: string;
+            };
             /** @description M3c: ödeme sonrası upsell ürünü → ad + Stripe tutarı; okunamazsa yok (upsell gösterilmez) */
             ekUrunler?: {
                 [key: string]: {

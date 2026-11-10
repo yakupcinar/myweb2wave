@@ -2336,3 +2336,86 @@ describe("D13 · D14 — ödeme", () => {
     expect(dugme.disabled).toBe(false);
   });
 });
+
+describe("M9b2 — yayındaki yasal sayfalar", () => {
+  const YASAL = {
+    sartlar: "http://cekirdek.test/yasal/keepchat/sartlar/tr",
+    gizlilik: "http://cekirdek.test/yasal/keepchat/gizlilik/tr",
+    cerez: "http://cekirdek.test/yasal/keepchat/cerez/tr",
+  };
+  const paywall = () =>
+    document.querySelector<HTMLElement>('[data-adim="paywall"]')!;
+  const adresler = (kap: HTMLElement): Record<string, string | null> =>
+    Object.fromEntries(
+      [...kap.querySelectorAll("a")].map((a) => [
+        a.textContent ?? "",
+        a.getAttribute("href"),
+      ]),
+    );
+  const paywallaGit = async () => {
+    kur();
+    await yuklendi();
+    fireEvent.click(screen.getByText("Başla"));
+    fireEvent.click(screen.getByText("Ailemle"));
+  };
+  const ile = (adim: Record<string, unknown>, yasal?: object): Yanit => {
+    const temel = yayin();
+    return {
+      durum: 200,
+      govde: {
+        ...temel,
+        ...(yasal ? { yasal } : {}),
+        tanim: {
+          ...temel.tanim,
+          adimlar: temel.tanim.adimlar.map((a) =>
+            a.tur === "paywall" ? { ...a, ...adim } : a,
+          ),
+        },
+      },
+    };
+  };
+
+  it("paywall adımında adres yoksa uygulamanın yasal sayfası; adımın kendi adresi önce gelir", async () => {
+    tanim = ile(
+      { gizlilik: "https://ornek.com/gizlilik", sartOnayi: true },
+      YASAL,
+    );
+    await paywallaGit();
+    const bag = adresler(paywall());
+    expect(bag["Kullanım şartları"]).toBe(YASAL.sartlar);
+    expect(bag["Gizlilik politikası"]).toBe("https://ornek.com/gizlilik");
+    // Şart onayı kutusu da aynı adrese bağlanır.
+    expect(paywall().querySelector(".sart-onayi a")?.getAttribute("href")).toBe(
+      YASAL.sartlar,
+    );
+  });
+
+  it("yayında yasal sayfa yoksa bağlantı uydurulmaz", async () => {
+    tanim = ile({});
+    await paywallaGit();
+    expect(adresler(paywall())).toEqual({});
+  });
+
+  it("izin şeridi çerez bildirimine ve gizliliğe bağlanır; yoksa bağlantı yok", async () => {
+    tanim = ile({}, YASAL);
+    kur();
+    await yuklendi();
+    const serit = screen.getByRole("complementary", {
+      name: "Reklam ölçümü izni",
+    });
+    expect(adresler(serit)).toEqual({
+      "Çerez ve izleme bildirimi": YASAL.cerez,
+      "Gizlilik politikası": YASAL.gizlilik,
+    });
+    cleanup();
+
+    tanim = ile({});
+    kur();
+    await yuklendi();
+    expect(
+      adresler(
+        screen.getByRole("complementary", { name: "Reklam ölçümü izni" }),
+      ),
+    ).toEqual({});
+  });
+});

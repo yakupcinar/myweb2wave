@@ -233,8 +233,12 @@ yazarken bunu okur; boş alan gönderilmez.
 - Herkese açık sayfa: `GET /yasal/{app}/{belge}/{dil}` (Twig, dış betik yok). Yer tutucular (`{{unvan}}` …) çizilirken
   dolar; boş değer "—" görünür. HTML yorumlanmaz.
 
-**Henüz ölçülmeyen:** hukuk görüşü, huninin bu sayfalara bağlanması (M9b2), sayfanın tarayıcıda denenmesi. Kayıt:
-`m9b1-yasal-metinler.md`.
+- **Huniye bağlantı (M9b2):** `GET /huni/{app}` (ve önizleme) yalnız yayındaki sayfaların adresini `yasal` alanında
+  verir; dil şimdilik huninin dili `tr`. Paywall adımında şartlar / gizlilik adresi yoksa bu adres kullanılır (adımın
+  kendisi önce gelir); izin şeridi çerez bildirimine ve gizliliğe bağlanır.
+
+**Henüz ölçülmeyen:** hukuk görüşü, sayfaların ve bağlantıların tarayıcıda denenmesi, dile göre seçim (M9d). Kayıtlar:
+`m9b1-yasal-metinler.md`, `m9b2-yasal-baglantilar.md`.
 
 ---
 

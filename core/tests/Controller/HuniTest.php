@@ -29,11 +29,38 @@ final class HuniTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, medya, yasal_metinler');
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
         $this->huniler = $huniler;
         self::assertSame([], $this->huniler->yeniHuni('keepchat', 'genel', null));
+    }
+
+    /**
+     * M9b2 (A23): yanıtta yalnız YAYINDAKİ (kaydedilmiş) yasal sayfalar, huninin
+     * dilinde (tr); hiç yoksa alan yok. Önizleme de aynısını alır.
+     */
+    public function testYayindakiYasalSayfalarinAdresi(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', self::tanim('Genel')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'genel'));
+        $this->client->request('GET', '/huni/keepchat');
+        self::assertResponseIsSuccessful();
+        self::assertArrayNotHasKey('yasal', $this->jsonYanit(), 'yayında belge yokken alan yok');
+
+        $this->db->executeStatement("INSERT INTO yasal_metinler (app, belge, dil, metin) VALUES
+            ('keepchat', 'sartlar', 'tr', 'x'), ('keepchat', 'cerez', 'tr', 'x'), ('keepchat', 'gizlilik', 'en', 'x')");
+        $this->client->request('GET', '/huni/keepchat');
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        self::assertSame([
+            'sartlar' => 'http://localhost/yasal/keepchat/sartlar/tr',
+            'cerez' => 'http://localhost/yasal/keepchat/cerez/tr',
+        ], $this->jsonYanit()['yasal'] ?? null);
+
+        $anahtar = $this->huniler->onizlemeAnahtari('keepchat', 'genel', time());
+        $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'genel', 'anahtar' => $anahtar]);
+        self::assertResponseIsSuccessful();
+        self::assertSame(['sartlar', 'cerez'], array_keys((array) ($this->jsonYanit()['yasal'] ?? [])));
     }
 
     /** Ç41: ziyaretsiz huni iz bırakmadan silinir (sürümleri ve kuralları da). */
@@ -980,5 +1007,14 @@ final class HuniTest extends WebTestCase
         }
 
         return \is_array($j) ? $j : [];
+    }
+
+    /** @return array<string, mixed> */
+    private function jsonYanit(): array
+    {
+        /** @var array<string, mixed> $g */
+        $g = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $g;
     }
 }

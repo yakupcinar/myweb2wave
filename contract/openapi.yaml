@@ -1738,6 +1738,15 @@ components:
         surum: { type: [integer, "null"], description: Yayınlanmış sürüm; taslakta null }
         tanim: { $ref: "#/components/schemas/HuniTanimi" }
         deneyler: { $ref: "#/components/schemas/DeneyAtamasi" }
+        yasal:
+          description: "M9b2: yalnız yayındaki (kaydedilmiş) yasal sayfaların adresi; paywall adımında adres yoksa ve izin şeridinde kullanılır"
+          type: object
+          additionalProperties: false
+          properties:
+            sartlar: { type: string, format: uri }
+            gizlilik: { type: string, format: uri }
+            kvkk: { type: string, format: uri }
+            cerez: { type: string, format: uri }
         ekUrunler:
           description: "M3c: ödeme sonrası upsell ürünü → ad + Stripe tutarı; okunamazsa yok (upsell gösterilmez)"
           type: object

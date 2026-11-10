@@ -231,7 +231,7 @@
     - [x] M7c1 · 2026-11-09, `docs/decisions/m7c1-okuma-araclari.md`: MCP'de 6 salt-okur rapor aracı (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları), Rapor'a uygulama süzgeci; `GET /apps/{app}/olaylar` (uygulama anahtarı, imleç + devam). Kırma 12/12 (biri testi güçlendirdi); gerçek MCP çağrısı dev'de
     - [x] M7c2 · 2026-11-10, `docs/decisions/m7c2-yazma-araclari.md`: MCP'de abonelik (listele, iptal planla / geri al, son faturayı iade) ve deney (kaydet, durum) araçları — yalnız "yönetim" izinli anahtarda, yıkıcılar işaretli; abonelik uygulamanınsa. Kırma 12/12 (biri testi güçlendirdi)
   - [ ] M8 · e-posta (A22: Postmark, karma izin) — [x] M8a1 sağlayıcı + bastırma (`m8a1-postmark.md`) · [x] M8a2 aktivasyon dizisi (`m8a2-aktivasyon.md`) · [x] M8b terk edilen ödeme (`m8b-kurtarma.md`)
-  - [ ] M9 · proje ayarları (A23; roller şimdilik yok) — [x] M9a uygulama kimliği (`m9a-uygulama-kimligi.md`) · [x] M9b1 yasal veriler + metinler (`m9b1-yasal-metinler.md`) · [ ] M9b2 huni yasal sayfalara bağlanır · [ ] M9c varsayılan tema/paywall · [ ] M9d dil/ülke yönlendirmesi
+  - [ ] M9 · proje ayarları (A23; roller şimdilik yok) — [x] M9a uygulama kimliği (`m9a-uygulama-kimligi.md`) · [x] M9b1 yasal veriler + metinler (`m9b1-yasal-metinler.md`) · [x] M9b2 huni yasal sayfalara bağlanır (`m9b2-yasal-baglantilar.md`) · [ ] M9c varsayılan tema/paywall · [ ] M9d dil/ülke yönlendirmesi
   - [ ] web2wave farkından (2026-11-10, `web2wave-platform-yapisi.md` § Ek 2026-11-10): R1 rapor süzgeçleri + önceki dönem · E1 e-posta şablonları panelde (tr/en) · M6c duraklat / sürdür · R2 CSV dışa aktarım
   - [ ] M10 destek kutusu (Postmark gelen e-posta) · M11 çeviri (isteğe bağlı)
 

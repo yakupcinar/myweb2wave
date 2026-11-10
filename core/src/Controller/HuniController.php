@@ -10,9 +10,11 @@ use App\Billing\UlkeBulucu;
 use App\Huni\Deneyler;
 use App\Huni\Huniler;
 use App\Huni\Tanim;
+use App\Yasal\YasalMetinler;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Huni sayfası tanımı buradan okur: hangi huni olacağını kurallar seçer
@@ -21,6 +23,9 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final readonly class HuniController
 {
+    /** Huni metinlerinin dili (sayfa lang="tr"); yasal adresler bu dilde. */
+    private const DIL = 'tr';
+
     /** Yayın en geç bu kadar sonra görünür (tarayıcı/CDN önbelleği). */
     private const ONBELLEK_SN = 60;
 
@@ -30,6 +35,8 @@ final readonly class HuniController
         private UlkeBulucu $ulkeler,
         private \App\Billing\EkUrunler $ekUrunler,
         private Deneyler $deneyler,
+        private YasalMetinler $yasal,
+        private UrlGeneratorInterface $adresler,
     ) {
     }
 
@@ -66,13 +73,30 @@ final readonly class HuniController
             }
             $atama += $this->deneyler->icerik($app, $huni, $tohum);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin + ([] === $atama ? [] : ['deneyler' => $atama]) + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']));
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + ([] === $atama ? [] : ['deneyler' => $atama]) + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']) + $this->yasalAlani($app));
         // M1c: fiyat ziyaretçinin ülkesine (IP) göre — ortak önbellek (CDN) bir
         // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
         $yanit->setPrivate();
         $yanit->setMaxAge(self::ONBELLEK_SN);
 
         return $yanit;
+    }
+
+    /**
+     * M9b2 (A23): yalnız YAYINDAKİ (kaydedilmiş) yasal sayfaların adresi — paywall
+     * adımında adres yoksa ve izin şeridinde kullanılır. Dil şimdilik huninin
+     * dili (tr); dile göre seçim M9d / M11.
+     *
+     * @return array{yasal?: non-empty-array<string, string>}
+     */
+    private function yasalAlani(string $app): array
+    {
+        $adresler = [];
+        foreach ($this->yasal->yayindakiler($app, self::DIL) as $belge) {
+            $adresler[$belge] = $this->adresler->generate('yasal_sayfa', ['app' => $app, 'belge' => $belge, 'dil' => self::DIL], UrlGeneratorInterface::ABSOLUTE_URL);
+        }
+
+        return [] === $adresler ? [] : ['yasal' => $adresler];
     }
 
     /** @return array{fiyatlar?: non-empty-array<string, array<string, mixed>>} */
@@ -115,7 +139,7 @@ final readonly class HuniController
         if (null === $sonuc) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $sonuc['tanim']));
+        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $sonuc['tanim']) + $this->yasalAlani($app));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

@@ -113,7 +113,7 @@ export default function Huni({ app }: { app: App }): ReactNode {
   useEffect(() => {
     let iptal = false;
     void (window.huniTanimi ?? tanimIstegi(app, KOK)).then((y) => {
-      if (!iptal) setYayin((y as Yayin | undefined) ?? null);
+      if (!iptal) setYayin(y ? yasalAdresleri(y as Yayin) : null);
     });
     return () => {
       iptal = true;
@@ -130,6 +130,32 @@ export default function Huni({ app }: { app: App }): ReactNode {
       </p>
     );
   return <Oynatici app={app} yayin={yayin} onizleme={onizleme} />;
+}
+
+/**
+ * M9b2 (A23): paywall adımında şartlar / gizlilik adresi yoksa uygulamanın
+ * YAYINDAKİ yasal sayfası (çekirdek yalnız kaydedilmiş belgeleri verir).
+ * Adımın kendi adresi her zaman önce gelir.
+ */
+function yasalAdresleri(yayin: Yayin): Yayin {
+  const y = yayin.yasal;
+  if (!y) return yayin;
+  return {
+    ...yayin,
+    tanim: {
+      ...yayin.tanim,
+      adimlar: yayin.tanim.adimlar.map((a) => {
+        if (a.tur !== "paywall") return a;
+        const sartlar = a.sartlar ?? y.sartlar;
+        const gizlilik = a.gizlilik ?? y.gizlilik;
+        return {
+          ...a,
+          ...(sartlar ? { sartlar } : {}),
+          ...(gizlilik ? { gizlilik } : {}),
+        };
+      }),
+    },
+  };
 }
 
 function Oynatici({
@@ -433,6 +459,8 @@ function Oynatici({
             onSec={izinSec}
             bekliyor={izinKaydediliyor}
             hata={izinHatasi}
+            cerez={yayin.yasal?.cerez}
+            gizlilik={yayin.yasal?.gizlilik}
           />
         ) : null}
         {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
