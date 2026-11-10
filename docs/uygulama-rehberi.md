@@ -221,6 +221,7 @@ yazarken bunu okur; boş alan gönderilmez.
 | `app:reklam-donusumleri:gonder` | Başarısız Meta CAPI / TikTok olaylarını yeniden dener | `reklam_donusumleri` |
 | `app:revenuecat:gonder` | Bekleyen RevenueCat aktarımları | `revenuecat_gidenler` |
 | `app:reklam-harcamalari:cek` | Meta harcaması (son 7 gün) | `reklam_harcamalari` |
+| `app:posta:dizi` | Aktivasyon dizisi: ödeyip bağlanmayana hatırlatma (15 dk cron) | `posta_dizisi` |
 | `app:huni-metin-cevaplari-sil` | Süresi dolan serbest yanıtlar ve izinsiz e-postalar | — |
 | `app:ulke-verisi` | DB-IP ülke verisi | — |
 
@@ -231,7 +232,11 @@ Bastırılmış adres atlanır.
 
 - Symfony Mailer. Dev'de Mailpit (`:8025`); testte `null://null` (§24); üretimde Postmark API (A22).
 - İşlem e-postaları (`outbound` akışı): giriş kodu, giriş bağlantısı, portal bağlantısı.
-- Dizi e-postaları (M8a2 aktivasyon, M8b terk edilen ödeme) bu bölüme eklenecek.
+- **Aktivasyon dizisi (M8a2, işlem e-postası, izin gerekmez):** ödeme e-postasından sonra 24. ve 72. saatte, uygulamaya
+  hâlâ bağlanmamış kişiye yeni giriş bağlantısı (+ `MAGAZA_ADRESI_<APP>` doluysa App Store adresi). Durur: bağlandı,
+  abonelik erişim vermiyor, adres bastırılmış. Gecikmiş adımlardan yalnız sonuncusu gider; 7 günden eski ödemeye
+  başlamaz. Kayıt `posta_dizisi` (`m8a2-aktivasyon.md`).
+- Terk edilen ödeme dizisi (M8b) bu bölüme eklenecek.
 - **Postmark pasif alıcıda hata atmaz (§57)**, bastırma listesi bunun için var.
 
 ### 4.4 Tek seferlik / bakım komutları

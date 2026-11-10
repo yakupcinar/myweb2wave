@@ -150,8 +150,13 @@ final readonly class GirisBaglantisi
         }
     }
 
-    /** @return array{uygulama_adresi: string, son_kullanma: string} */
-    private function uret(Connection $db, string $app, string $email, string $oturum): array
+    /**
+     * Yeni tek kullanımlık bağlantı. M8a2 aktivasyon dizisi de her adımda
+     * bununla yeni bağlantı üretir.
+     *
+     * @return array{uygulama_adresi: string, son_kullanma: string}
+     */
+    public function uret(Connection $db, string $app, string $email, string $oturum): array
     {
         $sema = $this->semalar[$app] ?? throw new \LogicException("'{$app}' için URL şeması yapılandırılmamış");
         $jeton = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');

@@ -15,3 +15,6 @@ parameters:
     # açar (<şema>://giris?jeton=…). Uygulama Info.plist'inde aynısı olmalı.
     uygulama_semalari:
         keepchat: keepchat
+    # M8a2: aktivasyon e-postasındaki mağaza adresi (App Store). Boş = yazılmaz.
+    uygulama_magaza_adresleri:
+        keepchat: '%env(default::MAGAZA_ADRESI_KEEPCHAT)%'
