@@ -263,3 +263,15 @@ durum, quiz / paywall, fiyat, LTV, ülke, 5 UTM, sıralama, deney).
 | Yasal sayfalar | quiz/page olarak, şablondan | ayrı sayfa + metin düzenleyici (M9b) | Bizimki daha basit, metin hunideki gibi düzenlenmez |
 | Varsayılanlar | ayarda "Default quiz / paywall / theme" (çalışırken) | "yeni hunilere örnek" (kopya, M9c) + varsayılan huni | Kullanıcı kopya modelini seçti |
 | Kurulum yönlendirmesi | proje ayarları kontrol listesi 0/8 | yok | Canlıya geçişte (Stripe, Postmark, alan adı, cron) işe yarar |
+
+**Apple tarzı için skill / kit değerlendirmesi (2026-11-10):**
+- HIG skill depoları okundu: raintree-technology/apple-hig-skills (MIT, 14 skill), alirezarezvani/claude-skills
+  `apple-hig-expert` (MIT), ebuntario/apple-hig (MIT). Yerel Apple uygulamaları için yazılmışlar (çıktı
+  SwiftUI / UIKit), web panele doğrudan uymuyor. Dışarıdan skill kurmak okunmamış talimat çalıştırmak demek:
+  **kurulmadı**, ilkeler okunup taslağa uygulandı (içerik önce, sistem renkleri, gruplu listeler, eylem odaklı ve
+  tutarlı metin, boş ekranda bir sonraki adım).
+- UI kitleri (@sylonik/macos-ui, smart-coder-labs/apple-design-system, react-mac-ui eskimiş) **reddedildi**: panelde
+  zaten Tailwind + Radix + kendi bileşenlerimiz var; Apple görünümü renk / yazı / köşe / boşluk değişkenleriyle elde
+  edilir, kit büyük bağımlılık ve yeniden yazım getirir.
+- Taslak: Design tuvali (claude.ai artifact, özel) — Rapor, Aboneler, Uygulama ayarları; örnek veri. Kullanıcı
+  yorumundan sonra bloklara bölünecek.
