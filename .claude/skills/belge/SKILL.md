@@ -36,6 +36,9 @@ yeniden dener.
 **4 · Açık uçlar.** "Fark ettim ama karar vermedim" her cümle
 `docs/decisions/acik-uclar.md`'ye bir Ç-no ile.
 
+**4c · Uygulama rehberi.** Blok bir panel sayfasını, uç, tablo ya da arka plan işini değiştirdiyse
+`docs/uygulama-rehberi.md`'de **yalnız o bölümü** güncelle (`grep -n "^### "` ile bul, `sed -n` ile oku).
+
 **4b · Yöntem el kitabı.** Blokta yeni bir yöntem ya da ders çıktıysa ilgili
 `docs/yontem/<bölüm>.md`'ye 1–5 satır, `07-yolculuk.md`'ye bloğun tek
 satırı. Ölçümü kopyalama, kayda bağlantı ver. Bölüm ~150 satırı geçerse böl.

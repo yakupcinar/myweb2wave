@@ -31,6 +31,8 @@ Sol menü sırasıyla:
 | `/panel/kullanicilar` | **Kullanıcılar** | Abonelikler (CRM): durum, maskeli e-posta, kaynak/kampanya, kişi bağlantısı; arama + durum süzgeci | React (P5) |
 | `/panel/huniler/{app}/{ad}` | (Düzenle) | Sürükle-bırak düzenleyici: adımlar, tema/zemin/kart, Kaydet · Önizle · Yayınla · Sürümler, AI sohbeti | React + Puck, panel uygulamasının sayfası (P3) |
 | `/panel/planlar` | **Planlar** | Fiyat kataloğu: plan aç (Stripe'ta ürün + fiyat), fiyatı değiştir (yeni Stripe fiyatı; aboneler eskisinde) | React (M1a) |
+| `/panel/deneyler` | **Deneyler** | Deney taslağı, varyantlar, başlat / durdur, sonuçlar | React (M4a) |
+| `/panel/webhooklar` | **Webhook'lar** | Giden webhook hedefleri: ekle, etkin/pasif, sil, teslim günlüğü | React (M7b) |
 | `/panel/baglam` | **Ürün bağlamı** | Uygulama başına ürün, kategori, kitle, ton, yasaklar (AI bunu okur) | React |
 | `/panel/anahtarlar` | **API anahtarları** | MCP için kişisel anahtar oluştur / iptal et | React |
 | `/panel/cikis` | **Çıkış** | | |

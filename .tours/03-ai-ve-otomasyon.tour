@@ -52,7 +52,7 @@
       "description": "### 📍 5. DURAK: Model ve Maliyet Kıyaslama Motoru (A6)\nYeni modeller çıktığında (Claude 3.7 Sonnet, Opus 4 vb.) hangisinin daha ucuz ve başarılı olduğunu ölçen benchmark komutumuzdur:\n\n`bin/console app:ai-degerlendir --efor=low`\n\n- `config/ai/degerlendirme.json` içindeki brief setlerini alır.\n- Her biri için geçici bir test hunisi açıp Claude'a huni tasarlatır.\n- Başarı oranını, tur sayısını, milisaniye cinsinden süreyi ve mikrodolar ($) maliyetini raporlar.\n\n💻 **AI Değerlendirme Testini Koşturmak İçin:**\n```bash\ndocker compose run --rm -T core vendor/bin/phpunit --filter AiDegerlendirCommandTest\n```"
     },
     {
-      "file": "docs/backend-mimarisi.md",
+      "file": "docs/uygulama-rehberi.md",
       "line": 1,
       "description": "## 🎓 TEBRİKLER! Tüm Turları Tamamladınız!\n\nMyWeb2Wave projesinin 3 ana omurgasını kod seviyesinde baştan sona gezdiniz:\n\n1. ✅ **Temel Mimari:** Sözleşme -> Puck -> PHP Doğrulama -> Preact Oynatıcı.\n2. ✅ **Para & Abonelik:** Paywall -> Stripe Webhook -> Past_Due -> Mobil Hak Doğrulama.\n3. ✅ **AI & Otomasyon:** Claude Tool Use -> Headless Chrome CDP -> MCP Sunucusu.\n\n*İhtiyacınız olan her an bu turları CodeTour menüsünden tekrar başlatabilirsiniz!*"
     }
