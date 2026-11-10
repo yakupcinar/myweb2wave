@@ -7,10 +7,16 @@
 > **Güncelleme kuralı:** bir blok bir sayfayı ya da arka plan işini değiştirirse, o blokta **yalnız o
 > bölüm** güncellenir (`/belge` adım 4c). Adresler ve portlar `adresler.md`'de, tuzaklar `tuzaklar.md`'de.
 >
-> Son tam gözden geçirme: 2026-11-10 (M8a1 sonrası). Önceki mimari notları (`backend-mimarisi.md`,
+> **İki bölüm:** **Kısım I** (§1–§7) sayfa sayfa ne olduğunu anlatır — okumak ve takip etmek için.
+> **Kısım II** (§8–§22) mimari plandır — kod yazarken, yeni bir şey eklerken; bölüm yapısı
+> `architecture-blueprint-generator` skill'inden (github/awesome-copilot, MIT; yalnız yapı alındı).
+>
+> Son tam gözden geçirme: 2026-11-10 (M9b1 sonrası). Önceki mimari notları (`backend-mimarisi.md`,
 > `teknik-mimari-notu.md`) buraya katıldı.
 
 ---
+
+# Kısım I — Sayfa sayfa uygulama
 
 ## 1. Uçtan uca yolculuk
 
@@ -331,3 +337,216 @@ Ayrıntı `acik-uclar.md`. En önemlileri:
 - Cron'lar (4.2).
 - Composer güvenlik güncellemeleri (Ç122).
 - Panel ekranlarının tarayıcıda gözden geçirilmesi.
+
+---
+
+# Kısım II — Mimari plan
+
+> Ayarlar (skill'in değişkenleri): proje türü **PHP Symfony + TypeScript (Preact / React)** · mimari **modüler monolit +
+> olay deposu / giden kutusu** (koddan tespit) · diyagram **Mermaid akış + C4 tarzı** · ayrıntı **Detailed** · kod örneği
+> **yok** (dosyaya bağlantı) · uygulama desenleri, karar kayıtları, genişletilebilirlik **açık**. Bizde karşılığı
+> olmayan bölüm tek satırla "yok" der; dolgu yazılmaz. Ölçüm 2026-11-10.
+
+## 8. Mimari tespit
+
+- **Tek çekirdek (monolit), modüllere bölünmüş:** Symfony 7.4 / PHP 8.4, `core/src/<Modül>`. Mikroservis yok; modüller
+  aynı süreçte, aynı veritabanında.
+- **Üç ön yüz, bir sözleşme:** statik huni (Vite + Preact, `funnel/`), panel (React SPA, `core/panel/`), mobil uygulama
+  (çekirdeğin dışında, yalnız HTTP). Hepsinin tipi `contract/openapi.yaml`'dan üretilir.
+- **Veri erişimi ORM'siz:** Doctrine **DBAL** ile elle yazılmış SQL (`Entity/`, `Repository/` boş; ORM kullanan dosya 0).
+  Kurallar Postgres'te de durur: `CHECK`, tetikleyici, görünüm.
+- **Olaylar:** yalnız ekleme yapılan `olaylar` tablosu, kaynak satırla aynı işlemde yazılır. Dışarıya giden her şey
+  (webhook, reklam dönüşümü, RevenueCat, e-posta dizisi) "tabloya yaz → komutla gönder" giden kutusu desenini izler.
+
+## 9. Genel bakış — ilkeler
+
+| İlke | Nerede görünür |
+|---|---|
+| Sözleşme önce | `contract/openapi.yaml` → üretilen TS tipleri; PHP testleri yanıtı sözleşmeye karşı doğrular (`Sozlesme::yanitiDogrula`) |
+| Doğruluk DB'de de | Uygulama doğrular **ve** DB kısıtı aynı kuralı tutar (§4) |
+| Dış sistem gelişigüzel çalışır | Webhook'lar tekrar edilebilir (tekrar engeli, eski olay yeniyi ezmez), gönderimler yeniden denenir |
+| Kişisel veri en az | Log'a, giden webhook'a, MCP listesine tam e-posta gitmez; IP / tarayıcı bilgisi 48 saatte silinir |
+| Ölçmeden iddia yok | Her karar testle ölçülür ve kırma denemesiyle kanıtlanır (`CLAUDE.md` §2) |
+
+## 10. Görselleştirme
+
+**Bağlam (C4 düzey 1)** — kim neyle konuşur:
+
+```mermaid
+flowchart LR
+    Z([Ziyaretçi]) --> H[Huni<br/>statik, CDN]
+    Y([Yönetici]) --> P[Panel<br/>React]
+    U([Mobil uygulama<br/>sunucusu]) --> C
+    H --> C[Çekirdek<br/>Symfony]
+    P --> C
+    AI([Claude<br/>MCP istemcisi]) --> C
+    C <--> S[(Stripe)]
+    C --> PM[(Postmark)]
+    C --> RC[(RevenueCat)]
+    C --> M[(Meta / TikTok)]
+    C --> W[(Müşterinin<br/>webhook hedefi)]
+    C --> AN[(Anthropic API)]
+    C --- DB[(Postgres)]
+```
+
+**Kaplar (C4 düzey 2)** — `compose.yaml`'daki servisler:
+
+| Kap | Rol | Port (yerel) |
+|---|---|---|
+| `core` | FrankenPHP + Symfony; API, panel kabuğu, yasal ve portal sayfaları | 8081 |
+| `db` | Postgres 18.6 (`app`, testte `app_test`) | 5435 |
+| `funnel` | Vite geliştirme sunucusu (üretimde statik dosya) | 4321 |
+| `panel` | Panel derleme / test | — |
+| `contract` | Sözleşmeden tip üretimi | — |
+| `ekran` | Başsız Chromium (CDP); AI için huni ekran görüntüsü | 9222 (iç) |
+| `mailpit` | Geliştirmede e-posta kutusu | 8025 |
+| `stripe-mock` | Testte sahte Stripe API'si | — |
+| `stripe-cli` | Araç profili (`araclar`): Stripe CLI, gerçek test hesabıyla elle iş | — |
+
+**Para akışı (veri akışı):**
+
+```mermaid
+sequenceDiagram
+    participant H as Huni
+    participant C as Çekirdek
+    participant S as Stripe
+    participant DB as Postgres
+    H->>C: POST /checkout/sessions (plan, ziyaret)
+    C->>S: oturum (1 sa, kurtarma açık, metadata.app)
+    C->>DB: odeme_oturumlari (ziyaret bağı)
+    S-->>C: webhook (imzalı)
+    C->>DB: aynı işlemde: subscriptions + olaylar + giden kutuları
+    C-->>S: 200
+    C->>C: işlemden sonra: RevenueCat, giriş e-postası, reklam dönüşümü
+    Note over C: cron: webhook / dizi / harcama komutları
+```
+
+## 11. Çekirdek bileşenler (modüller)
+
+| Modül | Sorumluluk | Ana sınıflar |
+|---|---|---|
+| `Huni` | Huni tanımı, doğrulama bekçisi, yayın, deneyler, ekran görüntüsü | `Tanim`, `Deneyler`, `Ekran/ChromeEkranCekici` |
+| `Ai` | Huni asistanı (Claude), ürün bağlamı | `HuniAsistani`, `UrunBaglami` |
+| `Atif` | Ziyaret, izin, reklam dönüşümü, harcama | `Ziyaretler`, `DonusumAktarimi`, `MetaHarcamalari` |
+| `Billing` | Stripe eşitleme, abonelik yönetimi, müşteri portalı | `SubscriptionSync`, `AbonelikYonetimi`, `MusteriPortali`, `PortalBaglantisi` |
+| `Kimlik` | Kişi ↔ uygulama kullanıcısı bağı, kod, giriş bağlantısı, hak | `Baglama`, `DogrulamaKodu`, `GirisBaglantisi`, `Hak` |
+| `Posta` | Bastırma listesi, aktivasyon ve kurtarma dizileri | `Bastirma`, `AktivasyonDizisi`, `KurtarmaDizisi` |
+| `Olay` | Olay deposu, giden webhook | `Olaylar`, `GidenWebhook`, `WebhookHedefleri` |
+| `Mcp` | MCP sunucusu, rapor ve yönetim araçları, API anahtarları | `McpSunucusu`, `RaporAraclari`, `YonetimAraclari` |
+| `Panel` | Rapor sorguları, kullanıcı listesi, yönetici girişi | `Rapor`, `Kullanicilar`, `YoneticiSaglayici` |
+| `Uygulama` / `Yasal` | Uygulama kimliği; yasal veriler ve metinler | `UygulamaAyarlari`; `YasalMetinler`, `Taslaklar` |
+| `Medya`, `Ozellik`, `RevenueCat` | Görseller; ziyaret özellikleri; RevenueCat aktarımı | — |
+| `Controller` (28), `Command` (16) | HTTP ve konsol girişleri — iş mantığı modülde | — |
+
+## 12. Katmanlar ve bağımlılıklar
+
+```mermaid
+flowchart TB
+    G["Giriş: Controller · Command · MCP aracı"] --> M["Modül servisleri (readonly sınıflar)"]
+    M --> D["DBAL Connection (elle SQL)"]
+    M --> X["Dış istemciler: Stripe SDK · HttpClient · Mailer"]
+    D --> PG[(Postgres: CHECK · tetikleyici · görünüm)]
+```
+
+- **Kural:** giriş katmanı ince; doğrulama ve iş kuralı servis sınıfında; servis DBAL'a doğrudan yazar.
+- **Ölçülen modül bağımlılıkları** (`use App\…`, 2026-11-10):
+  - Bağımsız: `Olay`, `Uygulama`, `Medya`, `Ozellik`, `RevenueCat`.
+  - Herkes `Olay`'a ve `Uygulama`'ya yaslanır.
+  - **İki döngü var:** `Billing ↔ Atif` ve `Kimlik ↔ Posta` (Ç127). Bugün sorun çıkarmıyor (aynı süreç), ama modülü
+    ayırmak gerekirse ilk kırılacak yerler bunlar.
+
+## 13. Veri mimarisi
+
+Tablo grupları Kısım I §5'te. Desenler:
+- **JSONB belge:** huni tanımı tek belge (`huniler.taslak`, `huni_surumleri`); bekçi `Tanim.php`.
+- **Yalnız ekleme:** `olaylar` (güncelleme tetikleyiciyle reddedilir), imleç `(islem, id)` (§53).
+- **Durum satırı + olay:** kaynak satır (ör. `subscriptions`) son hâli tutar, değişiklik aynı işlemde olaya yazılır.
+- **Giden kutusu:** `webhook_teslimleri`, `reklam_donusumleri`, `revenuecat_gidenler`, `posta_dizisi`. Kayıt önce
+  yazılır, gönderim sonra; başarısız olan yeniden denenir.
+- **Para:** küçük birim tamsayı + para birimi (`tutar_kucuk`, `para_birimi`); ondalık metin metin olarak çevrilir (§56).
+
+## 14. Kesişen konular
+
+| Konu | Uygulama |
+|---|---|
+| Kimlik doğrulama | Panel: tek yönetici, oturum DB'de, CSRF jetonu (`panel-api`). Uygulama sunucusu: `Bearer` uygulama anahtarı. MCP: kişisel anahtar (özet saklanır), yazma araçları yalnız `yonetim` izinli anahtarda. Stripe: imza. Postmark: HTTP Basic |
+| Yetki | Rol yok (A23); uygulama sınırı her sorguda `app` süzgeci |
+| Doğrulama | Sunucuda; aynı kural DB `CHECK`'inde. Panel formları `noValidate` (§44) |
+| Hata yönetimi | Kullanıcı yolu: 4xx + `hatalar` dizisi. Arka plan gönderimi "asla atmaz": log + yeniden deneme |
+| Günlük | PSR-3 `LoggerInterface`; Monolog kurulu değil, Symfony'nin yerleşik günlükçüsü (stderr). Kişisel veri yazılmaz |
+| Yapılandırma | Gizli: `.env.local`. Uygulama listesi: `uygulamalar.yaml`. Panelden değişen: DB (`uygulama_ayarlari`, `planlar`…) |
+| Önbellek | Fiyat önbelleği (`fiyat.onbellegi`); statik varlıklarda içerik özeti (§30) |
+| CORS | Huni kökenine izinli uçlar listesi; köken **ve** yöntem ölçülür (§36) |
+
+## 15. Servis iletişimi
+
+- **İç:** yalnız sınıf çağrısı. Kuyruk sistemi (Messenger) yok; zamanlanmış komutlar.
+- **Gelen:** Stripe ve Postmark webhook'ları, uygulama sunucusu API'si, MCP (Streamable HTTP).
+- **Giden:** Stripe SDK; `HttpClient` (Meta, TikTok, RevenueCat, webhook hedefleri — giden webhook özel ağa çıkamaz);
+  Symfony Mailer → Postmark.
+
+## 16. Teknolojiye özgü desenler
+
+- **Symfony:** öznitelikli rotalar (`#[Route]`), `#[AsCommand]`, `#[AsEventListener]`, `#[Autowire]` ile ortam değişkeni;
+  servisler `final readonly`. PHPStan en üst düzeyde.
+- **Panel (React 19):** TanStack Query (veri), `openapi-fetch` (tipli istemci), React Router, Tailwind, Radix, Puck
+  (düzenleyici), Recharts. Form veri gelince çizilir (yazılanı gelen veri ezmesin).
+- **Huni (Preact):** bağımlılık az; JS bütçesi `bin/kontrol`'de ölçülür. Durum bellekte; tarayıcıda yalnız izin
+  tercihi ve sekmelik ziyaret kimliği.
+
+## 17. Uygulama desenleri
+
+| Desen | Örnek | Nasıl |
+|---|---|---|
+| Giden kutusu + komut | `app:webhook:gonder`, `app:posta:dizi` | Aday sorgusu → işlem içinde "kayıt önce" (`ON CONFLICT DO NOTHING`) → gönder; düşerse işlem geri alınır |
+| Zamanı gelen son adım | Aktivasyon, kurtarma | Adımlar azalan sırada; `adim >=` kaydı olan atlanır |
+| Tekrar edilebilir webhook | `SubscriptionSync` | `processed_webhook_events` + `status_event_created` |
+| Kaydedilmeden yayında değil | Yasal metinler, huni yayını | Taslak ayrı; yayın açık eylem |
+| Panel uç kalıbı | `PanelUygulamaController` | Bilinmeyen uygulama 404 → CSRF 403 → servis `hatalar` → 422 / 200 |
+
+## 18. Test mimarisi
+
+- **Çekirdek:** PHPUnit; `WebTestCase` (gerçek HTTP yığını, `app_test` DB), `KernelTestCase` (servis).
+  - Stripe: `stripe-mock` ya da istek kaydedici (`KayitliStripeIstemcisi`).
+  - E-posta: `null://null` + Mailer iddiaları.
+  - Sözleşme: yanıt `openapi.yaml`'a karşı doğrulanır.
+- **Panel ve huni:** Vitest + happy-dom + Testing Library; sahte `fetch`.
+- **Kırma:** her blokta kararlar tek tek bozulur, test kırmızı olmalı; tutmayan deneme testi suçlar (`/kirma`).
+- **Gerçek sistem:** dev'de curl, Mailpit, Stripe test modu, başsız Chromium. Panel ekranları giriş istediği için
+  kullanıcıda.
+- **Tam kontrol:** `bin/kontrol` (biçim + statik analiz + testler + derleme); CI aynı komut (`.github/workflows/kontrol.yml`).
+
+## 19. Dağıtım mimarisi
+
+Üretim **yok**. Geliştirme `docker compose`; CI GitHub Actions. Canlıya geçiş kapısı `PLAN.md` §2-C'de (sağlayıcı, DNS,
+cron'lar, yedek, yüzey kapatma).
+
+## 20. Genişletme ve evrim
+
+| Eklenecek | Adımlar |
+|---|---|
+| Yeni uygulama | `uygulamalar.yaml`'a satır + sözleşme `app` enum'u → panel → Ayarlar (şema zorunlu, yedek yok) → uygulama anahtarı (`.env`) |
+| Yeni panel sayfası | Sözleşme → `uret` → controller (uç kalıbı §17) → `PanelController`'a sunucu rotası (§51) → `main.tsx` rota + `Duzen.tsx` menü → test (doğrudan adres dahil) |
+| Yeni e-posta | `UygulamaAyarlari::eposta($app)` ile kur (gönderen adı, yanıt adresi); pazarlamaysa izin + `broadcast` akışı + bastırma |
+| Yeni olay | Kaynak yazımıyla aynı işlemde `Olaylar::ekle`; yalnız durum değişince |
+| Yeni dış gönderim | Giden kutusu tablosu + komut + cron; kişisel veri göndermeden önce karar |
+| Yeni yasal davranış | Davranış değişince `Taslaklar.php` de değişir (Ç126) |
+
+## 21. Karar kayıtları ve yönetişim
+
+- **Kararlar** kopyalanmaz: neden `docs/pre-setup.md` (A1–A23), blok kaydı `docs/decisions/<konu>.md`, açık uç
+  `docs/decisions/acik-uclar.md`.
+- **Yönetişim:** `CLAUDE.md` kuralları; `bin/kontrol` yeşil + kırma kırmızı olmadan commit yok; `git checkout <dosya>`
+  engelli; tuzaklar `docs/tuzaklar.md`.
+
+## 22. Yeni geliştirme için plan
+
+1. **Ölç:** mevcut durumu say (kod, DB, gerçek uç), varsayma.
+2. **Karar ver:** elenen seçenek ve nedeni; kullanıcı kararı gerekiyorsa sor.
+3. **Sözleşme önce** (uç varsa) → `uret`.
+4. **Uygula:** cerrahi; kuralı ailenin tamamına uygula (ör. beş e-posta).
+5. **Test:** kararı ölçen test; sözleşme doğrulaması; DB kısıtı için ayrı test.
+6. **Kır:** her karar için bir deneme; tutmayan denemede önce testi suçla.
+7. **Gerçek istekle doğrula:** dev'de curl / Mailpit / test modu.
+8. **Belgele:** blok kaydı, PLAN, bu rehberde **yalnız değişen bölüm**, gerekirse tuzak ve açık uç.
+9. **Commit + CI.**
