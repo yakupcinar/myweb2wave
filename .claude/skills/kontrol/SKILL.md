@@ -2,7 +2,7 @@
 name: kontrol
 description: >-
   Projenin tam doğrulaması — biçim + statik analiz + test süiti + derleme,
-  çekirdek (Symfony) ve huni (Astro) için. Tek komut bin/kontrol. sinayici
+  çekirdek (Symfony), huni (Vite + Preact) ve panel (React) için. Tek komut bin/kontrol. sinayici
   ajanı bunu çağırır; bir blok bitince ve commit öncesi koşulur.
 ---
 

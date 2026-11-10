@@ -2,6 +2,8 @@
 
 Karar `pre-setup.md` A22 · önceki `m8a1-postmark.md`.
 
+> **Sonra değişti (2026-11-10, M9a):** mağaza adresi artık `.env` / `uygulama_magaza_adresleri` değil, panel → Ayarlar (`uygulama_ayarlari.magaza_adresi`); `posta_dizisi.stripe_subscription_id` sütunu M8b'de `kaynak` oldu. Bkz. `m9a-uygulama-kimligi.md`, `m8b-kurtarma.md`.
+
 ## Ne yapıldı
 
 - `App\Posta\AktivasyonDizisi` + `app:posta:dizi` (15 dk cron). İlk adım, var olan ödeme e-postasıdır.

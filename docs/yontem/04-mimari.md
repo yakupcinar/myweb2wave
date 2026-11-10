@@ -5,7 +5,7 @@ Ayrıntı ve reddedilenler: `docs/pre-setup.md` §A, §B2, §B3.
 ## İki parça: statik huni + çekirdek API
 
 ```
-reklam ──► Huni (Astro, statik, CDN)          ── sunucusu yok
+reklam ──► Huni (Vite + Preact, statik, CDN)  ── sunucusu yok
               │  POST /checkout/sessions {app, plan}
               ▼
            Çekirdek API (Symfony 7.4, PHP 8.4, FrankenPHP) ◄── Stripe webhook

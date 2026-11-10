@@ -9,7 +9,7 @@
 | Katman | Durum | Kanıt |
 |---|---|---|
 | Ürün kapsamı | ✅ A1–A3 | `docs/pre-setup.md` §A |
-| Yığın seçimi | ✅ B2 Astro + Symfony | `docs/pre-setup.md` §B2 |
+| Yığın seçimi | ✅ B2 Symfony + statik huni (Astro → 2026-11-03'ten beri Vite + Preact) | `docs/pre-setup.md` §B2, `docs/decisions/astro-kaldirma.md` |
 | İskelet + /kontrol | ✅ 2 test, 7/7 kırma kırmızı | `docs/decisions/iskelet.md` |
 | CI | ✅ GitHub Actions = `bin/kontrol`, kırma ölçüldü | `docs/decisions/ci.md` |
 | Stripe çekirdek | ✅ 12 test, kırma 10/10, gerçek Stripe test API + yeniden gönderim | `docs/decisions/stripe-odeme.md` |
@@ -52,6 +52,17 @@
 | AI tasarım döngüsü (V1) | ✅ 459 çekirdek testi, kırma 8/8; yapışık düğme gerilemesi (§45) düzeldi; uyku-ornek 16/16 uyarısız | `docs/decisions/v1-tasarim-dongusu.md` |
 | E-posta adımı (E1) | ✅ 454 çekirdek testi, kırma 19/20 (K16 kodu kaldırttı), gerçek Stripe oturumunda customer_email; gerçek ziyaretle tarayıcı yürüyüşü bekliyor (Ç98) | `docs/decisions/e1-eposta-adimi.md` |
 | Fiyat kataloğu (M1a) | ✅ 437 çekirdek testi, kırma 15/15, gerçek Stripe test API; panel tarayıcıda bekliyor (Ç96) | `docs/decisions/m1a-fiyat-katalogu.md` |
+| Teklifler (M1b) | ✅ 523 çekirdek testi, kırma 20/20 (2'si ilk yamada KOŞULMADI) | `docs/decisions/m1b-teklifler.md` |
+| Çok para birimi (M1c) | ✅ 537 çekirdek testi, kırma 20/20 (K21 test eksikti → güçlendi) | `docs/decisions/m1c-cok-para-birimi.md` |
+| Paywall: plan seçici, sayaç/güvence/onay, çok paywall, gömülü ödeme (M2a–d) | ✅ 549 → 564 çekirdek testi; kırma 15, 17, 4, 10 — hepsi kırmızı | `docs/decisions/m2a-plan-secici.md` … `m2d-gomulu-odeme.md` |
+| Downsell, ödeme sonrası ekran, upsell (M3a–c) | ✅ 571 → 587 çekirdek testi; kırma 10, 9, 16 (her birinde bir deneme test eksiğini buldu) | `docs/decisions/m3a-downsell.md` … `m3c-ek-urun-upsell.md` |
+| Deneyler + sonuçlar (M4a–b) | ✅ kırma 24 ve 16 (ilk koşuda tutmayanlar testleri güçlendirdi) | `docs/decisions/m4a-deneyler.md`, `m4b-deney-sonuclari.md` |
+| Olay deposu, faturalar, raporlar, Meta ROAS (M5a–d) | ✅ kırma 18/18, 7/8 (F8 erişilemeyen kodu gösterdi → kaldırıldı), 15/15, 13/13; Meta gerçek hesapla ölçülmedi (Ç121) | `docs/decisions/m5a-olay-deposu.md` … `m5d-meta-harcama.md` |
+| İptal / iade, müşteri portalı (M6a, M6b1–2) | ✅ kırma 19/19, 9/9, 11/11; gerçek Stripe test modunda iptal + 999 EUR iade | `docs/decisions/m6a-iptal-iade.md`, `m6b1-portal.md`, `m6b2-portal-web.md` |
+| Giden webhook, panel, MCP okuma / yazma (M7a–c2) | ✅ kırma 16/16, 12/12, 12/12, 12/12 | `docs/decisions/m7a-giden-webhook.md` … `m7c2-yazma-araclari.md` |
+| E-posta: Postmark + bastırma, aktivasyon, kurtarma (M8a1, M8a2, M8b) | ✅ core 671 → 690 test; kırma 11/11, 12/12, 18/18; Postmark test anahtarı ve Stripe kurtarma kopyası gerçek ölçüldü; hesap / cron yok (Ç123–125) | `docs/decisions/m8a1-postmark.md`, `m8a2-aktivasyon.md`, `m8b-kurtarma.md` |
+| Proje ayarları: kimlik, yasal metinler, huni bağlantısı (M9a, M9b1–2) | ✅ core 708 → 723 test; kırma 18/18, 14/14, 7/7; hukuki gözden geçirme yok (Ç126) | `docs/decisions/m9a-uygulama-kimligi.md`, `m9b1-yasal-metinler.md`, `m9b2-yasal-baglantilar.md` |
+| Uygulama rehberi (sayfa sayfa + mimari plan) | ✅ 243 bağlantı betikle denetlendi (dosya + satır) | `docs/uygulama-rehberi.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
