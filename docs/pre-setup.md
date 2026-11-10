@@ -260,6 +260,14 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A25 · Entegrasyonlar ve anahtarlar** (2026-11-11, kullanıcı).
+- Menüde Webhook'lar, API anahtarları ve Ürün bağlamı (AI) yerine tek **Entegrasyonlar** sayfası (taslaktaki
+  gibi). Reddedilenler: ayrı kalmaları; Ürün bağlamı'nın ayrı kalması.
+- Webhook olayları Türkçe ve gruplu seçilir (Huni · Ödeme · Abonelik), grup başına "Tümü".
+- İptal edilen API anahtarları listede gizlenir ("İptal edilenler (N)" katlanır) ve silinebilir; etkin anahtar
+  önce iptal edilir. Reddedilenler: yalnız gizlemek, iptalde silmek (geçmiş kalmaz).
+- Kaynak: [p7-taslak-farki.md](decisions/p7-taslak-farki.md) (Ç130, Ç131).
+
 **A24 · Panel tabloları sayfalı** (2026-11-10, kullanıcı: numaralı sayfalama, büyüyen tüm tablolar).
 - Sayfa başına 25, sunucuda; sıralama da sunucuda. Aboneler'de sayfa ve sıra adreste. Rapor'un üç listesi
   (ziyaretler, kaynaklar, serbest yanıtlar) kendi uçlarında. Reddedilenler: tarih aralığı zorunluluğu,
