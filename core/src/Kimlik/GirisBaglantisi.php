@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Kimlik;
 
+use App\Posta\Bastirma;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -115,9 +116,13 @@ final readonly class GirisBaglantisi
     public function epostalariGonder(int $azami = 20): void
     {
         $oturumlar = $this->db->fetchFirstColumn(
-            'SELECT stripe_checkout_session_id FROM subscriptions
-             WHERE odeme_tamamlandi_at IS NOT NULL AND giris_epostasi_at IS NULL AND email IS NOT NULL
-             ORDER BY odeme_tamamlandi_at LIMIT ?',
+            // A22: bastırılmış adres atlanır — Postmark göndermez, köprü
+            // hata atmaz; atlanmasa "gitti" yazılırdı. Yeniden etkinleşince gider.
+            "SELECT s.stripe_checkout_session_id FROM subscriptions s
+             WHERE s.odeme_tamamlandi_at IS NOT NULL AND s.giris_epostasi_at IS NULL AND s.email IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM posta_bastirma p
+                               WHERE p.email = lower(s.email) AND p.akis = '".Bastirma::ISLEM."' AND p.bastirildi)
+             ORDER BY s.odeme_tamamlandi_at LIMIT ?",
             [$azami],
         );
         foreach ($oturumlar as $oturum) {

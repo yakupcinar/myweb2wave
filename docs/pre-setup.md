@@ -235,6 +235,15 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   yıkıcı işaretli (istemci her çağrıda onay sorar). Reddedilen: tüm anahtarlar, iadeyi MCP dışında tutmak.
   Bölünme: M7c1 okuma → M7c2 yazma.
 
+**A22 · M8 e-posta** (2026-11-10, kullanıcı: önerilere göre).
+- Sağlayıcı **Postmark** (API). İşlem e-postası `outbound`, dizi / pazarlama `broadcast` akışı. Reddedilen: Resend
+  (kolay ama genç), SES (ucuz ama sandbox + SNS + itibar yükü bugün). Dizi motoru bizde, sağlayıcı yalnız teslim.
+- Bastırma: Postmark'ın listesi esas, yerel kopyası `posta_bastirma` (Subscription Change webhook'u + 406 olayı).
+- İzin **karma**: huninin izin kutusu + izin kanıtı; adres ödeme ya da kodla kanıtlanınca dizi. Reddedilen: tek onay
+  (itibar), çift onay (terk edilen ödeme dizisini fiilen öldürür). İYS hukuk görüşü bekliyor.
+- Sıra: M8a aktivasyon (işlem e-postası, izin gerekmez) → M8b terk edilen ödeme kurtarma. Deneme bitiyor
+  hatırlatması önce Stripe'ın kendi ayarıyla.
+
 **A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
 - Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
   dosyası, yalnız çekme (akış API).

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Kimlik\GirisBaglantisi;
+use App\Posta\Bastirma;
 use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -29,7 +31,7 @@ final class GirisBaglantisiTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
+        $this->db->executeStatement('TRUNCATE posta_bastirma, giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
     }
 
     // --- başarı sayfası ---
@@ -217,6 +219,27 @@ final class GirisBaglantisiTest extends WebTestCase
         self::assertSame(1, $this->say('SELECT count(*) FROM giris_jetonlari'));
     }
 
+    public function testBastirilmisAdreseOdemeEpostasiGitmezEtkinlesinceGider(): void
+    {
+        // A22: Postmark bastırılmış adrese göndermez, köprü hata atmaz —
+        // atlanmasa e-posta "gitti" yazılırdı (§57).
+        $this->bastirma()->yaz('a@example.com', Bastirma::ISLEM, true, 'HardBounce', new \DateTimeImmutable('-1 hour'));
+        $this->bastirma()->yaz('b@example.com', 'broadcast', true, 'ManualSuppression', new \DateTimeImmutable('-1 hour'));
+        $this->odemeTamamlandi('cs_1', 'A@Example.com');
+        self::assertEmailCount(0);
+        self::assertSame(0, $this->say('SELECT count(*) FROM subscriptions WHERE giris_epostasi_at IS NOT NULL'));
+
+        // Yalnız işlem akışındaki bastırma sayılır.
+        $this->odemeTamamlandi('cs_2', 'b@example.com');
+        self::assertEmailCount(1);
+
+        $this->bastirma()->yaz('a@example.com', Bastirma::ISLEM, false, null, new \DateTimeImmutable());
+        $giris = static::getContainer()->get(GirisBaglantisi::class);
+        self::assertInstanceOf(GirisBaglantisi::class, $giris);
+        $giris->epostalariGonder();
+        self::assertSame(2, $this->say('SELECT count(*) FROM subscriptions WHERE giris_epostasi_at IS NOT NULL'));
+    }
+
     // --- yardımcılar ---
 
     /** @param array<string, mixed> $ek */
@@ -279,6 +302,14 @@ final class GirisBaglantisiTest extends WebTestCase
         $g = json_decode((string) $this->client->getResponse()->getContent(), true);
 
         return \is_array($g) ? $g : [];
+    }
+
+    private function bastirma(): Bastirma
+    {
+        $b = static::getContainer()->get(Bastirma::class);
+        self::assertInstanceOf(Bastirma::class, $b);
+
+        return $b;
     }
 
     /** @param list<mixed> $p */

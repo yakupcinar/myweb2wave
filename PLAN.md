@@ -230,7 +230,7 @@
     - [x] M7b · 2026-11-09, `docs/decisions/m7b-webhook-paneli.md`: panelde "Webhook'lar" — hedef ekle (https, sözlükten olaylar, sır bir kez, uygulama başına 10), etkin / pasif, iki adımlı sil, teslim günlüğü (son 50) ve yeniden gönder. Kırma 12/12; test gerçek bir çökmeyi buldu (onay kutusu)
     - [x] M7c1 · 2026-11-09, `docs/decisions/m7c1-okuma-araclari.md`: MCP'de 6 salt-okur rapor aracı (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları), Rapor'a uygulama süzgeci; `GET /apps/{app}/olaylar` (uygulama anahtarı, imleç + devam). Kırma 12/12 (biri testi güçlendirdi); gerçek MCP çağrısı dev'de
     - [x] M7c2 · 2026-11-10, `docs/decisions/m7c2-yazma-araclari.md`: MCP'de abonelik (listele, iptal planla / geri al, son faturayı iade) ve deney (kaydet, durum) araçları — yalnız "yönetim" izinli anahtarda, yıkıcılar işaretli; abonelik uygulamanınsa. Kırma 12/12 (biri testi güçlendirdi)
-  - [ ] M8 · e-posta: işlem + dizi (Ç30 sağlayıcı bekliyor)
+  - [ ] M8 · e-posta (A22: Postmark, karma izin) — [x] M8a1 sağlayıcı + bastırma (`m8a1-postmark.md`) · [ ] M8a2 aktivasyon dizisi · [ ] M8b terk edilen ödeme
   - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
 
 ## 2. Açılmamış Görevler & Gelecek Yol Haritası (Backlog)

@@ -425,3 +425,13 @@ birden çok çekimle ölç.
 **Sebep:** `1.005 * 100 = 100.49999…`. PHP 8.4'ten önce `round()` 15 anlamlı basamağa ön yuvarlayıp 101 veriyordu; 8.4 bunu kaldırdı. Ezberdeki "PHP round bunu düzeltir" bilgisi artık yanlış.
 **Ölçüm (2026-11-09, `m5d-meta-harcama.md`):** PHP 8.4.26 `round(1.005*100)` → 100. Önce "ön yuvarlama 101 verir" diye yazdım ve özel çeviriciyi gereksiz sanıp kaldırdım (kırma D4 yeşil kalmıştı). Ama test 1.005'i servisten hiç geçirmiyordu. Servis düzeyi test eklenince 100 çıktı, çevirici geri geldi.
 **Doğrusu:** dış sistemin ondalık metnini metin olarak çevir (`ParaBirimi::metindenKucuk`). Kayan noktalı yol yalnız 2 basamaklı panel girdisinde güvenli. Bir savunmayı "gereksiz" diye kaldırmadan önce onu ölçen testin o yoldan geçtiğini doğrula.
+
+## §57 — Postmark köprüsü pasif alıcıda hata atmaz: e-posta gitmez, `send()` başarılı döner
+**Belirti:** giriş kodu / bağlantısı "gönderildi", uç 202, `giris_epostasi_at` dolu — kişiye hiçbir şey gelmez.
+**Sebep:** Postmark bastırılmış (hard bounce, şikâyet, abonelikten çıkma) adrese HTTP 422 + `ErrorCode` 406 döner;
+Symfony `PostmarkApiTransport` olay dağıtıcısı varsa (çatıda hep var) bunu `PostmarkDeliveryEvent` olarak yayar ve
+**dönüşü başarılı** sayar.
+**Ölçüm (2026-11-10, `m8a1-postmark.md`):** köprü kaynağı (`CODE_INACTIVE_RECIPIENT`) + MockHttpClient ile 422/406
+yanıtında `send()` atmadı; dinleyici kaldırılınca kayıt da yok (kırma K1).
+**Doğrusu:** olayı dinle, adresi bastırma listesine yaz; kuyruktan göndermeden önce listeye bak.
+
