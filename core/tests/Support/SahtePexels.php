@@ -31,13 +31,15 @@ final class SahtePexels
     private static ?string $jpeg = null;
 
     /**
-     * 1130×1700: küçültmeyi (en uzun kenar 1600) ölçer ama küçük — CI'da
-     * 1880×2820 sahte + gerçek çözme aynı süreçte 128 MB'ı aştı (V3b CI).
+     * 400×1700: küçültmeyi (en uzun kenar 1600) ölçer ama küçük — CI'da
+     * 1880×2820 sahte + gerçek çözme aynı süreçte 128 MB'ı aştı (V3b CI);
+     * 1130×1700 de süit büyüyünce aştı (P7a2, 2026-11-11; §47). Genişlik
+     * ölçüme katkı vermez, yalnız belleğe.
      */
     private static function jpeg(): string
     {
         if (null === self::$jpeg) {
-            $g = imagecreatetruecolor(1130, 1700);
+            $g = imagecreatetruecolor(400, 1700);
             imagefill($g, 0, 0, (int) imagecolorallocate($g, 20, 30, 70));
             ob_start();
             imagejpeg($g, null, 80);

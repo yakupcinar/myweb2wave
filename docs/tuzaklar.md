@@ -368,6 +368,7 @@ birden çok çekimle ölç.
 **Sebep:** sahte (ör. büyük görsel üreten HTTP sahtesi) ve denetlenen kod (aynı görseli çözen) aynı PHP sürecinde; ikisi birlikte sınıra yakın. Yerelde aynı 128M ile geçmesi şanstı (sıra/çöp toplama).
 **Ölçüm (2026-11-03, `v3b-stok-fotograf.md`):** 1880×2820 sahte JPEG + gerçek çözme → CI'da tam süitte 128 MB aşıldı (test tek başına 78,7 MB — birikmiş süit belleğiyle aştı); 1130×1700 (küçültmeyi yine ölçer) ile 9 testlik sınıf 69 MB.
 **Doğrusu:** sahte veriyi davranışı ölçen en küçük boyda tut, bir kez üret; yerel yeşili "sınıra ne kadar yakın" sorusuyla oku (`Memory:` satırı).
+**Yeniden görüldü (2026-11-11, P7a2 CI):** süit 740 teste çıkınca 1130×1700 de aştı (CI kırmızı, yerelde `bin/kontrol` bir kez yeşil geçti, tam süit tekrarında aynı ölümle düştü). Ölçümü yapan yalnız uzun kenar (>1600) — genişlik 400'e indi: sınıf 73 → 46,8 MB, tam süit 128M'de yeşil (tepe 89 MB). Kırma: `HEDEF_KENAR` 1800 → test [400, 1700] ile düştü.
 
 ## §48 — Satır içi YAML'da tırnaksız virgül JS üreticisinde metni sessizce keser
 **Belirti:** sözleşmeden üretilen TypeScript tipleri hatasız üretilir, tip denetimi yeşil; ama alanın açıklaması yarıda ("Ana birimde"). PHP tarafındaki sözleşme testleri ise `Malformed inline YAML string` ile düşer.
