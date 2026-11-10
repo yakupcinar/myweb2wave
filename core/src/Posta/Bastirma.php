@@ -17,6 +17,8 @@ final readonly class Bastirma
 {
     /** Postmark'ın varsayılan işlem (transactional) akışı. */
     public const ISLEM = 'outbound';
+    /** Pazarlama / dizi akışı (broadcast); abonelikten çıkmayı Postmark yönetir. */
+    public const YAYIN = 'broadcast';
 
     public function __construct(private Connection $db)
     {

@@ -65,7 +65,7 @@ final class AktivasyonDizisiTest extends KernelTestCase
     public function testIkinciAdimIlkindenSonraZamaniGelinceGider(): void
     {
         $this->abonelik('sub_1', 'a@example.com', 73);
-        $this->db->executeStatement("INSERT INTO posta_dizisi (stripe_subscription_id, dizi, adim) VALUES ('sub_1', 'aktivasyon', 1)");
+        $this->db->executeStatement("INSERT INTO posta_dizisi (kaynak, dizi, adim) VALUES ('sub_1', 'aktivasyon', 1)");
 
         self::assertSame(1, $this->dizi()->gonder());
         $mesaj = self::getMailerMessage();
@@ -183,8 +183,8 @@ final class AktivasyonDizisiTest extends KernelTestCase
     private function kayitlar(): array
     {
         return array_map(
-            static fn (array $r): array => [$r['stripe_subscription_id'], $r['adim']],
-            $this->db->fetchAllAssociative('SELECT stripe_subscription_id, adim FROM posta_dizisi ORDER BY 1, 2'),
+            static fn (array $r): array => [$r['kaynak'], $r['adim']],
+            $this->db->fetchAllAssociative('SELECT kaynak, adim FROM posta_dizisi ORDER BY 1, 2'),
         );
     }
 

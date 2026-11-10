@@ -76,7 +76,7 @@ final readonly class AktivasyonDizisi
                AND NOT EXISTS (SELECT 1 FROM baglantilar b JOIN kisiler k ON k.id = b.kisi_id
                                WHERE b.app = s.app AND k.email = lower(s.email))
                AND NOT EXISTS (SELECT 1 FROM posta_dizisi d
-                               WHERE d.stripe_subscription_id = s.stripe_subscription_id AND d.dizi = :dizi AND d.adim >= :adim)
+                               WHERE d.kaynak = s.stripe_subscription_id AND d.dizi = :dizi AND d.adim >= :adim)
                AND NOT EXISTS (SELECT 1 FROM posta_bastirma p
                                WHERE p.email = lower(s.email) AND p.akis = :akis AND p.bastirildi)
              ORDER BY s.odeme_tamamlandi_at LIMIT :azami',
@@ -92,7 +92,7 @@ final readonly class AktivasyonDizisi
     {
         // Kayıt önce: aynı anda koşan ikinci cron aynı adımı göndermesin.
         $yeni = $db->executeStatement(
-            'INSERT INTO posta_dizisi (stripe_subscription_id, dizi, adim) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
+            'INSERT INTO posta_dizisi (kaynak, dizi, adim) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
             [$abonelik, self::DIZI, $adim],
         );
         $s = $db->fetchAssociative('SELECT app, email, stripe_checkout_session_id FROM subscriptions WHERE stripe_subscription_id = ?', [$abonelik]);

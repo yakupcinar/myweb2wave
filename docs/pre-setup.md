@@ -241,6 +241,9 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - Bastırma: Postmark'ın listesi esas, yerel kopyası `posta_bastirma` (Subscription Change webhook'u + 406 olayı).
 - İzin **karma**: huninin izin kutusu + izin kanıtı; adres ödeme ya da kodla kanıtlanınca dizi. Reddedilen: tek onay
   (itibar), çift onay (terk edilen ödeme dizisini fiilen öldürür). İYS hukuk görüşü bekliyor.
+- M8b kurtarma bağlantısı: Stripe'ın kurtarma adresi (oturum 1 saatte dolar). Reddedilen: kendi uçumuzda yeni oturum
+  açmak (fazla kod; ölçüm kopyanın metadata, dönüş adresi ve e-postayı koruduğunu gösterdi), huniye dönmek
+  (anket baştan başlar). İndirim yok (teklif kuralı açık değil).
 - Sıra: M8a aktivasyon (işlem e-postası, izin gerekmez) → M8b terk edilen ödeme kurtarma. Deneme bitiyor
   hatırlatması önce Stripe'ın kendi ayarıyla.
 

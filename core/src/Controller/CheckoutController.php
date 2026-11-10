@@ -25,6 +25,8 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/checkout/sessions', name: 'checkout_session_create', methods: ['POST'])]
 final readonly class CheckoutController
 {
+    public const OTURUM_SURESI_SN = 3600;
+
     public function __construct(
         private StripeClient $stripe,
         private LoggerInterface $logger,
@@ -104,6 +106,10 @@ final readonly class CheckoutController
                 ...(isset($teklifAlanlari['discounts']) ? ['discounts' => $teklifAlanlari['discounts']] : []),
                 // Deneme kartlıdır: kart ilk günden alınır, süre bitince ücret kendiliğinden çekilir.
                 'payment_method_collection' => 'always',
+                // M8b (A22): terk edilen oturum 1 saatte dolar (Stripe alt sınırı 30 dk,
+                // varsayılan 24 sa); dolunca Stripe kurtarma adresi verir (30 gün).
+                'expires_at' => time() + self::OTURUM_SURESI_SN,
+                'after_expiration' => ['recovery' => ['enabled' => true]],
                 // Gömülüde iptal sayfası yok: ziyaretçi paneli kapatıp paywall'da kalır.
                 ...($gomulu
                     ? ['ui_mode' => 'embedded_page', 'return_url' => $donus]

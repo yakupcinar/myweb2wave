@@ -199,6 +199,19 @@ final class ParaBirimiTest extends WebTestCase
         self::assertSame('usd', $this->odeme([])['currency'], 'ülke bilinmiyor → ana birim');
     }
 
+    public function testOdemeOturumuBirSaatteDolarKurtarmaAcik(): void
+    {
+        // M8b (A22): terk edilen oturum 1 saatte dolar; dolunca Stripe kurtarma adresi verir.
+        $this->stripe->yanitlar['/v1/prices/'.self::FIYAT] = self::fiyat([]);
+        $once = time();
+        $p = $this->odeme([]);
+
+        self::assertSame(['recovery' => ['enabled' => 'true']], $p['after_expiration']);
+        self::assertIsNumeric($p['expires_at']);
+        self::assertGreaterThanOrEqual($once + 3600, (int) $p['expires_at']);
+        self::assertLessThanOrEqual(time() + 3600, (int) $p['expires_at']);
+    }
+
     private function sifirla(): void
     {
         $this->db->executeStatement("UPDATE planlar SET stripe_fiyat = '".self::FIYAT."', teklif_turu = NULL, teklif_gun = NULL, teklif_yuzde = NULL, stripe_teklif = NULL WHERE app = 'keepchat' AND anahtar = 'monthly'");

@@ -221,7 +221,7 @@ yazarken bunu okur; boş alan gönderilmez.
 | `app:reklam-donusumleri:gonder` | Başarısız Meta CAPI / TikTok olaylarını yeniden dener | `reklam_donusumleri` |
 | `app:revenuecat:gonder` | Bekleyen RevenueCat aktarımları | `revenuecat_gidenler` |
 | `app:reklam-harcamalari:cek` | Meta harcaması (son 7 gün) | `reklam_harcamalari` |
-| `app:posta:dizi` | Aktivasyon dizisi: ödeyip bağlanmayana hatırlatma (15 dk cron) | `posta_dizisi` |
+| `app:posta:dizi` | Aktivasyon + kurtarma dizileri (15 dk cron) | `posta_dizisi` |
 | `app:huni-metin-cevaplari-sil` | Süresi dolan serbest yanıtlar ve izinsiz e-postalar | — |
 | `app:ulke-verisi` | DB-IP ülke verisi | — |
 
@@ -236,7 +236,14 @@ Bastırılmış adres atlanır.
   hâlâ bağlanmamış kişiye yeni giriş bağlantısı (+ `MAGAZA_ADRESI_<APP>` doluysa App Store adresi). Durur: bağlandı,
   abonelik erişim vermiyor, adres bastırılmış. Gecikmiş adımlardan yalnız sonuncusu gider; 7 günden eski ödemeye
   başlamaz. Kayıt `posta_dizisi` (`m8a2-aktivasyon.md`).
-- Terk edilen ödeme dizisi (M8b) bu bölüme eklenecek.
+- **Terk edilen ödeme kurtarma (M8b, pazarlama — yalnız huninin izin kutusu işaretliyse, `broadcast` akışı):**
+  - Ödeme oturumu 1 saatte dolar. Stripe o zaman bir kurtarma adresi verir (30 gün geçerli). Adres açılınca aynı
+    planla bir kopya oturum açılır.
+  - 1. e-posta oturum dolunca, 2. e-posta oturum açıldıktan 24 saat sonra gider.
+  - Durur: ödendi, aynı e-postayla abone, izin geri alındı, adres bastırıldı.
+  - Aynı kişiye 7 günde tek dizi gider.
+  - Abonelikten çıkma bağlantısını Postmark ekler.
+  - Kopya oturum ödenince asıl ziyarete bağlanır (`kurtarildigi_oturum`). Kayıt: `m8b-kurtarma.md`.
 - **Postmark pasif alıcıda hata atmaz (§57)**, bastırma listesi bunun için var.
 
 ### 4.4 Tek seferlik / bakım komutları

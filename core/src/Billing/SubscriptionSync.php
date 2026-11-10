@@ -48,9 +48,13 @@ final readonly class SubscriptionSync
                 if ('checkout.session.expired' === $event->type) {
                     // Ç59: ödenmeden kapanan oturumda completed hiç gelmez; eşleşme
                     // verisi (IP/UA) burada silinir — uygulamadan bağımsız.
+                    // M8b: Stripe'ın kurtarma adresi (kurtarma dizisi bundan gönderir).
+                    $sonra = $nesne['after_expiration'] ?? null;
+                    $kurtarma = \is_array($sonra) && \is_array($sonra['recovery'] ?? null) ? ($sonra['recovery']['url'] ?? null) : null;
                     $db->executeStatement(
-                        'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL WHERE stripe_checkout_session_id = :oturum',
-                        ['oturum' => $nesne['id'] ?? null],
+                        'UPDATE odeme_oturumlari SET ip_adresi = NULL, user_agent = NULL, kurtarma_url = coalesce(kurtarma_url, :kurtarma)
+                         WHERE stripe_checkout_session_id = :oturum',
+                        ['oturum' => $nesne['id'] ?? null, 'kurtarma' => \is_string($kurtarma) && str_starts_with($kurtarma, 'https://') ? $kurtarma : null],
                     );
 
                     return;
@@ -113,6 +117,17 @@ final readonly class SubscriptionSync
             ['sub' => $sub, 'cus' => $cus, 'email' => $email, 'app' => $app, 'oturum' => $session['id'] ?? null],
         );
         $this->revenuecat->aboneligiKuyrugaAl($db, $app, $sub);
+        // M8b: kurtarma adresiyle açılan kopya oturumun ziyaret bağı yok —
+        // asıl oturumun ziyaretine bağlanır (atıf, rapor, deney dönüşümü).
+        $asil = $session['recovered_from'] ?? null;
+        if (\is_string($asil) && \is_string($session['id'] ?? null)) {
+            $db->executeStatement(
+                'INSERT INTO odeme_oturumlari (stripe_checkout_session_id, ziyaret_id, kurtarildigi_oturum)
+                 SELECT :oturum, ziyaret_id, stripe_checkout_session_id FROM odeme_oturumlari WHERE stripe_checkout_session_id = :asil
+                 ON CONFLICT (stripe_checkout_session_id) DO NOTHING',
+                ['oturum' => $session['id'], 'asil' => $asil],
+            );
+        }
         // Atıf (A6): bu oturum bir huni ziyaretinden açıldıysa ödendi say.
         $odemeTamamlandi = 'paid' === ($session['payment_status'] ?? null);
         // M4b (A17): deney dönüşümü abonelik başlamasıdır (deneme dahil).
