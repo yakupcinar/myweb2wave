@@ -120,6 +120,9 @@ değiştirmez.
 | Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L347)) |
 | Serbest yanıtlar | Metin sorularına yazılanlar | 90 gün saklanır, sonra silinir |
 
+Ziyaretler, Kaynak kırılımı ve Serbest yanıtlar 25'er satırlık sayfalarla gelir. Her biri kendi ucundan
+okunur (`/panel/api/rapor/ziyaretler|kaynaklar|serbestYanitlar`, P7a2).
+
 **Üç tanım raporu okurken önemli:**
 - **"Ödedi"** = ilk ödemede gerçekten para çekildi **ya da** aboneliğin tahsil edilmiş bir faturası var
   ([`Rapor::ODEDI`](../core/src/Panel/Rapor.php#L31)). Kartlı denemede Stripe ödemeyi "paid" sayar ama tutar 0'dır;
@@ -223,8 +226,11 @@ isteğinde "bu kişinin aboneliğini dönem sonunda iptal et" ya da "son ödemes
     kadar açık", Ödeme sorunlu, Bitti.
   - **Geldiği yer:** kaynak (yoksa Doğrudan) ve reklam rozeti; altında kampanya · huni.
   - **Son ödeme:** son faturanın tutarı ve tarihi ("€9,99 · 3 Kas").
-- Arama kutusu ve durum için bölmeli seçici (Tümü · Aktif · Denemede · Ödeme sorunlu · Bitti). İkisi de adreste
-  (`?ara=&durum=`) durur ve sunucuda süzülür. Başlıklara tıklanınca liste sıralanır.
+- Arama kutusu ve durum için bölmeli seçici (Tümü · Aktif · Denemede · Ödeme sorunlu · Bitti).
+- Başlıklara tıklanınca liste sıralanır; ikinci tık sırayı ters çevirir.
+- Liste 25'er satırlık sayfalara bölünür; altta "1–25 / 312 abonelik · ‹ Önceki · Sonraki ›" yazar (P7a2).
+- Arama, durum, sayfa ve sıra adreste durur (`?ara=&durum=&sayfa=&sirala=&yon=`); süzme ve sıralama
+  sunucuda yapılır. Süzgeç ya da sıra değişince ilk sayfaya dönülür.
 - **İşlem** sütunu:
   - Abonelik sürüyorsa "Dönem sonunda iptal et" (denemede "Deneme sonunda iptal et").
   - İptal planlıysa "İptali geri al".
@@ -235,7 +241,7 @@ söyler; örneğin "€6,99 iade edilsin mi? … 3 Kasım faturası. Geri alına
 kırmızı "İade et". Stripe'ın verdiği hata satırın altında görünür.
 
 **Arkada nasıl çalışır**
-1. Liste [`Kullanicilar::liste`](../core/src/Panel/Kullanicilar.php#L39)'den gelir.
+1. Liste [`Kullanicilar::liste`](../core/src/Panel/Kullanicilar.php#L72)'den gelir.
 2. İptal: [`AbonelikYonetimi::donemSonundaIptal`](../core/src/Billing/AbonelikYonetimi.php#L29) Stripe'a
    `cancel_at_period_end` gönderir ve **Stripe'ın döndürdüğü** durumu yazar — Stripe reddetse panel yalan söylemez.
 3. İade: [`AbonelikYonetimi::sonFaturayiIadeEt`](../core/src/Billing/AbonelikYonetimi.php#L51) son faturanın ödemesini

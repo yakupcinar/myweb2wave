@@ -80,6 +80,7 @@ let yonlendirici: ReturnType<typeof createMemoryRouter>;
 let istenen: string[] = [];
 let islemler: string[] = [];
 let islemYaniti: Response | null = null;
+let toplam: number | null = null;
 
 function kur(satirlar = SATIRLAR, adres = "/panel/kullanicilar") {
     istenen = [];
@@ -93,10 +94,13 @@ function kur(satirlar = SATIRLAR, adres = "/panel/kullanicilar") {
                 );
                 return islemYaniti ?? new Response(null, { status: 204 });
             }
-            istenen.push(new URL(istek.url, "http://x").search);
+            const adres = new URL(istek.url, "http://x");
+            istenen.push(adres.search);
             return new Response(
                 JSON.stringify({
-                    azami: 200,
+                    sayfa: Number(adres.searchParams.get("sayfa") ?? 1),
+                    boyut: 25,
+                    toplam: toplam ?? satirlar.length,
                     durumlar: ["active", "canceled", "past_due"],
                     satirlar,
                 }),
@@ -134,6 +138,7 @@ afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     islemYaniti = null;
+    toplam = null;
 });
 
 const islemHucresi = (abonelik: string): HTMLElement =>
@@ -255,7 +260,7 @@ describe("M6a — abonelik işlemleri", () => {
 describe("P5: Aboneler", () => {
     it("satırlar: maskeli e-posta, Türkçe durum, kaynak + reklam, kişi bağlantısı, son ödeme; menüde işaretli", async () => {
         kur();
-        await screen.findByText(/^3 abonelik ·/);
+        await screen.findByText("3 abonelik");
         expect(
             screen
                 .getByRole("link", { name: "Aboneler" })
@@ -298,7 +303,7 @@ describe("P5: Aboneler", () => {
 
     it("arama ve durum adrese yazılır ve uca gider", async () => {
         kur();
-        await screen.findByText(/^3 abonelik ·/);
+        await screen.findByText("3 abonelik");
         fireEvent.change(screen.getByLabelText("E-posta ya da kampanya ara"), {
             target: { value: " meta " },
         });
@@ -326,27 +331,65 @@ describe("P5: Aboneler", () => {
             ),
         );
         await waitFor(() =>
-            expect(istenen.at(-1)).toBe("?ara=meta&durum=canceled"),
+            expect(istenen.at(-1)).toBe("?ara=meta&durum=canceled&sayfa=1"),
         );
     });
 
-    it("başlıkla sıralama: önce artan, ikinci tıkta azalan; aria-sort", async () => {
-        kur();
-        await screen.findByText(/^3 abonelik ·/);
-        // Son ödeme = son faturanın ödendiği an; faturasız (sub_b) en başta.
+    it("P7a2: başlıkla sıralama sunucuda — adreste ve uçta; ikinci tık azalan; sayfa başa döner", async () => {
+        kur(SATIRLAR, "/panel/kullanicilar?sayfa=2");
+        await screen.findAllByRole("row");
         const odeme = screen.getByRole("button", { name: "Son ödeme" });
         fireEvent.click(odeme);
-        expect(sira()).toEqual(["sub_b", "sub_c", "sub_a"]);
+        await waitFor(() =>
+            expect(yonlendirici.state.location.search).toBe("?sirala=sonOdeme"),
+        );
+        await waitFor(() =>
+            expect(istenen.at(-1)).toBe(
+                "?ara=&durum=&sayfa=1&sirala=sonOdeme&yon=artan",
+            ),
+        );
         expect(odeme.closest("th")?.getAttribute("aria-sort")).toBe(
             "ascending",
         );
         fireEvent.click(odeme);
-        expect(sira()).toEqual(["sub_a", "sub_c", "sub_b"]);
+        await waitFor(() =>
+            expect(yonlendirici.state.location.search).toBe(
+                "?sirala=sonOdeme&yon=azalan",
+            ),
+        );
         expect(odeme.closest("th")?.getAttribute("aria-sort")).toBe(
             "descending",
         );
         fireEvent.click(screen.getByRole("button", { name: "Abone" }));
-        expect(sira()).toEqual(["sub_a", "sub_b", "sub_c"]);
+        await waitFor(() =>
+            expect(yonlendirici.state.location.search).toBe("?sirala=email"),
+        );
+    });
+
+    it("P7a2: sayfalama — sayı, sonraki sayfa adreste ve uçta, süzgeç ilk sayfaya döndürür", async () => {
+        toplam = 30;
+        kur();
+        const nav = await screen.findByRole("navigation", {
+            name: "Sayfalama",
+        });
+        // Aralık sunucunun sayfa boyutuyla (25) yazılır.
+        expect(nav.textContent).toContain("1–25 / 30 abonelik");
+        fireEvent.click(within(nav).getByRole("button", { name: "Sonraki ›" }));
+        await waitFor(() =>
+            expect(yonlendirici.state.location.search).toBe("?sayfa=2"),
+        );
+        await waitFor(() =>
+            expect(istenen.at(-1)).toBe("?ara=&durum=&sayfa=2"),
+        );
+        fireEvent.click(
+            within(screen.getByRole("group", { name: "Durum" })).getByRole(
+                "button",
+                { name: "Aktif" },
+            ),
+        );
+        await waitFor(() =>
+            expect(yonlendirici.state.location.search).toBe("?durum=active"),
+        );
     });
 
     it("eşleşme yoksa boş satır", async () => {

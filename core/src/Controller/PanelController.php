@@ -22,6 +22,9 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
  */
 final class PanelController extends AbstractController
 {
+    /** P7a2: büyüyen tablolar sayfalı (kullanıcı kararı; web2wave gibi sunucuda, numaralı). */
+    public const SAYFA_BOYUTU = 25;
+
     /**
      * Panel uygulaması (B5): React kabuğu. Sayfaları istemci yönlendirir;
      * veriler /panel/api/* uçlarından. Derlenmemişse açık hata.
@@ -46,14 +49,19 @@ final class PanelController extends AbstractController
         return self::korumali($this->render('panel/uygulama.html.twig', $giris));
     }
 
-    /** P5: abonelikler (CRM) — e-posta maskeli; arama ve durum süzgeci. */
+    /** P5: abonelikler (CRM) — e-posta maskeli; arama ve durum süzgeci. P7a2: sayfalı, sıralama sunucuda. */
     #[Route('/panel/api/kullanicilar', name: 'panel_api_kullanicilar', methods: ['GET'])]
     public function kullanicilar(Request $request, Kullanicilar $kullanicilar): JsonResponse
     {
+        $ara = mb_substr($request->query->getString('ara'), 0, 100);
+        $durum = mb_substr($request->query->getString('durum'), 0, 40);
+        $sayfa = self::sayfa($request);
+
         return self::korumali(new JsonResponse([
-            'azami' => Kullanicilar::AZAMI_SATIR,
+            ...self::sayfali($sayfa, $kullanicilar->say($ara, $durum)),
             'durumlar' => $kullanicilar->durumlar(),
-            'satirlar' => $kullanicilar->liste(mb_substr($request->query->getString('ara'), 0, 100), mb_substr($request->query->getString('durum'), 0, 40)),
+            'satirlar' => $kullanicilar->liste($ara, $durum, null, $sayfa, self::SAYFA_BOYUTU,
+                $request->query->getString('sirala'), 'azalan' !== $request->query->getString('yon')),
         ]));
     }
 
@@ -61,25 +69,38 @@ final class PanelController extends AbstractController
     #[Route('/panel/api/rapor', name: 'panel_api_rapor', methods: ['GET'])]
     public function rapor(Request $request, Rapor $rapor): JsonResponse
     {
-        $gun = $request->query->getInt('gun', 30);
-        if (!\in_array($gun, Rapor::GUNLER, true)) {
-            $gun = 30;
-        }
+        $gun = self::gun($request);
 
         return self::korumali(new JsonResponse([
             'gun' => $gun,
             'gunler' => Rapor::GUNLER,
-            'azami' => Rapor::AZAMI_SATIR,
             'sayimlar' => $rapor->sayimlar($gun),
             'izinler' => $rapor->izinler($gun),
-            'satirlar' => $rapor->satirlar($gun),
             'adimlar' => $rapor->adimlar($gun),
             'cevaplar' => $rapor->cevaplar($gun),
-            'utm' => $rapor->utm($gun),
             'kohort' => $rapor->kohort($gun),
             'kampanyalar' => $rapor->kampanyalar($gun),
-            'metinCevaplari' => $rapor->metinCevaplari($gun),
             'gunluk' => $rapor->gunluk($gun),
+        ]));
+    }
+
+    /**
+     * P7a2: raporun büyüyen üç listesi ayrı ve sayfalı — her tablonun kendi
+     * sayfası olur, raporun geri kalanı sayfa değişince yeniden hesaplanmaz.
+     */
+    #[Route('/panel/api/rapor/{liste}', name: 'panel_api_rapor_liste', requirements: ['liste' => 'ziyaretler|kaynaklar|serbestYanitlar'], methods: ['GET'])]
+    public function raporListesi(Request $request, Rapor $rapor, string $liste): JsonResponse
+    {
+        $gun = self::gun($request);
+        $sayfa = self::sayfa($request);
+
+        return self::korumali(new JsonResponse([
+            ...self::sayfali($sayfa, $rapor->toplam($liste, $gun)),
+            'satirlar' => match ($liste) {
+                'ziyaretler' => $rapor->satirlar($gun, $sayfa, self::SAYFA_BOYUTU),
+                'kaynaklar' => $rapor->utm($gun, null, $sayfa, self::SAYFA_BOYUTU),
+                default => $rapor->metinCevaplari($gun, $sayfa, self::SAYFA_BOYUTU),
+            },
         ]));
     }
 
@@ -104,6 +125,25 @@ final class PanelController extends AbstractController
     {
         // Güvenlik duvarının logout dinleyicisi bu isteği buraya gelmeden karşılar.
         throw new \LogicException('logout güvenlik duvarında');
+    }
+
+    private static function gun(Request $request): int
+    {
+        $gun = $request->query->getInt('gun', 30);
+
+        return \in_array($gun, Rapor::GUNLER, true) ? $gun : 30;
+    }
+
+    /** 1'den başlar; bozuk ya da aşırı değer 1'e / üst sınıra çekilir (OFFSET taşmasın). */
+    private static function sayfa(Request $request): int
+    {
+        return max(1, min(10000, $request->query->getInt('sayfa', 1)));
+    }
+
+    /** @return array{sayfa: int, boyut: int, toplam: int} */
+    private static function sayfali(int $sayfa, int $toplam): array
+    {
+        return ['sayfa' => $sayfa, 'boyut' => self::SAYFA_BOYUTU, 'toplam' => $toplam];
     }
 
     /**

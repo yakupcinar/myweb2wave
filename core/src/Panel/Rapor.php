@@ -54,7 +54,7 @@ final readonly class Rapor
      * @return list<array{zaman: string, app: string, huni: string|null, kaynak: string, kampanya: string|null, reklam: bool,
      *                    asama: string, durum: string|null, email: string|null}>
      */
-    public function satirlar(int $gun): array
+    public function satirlar(int $gun, int $sayfa = 1, int $boyut = self::AZAMI_SATIR): array
     {
         $satirlar = $this->db->fetchAllAssociative(
             'SELECT z.created_at, z.app, z.huni, '.self::KAYNAK.' AS kaynak, z.utm_campaign, '.self::REKLAM.' AS reklam,
@@ -68,9 +68,9 @@ final readonly class Rapor
                  ORDER BY 2 DESC NULLS LAST, o.abonelik_at DESC LIMIT 1
              ) od ON true
              WHERE z.created_at >= now() - make_interval(days => :gun)
-             ORDER BY z.created_at DESC
-             LIMIT '.self::AZAMI_SATIR,
-            ['gun' => $gun],
+             ORDER BY z.created_at DESC, z.id
+             LIMIT :boyut OFFSET :atla',
+            ['gun' => $gun, 'boyut' => $boyut, 'atla' => ($sayfa - 1) * $boyut],
         );
 
         return array_map(static fn (array $s): array => [
@@ -230,7 +230,7 @@ final readonly class Rapor
      * @return list<array{kaynak: string, ortam: string|null, kampanya: string|null, reklam: bool, ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int,
      *                    gelir: list<array{paraBirimi: string, tutar: int|float}>}>
      */
-    public function utm(int $gun, ?string $app = null): array
+    public function utm(int $gun, ?string $app = null, int $sayfa = 1, int $boyut = self::AZAMI_SATIR): array
     {
         // Gelir ayrı sorguda, grup anahtarıyla PHP'de birleşir (ilişkili alt sorgu
         // grup × ziyaret tarardı). REKLAM organikte NULL olabilir — iki sorguda aynı.
@@ -267,9 +267,9 @@ final readonly class Rapor
                  FROM odeme_oturumlari o WHERE o.ziyaret_id = v.id
              ) od
              GROUP BY 1, 2, 3, 4
-             ORDER BY ziyaret DESC, v.kaynak COLLATE "C", v.ortam COLLATE "C" NULLS FIRST, v.kampanya COLLATE "C" NULLS FIRST
-             LIMIT '.self::AZAMI_SATIR,
-            ['gun' => $gun, 'app' => $app],
+             ORDER BY ziyaret DESC, v.kaynak COLLATE "C", v.ortam COLLATE "C" NULLS FIRST, v.kampanya COLLATE "C" NULLS FIRST, v.reklam NULLS FIRST
+             LIMIT :boyut OFFSET :atla',
+            ['gun' => $gun, 'app' => $app, 'boyut' => $boyut, 'atla' => ($sayfa - 1) * $boyut],
         ));
     }
 
@@ -389,7 +389,7 @@ final readonly class Rapor
     }
 
     /** @return list<array{zaman: string, app: string, soru: string, cevap: string}> */
-    public function metinCevaplari(int $gun): array
+    public function metinCevaplari(int $gun, int $sayfa = 1, int $boyut = self::AZAMI_SATIR): array
     {
         return array_map(static fn (array $s): array => [
             'zaman' => self::dizge($s['created_at']),
@@ -400,10 +400,26 @@ final readonly class Rapor
             'SELECT z.created_at, z.app, c.soru, c.cevap
              FROM huni_metin_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
              WHERE z.created_at >= now() - make_interval(days => :gun)
-             ORDER BY c.updated_at DESC
-             LIMIT '.self::AZAMI_SATIR,
-            ['gun' => $gun],
+             ORDER BY c.updated_at DESC, c.ziyaret_id, c.soru
+             LIMIT :boyut OFFSET :atla',
+            ['gun' => $gun, 'boyut' => $boyut, 'atla' => ($sayfa - 1) * $boyut],
         ));
+    }
+
+    /**
+     * P7a2: sayfalı listelerin toplamı ("/ 312") — satirlar, utm ve
+     * metinCevaplari ile aynı aralık ve gruplama. Liste adı rotada sınırlı
+     * (ziyaretler | kaynaklar | serbestYanitlar).
+     */
+    public function toplam(string $liste, int $gun): int
+    {
+        $aralik = 'z.created_at >= now() - make_interval(days => :gun)';
+
+        return self::sayi($this->db->fetchOne(match ($liste) {
+            'ziyaretler' => "SELECT count(*) FROM huni_ziyaretleri z WHERE {$aralik}",
+            'kaynaklar' => 'SELECT count(*) FROM (SELECT DISTINCT '.self::KAYNAK.', z.utm_medium, z.utm_campaign, '.self::REKLAM." FROM huni_ziyaretleri z WHERE {$aralik}) g",
+            default => "SELECT count(*) FROM huni_metin_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id WHERE {$aralik}",
+        }, ['gun' => $gun]));
     }
 
     /** Ekran görüntüsünde kişisel veri sızmasın (kullanıcı kararı): a***@alan.com. */

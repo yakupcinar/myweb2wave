@@ -65,6 +65,7 @@
 | Uygulama rehberi (sayfa sayfa + mimari plan) | ✅ 243 bağlantı betikle denetlendi (dosya + satır) | `docs/uygulama-rehberi.md` |
 | Panel görünümü Apple tarzı (P6) | ✅ renk değişkenleri + gruplu menü + ortak bileşenler + giriş sayfası; okunabilirlik ve iki kopya testle (kırma 4/4); iç sayfalar tarayıcıda kullanıcıda | `docs/decisions/p6-apple-tarzi-panel.md` |
 | Panel taslakla bire bir — kabuk + Aboneler (P7a) | ✅ tema seçici (açık varsayılan), Aboneler taslaktaki gibi, son fatura tarihi API'de; kırma 15/15, tarayıcıda açık/koyu + onay satırı | `docs/decisions/p7a-aboneler.md` |
+| Büyüyen tablolar sayfalı (P7a2) | ✅ 25'er satır, sunucuda; Aboneler sıralaması sunucuda, Rapor'un üç listesi ayrı uçta; kırma 12/12, tarayıcıda 116 ziyaret sayfalandı | `docs/decisions/p7a2-sayfalama.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)

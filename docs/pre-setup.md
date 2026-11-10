@@ -260,6 +260,12 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A24 · Panel tabloları sayfalı** (2026-11-10, kullanıcı: numaralı sayfalama, büyüyen tüm tablolar).
+- Sayfa başına 25, sunucuda; sıralama da sunucuda. Aboneler'de sayfa ve sıra adreste. Rapor'un üç listesi
+  (ziyaretler, kaynaklar, serbest yanıtlar) kendi uçlarında. Reddedilenler: tarih aralığı zorunluluğu,
+  "daha fazla göster", tablo içinde kaydırma. Ayrıntı ve ölçüm:
+  [p7a2-sayfalama.md](decisions/p7a2-sayfalama.md).
+
 **A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
 - Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
   dosyası, yalnız çekme (akış API).

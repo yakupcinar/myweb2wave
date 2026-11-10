@@ -5,6 +5,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     cleanup,
+    fireEvent,
     render,
     screen,
     waitFor,
@@ -24,25 +25,11 @@ type PanelRaporu = components["schemas"]["PanelRaporu"];
 const RAPOR: PanelRaporu = {
     gun: 30,
     gunler: [7, 30, 90],
-    azami: 200,
     sayimlar: {
         reklam: { ziyaret: 3, odemeye_gecti: 3, deneme: 1, odedi: 1 },
         organik: { ziyaret: 1, odemeye_gecti: 0, deneme: 0, odedi: 0 },
     },
     izinler: { kabul: 2, red: 1, secmeyen: 1 },
-    satirlar: [
-        {
-            zaman: "2026-10-27T06:31:58+00:00",
-            app: "keepchat",
-            huni: null,
-            kaynak: "<script>alert(1)</script>",
-            kampanya: "ekim-1",
-            reklam: true,
-            asama: "ödedi",
-            durum: "active",
-            email: "a***@example.com",
-        },
-    ],
     adimlar: [
         { app: "keepchat", huni: "—", sira: 0, adim: "karsilama", ulasan: 3 },
         { app: "keepchat", huni: "—", sira: 1, adim: "kiminle", ulasan: 2 },
@@ -55,33 +42,6 @@ const RAPOR: PanelRaporu = {
             secenek: "aile",
             sayi: 4,
             abone: 1,
-        },
-    ],
-    utm: [
-        {
-            kaynak: "meta",
-            ortam: "cpc",
-            kampanya: "ekim",
-            reklam: true,
-            ziyaret: 3,
-            odemeye_gecti: 3,
-            deneme: 1,
-            odedi: 1,
-            gelir: [
-                { paraBirimi: "EUR", tutar: 29.97 },
-                { paraBirimi: "TRY", tutar: 20 },
-            ],
-        },
-        {
-            kaynak: "doğrudan",
-            ortam: null,
-            kampanya: null,
-            reklam: false,
-            ziyaret: 1,
-            odemeye_gecti: 0,
-            deneme: 0,
-            odedi: 0,
-            gelir: [],
         },
     ],
     kampanyalar: [
@@ -121,7 +81,6 @@ const RAPOR: PanelRaporu = {
             ],
         },
     ],
-    metinCevaplari: [],
     gunluk: [
         {
             gun: "2026-11-01",
@@ -144,7 +103,53 @@ const RAPOR: PanelRaporu = {
     ],
 };
 
+// P7a2: büyüyen üç liste kendi uçlarından, sayfalı.
+const LISTELER: Record<string, unknown[]> = {
+    ziyaretler: [
+        {
+            zaman: "2026-10-27T06:31:58+00:00",
+            app: "keepchat",
+            huni: null,
+            kaynak: "<script>alert(1)</script>",
+            kampanya: "ekim-1",
+            reklam: true,
+            asama: "ödedi",
+            durum: "active",
+            email: "a***@example.com",
+        },
+    ],
+    kaynaklar: [
+        {
+            kaynak: "meta",
+            ortam: "cpc",
+            kampanya: "ekim",
+            reklam: true,
+            ziyaret: 3,
+            odemeye_gecti: 3,
+            deneme: 1,
+            odedi: 1,
+            gelir: [
+                { paraBirimi: "EUR", tutar: 29.97 },
+                { paraBirimi: "TRY", tutar: 20 },
+            ],
+        },
+        {
+            kaynak: "doğrudan",
+            ortam: null,
+            kampanya: null,
+            reklam: false,
+            ziyaret: 1,
+            odemeye_gecti: 0,
+            deneme: 0,
+            odedi: 0,
+            gelir: [],
+        },
+    ],
+    serbestYanitlar: [],
+};
+
 let istenen: string[] = [];
+let toplamlar: Record<string, number> = {};
 
 function kur(adres = "/panel", veri: PanelRaporu = RAPOR): void {
     istenen = [];
@@ -152,6 +157,20 @@ function kur(adres = "/panel", veri: PanelRaporu = RAPOR): void {
         "fetch",
         vi.fn(async (istek: Request) => {
             istenen.push(istek.url);
+            const adres = new URL(istek.url, "http://x");
+            const liste = adres.pathname.split("/panel/api/rapor/")[1];
+            if (liste) {
+                const satirlar = LISTELER[liste] ?? [];
+                return new Response(
+                    JSON.stringify({
+                        sayfa: Number(adres.searchParams.get("sayfa") ?? 1),
+                        boyut: 25,
+                        toplam: toplamlar[liste] ?? satirlar.length,
+                        satirlar,
+                    }),
+                    { headers: { "Content-Type": "application/json" } },
+                );
+            }
             return new Response(JSON.stringify(veri), {
                 headers: { "Content-Type": "application/json" },
             });
@@ -168,6 +187,7 @@ function kur(adres = "/panel", veri: PanelRaporu = RAPOR): void {
 
 afterEach(() => {
     cleanup();
+    toplamlar = {};
     vi.unstubAllGlobals();
 });
 
@@ -348,12 +368,28 @@ describe("Rapor", () => {
         ).toEqual(["Rapor"]);
     });
 
-    it("gün aralığı adresten okunur ve uca gider; tanınmayan 30", async () => {
-        kur("/panel?gun=90");
-        await screen.findByRole("region", { name: "Özet" });
-        expect(
-            new URL(istenen[0] ?? "", "http://x").searchParams.get("gun"),
-        ).toBe("90");
+    it("gün aralığı adresten okunur ve rapor + liste uçlarına gider; tanınmayan 30", async () => {
+        const gunler = (): string[] => [
+            ...new Set(
+                istenen.map(
+                    (u) => new URL(u, "http://x").searchParams.get("gun") ?? "",
+                ),
+            ),
+        ];
+        const yollar = (): string[] =>
+            istenen.map((u) => new URL(u, "http://x").pathname).sort();
+        // Sunucu seçilen aralığı yanıtta geri verir; listeler onu kullanır.
+        kur("/panel?gun=90", { ...RAPOR, gun: 90 });
+        await screen.findByRole("region", { name: "Ziyaretler" });
+        await screen.findByRole("region", { name: "Kaynak kırılımı" });
+        await screen.findByRole("region", { name: "Serbest yanıtlar" });
+        expect(yollar()).toEqual([
+            "/panel/api/rapor",
+            "/panel/api/rapor/kaynaklar",
+            "/panel/api/rapor/serbestYanitlar",
+            "/panel/api/rapor/ziyaretler",
+        ]);
+        expect(gunler()).toEqual(["90"]);
         expect(
             screen
                 .getByRole("link", { name: "Son 90 gün" })
@@ -361,9 +397,62 @@ describe("Rapor", () => {
         ).toBe("page");
         cleanup();
         kur("/panel?gun=5");
-        await waitFor(() => expect(istenen).toHaveLength(1));
+        await screen.findByRole("region", { name: "Ziyaretler" });
+        expect(gunler()).toEqual(["30"]);
+    });
+
+    it("P7a2: liste sayfalı — sayı, sonraki sayfa isteği, sınırda düğme kapalı", async () => {
+        toplamlar = { ziyaretler: 30 };
+        kur();
+        const ziyaret = await screen.findByRole("region", {
+            name: "Ziyaretler",
+        });
+        const sayfalama = within(ziyaret.parentElement!).getByRole(
+            "navigation",
+            {
+                name: "Sayfalama",
+            },
+        );
+        expect(sayfalama.textContent).toContain("1–25 / 30 ziyaret");
+        const onceki = within(sayfalama).getByRole("button", {
+            name: "‹ Önceki",
+        });
+        expect((onceki as HTMLButtonElement).disabled).toBe(true);
+        fireEvent.click(
+            within(sayfalama).getByRole("button", { name: "Sonraki ›" }),
+        );
+        await waitFor(() =>
+            expect(
+                istenen
+                    .map((u) => new URL(u, "http://x"))
+                    .find(
+                        (u) =>
+                            u.pathname === "/panel/api/rapor/ziyaretler" &&
+                            u.searchParams.get("sayfa") === "2",
+                    )
+                    ?.searchParams.get("gun"),
+            ).toBe("30"),
+        );
+        await waitFor(() =>
+            expect(sayfalama.textContent).toContain("26–30 / 30 ziyaret"),
+        );
         expect(
-            new URL(istenen[0] ?? "", "http://x").searchParams.get("gun"),
-        ).toBe("30");
+            (
+                within(sayfalama).getByRole("button", {
+                    name: "Sonraki ›",
+                }) as HTMLButtonElement
+            ).disabled,
+        ).toBe(true);
+        // Kaynaklar tek sayfaya sığar: yalnız sayı, düğme yok.
+        const kaynak = await screen.findByRole("region", {
+            name: "Kaynak kırılımı",
+        });
+        const k = within(kaynak.parentElement!).getByRole("navigation", {
+            name: "Sayfalama",
+        });
+        expect([
+            k.textContent,
+            within(k).queryAllByRole("button").length,
+        ]).toEqual(["2 kaynak", 0]);
     });
 });

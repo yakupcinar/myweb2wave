@@ -203,7 +203,7 @@ final class PanelTest extends WebTestCase
         self::assertSame(['ziyaret' => 3, 'odemeye_gecti' => 3, 'deneme' => 1, 'odedi' => 1], $r['sayimlar']['reklam']);
         self::assertSame(
             [['deneme başladı', 'trialing', 'd***@example.com'], ['ödedi', null, null], ['ödemeye geçti', null, null]],
-            array_map(static fn (array $s): array => [$s['asama'], $s['durum'], $s['email']], $r['satirlar']),
+            array_map(static fn (array $s): array => [$s['asama'], $s['durum'], $s['email']], $this->liste('ziyaretler')),
         );
     }
 
@@ -255,7 +255,7 @@ final class PanelTest extends WebTestCase
             ['kaynak' => 'google', 'ortam' => 'cpc', 'kampanya' => 'kasim', 'reklam' => true, 'ziyaret' => 2, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'TRY', 'tutar' => 20]]],
             ['kaynak' => 'meta', 'ortam' => 'paid', 'kampanya' => 'ekim', 'reklam' => true, 'ziyaret' => 1, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 7]]],
             ['kaynak' => 'tiktok', 'ortam' => 'cpc', 'kampanya' => 'ekim', 'reklam' => true, 'ziyaret' => 1, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'TRY', 'tutar' => 15]]],
-        ], $r['utm']);
+        ], $this->liste('kaynaklar', '?gun=90'));
         // A deneme ile başladı ama faturası ödendi → "ödedi" (deneme değil).
         self::assertSame(['ziyaret' => 7, 'odemeye_gecti' => 6, 'deneme' => 0, 'odedi' => 5], $r['sayimlar']['reklam']);
         self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'deneme' => 1, 'odedi' => 1], $r['sayimlar']['organik']);
@@ -359,7 +359,7 @@ final class PanelTest extends WebTestCase
 
         self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['kampanyalar'][0]['gelir']);
         self::assertSame(0.5, $r['kampanyalar'][0]['roas']);
-        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['utm'][0]['gelir']);
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $this->liste('kaynaklar')[0]['gelir'] ?? null);
         self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['kohort'][0]['pencereler'][0]['kisiBasi']);
     }
 
@@ -370,7 +370,7 @@ final class PanelTest extends WebTestCase
 
         $r = $this->rapor();
 
-        $odeyen = $r['satirlar'][0];
+        $odeyen = $this->liste('ziyaretler')[0];
         unset($odeyen['zaman']);
         self::assertSame(['app' => 'keepchat', 'huni' => null, 'kaynak' => 'meta', 'kampanya' => 'ekim-1', 'reklam' => true, 'asama' => 'ödedi', 'durum' => 'active', 'email' => 'a***@example.com'], $odeyen);
         self::assertStringNotContainsString('ayse@example.com', (string) $this->client->getResponse()->getContent());
@@ -399,16 +399,50 @@ final class PanelTest extends WebTestCase
         self::assertSame(4, $this->rapor('?gun=90')['adimlar'][0]['ulasan']);
     }
 
+    /**
+     * P7a2: raporun üç listesi sayfalı — toplam aralıktaki tamamı, sayfalar
+     * örtüşmez; kaynaklarda toplam grup sayısıdır (ziyaret değil).
+     */
+    public function testRaporListeleriSayfali(): void
+    {
+        for ($i = 0; $i < 27; ++$i) {
+            // 27 ziyaret, 14 kampanya (ikişer) → 14 kaynak grubu.
+            $z = $this->ziyaretEkle(['utm_source' => 'meta', 'utm_campaign' => 'k'.intdiv($i, 2)], ($i + 1).' minutes');
+            $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => 1, 'adim' => 'hedef']);
+            $this->db->insert('huni_metin_cevaplari', ['ziyaret_id' => $z, 'soru' => 'hedef', 'cevap' => 'c'.$i]);
+        }
+        $this->ziyaretEkle([], '40 days');
+        $this->girisYapmis();
+
+        $z1 = $this->listeYaniti('ziyaretler');
+        $z2 = $this->listeYaniti('ziyaretler', '?sayfa=2');
+        self::assertSame([1, 25, 27, 25, 2, 2], [$z1['sayfa'], $z1['boyut'], $z1['toplam'], \count($z1['satirlar']), $z2['sayfa'], \count($z2['satirlar'])]);
+        self::assertSame(['k0', 'k0', 'k1'], array_column(\array_slice($z1['satirlar'], 0, 3), 'kampanya'), 'en yeni önce');
+        self::assertSame(['k12', 'k13'], array_column($z2['satirlar'], 'kampanya'));
+        self::assertSame(28, $this->listeYaniti('ziyaretler', '?gun=90')['toplam'], 'aralık toplamı da sınırlar');
+
+        $k1 = $this->listeYaniti('kaynaklar');
+        self::assertSame([14, 14], [$k1['toplam'], \count($k1['satirlar'])]);
+
+        $y1 = $this->listeYaniti('serbestYanitlar');
+        $y2 = $this->listeYaniti('serbestYanitlar', '?sayfa=2');
+        self::assertSame([27, 25, 2], [$y1['toplam'], \count($y1['satirlar']), \count($y2['satirlar'])]);
+        self::assertCount(27, array_unique(array_filter(array_merge(array_column($y1['satirlar'], 'cevap'), array_column($y2['satirlar'], 'cevap')), \is_string(...))));
+
+        $this->client->request('GET', '/panel/api/rapor/kohort');
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testSerbestYanitYalnizOturumluPanelde(): void
     {
         $z = $this->ziyaretEkle([], '1 hour');
         $this->db->insert('huni_adimlari', ['ziyaret_id' => $z, 'sira' => 1, 'adim' => 'hedef']);
         $this->db->insert('huni_metin_cevaplari', ['ziyaret_id' => $z, 'soru' => 'hedef', 'cevap' => 'Daha iyi uyumak']);
-        $this->client->request('GET', '/panel/api/rapor');
+        $this->client->request('GET', '/panel/api/rapor/serbestYanitlar');
         self::assertResponseRedirects('/panel/giris');
 
         $this->girisYapmis();
-        self::assertSame(['Daha iyi uyumak'], array_column($this->rapor()['metinCevaplari'], 'cevap'));
+        self::assertSame(['Daha iyi uyumak'], array_column($this->liste('serbestYanitlar'), 'cevap'));
     }
 
     /** Üç ziyaret: biri çoklu aile+iş, biri aile, biri iş seçer. */
@@ -446,10 +480,10 @@ final class PanelTest extends WebTestCase
      * orada ölçüldü, tip açıklaması yalnız erişim için.
      *
      * @return array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>,
-     *               satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>,
-     *               cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>,
+     *               adimlar: list<array{adim: string, ulasan: int}>,
+     *               cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>,
      *               gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>,
-     *               utm: list<array<string, mixed>>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>}
+     *               kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>}
      */
     private function rapor(string $sorgu = ''): array
     {
@@ -457,8 +491,31 @@ final class PanelTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $yanit = $this->client->getResponse();
         Sozlesme::yanitiDogrula('GET', '/panel/api/rapor', $yanit);
-        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, satirlar: list<array<string, mixed>>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, metinCevaplari: list<array{cevap: string}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, utm: list<array<string, mixed>>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
+        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
         $govde = json_decode((string) $yanit->getContent(), true);
+
+        return $govde;
+    }
+
+    /**
+     * P7a2: raporun sayfalı listesi (ziyaretler, kaynaklar, serbestYanitlar);
+     * yanıt sözleşmeyle doğrulanır, satırlar döner.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function liste(string $ad, string $sorgu = ''): array
+    {
+        return $this->listeYaniti($ad, $sorgu)['satirlar'];
+    }
+
+    /** @return array{sayfa: int, boyut: int, toplam: int, satirlar: list<array<string, mixed>>} */
+    private function listeYaniti(string $ad, string $sorgu = ''): array
+    {
+        $this->client->request('GET', '/panel/api/rapor/'.$ad.$sorgu);
+        self::assertResponseIsSuccessful();
+        Sozlesme::yanitiDogrula('GET', '/panel/api/rapor/'.$ad, $this->client->getResponse());
+        /** @var array{sayfa: int, boyut: int, toplam: int, satirlar: list<array<string, mixed>>} $govde */
+        $govde = json_decode((string) $this->client->getResponse()->getContent(), true);
 
         return $govde;
     }

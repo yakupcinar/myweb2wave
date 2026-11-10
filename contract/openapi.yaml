@@ -542,6 +542,45 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PanelRaporu" }
+  /panel/api/rapor/ziyaretler:
+    get:
+      operationId: panelRaporZiyaretleri
+      summary: P7a2 — rapor ziyaret listesi (sayfalı)
+      parameters:
+        - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
+        - { $ref: "#/components/parameters/Sayfa" }
+      responses:
+        "200":
+          description: Bir sayfa satır ve toplam
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RaporZiyaretleri" }
+  /panel/api/rapor/kaynaklar:
+    get:
+      operationId: panelRaporKaynaklari
+      summary: P7a2 — rapor kaynak kırılımı (sayfalı)
+      parameters:
+        - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
+        - { $ref: "#/components/parameters/Sayfa" }
+      responses:
+        "200":
+          description: Bir sayfa satır ve toplam
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RaporKaynaklari" }
+  /panel/api/rapor/serbestYanitlar:
+    get:
+      operationId: panelRaporSerbestYanitlari
+      summary: P7a2 — rapor serbest yanıtları (sayfalı)
+      parameters:
+        - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
+        - { $ref: "#/components/parameters/Sayfa" }
+      responses:
+        "200":
+          description: Bir sayfa satır ve toplam
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RaporSerbestYanitlari" }
   /panel/api/ai/durum:
     get:
       operationId: panelAiDurumu
@@ -623,17 +662,22 @@ paths:
       parameters:
         - { name: ara, in: query, required: false, schema: { type: string, maxLength: 100 }, description: "E-posta, utm_source ya da utm_campaign içinde (büyük/küçük harf fark etmez)" }
         - { name: durum, in: query, required: false, schema: { type: string, maxLength: 40 }, description: "Abonelik durumu (active, past_due, canceled…); boş = hepsi" }
+        - { $ref: "#/components/parameters/Sayfa" }
+        - { name: sirala, in: query, required: false, schema: { type: string, enum: [email, durum, kaynak, sonOdeme] }, description: "P7a2 — sunucuda sıralama; yoksa en yeni güncellenen önce" }
+        - { name: yon, in: query, required: false, schema: { type: string, enum: [artan, azalan], default: artan } }
       responses:
         "200":
-          description: En yeni güncellenen önce, en çok azami satır
+          description: Bir sayfa abonelik (P7a2) ve süzgece uyan toplam
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: false
-                required: [azami, durumlar, satirlar]
+                required: [sayfa, boyut, toplam, durumlar, satirlar]
                 properties:
-                  azami: { type: integer }
+                  sayfa: { type: integer, minimum: 1 }
+                  boyut: { type: integer, minimum: 1 }
+                  toplam: { type: integer, minimum: 0 }
                   durumlar: { type: array, items: { type: string }, description: Süzgeç için veride geçen durumlar }
                   satirlar:
                     type: array
@@ -1463,6 +1507,12 @@ components:
       in: path
       required: true
       schema: { type: string }
+    Sayfa:
+      name: sayfa
+      in: query
+      required: false
+      description: "P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000"
+      schema: { type: integer, minimum: 1, default: 1 }
   responses:
     Yetkisiz:
       description: Anahtar yok, yanlış ya da başka uygulamanın
@@ -1623,7 +1673,7 @@ components:
     PanelRaporu:
       type: object
       additionalProperties: false
-      required: [gun, gunler, azami, sayimlar, izinler, satirlar, adimlar, cevaplar, metinCevaplari, gunluk, utm, kohort, kampanyalar]
+      required: [gun, gunler, sayimlar, izinler, adimlar, cevaplar, gunluk, kohort, kampanyalar]
       properties:
         gun: { type: integer, enum: [7, 30, 90] }
         gunluk:
@@ -1641,9 +1691,6 @@ components:
         gunler:
           type: array
           items: { type: integer, enum: [7, 30, 90] }
-        azami:
-          description: Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar
-          type: integer
         sayimlar:
           type: object
           additionalProperties: false
@@ -1660,24 +1707,6 @@ components:
             kabul: { type: integer, minimum: 0 }
             red: { type: integer, minimum: 0 }
             secmeyen: { type: integer, minimum: 0 }
-        satirlar:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required: [zaman, app, huni, kaynak, kampanya, reklam, asama, durum, email]
-            properties:
-              zaman: { type: string }
-              app: { type: string }
-              huni: { type: [string, "null"] }
-              kaynak: { type: string }
-              kampanya: { type: [string, "null"] }
-              reklam: { type: boolean }
-              asama: { type: string, enum: ["sayfayı gördü", "ödemeye geçti", "deneme başladı", "ödedi"] }
-              durum: { type: [string, "null"] }
-              email:
-                description: Maskeli (a***@example.com); açık e-posta panele hiç gelmez
-                type: [string, "null"]
         adimlar:
           type: array
           items:
@@ -1702,23 +1731,6 @@ components:
               secenek: { type: string }
               sayi: { type: integer, minimum: 0, description: Bu seçeneği seçen ziyaret }
               abone: { type: integer, minimum: 0, description: "M5c — bunlardan abone olan (deneme dahil)" }
-        utm:
-          description: "M5c — kaynak / ortam / kampanya başına; gelir aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları (en çok ziyaretli azami grup)"
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required: [kaynak, ortam, kampanya, reklam, ziyaret, odemeye_gecti, deneme, odedi, gelir]
-            properties:
-              kaynak: { type: string }
-              ortam: { type: [string, "null"] }
-              kampanya: { type: [string, "null"] }
-              reklam: { type: boolean }
-              ziyaret: { type: integer, minimum: 0 }
-              odemeye_gecti: { type: integer, minimum: 0 }
-              deneme: { type: integer, minimum: 0 }
-              odedi: { type: integer, minimum: 0 }
-              gelir: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
         kohort:
           description: "M5c — ziyaretin UTC haftası (pazartesi, en yeni önce); pencerede ziyaret başına birikimli gelir (0 = ilk 24 saat); pencere haftanın son ziyareti için dolmadıysa olgun değil, tutar yok"
           type: array
@@ -1753,8 +1765,68 @@ components:
               odedi: { type: integer, minimum: 0 }
               gelir: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
               roas: { type: [number, "null"], minimum: 0 }
-        metinCevaplari:
-          description: 90 gün içinde, en yeni azami kadar
+    RaporZiyaretleri:
+      description: "P7a2 — aralıktaki ziyaretler, en yeni önce, sayfalı"
+      type: object
+      additionalProperties: false
+      required: [sayfa, boyut, toplam, satirlar]
+      properties:
+        sayfa: { type: integer, minimum: 1 }
+        boyut: { type: integer, minimum: 1 }
+        toplam: { type: integer, minimum: 0 }
+        satirlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [zaman, app, huni, kaynak, kampanya, reklam, asama, durum, email]
+            properties:
+              zaman: { type: string }
+              app: { type: string }
+              huni: { type: [string, "null"] }
+              kaynak: { type: string }
+              kampanya: { type: [string, "null"] }
+              reklam: { type: boolean }
+              asama: { type: string, enum: ["sayfayı gördü", "ödemeye geçti", "deneme başladı", "ödedi"] }
+              durum: { type: [string, "null"] }
+              email:
+                description: Maskeli (a***@example.com); açık e-posta panele hiç gelmez
+                type: [string, "null"]
+    RaporKaynaklari:
+      description: "M5c, P7a2 — kaynak / ortam / kampanya başına; gelir aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları; en çok ziyaretli önce, sayfalı"
+      type: object
+      additionalProperties: false
+      required: [sayfa, boyut, toplam, satirlar]
+      properties:
+        sayfa: { type: integer, minimum: 1 }
+        boyut: { type: integer, minimum: 1 }
+        toplam: { type: integer, minimum: 0 }
+        satirlar:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [kaynak, ortam, kampanya, reklam, ziyaret, odemeye_gecti, deneme, odedi, gelir]
+            properties:
+              kaynak: { type: string }
+              ortam: { type: [string, "null"] }
+              kampanya: { type: [string, "null"] }
+              reklam: { type: boolean }
+              ziyaret: { type: integer, minimum: 0 }
+              odemeye_gecti: { type: integer, minimum: 0 }
+              deneme: { type: integer, minimum: 0 }
+              odedi: { type: integer, minimum: 0 }
+              gelir: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
+    RaporSerbestYanitlari:
+      description: "P7a2 — serbest metin cevapları, en yeni önce, sayfalı"
+      type: object
+      additionalProperties: false
+      required: [sayfa, boyut, toplam, satirlar]
+      properties:
+        sayfa: { type: integer, minimum: 1 }
+        boyut: { type: integer, minimum: 1 }
+        toplam: { type: integer, minimum: 0 }
+        satirlar:
           type: array
           items:
             type: object

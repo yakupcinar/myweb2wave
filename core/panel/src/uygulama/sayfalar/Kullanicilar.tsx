@@ -1,6 +1,6 @@
 // Aboneler (P5, CRM): abonelik başına satır — kim, durumu, nereden geldi,
-// son ödemesi. Arama ve durum adreste (?ara=&durum=), sunucuda süzülür;
-// sıralama istemcide (en çok 200 satır — tablo kitaplığı gerekmedi).
+// son ödemesi. Arama, durum, sayfa ve sıralama adreste
+// (?ara=&durum=&sayfa=&sirala=&yon=); P7a2'den beri hepsi sunucuda, 25'er satır.
 // M6a (A19): satırda dönem sonunda iptal / geri al ve son faturanın iadesi —
 // onay satırın altında açılır (tarayıcı iletişim kutusu yok).
 // P7a: görünüm onaylı taslakla bire bir (p7a-aboneler.md) — durum Türkçe ve
@@ -10,7 +10,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { api } from "../api";
 import { ekliTarih, kisaTarih, tutarlar, uzunTarih } from "../bicim";
@@ -20,14 +20,31 @@ import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
 import { Kart } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
+import { Sayfalama } from "../ui/Sayfalama";
 import { Tablo, Td, Th } from "../ui/Tablo";
 
-type Satir = Awaited<ReturnType<typeof listeAl>>["satirlar"][number];
+type Liste = Awaited<ReturnType<typeof listeAl>>;
+type Satir = Liste["satirlar"][number];
 type Sutun = "email" | "durum" | "kaynak" | "sonOdeme";
+type Sira = { sutun: Sutun; artan: boolean } | null;
 
-async function listeAl(ara: string, durum: string) {
+async function listeAl(ara: string, durum: string, sayfa: number, sira: Sira) {
     const { data } = await api.GET("/panel/api/kullanicilar", {
-        params: { query: { ara, durum } },
+        params: {
+            query: {
+                ara,
+                durum,
+                sayfa,
+                ...(sira
+                    ? {
+                          sirala: sira.sutun,
+                          yon: sira.artan
+                              ? ("artan" as const)
+                              : ("azalan" as const),
+                      }
+                    : {}),
+            },
+        },
     });
     if (!data) throw new Error("kullanıcılar alınamadı");
     return data;
@@ -88,21 +105,40 @@ export function Kullanicilar(): ReactNode {
     const [adres, setAdres] = useSearchParams();
     const ara = adres.get("ara") ?? "";
     const durum = adres.get("durum") ?? "";
+    const sayfa = Math.max(1, Number(adres.get("sayfa")) || 1);
+    const sutun = SUTUNLAR.find(([s]) => s === adres.get("sirala"))?.[0];
+    const sira: Sira = sutun
+        ? { sutun, artan: adres.get("yon") !== "azalan" }
+        : null;
     const [taslak, setTaslak] = useState(ara);
     const sorgu = useQuery({
-        queryKey: ["kullanicilar", ara, durum],
-        queryFn: () => listeAl(ara, durum),
-        // Yeni arama yüklenirken önceki sonuç kalır — tablo boşalıp zıplamasın.
+        queryKey: ["kullanicilar", ara, durum, sayfa, sira],
+        queryFn: () => listeAl(ara, durum, sayfa, sira),
+        // Yeni sayfa yüklenirken önceki sonuç kalır — tablo boşalıp zıplamasın.
         placeholderData: keepPreviousData,
     });
-    const sec = (ara2: string, durum2: string): void =>
+    // Süzgeç ya da sıra değişince ilk sayfaya dönülür (sayfa 4 yeni listede olmayabilir).
+    const sec = (
+        degisen: Partial<{
+            ara: string;
+            durum: string;
+            sayfa: number;
+            sira: Sira;
+        }>,
+    ): void => {
+        const y = { ara, durum, sira, sayfa: 1, ...degisen };
         setAdres(
             Object.fromEntries(
-                Object.entries({ ara: ara2.trim(), durum: durum2 }).filter(
-                    ([, v]) => v,
-                ),
+                Object.entries({
+                    ara: y.ara.trim(),
+                    durum: y.durum,
+                    sayfa: y.sayfa > 1 ? String(y.sayfa) : "",
+                    sirala: y.sira?.sutun ?? "",
+                    yon: y.sira && !y.sira.artan ? "azalan" : "",
+                }).filter(([, v]) => v),
             ),
         );
+    };
 
     return (
         <>
@@ -116,7 +152,7 @@ export function Kullanicilar(): ReactNode {
                     className="flex min-w-0 flex-[1_1_320px]"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        sec(taslak, durum);
+                        sec({ ara: taslak });
                     }}
                 >
                     <label className="flex min-h-10 w-full items-center gap-2 rounded-[10px] border border-kenar-2 bg-yuzey px-3 focus-within:outline-2 focus-within:outline-vurgu">
@@ -154,7 +190,7 @@ export function Kullanicilar(): ReactNode {
                             type="button"
                             aria-pressed={durum === d}
                             className={cn(bolmeSinifi, "px-3.5 py-1.5")}
-                            onClick={() => sec(ara, d)}
+                            onClick={() => sec({ durum: d })}
                         >
                             {ad}
                         </button>
@@ -167,8 +203,10 @@ export function Kullanicilar(): ReactNode {
                 </p>
             ) : sorgu.data ? (
                 <Liste
-                    satirlar={sorgu.data.satirlar}
-                    azami={sorgu.data.azami}
+                    liste={sorgu.data}
+                    sira={sira}
+                    sirala={(s) => sec({ sira: s })}
+                    sayfaSec={(n) => sec({ sayfa: n })}
                 />
             ) : (
                 <p role="status" className="text-soluk">
@@ -184,38 +222,24 @@ type Is = "iptal" | "geriAl" | "iade";
 const hucre = "px-[18px] py-3.5";
 
 function Liste({
-    satirlar,
-    azami,
+    liste,
+    sira,
+    sirala,
+    sayfaSec,
 }: {
-    satirlar: Satir[];
-    azami: number;
+    liste: Liste;
+    sira: Sira;
+    sirala: (s: Sira) => void;
+    sayfaSec: (sayfa: number) => void;
 }): ReactNode {
     const istemci = useQueryClient();
-    // Varsayılan: sunucunun sırası (en yeni güncellenen önce).
-    const [sira, setSira] = useState<{ sutun: Sutun; artan: boolean } | null>(
-        null,
-    );
+    const { satirlar } = liste;
     const [onay, setOnay] = useState<{ abonelik: string; is: Is } | null>(null);
     const [hata, setHata] = useState<{
         abonelik: string;
         metin: string;
     } | null>(null);
     const [calisiyor, setCalisiyor] = useState(false);
-    const sirali = useMemo(() => {
-        if (!sira) return satirlar;
-        const deger = (s: Satir): string =>
-            (sira.sutun === "sonOdeme"
-                ? s.sonFatura?.odendi
-                : sira.sutun === "durum"
-                  ? durumBilgisi(s)[1]
-                  : s[sira.sutun]) ?? "";
-        return [...satirlar].sort(
-            (a, b) =>
-                (deger(a) < deger(b) ? -1 : deger(a) > deger(b) ? 1 : 0) *
-                (sira.artan ? 1 : -1),
-        );
-    }, [satirlar, sira]);
-
     const yap = async (abonelik: string, is: Is): Promise<void> => {
         setHata(null);
         setCalisiyor(true);
@@ -269,13 +293,13 @@ function Liste({
                                         type="button"
                                         className="hover:text-metin"
                                         onClick={() =>
-                                            setSira((o) => ({
+                                            sirala({
                                                 sutun,
                                                 artan:
-                                                    o?.sutun === sutun
-                                                        ? !o.artan
+                                                    sira?.sutun === sutun
+                                                        ? !sira.artan
                                                         : true,
-                                            }))
+                                            })
                                         }
                                     >
                                         {ad}
@@ -286,7 +310,7 @@ function Liste({
                         </tr>
                     </thead>
                     <tbody>
-                        {sirali.map((s) => (
+                        {satirlar.map((s) => (
                             <Fragment key={s.abonelik}>
                                 <SatirGorunumu
                                     s={s}
@@ -339,12 +363,13 @@ function Liste({
                     </tbody>
                 </Tablo>
             </Kart>
-            <p className="mt-3 text-[13px] text-soluk">
-                {satirlar.length} abonelik ·{" "}
-                {satirlar.length >= azami
-                    ? `İlk ${azami} gösteriliyor — aramayı daralt.`
-                    : "Başlığa tıklayarak sırala."}
-            </p>
+            <Sayfalama
+                sayfa={liste.sayfa}
+                boyut={liste.boyut}
+                toplam={liste.toplam}
+                birim="abonelik"
+                sec={sayfaSec}
+            />
         </>
     );
 }

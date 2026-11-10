@@ -252,6 +252,12 @@ Privacy'de kullanılır), paylaşım önizlemesi (başlık, açıklama, görsel)
 **Subscriptions:** abonelik tarihi aralığı, proje, ID / kullanıcı / e-posta araması; hap süzgeçler (ödeme sistemi,
 durum, quiz / paywall, fiyat, LTV, ülke, 5 UTM, sıralama, deney).
 
+**Uzun listeler (2026-11-10, P7a sonrası gözlem, tarayıcıda okundu):** User Visits ve Subscriptions'ta
+sayfalama sunucuda, numaralı (`ul.pagination`); test hesabında 1 satır olduğu için düğme çıkmadı ve sayfa boyu
+ölçülemedi. İkisi de **zorunlu tarih aralığıyla** açılır (varsayılan son 7 gün), yani liste baştan sınırlı.
+Süzgeçler GET formunda (`orderby` dahil). Toplu veri için ayrı "Exports" / "Download archive" var; tablo
+başlığı yapışkan değil (`position: static`).
+
 ### Bizdeki karşılığı ve fark (arayüz)
 
 | Konu | web2wave | Bizde | Not |

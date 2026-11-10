@@ -1,8 +1,9 @@
 // Rapor (A6/2, B5): reklamdan mı geldi, ödedi mi; izin oranı; anket.
-// Veri /panel/api/rapor (sözleşme PanelRaporu); hesaplama yalnız gösterim
+// Veri /panel/api/rapor (sözleşme PanelRaporu); büyüyen üç liste (ziyaretler,
+// kaynaklar, serbest yanıtlar) kendi uçlarından, sayfalı (P7a2); hesaplama yalnız gösterim
 // (toplam, yüzde, şerit) — sayımların kendisi çekirdekte.
-import { useQuery } from "@tanstack/react-query";
-import { lazy, Suspense, type ReactNode } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
@@ -17,6 +18,7 @@ const GunlukGrafikler = lazy(async () => ({
 import { cn } from "../ui/cn";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
+import { Sayfalama } from "../ui/Sayfalama";
 import { Tablo, Td, Th } from "../ui/Tablo";
 
 type PanelRaporu = components["schemas"]["PanelRaporu"];
@@ -136,71 +138,7 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
 
             {r.adimlar.length ? <Anket r={r} /> : null}
 
-            <Kart aria-label="Ziyaretler">
-                <KartBasi
-                    baslik="Ziyaretler"
-                    aciklama={
-                        r.satirlar.length === r.azami
-                            ? `En yeni ${r.azami} ziyaret gösteriliyor; sayımlar tüm aralığı kapsar.`
-                            : undefined
-                    }
-                />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {[
-                                "Zaman (UTC)",
-                                "Uygulama",
-                                "Huni",
-                                "Kaynak",
-                                "Kampanya",
-                                "Aşama",
-                                "Abonelik",
-                                "E-posta",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {r.satirlar.map((s, i) => (
-                            <tr key={i} className="hover:bg-yuzey-2/50">
-                                <Td>{zaman(s.zaman)}</Td>
-                                <Td>{s.app}</Td>
-                                <Td>{s.huni ?? "—"}</Td>
-                                <Td>
-                                    {s.reklam ? (
-                                        <>
-                                            <Rozet tur="uyari">reklam</Rozet>{" "}
-                                            ·{" "}
-                                        </>
-                                    ) : null}
-                                    {s.kaynak}
-                                </Td>
-                                <Td>{s.kampanya ?? "—"}</Td>
-                                <Td>
-                                    <Rozet
-                                        tur={
-                                            s.asama === "ödedi" ? "iyi" : "notr"
-                                        }
-                                    >
-                                        {s.asama}
-                                    </Rozet>
-                                </Td>
-                                <Td>{s.durum ?? "—"}</Td>
-                                <Td>{s.email ?? "—"}</Td>
-                            </tr>
-                        ))}
-                        {r.satirlar.length ? null : (
-                            <tr>
-                                <Td colSpan={8} className="text-soluk">
-                                    Bu aralıkta ziyaret yok.
-                                </Td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Tablo>
-            </Kart>
+            <Ziyaretler key={r.gun} gun={r.gun} />
         </>
     );
 }
@@ -371,63 +309,7 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                     </tbody>
                 </Tablo>
             </Kart>
-            <Kart aria-label="Kaynak kırılımı">
-                <KartBasi
-                    baslik="Kaynak kırılımı"
-                    aciklama="Gelir: bu ziyaretlerin bugüne kadar tahsil edilen faturaları"
-                />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {[
-                                "Kaynak",
-                                "Ortam",
-                                "Kampanya",
-                                "Ziyaret",
-                                "Ödemeye geçti",
-                                "Deneme",
-                                "Ödedi",
-                                "Dönüşüm",
-                                "Gelir",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {r.utm.map((u) => (
-                            <tr
-                                key={`${u.kaynak}/${u.ortam ?? ""}/${u.kampanya ?? ""}/${u.reklam}`}
-                            >
-                                <Td>
-                                    {u.reklam ? (
-                                        <>
-                                            <Rozet tur="uyari">reklam</Rozet>{" "}
-                                            ·{" "}
-                                        </>
-                                    ) : null}
-                                    {u.kaynak}
-                                </Td>
-                                <Td>{u.ortam ?? "—"}</Td>
-                                <Td>{u.kampanya ?? "—"}</Td>
-                                <Td>{u.ziyaret}</Td>
-                                <Td>{u.odemeye_gecti}</Td>
-                                <Td>{u.deneme}</Td>
-                                <Td>{u.odedi}</Td>
-                                <Td>{donusum(u)}</Td>
-                                <Td>{tutarlar(u.gelir)}</Td>
-                            </tr>
-                        ))}
-                        {r.utm.length ? null : (
-                            <tr>
-                                <Td colSpan={9} className="text-soluk">
-                                    Bu aralıkta ziyaret yok.
-                                </Td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Tablo>
-            </Kart>
+            <Kaynaklar key={r.gun} gun={r.gun} />
             <Kart aria-label="Meta kampanyaları">
                 <KartBasi
                     baslik="Meta kampanyaları"
@@ -521,10 +403,213 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                     </tbody>
                 </Tablo>
             </Kart>
+            <SerbestYanitlar key={r.gun} gun={r.gun} />
+        </div>
+    );
+}
+
+function Ziyaretler({ gun }: { gun: Gun }): ReactNode {
+    const [sayfa, setSayfa] = useState(1);
+    const { data } = useQuery({
+        queryKey: ["rapor", gun, "ziyaretler", sayfa],
+        queryFn: async () => {
+            const { data } = await api.GET("/panel/api/rapor/ziyaretler", {
+                params: { query: { gun, sayfa } },
+            });
+            if (!data) throw new Error("liste alınamadı");
+            return data;
+        },
+        // Yeni sayfa gelene dek önceki kalır — kart boşalıp zıplamasın.
+        placeholderData: keepPreviousData,
+    });
+    // Kart veri gelince çizilir (boş tablo "ziyaret yok" demesin).
+    if (!data) return null;
+    const { satirlar } = data;
+    return (
+        <div>
+            <Kart aria-label="Ziyaretler">
+                <KartBasi baslik="Ziyaretler" />
+                <Tablo>
+                    <thead>
+                        <tr>
+                            {[
+                                "Zaman (UTC)",
+                                "Uygulama",
+                                "Huni",
+                                "Kaynak",
+                                "Kampanya",
+                                "Aşama",
+                                "Abonelik",
+                                "E-posta",
+                            ].map((b) => (
+                                <Th key={b}>{b}</Th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {satirlar.map((s, i) => (
+                            <tr key={i} className="hover:bg-yuzey-2/50">
+                                <Td>{zaman(s.zaman)}</Td>
+                                <Td>{s.app}</Td>
+                                <Td>{s.huni ?? "—"}</Td>
+                                <Td>
+                                    {s.reklam ? (
+                                        <>
+                                            <Rozet tur="uyari">reklam</Rozet>{" "}
+                                            ·{" "}
+                                        </>
+                                    ) : null}
+                                    {s.kaynak}
+                                </Td>
+                                <Td>{s.kampanya ?? "—"}</Td>
+                                <Td>
+                                    <Rozet
+                                        tur={
+                                            s.asama === "ödedi" ? "iyi" : "notr"
+                                        }
+                                    >
+                                        {s.asama}
+                                    </Rozet>
+                                </Td>
+                                <Td>{s.durum ?? "—"}</Td>
+                                <Td>{s.email ?? "—"}</Td>
+                            </tr>
+                        ))}
+                        {satirlar.length ? null : (
+                            <tr>
+                                <Td colSpan={8} className="text-soluk">
+                                    Bu aralıkta ziyaret yok.
+                                </Td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Tablo>
+            </Kart>
+            {
+                <Sayfalama
+                    sayfa={data.sayfa}
+                    boyut={data.boyut}
+                    toplam={data.toplam}
+                    birim="ziyaret"
+                    sec={setSayfa}
+                />
+            }
+        </div>
+    );
+}
+
+function Kaynaklar({ gun }: { gun: Gun }): ReactNode {
+    const [sayfa, setSayfa] = useState(1);
+    const { data } = useQuery({
+        queryKey: ["rapor", gun, "kaynaklar", sayfa],
+        queryFn: async () => {
+            const { data } = await api.GET("/panel/api/rapor/kaynaklar", {
+                params: { query: { gun, sayfa } },
+            });
+            if (!data) throw new Error("liste alınamadı");
+            return data;
+        },
+        // Yeni sayfa gelene dek önceki kalır — kart boşalıp zıplamasın.
+        placeholderData: keepPreviousData,
+    });
+    // Kart veri gelince çizilir (boş tablo "ziyaret yok" demesin).
+    if (!data) return null;
+    const { satirlar } = data;
+    return (
+        <div>
+            <Kart aria-label="Kaynak kırılımı">
+                <KartBasi
+                    baslik="Kaynak kırılımı"
+                    aciklama="Gelir: bu ziyaretlerin bugüne kadar tahsil edilen faturaları"
+                />
+                <Tablo>
+                    <thead>
+                        <tr>
+                            {[
+                                "Kaynak",
+                                "Ortam",
+                                "Kampanya",
+                                "Ziyaret",
+                                "Ödemeye geçti",
+                                "Deneme",
+                                "Ödedi",
+                                "Dönüşüm",
+                                "Gelir",
+                            ].map((b) => (
+                                <Th key={b}>{b}</Th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {satirlar.map((u) => (
+                            <tr
+                                key={`${u.kaynak}/${u.ortam ?? ""}/${u.kampanya ?? ""}/${u.reklam}`}
+                            >
+                                <Td>
+                                    {u.reklam ? (
+                                        <>
+                                            <Rozet tur="uyari">reklam</Rozet>{" "}
+                                            ·{" "}
+                                        </>
+                                    ) : null}
+                                    {u.kaynak}
+                                </Td>
+                                <Td>{u.ortam ?? "—"}</Td>
+                                <Td>{u.kampanya ?? "—"}</Td>
+                                <Td>{u.ziyaret}</Td>
+                                <Td>{u.odemeye_gecti}</Td>
+                                <Td>{u.deneme}</Td>
+                                <Td>{u.odedi}</Td>
+                                <Td>{donusum(u)}</Td>
+                                <Td>{tutarlar(u.gelir)}</Td>
+                            </tr>
+                        ))}
+                        {satirlar.length ? null : (
+                            <tr>
+                                <Td colSpan={9} className="text-soluk">
+                                    Bu aralıkta ziyaret yok.
+                                </Td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Tablo>
+            </Kart>
+            {
+                <Sayfalama
+                    sayfa={data.sayfa}
+                    boyut={data.boyut}
+                    toplam={data.toplam}
+                    birim="kaynak"
+                    sec={setSayfa}
+                />
+            }
+        </div>
+    );
+}
+
+function SerbestYanitlar({ gun }: { gun: Gun }): ReactNode {
+    const [sayfa, setSayfa] = useState(1);
+    const { data } = useQuery({
+        queryKey: ["rapor", gun, "serbestYanitlar", sayfa],
+        queryFn: async () => {
+            const { data } = await api.GET("/panel/api/rapor/serbestYanitlar", {
+                params: { query: { gun, sayfa } },
+            });
+            if (!data) throw new Error("liste alınamadı");
+            return data;
+        },
+        // Yeni sayfa gelene dek önceki kalır — kart boşalıp zıplamasın.
+        placeholderData: keepPreviousData,
+    });
+    // Kart veri gelince çizilir (boş tablo "ziyaret yok" demesin).
+    if (!data) return null;
+    const { satirlar } = data;
+    return (
+        <div>
             <Kart aria-label="Serbest yanıtlar">
                 <KartBasi
                     baslik="Serbest yanıtlar"
-                    aciklama={`90 gün içinde, en yeni ${r.azami}`}
+                    aciklama={`Son ${gun} gün, en yeni önce`}
                 />
                 <Tablo>
                     <thead>
@@ -537,7 +622,7 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                         </tr>
                     </thead>
                     <tbody>
-                        {r.metinCevaplari.map((c, i) => (
+                        {satirlar.map((c, i) => (
                             <tr key={i}>
                                 <Td>{zaman(c.zaman)}</Td>
                                 <Td>{c.app}</Td>
@@ -549,7 +634,7 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                                 </Td>
                             </tr>
                         ))}
-                        {r.metinCevaplari.length ? null : (
+                        {satirlar.length ? null : (
                             <tr>
                                 <Td colSpan={4} className="text-soluk">
                                     Henüz serbest yanıt yok.
@@ -559,6 +644,15 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                     </tbody>
                 </Tablo>
             </Kart>
+            {
+                <Sayfalama
+                    sayfa={data.sayfa}
+                    boyut={data.boyut}
+                    toplam={data.toplam}
+                    birim="yanıt"
+                    sec={setSayfa}
+                />
+            }
         </div>
     );
 }

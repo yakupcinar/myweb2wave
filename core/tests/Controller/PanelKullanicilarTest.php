@@ -27,7 +27,7 @@ final class PanelKullanicilarTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, subscriptions, kisiler, baglantilar CASCADE');
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, odeme_faturalari, subscriptions, kisiler, baglantilar CASCADE');
         // Ziyaretin huni/sürümü yayınlanmış çift olmalı (yabancı anahtar) — sırası başka teste bağlı kalmasın.
         $huniler = static::getContainer()->get(Huniler::class);
         self::assertInstanceOf(Huniler::class, $huniler);
@@ -96,13 +96,63 @@ final class PanelKullanicilarTest extends WebTestCase
         self::assertSame([], $abonelikler('?ara=ayse&durum=canceled'));
     }
 
-    /** @return array{azami: int, durumlar: list<string>, satirlar: list<array<string, mixed>>} */
+    /**
+     * P7a2: sayfa başına 25; toplam süzgece uyanların sayısı; sayfalar
+     * örtüşmez ve hepsi birlikte tamamı verir; bozuk sayfa 1 sayılır.
+     */
+    public function testSayfalama(): void
+    {
+        for ($i = 0; $i < 27; ++$i) {
+            $this->abonelik(\sprintf('sub_p%02d', $i), 'active', "p{$i}@example.com", \sprintf('2026-10-%02d 09:00Z', $i + 1), null);
+        }
+        $this->girisYap();
+
+        $s1 = $this->liste('');
+        self::assertSame([1, 25, 30, 25], [$s1['sayfa'], $s1['boyut'], $s1['toplam'], \count($s1['satirlar'])]);
+        $s2 = $this->liste('?sayfa=2');
+        self::assertSame([2, 30, 5], [$s2['sayfa'], $s2['toplam'], \count($s2['satirlar'])]);
+        $hepsi = array_merge(array_column($s1['satirlar'], 'abonelik'), array_column($s2['satirlar'], 'abonelik'));
+        self::assertCount(30, array_unique(array_filter($hepsi, \is_string(...))));
+        self::assertSame(['sub_a', 'sub_c', 'sub_b'], \array_slice($hepsi, 0, 3), 'en yeni güncellenen önce');
+        self::assertSame([[], 30], [$this->liste('?sayfa=99')['satirlar'], $this->liste('?sayfa=99')['toplam']]);
+        self::assertSame(1, $this->liste('?sayfa=0')['sayfa']);
+        self::assertSame([1, ['sub_b']], [$this->liste('?durum=canceled')['toplam'], array_column($this->liste('?durum=canceled')['satirlar'], 'abonelik')]);
+        self::assertSame(1, $this->liste('?ara=zeynep')['toplam'], 'arama toplamı da süzer');
+    }
+
+    /**
+     * P7a2: sıralama sunucuda (istemci yalnız bir sayfayı görür). Boş değer
+     * artanda başta; durum paneldeki Türkçe sırayla; tanınmayan sütun yok sayılır.
+     */
+    public function testSunucudaSiralama(): void
+    {
+        foreach ([['sub_a', '2026-11-01 10:00Z'], ['sub_c', '2026-11-05 10:00Z']] as [$sub, $odendi]) {
+            $this->db->insert('odeme_faturalari', ['stripe_invoice_id' => 'in_'.$sub, 'stripe_subscription_id' => $sub, 'app' => 'keepchat', 'tutar_kucuk' => 999, 'para_birimi' => 'eur', 'odendi_at' => $odendi]);
+        }
+        $this->girisYap();
+        $sira = fn (string $sorgu): array => array_column($this->liste($sorgu)['satirlar'], 'abonelik');
+
+        self::assertSame(['sub_a', 'sub_b', 'sub_c'], $sira('?sirala=email'));
+        self::assertSame(['sub_c', 'sub_b', 'sub_a'], $sira('?sirala=email&yon=azalan'));
+        self::assertSame(['sub_a', 'sub_c', 'sub_b'], $sira('?sirala=durum'), 'Aktif, Ödeme sorunlu, Bitti');
+        self::assertSame(['sub_b', 'sub_c', 'sub_a'], $sira('?sirala=kaynak'), 'kaynaksız başta, bulten, meta');
+        self::assertSame(['sub_a', 'sub_c', 'sub_b'], $sira('?sirala=kaynak&yon=azalan'));
+        self::assertSame(['sub_b', 'sub_a', 'sub_c'], $sira('?sirala=sonOdeme'));
+        self::assertSame(['sub_c', 'sub_a', 'sub_b'], $sira('?sirala=sonOdeme&yon=azalan'));
+        self::assertSame(['sub_a', 'sub_c', 'sub_b'], $sira('?sirala=s.email;DROP'), 'tanınmayan: varsayılan sıra');
+        // İptali planlı aktif "İptal edildi" (2) sayılır: Denemede (1) arkasında.
+        $this->db->executeStatement("UPDATE subscriptions SET iptal_donem_sonu = true WHERE stripe_subscription_id = 'sub_a'");
+        $this->db->executeStatement("UPDATE subscriptions SET status = 'trialing' WHERE stripe_subscription_id = 'sub_c'");
+        self::assertSame(['sub_c', 'sub_a', 'sub_b'], $sira('?sirala=durum'));
+    }
+
+    /** @return array{sayfa: int, boyut: int, toplam: int, durumlar: list<string>, satirlar: list<array<string, mixed>>} */
     private function liste(string $sorgu): array
     {
         $this->client->request('GET', '/panel/api/kullanicilar'.$sorgu);
         self::assertResponseIsSuccessful();
         Sozlesme::yanitiDogrula('GET', '/panel/api/kullanicilar', $this->client->getResponse());
-        /** @var array{azami: int, durumlar: list<string>, satirlar: list<array<string, mixed>>} $j */
+        /** @var array{sayfa: int, boyut: int, toplam: int, durumlar: list<string>, satirlar: list<array<string, mixed>>} $j */
         $j = json_decode((string) $this->client->getResponse()->getContent(), true);
 
         return $j;

@@ -280,6 +280,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/rapor/ziyaretler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** P7a2 — rapor ziyaret listesi (sayfalı) */
+        get: operations["panelRaporZiyaretleri"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/rapor/kaynaklar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** P7a2 — rapor kaynak kırılımı (sayfalı) */
+        get: operations["panelRaporKaynaklari"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/rapor/serbestYanitlar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** P7a2 — rapor serbest yanıtları (sayfalı) */
+        get: operations["panelRaporSerbestYanitlari"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/ai/durum": {
         parameters: {
             query?: never;
@@ -1129,8 +1180,6 @@ export interface components {
                 odemeTamamlandi: number;
             }[];
             gunler: (7 | 30 | 90)[];
-            /** @description Satır listelerinin üst sınırı (en yeni N); sayımlar tüm aralığı kapsar */
-            azami: number;
             sayimlar: {
                 reklam: components["schemas"]["PanelSayimi"];
                 organik: components["schemas"]["PanelSayimi"];
@@ -1141,19 +1190,6 @@ export interface components {
                 red: number;
                 secmeyen: number;
             };
-            satirlar: {
-                zaman: string;
-                app: string;
-                huni: string | null;
-                kaynak: string;
-                kampanya: string | null;
-                reklam: boolean;
-                /** @enum {string} */
-                asama: "sayfayı gördü" | "ödemeye geçti" | "deneme başladı" | "ödedi";
-                durum: string | null;
-                /** @description Maskeli (a***@example.com); açık e-posta panele hiç gelmez */
-                email: string | null;
-            }[];
             adimlar: {
                 app: string;
                 huni: string;
@@ -1169,18 +1205,6 @@ export interface components {
                 sayi: number;
                 /** @description M5c — bunlardan abone olan (deneme dahil) */
                 abone: number;
-            }[];
-            /** @description M5c — kaynak / ortam / kampanya başına; gelir aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları (en çok ziyaretli azami grup) */
-            utm: {
-                kaynak: string;
-                ortam: string | null;
-                kampanya: string | null;
-                reklam: boolean;
-                ziyaret: number;
-                odemeye_gecti: number;
-                deneme: number;
-                odedi: number;
-                gelir: components["schemas"]["PanelTutar"][];
             }[];
             /** @description M5c — ziyaretin UTC haftası (pazartesi, en yeni önce); pencerede ziyaret başına birikimli gelir (0 = ilk 24 saat); pencere haftanın son ziyareti için dolmadıysa olgun değil, tutar yok */
             kohort: {
@@ -1203,8 +1227,49 @@ export interface components {
                 gelir: components["schemas"]["PanelTutar"][];
                 roas: number | null;
             }[];
-            /** @description 90 gün içinde, en yeni azami kadar */
-            metinCevaplari: {
+        };
+        /** @description P7a2 — aralıktaki ziyaretler, en yeni önce, sayfalı */
+        RaporZiyaretleri: {
+            sayfa: number;
+            boyut: number;
+            toplam: number;
+            satirlar: {
+                zaman: string;
+                app: string;
+                huni: string | null;
+                kaynak: string;
+                kampanya: string | null;
+                reklam: boolean;
+                /** @enum {string} */
+                asama: "sayfayı gördü" | "ödemeye geçti" | "deneme başladı" | "ödedi";
+                durum: string | null;
+                /** @description Maskeli (a***@example.com); açık e-posta panele hiç gelmez */
+                email: string | null;
+            }[];
+        };
+        /** @description M5c, P7a2 — kaynak / ortam / kampanya başına; gelir aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları; en çok ziyaretli önce, sayfalı */
+        RaporKaynaklari: {
+            sayfa: number;
+            boyut: number;
+            toplam: number;
+            satirlar: {
+                kaynak: string;
+                ortam: string | null;
+                kampanya: string | null;
+                reklam: boolean;
+                ziyaret: number;
+                odemeye_gecti: number;
+                deneme: number;
+                odedi: number;
+                gelir: components["schemas"]["PanelTutar"][];
+            }[];
+        };
+        /** @description P7a2 — serbest metin cevapları, en yeni önce, sayfalı */
+        RaporSerbestYanitlari: {
+            sayfa: number;
+            boyut: number;
+            toplam: number;
+            satirlar: {
                 zaman: string;
                 app: string;
                 soru: string;
@@ -1703,6 +1768,8 @@ export interface components {
     };
     parameters: {
         App: string;
+        /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
+        Sayfa: number;
     };
     requestBodies: never;
     headers: never;
@@ -2525,6 +2592,81 @@ export interface operations {
             };
         };
     };
+    panelRaporZiyaretleri: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+                /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
+                sayfa?: components["parameters"]["Sayfa"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bir sayfa satır ve toplam */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaporZiyaretleri"];
+                };
+            };
+        };
+    };
+    panelRaporKaynaklari: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+                /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
+                sayfa?: components["parameters"]["Sayfa"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bir sayfa satır ve toplam */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaporKaynaklari"];
+                };
+            };
+        };
+    };
+    panelRaporSerbestYanitlari: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+                /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
+                sayfa?: components["parameters"]["Sayfa"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bir sayfa satır ve toplam */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaporSerbestYanitlari"];
+                };
+            };
+        };
+    };
     panelAiDurumu: {
         parameters: {
             query?: never;
@@ -2767,6 +2909,11 @@ export interface operations {
                 ara?: string;
                 /** @description Abonelik durumu (active, past_due, canceled…); boş = hepsi */
                 durum?: string;
+                /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
+                sayfa?: components["parameters"]["Sayfa"];
+                /** @description P7a2 — sunucuda sıralama; yoksa en yeni güncellenen önce */
+                sirala?: "email" | "durum" | "kaynak" | "sonOdeme";
+                yon?: "artan" | "azalan";
             };
             header?: never;
             path?: never;
@@ -2774,14 +2921,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description En yeni güncellenen önce, en çok azami satır */
+            /** @description Bir sayfa abonelik (P7a2) ve süzgece uyan toplam */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        azami: number;
+                        sayfa: number;
+                        boyut: number;
+                        toplam: number;
                         /** @description Süzgeç için veride geçen durumlar */
                         durumlar: string[];
                         satirlar: {
