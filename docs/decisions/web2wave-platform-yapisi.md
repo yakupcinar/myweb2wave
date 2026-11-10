@@ -207,3 +207,59 @@ canlıya geçişin önkoşulu (yasal bağlantı, varsayılan paywall, dil); R1 �
 e-posta yolu ister.
 
 **Karar (kullanıcı, 2026-11-10):** önerilen sıra kabul (M9b2 → M9c → M9d → R1 → E1 → M6c → R2 → M10 → M11); Creatives **kapsam dışı** (backlog'da "sonra").
+
+## Ek 2026-11-10 — arayüz (panel gezildi)
+
+Kullanıcı kendi web2wave hesabını açtı; panel Chrome'da salt okunur gezildi (Analytics, Quizzes, quiz düzenleyici +
+Overview, Paywalls, paywall düzenleyici, proje ayarları, Subscriptions). Hiçbir şey kaydedilmedi; iki düzenleyiciden
+çıkarken tarayıcının "kaydedilmemiş değişiklik" uyarısı atıldı (Overview'ın ürettiği ekran görüntüleri; içerik
+değiştirilmedi). **Kullanıcı kararı: web2wave yapı / iş akışı referansı; görsel stil Apple'ın tasarım dili olacak,
+web2wave'in koyu-yeşil stili değil.**
+
+**Bilgi mimarisi (sol menü, gruplu):** MCP · ANALYTICS (Analytics, Chart builder, Table Report, A/B Tests) · FUNNELS
+(Quizzes, Paywalls, Email Sequences) · CRM (User Visits, Subscriptions, Support Desk, Chargebacks) · ADS CREATIVES
+(Trends, AI Creatives) · SERVICES (Growth & Marketing, Agency Ad Accounts, Paid Ads Financing) · SETTINGS (Projects,
+Plans & Prices, Pricing, Files, Exports, Documentation). Üst çubuk: sayfa adı, plan rozeti, yardım, açık/koyu, tam
+ekran, kullanıcı.
+
+**Ortak sayfa kalıbı:** her listenin üstünde kapatılabilir tanıtım kartı (ne işe yarar + belge bağlantısı + küçük
+görsel); altında süzgeç kartı (tarih aralığı, proje, arama, "Filters:" yanında hap biçiminde eklenebilir süzgeçler);
+altında tablo ve satır sonunda simge eylemleri (analitik, düzenle, kopyala, AI ile çevir, sürümler, sil).
+
+**Analytics:** tarih + proje + 15 hap süzgeç (quiz, quiz sürümü, paywall, paywall sürümü, ödeme sistemi, live/test,
+5 UTM, ülke, platform, deney, kullanıcı özelliği); sekmeler Overview / Cohorts revenue / Subscriptions / Quiz
+Analytics / Paywall Analytics / Install Conversion; Overview'da gruplu KPI kartları (REVENUE, ADS, SUBSCRIPTIONS,
+FUNNEL, CONVERSIONS), her kartta önceki döneme göre % değişim; altında "karta tıkla grafiğe ekle, Shift ile karşılaştır"
+zaman grafiği + CSV.
+
+**Quizzes listesi:** yasal sayfalar, abonelik yönetimi ve ödeme sonrası sayfa da birer "quiz/page"; etiketler Main
+quiz / Funnel stage / After pay / Subscription; sütunlar ID+sürüm, ad+dil, URL, "after quiz go to" paywall, son 24 sa
+kullanıcı; satırda "Insights" ve "Creatives" düğmeleri.
+
+**Düzenleyici (quiz ve paywall aynı):** dört sütun — ekranlar | seçili ekranın blokları (arama, +) | telefon önizlemesi
+(tema seçici + "Edit styles", sürüm, LIVE bağlantısı, Overview, cihaz / yakınlaştırma) | blok özellikleri (Block
+Properties / Styles; her alanın yanında "Conditions"; ham HTML / CSS alanları). Üstte Settings / JSON / Editor / Files
+sekmeleri, dil, sürüm, Show Diff, Save, Save & Publish, AI Helper. Paywall'da popup'lar da ekran; "After pay go to"
+ekran listesinin altında. **Overview:** ekranların oklarla bağlı kart haritası, kartta Edit + "Internal note".
+
+**Proje ayarları:** üstte "Project settings checklist 0/8" (ödeme sağlayıcı, fiyat, alan adı, e-posta gönderici,
+piksel, SDK, indirme bağlantıları, ekip); sekmeler General, Analytics, Ad Accounts, Payments, ECommerce, Chargebacks,
+Deeplinks & Billing, Emails, Support Desk, Translations, API & Webhook, Members. General'da: zaman dilimi, özel alan
+adı (CNAME yönergesiyle), etiketler (niş), **varsayılan tema** (adlı hazır temalar), **varsayılan quiz**, **varsayılan
+paywall**, müşteri portalı adresi, **yasal veriler** (AppStore ID, Google Store ID, şirket adı, adres, ülke — ToS ve
+Privacy'de kullanılır), paylaşım önizlemesi (başlık, açıklama, görsel), robots.txt, yazı tipleri.
+
+**Subscriptions:** abonelik tarihi aralığı, proje, ID / kullanıcı / e-posta araması; hap süzgeçler (ödeme sistemi,
+durum, quiz / paywall, fiyat, LTV, ülke, 5 UTM, sıralama, deney).
+
+### Bizdeki karşılığı ve fark (arayüz)
+
+| Konu | web2wave | Bizde | Not |
+|---|---|---|---|
+| Menü | 7 grup, ~25 öğe | 10 öğe, grupsuz | Gruplamak (Analitik · Huniler · Müşteriler · Ayarlar) okunurluğu artırır |
+| Sayfa kalıbı | tanıtım kartı + süzgeç kartı + tablo + satır simgeleri | başlık + kartlar; süzgeç yalnız Kullanıcılar'da | Apple dilinde tanıtım kartı yerine başlık altı kısa açıklama yeter |
+| Rapor | gruplu KPI kartları, önceki dönem %, hap süzgeçler, sekmeler | tek sayfa kartlar, süzgeç ve önceki dönem yok | R1 ile örtüşür |
+| Düzenleyici | 4 sütun, her alanda koşul, JSON / diff / sürüm | Puck: bloklar + önizleme + alanlar, sürümler, AI sohbeti | Yapı benzer; "Show Diff" ve ekran haritası (Overview) bizde yok |
+| Yasal sayfalar | quiz/page olarak, şablondan | ayrı sayfa + metin düzenleyici (M9b) | Bizimki daha basit, metin hunideki gibi düzenlenmez |
+| Varsayılanlar | ayarda "Default quiz / paywall / theme" (çalışırken) | "yeni hunilere örnek" (kopya, M9c) + varsayılan huni | Kullanıcı kopya modelini seçti |
+| Kurulum yönlendirmesi | proje ayarları kontrol listesi 0/8 | yok | Canlıya geçişte (Stripe, Postmark, alan adı, cron) işe yarar |
