@@ -93,7 +93,8 @@ her sayfanın doğrudan adresle açılabilmesi için sunucu rotası da
 [`PanelController`](../core/src/Controller/PanelController.php)'dadır (tuzak §51).
 
 **Görünüm (P6):** Apple tarzı — açık gri zemin, çerçevesiz beyaz kartlar, sistem yazı tipi, tek mavi vurgu, hap
-düğmeler; açık / koyu mod sistemden. Menü dört grupta: **Analiz** (Rapor, Deneyler) · **Satış** (Huniler, Planlar
+düğmeler. Tema menünün altındaki seçiciden: Açık (varsayılan) / Koyu / Sistem; seçim tarayıcıda saklanır ve
+sayfa boyanmadan önce uygulanır ([`tema.html.twig`](../core/templates/panel/tema.html.twig), [`tema.ts`](../core/panel/src/uygulama/tema.ts); P7a). Menü dört grupta: **Analiz** (Rapor, Deneyler) · **Satış** (Huniler, Planlar
 ve fiyatlar) · **Müşteriler** (Aboneler) · **Ayarlar** (Uygulama, Yasal metinler, Ürün bağlamı (AI), Webhook'lar, API
 anahtarları). Renkler [`stil.css`](../core/panel/src/uygulama/stil.css)'te ve giriş sayfası için
 [`base.html.twig`](../core/templates/base.html.twig)'de; iki kopyanın aynı olduğunu ve her metin renginin 4.5:1'i
@@ -215,14 +216,23 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 isteğinde "bu kişinin aboneliğini dönem sonunda iptal et" ya da "son ödemesini iade et" işlemleri buradan yapılır.
 
 **Ekranda ne var** ([`Kullanicilar.tsx`](../core/panel/src/uygulama/sayfalar/Kullanicilar.tsx))
-- Abonelik başına bir satır: durum, **maskeli** e-posta (tam adres Stripe'ta durur; panelde kişisel veri az gösterilir),
-  geldiği kaynak ve kampanya, son ödeme, son güncelleme.
-- Arama ve duruma göre süzgeç (adreste `?ara=&durum=`, sunucuda süzülür).
-- **İşlem** sütunu: abonelik sürüyorsa "Dönem sonunda iptal et"; iptal planlıysa "İptal planlı — <dönem sonu>" ve
-  "İptali geri al"; son tahsil edilen faturanın iade edilmemiş kalanı varsa "Son faturayı iade et (€6,99)".
+- Abonelik başına bir satır (P7a, taslakla bire bir):
+  - **Abone:** **maskeli** e-posta (tam adres Stripe'ta durur; panelde kişisel veri az gösterilir); altında
+    "3 Kasım'dan beri · uygulamaya bağlı".
+  - **Durum:** renkli nokta ve Türkçe metin — Aktif, "Denemede · 15 Kasım'da biter", "İptal edildi · 1 Aralık'a
+    kadar açık", Ödeme sorunlu, Bitti.
+  - **Geldiği yer:** kaynak (yoksa Doğrudan) ve reklam rozeti; altında kampanya · huni.
+  - **Son ödeme:** son faturanın tutarı ve tarihi ("€9,99 · 3 Kas").
+- Arama kutusu ve durum için bölmeli seçici (Tümü · Aktif · Denemede · Ödeme sorunlu · Bitti). İkisi de adreste
+  (`?ara=&durum=`) durur ve sunucuda süzülür. Başlıklara tıklanınca liste sıralanır.
+- **İşlem** sütunu:
+  - Abonelik sürüyorsa "Dönem sonunda iptal et" (denemede "Deneme sonunda iptal et").
+  - İptal planlıysa "İptali geri al".
+  - Son faturanın iade edilmemiş kalanı varsa "€6,99 iade et".
 
-**Ne yapabilirsin.** İptal planla, iptali geri al, son faturayı iade et. Her işlem iki adımlı onay ister ("emin
-misiniz? Evet / Vazgeç"); Stripe'ın verdiği hata satırda görünür.
+**Ne yapabilirsin.** İptal planla, iptali geri al, son faturayı iade et. Onay satırın altında açılır ve sonucu
+söyler; örneğin "€6,99 iade edilsin mi? … 3 Kasım faturası. Geri alınamaz; abonelik sürer." Düğmeler Vazgeç ve
+kırmızı "İade et". Stripe'ın verdiği hata satırın altında görünür.
 
 **Arkada nasıl çalışır**
 1. Liste [`Kullanicilar::liste`](../core/src/Panel/Kullanicilar.php#L39)'den gelir.

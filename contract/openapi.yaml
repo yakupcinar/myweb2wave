@@ -663,11 +663,12 @@ paths:
                             - type: "null"
                             - type: object
                               additionalProperties: false
-                              required: [paraBirimi, tutar, iade]
+                              required: [paraBirimi, tutar, iade, odendi]
                               properties:
                                 paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
                                 tutar: { type: number, minimum: 0 }
                                 iade: { type: number, minimum: 0 }
+                                odendi: { type: [string, "null"], format: date-time, description: "P7a — faturanın ödendiği an (UTC)" }
   /panel/api/uygulamalar:
     get:
       operationId: panelUygulamalari

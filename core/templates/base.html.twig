@@ -2,13 +2,14 @@
    (tarifin şablonu sürümü sabitlenmemiş bir CDN betiği yüklüyordu).
    Görünüm: P6'dan beri Apple tarzı (docs/decisions/p6-apple-tarzi-panel.md);
    ilk düzen panel-gorunum.md.
-   Açık ve koyu tema sistem ayarından. #}
+   Açık ve koyu tema: panel/tema.html.twig (P7a). #}
 <!DOCTYPE html>
 <html lang="tr">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="noindex, nofollow">
+        {{ include('panel/tema.html.twig') }}
         <title>{% block title %}MyWeb2Wave panel{% endblock %}</title>
         <style>
             :root {
@@ -19,14 +20,12 @@
                 --iyi: #1b7a3a; --iyi-zemin: #e3f4e8; --reklam: #9a5b00; --reklam-zemin: #fff1dc;
                 --tehlike: #c4312a; --tehlike-zemin: #fde7e6; --golge: 0 1px 2px #0000000d, 0 1px 3px #0000000a;
             }
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    color-scheme: dark;
-                    --zemin: #000000; --yuzey: #1c1c1e; --yuzey-2: #2c2c2e; --kenar: #38383a;
-                    --metin: #f5f5f7; --soluk: #a1a1a6; --vurgu: #4c9dff; --vurgu-yazi: #000000;
-                    --iyi: #34c759; --iyi-zemin: #34c75926; --reklam: #ff9f0a; --reklam-zemin: #ff9f0a26;
-                    --tehlike: #ff6961; --tehlike-zemin: #ff696126; --golge: none;
-                }
+            :root[data-tema="koyu"] {
+                color-scheme: dark;
+                --zemin: #000000; --yuzey: #1c1c1e; --yuzey-2: #2c2c2e; --kenar: #38383a;
+                --metin: #f5f5f7; --soluk: #a1a1a6; --vurgu: #4c9dff; --vurgu-yazi: #000000;
+                --iyi: #34c759; --iyi-zemin: #34c75926; --reklam: #ff9f0a; --reklam-zemin: #ff9f0a26;
+                --tehlike: #ff6961; --tehlike-zemin: #ff696126; --golge: none;
             }
             * { box-sizing: border-box; }
             body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; margin: 0; background: var(--zemin); color: var(--metin); -webkit-font-smoothing: antialiased; }

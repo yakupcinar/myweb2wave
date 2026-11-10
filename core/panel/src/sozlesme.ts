@@ -2816,6 +2816,11 @@ export interface operations {
                                 paraBirimi: string;
                                 tutar: number;
                                 iade: number;
+                                /**
+                                 * Format: date-time
+                                 * @description P7a — faturanın ödendiği an (UTC)
+                                 */
+                                odendi: string | null;
                             };
                         }[];
                     };

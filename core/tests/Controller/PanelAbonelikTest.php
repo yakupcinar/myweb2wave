@@ -134,7 +134,7 @@ final class PanelAbonelikTest extends WebTestCase
         $j = json_decode((string) $this->client->getResponse()->getContent(), true);
         $satir = $j['satirlar'][0] ?? [];
 
-        self::assertSame([true, '2026-12-01T10:00:00+00:00', ['paraBirimi' => 'EUR', 'tutar' => 9.99, 'iade' => 3]], [$satir['iptalDonemSonu'] ?? null, $satir['donemSonu'] ?? null, $satir['sonFatura'] ?? null]);
+        self::assertSame([true, '2026-12-01T10:00:00+00:00', ['paraBirimi' => 'EUR', 'tutar' => 9.99, 'iade' => 3, 'odendi' => '2026-11-01T10:00:00+00:00']], [$satir['iptalDonemSonu'] ?? null, $satir['donemSonu'] ?? null, $satir['sonFatura'] ?? null]);
     }
 
     public function testFaturasizIadeYok(): void

@@ -34,7 +34,7 @@ final class Kullanicilar
      *
      * @return list<array{abonelik: string, app: ?string, durum: string, email: ?string, guncelleme: string, odeme: ?string,
      *                    reklam: bool, kaynak: ?string, ortam: ?string, kampanya: ?string, huni: ?string, kisi: bool, bagli: bool,
-     *                    iptalDonemSonu: bool, donemSonu: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float}|null}>
+     *                    iptalDonemSonu: bool, donemSonu: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float, odendi: string|null}|null}>
      */
     public function liste(string $ara, string $durum, ?string $app = null): array
     {
@@ -60,17 +60,19 @@ final class Kullanicilar
             'iptalDonemSonu' => true === $s['iptal_donem_sonu'],
             'donemSonu' => self::dizgeYaDaNull($s['donem_sonu']),
             'sonFatura' => \is_string($s['f_para']) ? ['paraBirimi' => strtoupper($s['f_para']), 'tutar' => ParaBirimi::anaBirim(self::sayi($s['f_tutar']), $s['f_para']),
-                'iade' => ParaBirimi::anaBirim(self::sayi($s['f_iade']), $s['f_para'])] : null,
+                'iade' => ParaBirimi::anaBirim(self::sayi($s['f_iade']), $s['f_para']),
+                // P7a: panel "€6,99 · 3 Kas" ve iade onayında "3 Kasım faturası" diye yazar.
+                'odendi' => self::dizgeYaDaNull($s['f_odendi'])] : null,
         ], $this->db->fetchAllAssociative(
             'SELECT s.stripe_subscription_id AS abonelik, s.app, s.status AS durum, s.email,
                     '.$zaman('s.updated_at').' AS guncelleme, '.$zaman('s.odeme_tamamlandi_at').' AS odeme,
                     z.utm_source, z.utm_medium, z.utm_campaign, z.huni, COALESCE('.Rapor::REKLAM.', false) AS reklam,
                     k.id IS NOT NULL AS kisi,
                     EXISTS (SELECT 1 FROM baglantilar b WHERE b.kisi_id = k.id AND b.app = s.app) AS bagli,
-                    s.iptal_donem_sonu, '.$zaman('s.donem_sonu').' AS donem_sonu, f.para_birimi AS f_para, f.tutar_kucuk AS f_tutar, f.iade_kucuk AS f_iade
+                    s.iptal_donem_sonu, '.$zaman('s.donem_sonu').' AS donem_sonu, f.para_birimi AS f_para, f.tutar_kucuk AS f_tutar, f.iade_kucuk AS f_iade, '.$zaman('f.odendi_at').' AS f_odendi
              FROM subscriptions s
              LEFT JOIN LATERAL (
-                 SELECT para_birimi, tutar_kucuk, iade_kucuk FROM odeme_faturalari
+                 SELECT para_birimi, tutar_kucuk, iade_kucuk, odendi_at FROM odeme_faturalari
                  WHERE stripe_subscription_id = s.stripe_subscription_id ORDER BY odendi_at DESC, stripe_invoice_id DESC LIMIT 1
              ) f ON true
              LEFT JOIN LATERAL (

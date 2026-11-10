@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
+import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
 import { SayfaBasi } from "../Duzen";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
@@ -226,18 +227,14 @@ function BelgeKarti({
     return (
         <Kart>
             <KartBasi baslik={secili.baslik}>
-                <div
-                    role="group"
-                    aria-label="Dil"
-                    className="inline-flex gap-0.5 rounded-[9px] bg-yuzey-2 p-[2px]"
-                >
+                <div role="group" aria-label="Dil" className={bolmeliSinif}>
                     {diller.map((d) => (
                         <button
                             key={d.dil}
                             type="button"
                             aria-pressed={d.dil === dil}
                             onClick={() => setDil(d.dil)}
-                            className="rounded-[7px] px-3 py-1 text-[13px] whitespace-nowrap text-metin hover:bg-yuzey/60 aria-pressed:bg-yuzey aria-pressed:font-semibold aria-pressed:shadow-sm"
+                            className={bolmeSinifi}
                         >
                             {DIL_ADI[d.dil]}
                         </button>

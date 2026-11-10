@@ -1,7 +1,7 @@
 // Panel düzeni (B5): solda menü (dar ekranda üstte), sağda sayfa. Bulunulan
 // sayfa NavLink'le işaretlenir (aria-current). P6: Apple tarzı — menü dört
 // grupta (Analiz · Satış · Müşteriler · Ayarlar); dar ekranda grup adları
-// gizlenir, bağlantılar tek satırda kayar.
+// gizlenir, bağlantılar tek satırda kayar. P7a: menünün altında tema seçici.
 import {
     ChartColumn,
     FlaskConical,
@@ -15,8 +15,10 @@ import {
     Users,
     Webhook,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router";
+import { sistemiDinle, temaOku, temaSec, type Tema } from "./tema";
+import { bolmeliSinif, bolmeSinifi } from "./ui/bolmeli";
 import { cn } from "./ui/cn";
 
 const ogeSinifi =
@@ -66,7 +68,12 @@ export function Duzen(): ReactNode {
                             <path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" />
                         </svg>
                     </span>
-                    MyWeb2Wave
+                    <span className="flex flex-col leading-tight">
+                        <span className="text-[15px]">MyWeb2Wave</span>
+                        <span className="hidden text-xs font-normal text-soluk md:block">
+                            Yönetim paneli
+                        </span>
+                    </span>
                 </Link>
                 <Grup ad="Analiz">
                     <NavLink to="/panel" end className={ogeSinifi}>
@@ -116,11 +123,12 @@ export function Duzen(): ReactNode {
                         API anahtarları
                     </NavLink>
                 </Grup>
+                <TemaSecici />
                 <a
                     href="/panel/cikis"
                     className={cn(
                         ogeSinifi,
-                        "ml-auto text-soluk md:mt-auto md:ml-0 [&>svg]:text-soluk",
+                        "text-soluk md:-mt-2 [&>svg]:text-soluk",
                     )}
                 >
                     <LogOut aria-hidden="true" className="size-4.5" />
@@ -130,6 +138,42 @@ export function Duzen(): ReactNode {
             <main className="w-full max-w-[1240px] px-4 pt-6 pb-10 md:px-12 md:pt-9 md:pb-16">
                 <Outlet />
             </main>
+        </div>
+    );
+}
+
+const TEMALAR: [Tema, string][] = [
+    ["acik", "Açık"],
+    ["koyu", "Koyu"],
+    ["sistem", "Sistem"],
+];
+
+function TemaSecici(): ReactNode {
+    const [tema, setTema] = useState(temaOku);
+    useEffect(() => (tema === "sistem" ? sistemiDinle() : undefined), [tema]);
+    return (
+        <div
+            role="group"
+            aria-label="Tema"
+            className={cn(
+                bolmeliSinif,
+                "ml-auto md:mt-auto md:ml-2.5 md:self-start",
+            )}
+        >
+            {TEMALAR.map(([t, ad]) => (
+                <button
+                    key={t}
+                    type="button"
+                    aria-pressed={tema === t}
+                    className={bolmeSinifi}
+                    onClick={() => {
+                        temaSec(t);
+                        setTema(t);
+                    }}
+                >
+                    {ad}
+                </button>
+            ))}
         </div>
     );
 }

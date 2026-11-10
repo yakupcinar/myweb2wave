@@ -10,9 +10,12 @@ export const dugmeSinifi = cva(
         variants: {
             tur: {
                 ana: "border-vurgu bg-vurgu text-vurgu-yazi hover:brightness-110 active:brightness-95",
-                ikincil: "border-kenar bg-yuzey text-metin hover:bg-yuzey-2",
+                ikincil: "border-kenar-2 bg-yuzey text-metin hover:bg-yuzey-2",
                 tehlike:
-                    "border-kenar bg-yuzey text-tehlike hover:border-transparent hover:bg-tehlike-zemin",
+                    "border-kenar-2 bg-yuzey text-tehlike hover:border-transparent hover:bg-tehlike-zemin",
+                // P7a: onay satırı — geri alınamaz adım dolu kırmızı, vazgeç gri.
+                yikici: "border-tehlike bg-tehlike text-vurgu-yazi hover:brightness-110",
+                sade: "border-transparent bg-dolgu text-metin hover:brightness-95",
             },
         },
         defaultVariants: { tur: "ikincil" },

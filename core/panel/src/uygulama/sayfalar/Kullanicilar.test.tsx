@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-// P5: Kullanıcılar — satırlar, maskeli e-posta, durum rozeti, arama ve süzgeç
-// adreste ve uca gider, başlıkla sıralama (aria-sort), boş sonuç.
+// P5: Aboneler — satırlar, maskeli e-posta, durum, arama ve süzgeç adreste ve
+// uca gider, başlıkla sıralama (aria-sort), boş sonuç. P7a: Türkçe tarihli
+// durum, bölmeli durum süzgeci, satır altında sonucu anlatan onay.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     cleanup,
@@ -11,7 +12,7 @@ import {
     within,
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
 
 const satir = (abonelik: string, ek: object) => ({
@@ -44,7 +45,13 @@ const SATIRLAR = [
         huni: "genel",
         kisi: true,
         bagli: true,
-        sonFatura: { paraBirimi: "EUR", tutar: 9.99, iade: 3 },
+        donemSonu: "2026-12-01T10:00:00+00:00",
+        sonFatura: {
+            paraBirimi: "EUR",
+            tutar: 9.99,
+            iade: 3,
+            odendi: "2026-11-03T10:00:00+00:00",
+        },
     }),
     satir("sub_c", {
         durum: "past_due",
@@ -54,7 +61,12 @@ const SATIRLAR = [
         kampanya: "kis",
         iptalDonemSonu: true,
         donemSonu: "2026-12-01T10:00:00+00:00",
-        sonFatura: { paraBirimi: "EUR", tutar: 9.99, iade: 9.99 },
+        sonFatura: {
+            paraBirimi: "EUR",
+            tutar: 9.99,
+            iade: 9.99,
+            odendi: "2026-10-21T10:00:00+00:00",
+        },
     }),
     satir("sub_b", {
         durum: "canceled",
@@ -109,8 +121,17 @@ const sira = (): string[] =>
         (t) => t.getAttribute("data-abonelik") ?? "",
     );
 
+// Tarih yılı "bugün"e göre yazılır (3 Kas / 3 Kas 2025) — saat sabit.
+beforeEach(() => {
+    vi.useFakeTimers({
+        toFake: ["Date"],
+        now: new Date("2026-11-10T12:00:00Z"),
+    });
+});
+
 afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     islemYaniti = null;
 });
@@ -118,6 +139,11 @@ afterEach(() => {
 const islemHucresi = (abonelik: string): HTMLElement =>
     document.querySelector<HTMLElement>(
         `tr[data-abonelik="${abonelik}"] td:last-child`,
+    )!;
+// Onay ve hata satırı abonelik satırının hemen altında.
+const altSatir = (abonelik: string): HTMLElement =>
+    document.querySelector<HTMLElement>(
+        `tr[data-abonelik="${abonelik}"] + tr:not([data-abonelik])`,
     )!;
 
 describe("M6a — abonelik işlemleri", () => {
@@ -131,31 +157,57 @@ describe("M6a — abonelik işlemleri", () => {
         // 9,99 − 3 = 6,99 kalan; tam iade edilmiş faturada iade düğmesi yok.
         expect(metin("sub_a")).toEqual([
             "Dönem sonunda iptal et",
-            "Son faturayı iade et (€6,99)",
+            "€6,99 iade et",
         ]);
         expect(metin("sub_c")).toEqual(["İptali geri al"]);
-        expect(islemHucresi("sub_c").textContent).toContain(
-            "İptal planlı — 2026-12-01 10:00",
-        );
         expect(metin("sub_b")).toEqual([]);
     });
 
-    it("iki adımlı onay: Vazgeç istek göndermez, Evet jetonla gönderir ve listeyi yeniler", async () => {
+    it("denemede: düğme ve onay deneme sonunu söyler", async () => {
+        kur([
+            satir("sub_d", {
+                durum: "trialing",
+                donemSonu: "2026-11-15T10:00:00+00:00",
+            }),
+        ]);
+        await screen.findAllByRole("row");
+        expect(
+            document.querySelector('tr[data-abonelik="sub_d"]')?.textContent,
+        ).toContain("Denemede · 15 Kasım'da biter");
+        fireEvent.click(
+            within(islemHucresi("sub_d")).getByRole("button", {
+                name: "Deneme sonunda iptal et",
+            }),
+        );
+        expect(altSatir("sub_d").textContent).toContain(
+            "15 Kasım'a kadar açık kalır, sonra ücret çekilmez",
+        );
+    });
+
+    it("iki adımlı onay satırın altında: Vazgeç istek göndermez, onay jetonla gönderir ve listeyi yeniler", async () => {
         kur();
         await screen.findAllByRole("row");
         const hucre = within(islemHucresi("sub_a"));
         fireEvent.click(
             hucre.getByRole("button", { name: "Dönem sonunda iptal et" }),
         );
-        expect(hucre.getByText(/emin misiniz/)).toBeTruthy();
-        fireEvent.click(hucre.getByRole("button", { name: "Vazgeç" }));
+        expect(altSatir("sub_a").textContent).toContain(
+            "Dönem sonunda iptal edilsin mi? a***@example.com · 1 Aralık'a kadar açık kalır, sonra yenilenmez.",
+        );
+        fireEvent.click(
+            within(altSatir("sub_a")).getByRole("button", { name: "Vazgeç" }),
+        );
+        expect(altSatir("sub_a")).toBeNull();
         expect(islemler).toEqual([]);
 
         const once = istenen.length;
-        fireEvent.click(
-            hucre.getByRole("button", { name: /Son faturayı iade et/ }),
+        fireEvent.click(hucre.getByRole("button", { name: "€6,99 iade et" }));
+        expect(altSatir("sub_a").textContent).toContain(
+            "€6,99 iade edilsin mi? a***@example.com · 3 Kasım faturası. Geri alınamaz; abonelik sürer.",
         );
-        fireEvent.click(hucre.getByRole("button", { name: "Evet" }));
+        fireEvent.click(
+            within(altSatir("sub_a")).getByRole("button", { name: "İade et" }),
+        );
         await waitFor(() =>
             expect(islemler).toEqual([
                 "POST /panel/api/abonelikler/sub_a/iade true",
@@ -169,7 +221,7 @@ describe("M6a — abonelik işlemleri", () => {
             }),
         );
         fireEvent.click(
-            within(islemHucresi("sub_c")).getByRole("button", { name: "Evet" }),
+            within(altSatir("sub_c")).getByRole("button", { name: "Geri al" }),
         );
         await waitFor(() =>
             expect(islemler.at(-1)).toBe(
@@ -185,21 +237,25 @@ describe("M6a — abonelik işlemleri", () => {
         );
         kur();
         await screen.findAllByRole("row");
-        const hucre = within(islemHucresi("sub_a"));
         fireEvent.click(
-            hucre.getByRole("button", { name: "Dönem sonunda iptal et" }),
+            within(islemHucresi("sub_a")).getByRole("button", {
+                name: "Dönem sonunda iptal et",
+            }),
         );
-        fireEvent.click(hucre.getByRole("button", { name: "Evet" }));
-        expect((await hucre.findByRole("alert")).textContent).toBe(
-            "Stripe isteği reddetti: x",
+        fireEvent.click(
+            within(altSatir("sub_a")).getByRole("button", { name: "İptal et" }),
         );
+        await waitFor(() => expect(altSatir("sub_a")).not.toBeNull());
+        expect(
+            (await within(altSatir("sub_a")).findByRole("alert")).textContent,
+        ).toBe("Stripe isteği reddetti: x");
     });
 });
 
-describe("P5: Kullanıcılar", () => {
-    it("satırlar: maskeli e-posta, durum, kaynak + reklam, kişi bağlantısı; menüde işaretli", async () => {
+describe("P5: Aboneler", () => {
+    it("satırlar: maskeli e-posta, Türkçe durum, kaynak + reklam, kişi bağlantısı, son ödeme; menüde işaretli", async () => {
         kur();
-        await screen.findByText("3 abonelik");
+        await screen.findByText(/^3 abonelik ·/);
         expect(
             screen
                 .getByRole("link", { name: "Aboneler" })
@@ -211,31 +267,59 @@ describe("P5: Kullanıcılar", () => {
         expect(a.getByText("a***@example.com")).toBeTruthy();
         expect(a.getByText("reklam")).toBeTruthy();
         expect(a.getByText(/meta \/ paid_social/)).toBeTruthy();
-        expect(a.getByText("bağlı (keepchat)")).toBeTruthy();
-        expect(a.getByText("2026-11-01 10:00")).toBeTruthy();
         expect(
-            within(
-                document.querySelector<HTMLElement>(
-                    'tr[data-abonelik="sub_c"]',
-                )!,
-            ).getByText("past_due"),
+            a.getByText("1 Kasım'dan beri · uygulamaya bağlı (keepchat)"),
         ).toBeTruthy();
+        expect(a.getByText("Aktif")).toBeTruthy();
+        expect(a.getByText("ekim-1 · genel")).toBeTruthy();
+        expect(a.getByText("€9,99 · 3 Kas")).toBeTruthy();
+        expect(a.getByText("€3,00 iade edildi")).toBeTruthy();
+        const c = within(
+            document.querySelector<HTMLElement>('tr[data-abonelik="sub_c"]')!,
+        );
+        // İptali planlı abonelik Stripe'ta hâlâ past_due: önce iptal söylenir.
+        expect(
+            c.getByText("İptal edildi · 1 Aralık'a kadar açık"),
+        ).toBeTruthy();
+        expect(c.getByText("İade edildi")).toBeTruthy();
+        // Ödeme anı bilinmiyor: alt satırda tarih ya da tahmin yok.
+        expect(
+            document.querySelector('tr[data-abonelik="sub_c"] td span.text-xs')
+                ?.textContent,
+        ).toBe("");
+        const b = within(
+            document.querySelector<HTMLElement>('tr[data-abonelik="sub_b"]')!,
+        );
+        expect(b.getByText("Bitti")).toBeTruthy();
+        expect(b.getByText("Henüz yok")).toBeTruthy();
+        expect(b.getByText("Doğrudan")).toBeTruthy();
         expect(sira()).toEqual(["sub_a", "sub_c", "sub_b"]);
     });
 
     it("arama ve durum adrese yazılır ve uca gider", async () => {
         kur();
-        await screen.findByText("3 abonelik");
-        fireEvent.change(screen.getByLabelText("Ara"), {
+        await screen.findByText(/^3 abonelik ·/);
+        fireEvent.change(screen.getByLabelText("E-posta ya da kampanya ara"), {
             target: { value: " meta " },
         });
         fireEvent.submit(screen.getByRole("search"));
         await waitFor(() =>
             expect(yonlendirici.state.location.search).toBe("?ara=meta"),
         );
-        fireEvent.change(screen.getByLabelText("Durum"), {
-            target: { value: "canceled" },
-        });
+        const durum = within(screen.getByRole("group", { name: "Durum" }));
+        expect(
+            durum
+                .getByRole("button", { name: "Tümü" })
+                .getAttribute("aria-pressed"),
+        ).toBe("true");
+        fireEvent.click(durum.getByRole("button", { name: "Bitti" }));
+        await waitFor(() =>
+            expect(
+                durum
+                    .getByRole("button", { name: "Bitti" })
+                    .getAttribute("aria-pressed"),
+            ).toBe("true"),
+        );
         await waitFor(() =>
             expect(yonlendirici.state.location.search).toBe(
                 "?ara=meta&durum=canceled",
@@ -248,27 +332,32 @@ describe("P5: Kullanıcılar", () => {
 
     it("başlıkla sıralama: önce artan, ikinci tıkta azalan; aria-sort", async () => {
         kur();
-        await screen.findByText("3 abonelik");
-        const odeme = screen.getByRole("button", { name: "Ödeme (UTC)" });
+        await screen.findByText(/^3 abonelik ·/);
+        // Son ödeme = son faturanın ödendiği an; faturasız (sub_b) en başta.
+        const odeme = screen.getByRole("button", { name: "Son ödeme" });
         fireEvent.click(odeme);
-        expect(sira()).toEqual(["sub_c", "sub_b", "sub_a"]);
+        expect(sira()).toEqual(["sub_b", "sub_c", "sub_a"]);
         expect(odeme.closest("th")?.getAttribute("aria-sort")).toBe(
             "ascending",
         );
         fireEvent.click(odeme);
-        expect(sira()).toEqual(["sub_a", "sub_b", "sub_c"]);
+        expect(sira()).toEqual(["sub_a", "sub_c", "sub_b"]);
         expect(odeme.closest("th")?.getAttribute("aria-sort")).toBe(
             "descending",
         );
-        fireEvent.click(screen.getByRole("button", { name: "E-posta" }));
+        fireEvent.click(screen.getByRole("button", { name: "Abone" }));
         expect(sira()).toEqual(["sub_a", "sub_b", "sub_c"]);
     });
 
     it("eşleşme yoksa boş satır", async () => {
         kur([], "/panel/kullanicilar?ara=yok");
         await screen.findByText("Eşleşen abonelik yok.");
-        expect((screen.getByLabelText("Ara") as HTMLInputElement).value).toBe(
-            "yok",
-        );
+        expect(
+            (
+                screen.getByLabelText(
+                    "E-posta ya da kampanya ara",
+                ) as HTMLInputElement
+            ).value,
+        ).toBe("yok");
     });
 });

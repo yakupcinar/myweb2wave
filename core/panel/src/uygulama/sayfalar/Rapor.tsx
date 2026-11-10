@@ -7,6 +7,7 @@ import { Link, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { tutarlar, yuzde, zaman } from "../bicim";
+import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
 import { SayfaBasi } from "../Duzen";
 
 // P4: grafik kitaplığı (Recharts) ayrı parça — Huniler/düzenleyici indirmez.
@@ -49,16 +50,13 @@ export function Rapor(): ReactNode {
                 baslik="Rapor"
                 aciklama={`Ziyaretçilerin kaçı abone oldu ve ne kadar kazandırdı — son ${gun} gün.`}
             >
-                <nav
-                    aria-label="Zaman aralığı"
-                    className="inline-flex gap-0.5 rounded-[9px] bg-yuzey-2 p-[2px]"
-                >
+                <nav aria-label="Zaman aralığı" className={bolmeliSinif}>
                     {GUNLER.map((g) => (
                         <Link
                             key={g}
                             to={`/panel?gun=${g}`}
                             aria-current={g === gun ? "page" : undefined}
-                            className="rounded-[7px] px-3 py-1 text-[13px] whitespace-nowrap text-metin hover:bg-yuzey/60 aria-[current=page]:bg-yuzey aria-[current=page]:font-semibold aria-[current=page]:shadow-sm"
+                            className={bolmeSinifi}
                         >
                             Son {g} gün
                         </Link>

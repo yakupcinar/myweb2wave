@@ -50,6 +50,24 @@ final class PanelRenkleriTest extends TestCase
             }
         }
         self::assertGreaterThanOrEqual(4.5, self::oran($r['vurgu-yazi'] ?? '', $r['vurgu'] ?? ''), "düğme yazısı / vurgu ({$mod})");
+        // P7a: onay satırındaki dolu kırmızı düğme ("İade et").
+        self::assertGreaterThanOrEqual(4.5, self::oran($r['vurgu-yazi'] ?? '', $r['tehlike'] ?? ''), "düğme yazısı / tehlike ({$mod})");
+    }
+
+    /**
+     * P7a: tema seçimi boyamadan ÖNCE uygulanır (§40) — iki kabukta da tema
+     * betiği stilden önce; anahtar React tarafıyla (tema.ts) aynı (kural 7).
+     */
+    public function testTemaBetigiStildenOnceVeAnahtarAyni(): void
+    {
+        foreach (['/templates/base.html.twig' => '<style>', '/templates/panel/uygulama.html.twig' => 'stiller'] as $yol => $stil) {
+            $sablon = self::oku($yol);
+            $betik = strpos($sablon, "include('panel/tema.html.twig')");
+            self::assertNotFalse($betik, $yol);
+            self::assertLessThan(strpos($sablon, $stil), $betik, $yol);
+        }
+        self::assertStringContainsString("localStorage.getItem('panel-tema')", self::oku('/templates/panel/tema.html.twig'));
+        self::assertStringContainsString('const ANAHTAR = "panel-tema";', self::oku('/panel/src/uygulama/tema.ts'));
     }
 
     private static function oku(string $yol): string
@@ -63,9 +81,9 @@ final class PanelRenkleriTest extends TestCase
     /** @return array<string, string> ad → #rrggbb ya da #rrggbbaa (küçük harf) */
     private static function degiskenler(string $css, string $mod): array
     {
-        // Açık: ilk :root bloğundan koyu bloğa kadar; koyu: prefers-color-scheme: dark'tan sonrası.
+        // Açık: ilk :root bloğundan koyu bloğa kadar; koyu: :root[data-tema="koyu"]'dan sonrası.
         $kok = strpos($css, ':root');
-        $koyu = strpos($css, 'prefers-color-scheme: dark');
+        $koyu = strpos($css, ':root[data-tema="koyu"]');
         self::assertNotFalse($kok);
         self::assertNotFalse($koyu);
         $parca = 'koyu' === $mod ? substr($css, $koyu) : substr($css, $kok, $koyu - $kok);

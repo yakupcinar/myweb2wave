@@ -6,6 +6,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="noindex, nofollow">
+        {{ include('panel/tema.html.twig') }}
         <title>MyWeb2Wave panel</title>
         {% for s in stiller %}<link rel="stylesheet" href="{{ s }}">{% endfor %}
         <script type="module" src="{{ betik }}"></script>

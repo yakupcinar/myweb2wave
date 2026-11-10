@@ -8,10 +8,7 @@ export function Kart({
 }: ComponentProps<"section">): ReactNode {
     return (
         <section
-            className={cn(
-                "min-w-0 rounded-[14px] bg-yuzey dark:border dark:border-kenar",
-                className,
-            )}
+            className={cn("min-w-0 rounded-[14px] bg-yuzey", className)}
             {...oz}
         />
     );

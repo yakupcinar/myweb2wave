@@ -1,26 +1,29 @@
-// Kullanıcılar (P5, CRM): abonelik başına satır — durum, maskeli e-posta,
-// ödemeyi başlatan ziyaretin kaynağı/kampanyası, kişi ve uygulama bağlantısı.
-// Arama ve durum adreste (?ara=&durum=), sunucuda süzülür; sıralama istemcide
-// (en çok 200 satır — tablo kitaplığı gerekmedi).
+// Aboneler (P5, CRM): abonelik başına satır — kim, durumu, nereden geldi,
+// son ödemesi. Arama ve durum adreste (?ara=&durum=), sunucuda süzülür;
+// sıralama istemcide (en çok 200 satır — tablo kitaplığı gerekmedi).
 // M6a (A19): satırda dönem sonunda iptal / geri al ve son faturanın iadesi —
-// iki adımlı onay sayfada (tarayıcı iletişim kutusu yok).
+// onay satırın altında açılır (tarayıcı iletişim kutusu yok).
+// P7a: görünüm onaylı taslakla bire bir (p7a-aboneler.md) — durum Türkçe ve
+// tarihli, durum süzgeci bölmeli seçici, onay sonucu anlatır.
 import {
     keepPreviousData,
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { api } from "../api";
-import { tutarlar, zaman } from "../bicim";
+import { ekliTarih, kisaTarih, tutarlar, uzunTarih } from "../bicim";
 import { SayfaBasi } from "../Duzen";
+import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
+import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
-import { Kart, KartBasi } from "../ui/Kart";
+import { Kart } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
 import { Tablo, Td, Th } from "../ui/Tablo";
 
 type Satir = Awaited<ReturnType<typeof listeAl>>["satirlar"][number];
-type Sutun = "durum" | "email" | "kaynak" | "kampanya" | "odeme" | "guncelleme";
+type Sutun = "email" | "durum" | "kaynak" | "sonOdeme";
 
 async function listeAl(ara: string, durum: string) {
     const { data } = await api.GET("/panel/api/kullanicilar", {
@@ -31,22 +34,55 @@ async function listeAl(ara: string, durum: string) {
 }
 
 const SUTUNLAR: [Sutun, string][] = [
+    ["email", "Abone"],
     ["durum", "Durum"],
-    ["email", "E-posta"],
-    ["kaynak", "Kaynak"],
-    ["kampanya", "Kampanya"],
-    ["odeme", "Ödeme (UTC)"],
-    ["guncelleme", "Güncelleme (UTC)"],
+    ["kaynak", "Geldiği yer"],
+    ["sonOdeme", "Son ödeme"],
 ];
 
-const durumRozeti = (d: string): ReactNode =>
-    d === "active" || d === "trialing" ? (
-        <Rozet tur="iyi">{d}</Rozet>
-    ) : d === "past_due" || d === "unpaid" ? (
-        <Rozet tur="uyari">{d}</Rozet>
-    ) : (
-        <Rozet>{d || "—"}</Rozet>
-    );
+// Stripe durumu → süzgeç. "Ödeme sorunlu" past_due; unpaid az görülür, Tümü'nde.
+const DURUMLAR: [string, string][] = [
+    ["", "Tümü"],
+    ["active", "Aktif"],
+    ["trialing", "Denemede"],
+    ["past_due", "Ödeme sorunlu"],
+    ["canceled", "Bitti"],
+];
+
+const SURER = ["active", "trialing", "past_due"];
+
+/** Durum noktası rengi + Türkçe, tarihli açıklama. */
+function durumBilgisi(s: Satir): [string, string] {
+    if (s.iptalDonemSonu && SURER.includes(s.durum))
+        return [
+            "bg-uyari",
+            s.donemSonu
+                ? `İptal edildi · ${ekliTarih(s.donemSonu, "e")} kadar açık`
+                : "İptal edildi",
+        ];
+    switch (s.durum) {
+        case "active":
+            return ["bg-iyi", "Aktif"];
+        case "trialing":
+            return [
+                "bg-vurgu",
+                s.donemSonu
+                    ? `Denemede · ${ekliTarih(s.donemSonu, "de")} biter`
+                    : "Denemede",
+            ];
+        case "past_due":
+        case "unpaid":
+            return ["bg-tehlike", "Ödeme sorunlu"];
+        case "canceled":
+        case "incomplete_expired":
+            return ["bg-soluk", "Bitti"];
+        default:
+            return ["bg-soluk", "Bekliyor"];
+    }
+}
+
+const tutar = (paraBirimi: string, t: number): string =>
+    tutarlar([{ paraBirimi, tutar: t }]);
 
 export function Kullanicilar(): ReactNode {
     const [adres, setAdres] = useSearchParams();
@@ -56,7 +92,7 @@ export function Kullanicilar(): ReactNode {
     const sorgu = useQuery({
         queryKey: ["kullanicilar", ara, durum],
         queryFn: () => listeAl(ara, durum),
-        // Yeni arama yüklenirken önceki sonuç kalır — durum seçenekleri boşalmasın.
+        // Yeni arama yüklenirken önceki sonuç kalır — tablo boşalıp zıplamasın.
         placeholderData: keepPreviousData,
     });
     const sec = (ara2: string, durum2: string): void =>
@@ -74,49 +110,60 @@ export function Kullanicilar(): ReactNode {
                 baslik="Aboneler"
                 aciklama="Kimin aboneliği sürüyor, kim nereden geldi. Tam e-posta adresi yalnız Stripe'ta görünür."
             />
-            <form
-                role="search"
-                className="mb-4 flex flex-wrap items-end gap-3"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    sec(taslak, durum);
-                }}
-            >
-                <label className="grid gap-1.5">
-                    <span className="font-semibold">Ara</span>
-                    <input
-                        type="search"
-                        value={taslak}
-                        maxLength={100}
-                        placeholder="e-posta, kaynak ya da kampanya"
-                        onChange={(e) => setTaslak(e.currentTarget.value)}
-                        className="min-h-9 w-72 max-w-full rounded-lg border border-kenar bg-zemin px-3"
-                    />
-                </label>
-                <label className="grid gap-1.5">
-                    <span className="font-semibold">Durum</span>
-                    <select
-                        value={durum}
-                        onChange={(e) => sec(ara, e.currentTarget.value)}
-                        className="min-h-9 rounded-lg border border-kenar bg-zemin px-3"
-                    >
-                        <option value="">hepsi</option>
-                        {(sorgu.data?.durumlar ?? (durum ? [durum] : [])).map(
-                            (d) => (
-                                <option key={d} value={d}>
-                                    {d}
-                                </option>
-                            ),
-                        )}
-                    </select>
-                </label>
-                <Dugme tur="ana" type="submit">
-                    Ara
-                </Dugme>
-            </form>
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+                <form
+                    role="search"
+                    className="flex min-w-0 flex-[1_1_320px]"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        sec(taslak, durum);
+                    }}
+                >
+                    <label className="flex min-h-10 w-full items-center gap-2 rounded-[10px] border border-kenar-2 bg-yuzey px-3 focus-within:outline-2 focus-within:outline-vurgu">
+                        <svg
+                            aria-hidden="true"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            className="shrink-0 text-soluk"
+                        >
+                            <circle cx="11" cy="11" r="7" />
+                            <path d="M20 20l-4-4" />
+                        </svg>
+                        <span className="sr-only">
+                            E-posta ya da kampanya ara
+                        </span>
+                        <input
+                            type="search"
+                            value={taslak}
+                            maxLength={100}
+                            placeholder="E-posta ya da kampanya ara"
+                            onChange={(e) => setTaslak(e.currentTarget.value)}
+                            className="min-w-0 flex-1 bg-transparent text-metin outline-none placeholder:text-soluk"
+                        />
+                    </label>
+                </form>
+                <div role="group" aria-label="Durum" className={bolmeliSinif}>
+                    {DURUMLAR.map(([d, ad]) => (
+                        <button
+                            key={d}
+                            type="button"
+                            aria-pressed={durum === d}
+                            className={cn(bolmeSinifi, "px-3.5 py-1.5")}
+                            onClick={() => sec(ara, d)}
+                        >
+                            {ad}
+                        </button>
+                    ))}
+                </div>
+            </div>
             {sorgu.isError ? (
                 <p role="alert" className="text-tehlike">
-                    Kullanıcılar yüklenemedi.
+                    Aboneler yüklenemedi.
                 </p>
             ) : sorgu.data ? (
                 <Liste
@@ -132,6 +179,10 @@ export function Kullanicilar(): ReactNode {
     );
 }
 
+type Is = "iptal" | "geriAl" | "iade";
+
+const hucre = "px-[18px] py-3.5";
+
 function Liste({
     satirlar,
     azami,
@@ -139,14 +190,25 @@ function Liste({
     satirlar: Satir[];
     azami: number;
 }): ReactNode {
+    const istemci = useQueryClient();
     // Varsayılan: sunucunun sırası (en yeni güncellenen önce).
     const [sira, setSira] = useState<{ sutun: Sutun; artan: boolean } | null>(
         null,
     );
+    const [onay, setOnay] = useState<{ abonelik: string; is: Is } | null>(null);
+    const [hata, setHata] = useState<{
+        abonelik: string;
+        metin: string;
+    } | null>(null);
+    const [calisiyor, setCalisiyor] = useState(false);
     const sirali = useMemo(() => {
         if (!sira) return satirlar;
         const deger = (s: Satir): string =>
-            (sira.sutun === "kaynak" ? s.kaynak : s[sira.sutun]) ?? "";
+            (sira.sutun === "sonOdeme"
+                ? s.sonFatura?.odendi
+                : sira.sutun === "durum"
+                  ? durumBilgisi(s)[1]
+                  : s[sira.sutun]) ?? "";
         return [...satirlar].sort(
             (a, b) =>
                 (deger(a) < deger(b) ? -1 : deger(a) > deger(b) ? 1 : 0) *
@@ -154,129 +216,12 @@ function Liste({
         );
     }, [satirlar, sira]);
 
-    return (
-        <Kart aria-label="Abonelikler">
-            <KartBasi
-                baslik={`${satirlar.length} abonelik`}
-                aciklama={
-                    satirlar.length >= azami
-                        ? `İlk ${azami} gösteriliyor — aramayı daralt.`
-                        : "Başlığa tıklayarak sırala."
-                }
-            />
-            <Tablo>
-                <thead>
-                    <tr>
-                        {SUTUNLAR.map(([sutun, ad]) => (
-                            <Th
-                                key={sutun}
-                                aria-sort={
-                                    sira?.sutun === sutun
-                                        ? sira.artan
-                                            ? "ascending"
-                                            : "descending"
-                                        : undefined
-                                }
-                            >
-                                <button
-                                    type="button"
-                                    className="uppercase"
-                                    onClick={() =>
-                                        setSira((o) => ({
-                                            sutun,
-                                            artan:
-                                                o?.sutun === sutun
-                                                    ? !o.artan
-                                                    : true,
-                                        }))
-                                    }
-                                >
-                                    {ad}
-                                </button>
-                            </Th>
-                        ))}
-                        <Th>Huni</Th>
-                        <Th>Kişi</Th>
-                        <Th>İşlem</Th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sirali.map((s) => (
-                        <tr key={s.abonelik} data-abonelik={s.abonelik}>
-                            <Td>{durumRozeti(s.durum)}</Td>
-                            <Td className="font-mono text-[12.5px]">
-                                {s.email ?? "—"}
-                            </Td>
-                            <Td>
-                                {s.reklam ? (
-                                    <Rozet tur="uyari">reklam</Rozet>
-                                ) : null}{" "}
-                                {s.kaynak
-                                    ? `${s.kaynak}${s.ortam ? ` / ${s.ortam}` : ""}`
-                                    : "—"}
-                            </Td>
-                            <Td>{s.kampanya ?? "—"}</Td>
-                            <Td>{s.odeme ? zaman(s.odeme) : "—"}</Td>
-                            <Td>{zaman(s.guncelleme)}</Td>
-                            <Td>{s.huni ?? "—"}</Td>
-                            <Td>
-                                {s.bagli
-                                    ? `bağlı (${s.app ?? "?"})`
-                                    : s.kisi
-                                      ? "kayıtlı"
-                                      : "—"}
-                            </Td>
-                            <Td>
-                                <Islemler s={s} />
-                            </Td>
-                        </tr>
-                    ))}
-                    {satirlar.length ? null : (
-                        <tr>
-                            <Td colSpan={9} className="text-soluk">
-                                Eşleşen abonelik yok.
-                            </Td>
-                        </tr>
-                    )}
-                </tbody>
-            </Tablo>
-        </Kart>
-    );
-}
-
-type Is = "iptal" | "geriAl" | "iade";
-
-const SURER = ["active", "trialing", "past_due"];
-
-function Islemler({ s }: { s: Satir }): ReactNode {
-    const istemci = useQueryClient();
-    const [onay, setOnay] = useState<Is | null>(null);
-    const [hata, setHata] = useState("");
-    const [calisiyor, setCalisiyor] = useState(false);
-    const kalan = s.sonFatura
-        ? Math.round((s.sonFatura.tutar - s.sonFatura.iade) * 100) / 100
-        : 0;
-    const islemler: [Is, string][] = [
-        ...(s.iptalDonemSonu
-            ? ([["geriAl", "İptali geri al"]] as [Is, string][])
-            : SURER.includes(s.durum)
-              ? ([["iptal", "Dönem sonunda iptal et"]] as [Is, string][])
-              : []),
-        ...(s.sonFatura && kalan > 0
-            ? ([
-                  [
-                      "iade",
-                      `Son faturayı iade et (${tutarlar([{ paraBirimi: s.sonFatura.paraBirimi, tutar: kalan }])})`,
-                  ],
-              ] as [Is, string][])
-            : []),
-    ];
-    const yap = async (is: Is): Promise<void> => {
-        setHata("");
+    const yap = async (abonelik: string, is: Is): Promise<void> => {
+        setHata(null);
         setCalisiyor(true);
         const yol = {
             params: {
-                path: { abonelik: s.abonelik },
+                path: { abonelik },
                 header: { "X-CSRF-Token": "" },
             },
         };
@@ -295,46 +240,290 @@ function Islemler({ s }: { s: Satir }): ReactNode {
         setCalisiyor(false);
         setOnay(null);
         if (response.status !== 204)
-            return setHata((error?.hatalar ?? ["İşlem yapılamadı."]).join(" "));
+            return setHata({
+                abonelik,
+                metin: (error?.hatalar ?? ["İşlem yapılamadı."]).join(" "),
+            });
         await istemci.invalidateQueries({ queryKey: ["kullanicilar"] });
     };
+
     return (
-        <div className="grid gap-1.5">
-            {s.iptalDonemSonu ? (
-                <span className="text-[12.5px] text-soluk">
-                    İptal planlı
-                    {s.donemSonu ? ` — ${zaman(s.donemSonu)}` : ""}
-                </span>
-            ) : null}
-            {onay ? (
-                <span className="flex flex-wrap items-center gap-2">
-                    <span>
-                        {islemler.find(([i]) => i === onay)?.[1]} — emin
-                        misiniz?
+        <>
+            <Kart aria-label="Abonelikler" className="overflow-hidden">
+                <Tablo className="min-w-[860px]">
+                    <thead>
+                        <tr>
+                            {SUTUNLAR.map(([sutun, ad]) => (
+                                <Th
+                                    key={sutun}
+                                    className="px-[18px]"
+                                    aria-sort={
+                                        sira?.sutun === sutun
+                                            ? sira.artan
+                                                ? "ascending"
+                                                : "descending"
+                                            : undefined
+                                    }
+                                >
+                                    <button
+                                        type="button"
+                                        className="hover:text-metin"
+                                        onClick={() =>
+                                            setSira((o) => ({
+                                                sutun,
+                                                artan:
+                                                    o?.sutun === sutun
+                                                        ? !o.artan
+                                                        : true,
+                                            }))
+                                        }
+                                    >
+                                        {ad}
+                                    </button>
+                                </Th>
+                            ))}
+                            <Th className="px-[18px] text-right">İşlem</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sirali.map((s) => (
+                            <Fragment key={s.abonelik}>
+                                <SatirGorunumu
+                                    s={s}
+                                    sec={(is) => {
+                                        setHata(null);
+                                        setOnay({ abonelik: s.abonelik, is });
+                                    }}
+                                />
+                                {onay?.abonelik === s.abonelik ? (
+                                    <OnaySatiri
+                                        s={s}
+                                        is={onay.is}
+                                        calisiyor={calisiyor}
+                                        vazgec={() => setOnay(null)}
+                                        onayla={() =>
+                                            void yap(s.abonelik, onay.is)
+                                        }
+                                    />
+                                ) : null}
+                                {hata?.abonelik === s.abonelik ? (
+                                    <tr>
+                                        <Td
+                                            colSpan={5}
+                                            className={cn(
+                                                hucre,
+                                                "whitespace-normal",
+                                            )}
+                                        >
+                                            <span
+                                                role="alert"
+                                                className="text-tehlike"
+                                            >
+                                                {hata.metin}
+                                            </span>
+                                        </Td>
+                                    </tr>
+                                ) : null}
+                            </Fragment>
+                        ))}
+                        {satirlar.length ? null : (
+                            <tr>
+                                <Td
+                                    colSpan={5}
+                                    className={cn(hucre, "text-soluk")}
+                                >
+                                    Eşleşen abonelik yok.
+                                </Td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Tablo>
+            </Kart>
+            <p className="mt-3 text-[13px] text-soluk">
+                {satirlar.length} abonelik ·{" "}
+                {satirlar.length >= azami
+                    ? `İlk ${azami} gösteriliyor — aramayı daralt.`
+                    : "Başlığa tıklayarak sırala."}
+            </p>
+        </>
+    );
+}
+
+/** Kalan iade edilebilir tutar (ana birim); 0 → iade düğmesi yok. */
+const kalan = (s: Satir): number =>
+    s.sonFatura
+        ? Math.round((s.sonFatura.tutar - s.sonFatura.iade) * 100) / 100
+        : 0;
+
+function SatirGorunumu({
+    s,
+    sec,
+}: {
+    s: Satir;
+    sec: (is: Is) => void;
+}): ReactNode {
+    const [nokta, durumMetni] = durumBilgisi(s);
+    const alt = [
+        // Ödeme anı yoksa (olay henüz gelmedi) tarih iddia edilmez.
+        s.odeme ? `${ekliTarih(s.odeme, "den")} beri` : null,
+        s.bagli
+            ? `uygulamaya bağlı (${s.app ?? "?"})`
+            : s.kisi
+              ? "kayıtlı"
+              : null,
+    ].filter(Boolean);
+    const nereden = [s.kampanya, s.huni].filter(Boolean).join(" · ");
+    const f = s.sonFatura;
+    const iadeEdilebilir = kalan(s);
+    const dugme = "min-h-8 px-3 font-normal";
+
+    return (
+        <tr data-abonelik={s.abonelik}>
+            <Td className={hucre}>
+                <div className="flex flex-col gap-0.5">
+                    <span>{s.email ?? "—"}</span>
+                    <span className="text-xs text-soluk">
+                        {alt.join(" · ")}
                     </span>
-                    <Dugme
-                        tur="ana"
-                        disabled={calisiyor}
-                        onClick={() => void yap(onay)}
-                    >
-                        Evet
-                    </Dugme>
-                    <Dugme disabled={calisiyor} onClick={() => setOnay(null)}>
-                        Vazgeç
-                    </Dugme>
+                </div>
+            </Td>
+            <Td className={hucre}>
+                <span
+                    className="inline-flex items-center gap-1.5 text-[13px]"
+                    title={s.durum || undefined}
+                >
+                    <span
+                        aria-hidden="true"
+                        className={cn("size-2 rounded-full", nokta)}
+                    />
+                    {durumMetni}
                 </span>
-            ) : (
-                islemler.map(([is, ad]) => (
-                    <Dugme key={is} onClick={() => setOnay(is)}>
-                        {ad}
-                    </Dugme>
-                ))
-            )}
-            {hata ? (
-                <span role="alert" className="text-tehlike">
-                    {hata}
-                </span>
-            ) : null}
-        </div>
+            </Td>
+            <Td className={hucre}>
+                <div className="flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1.5">
+                        {s.kaynak
+                            ? `${s.kaynak}${s.ortam ? ` / ${s.ortam}` : ""}`
+                            : "Doğrudan"}
+                        {s.reklam ? <Rozet tur="uyari">reklam</Rozet> : null}
+                    </span>
+                    <span className="text-xs text-soluk">{nereden || "—"}</span>
+                </div>
+            </Td>
+            <Td className={hucre}>
+                {f ? (
+                    <div className="flex flex-col gap-0.5">
+                        <span>
+                            {tutar(f.paraBirimi, f.tutar)}
+                            {f.odendi ? ` · ${kisaTarih(f.odendi)}` : ""}
+                        </span>
+                        {f.iade > 0 ? (
+                            <span className="text-xs text-soluk">
+                                {iadeEdilebilir > 0
+                                    ? `${tutar(f.paraBirimi, f.iade)} iade edildi`
+                                    : "İade edildi"}
+                            </span>
+                        ) : null}
+                    </div>
+                ) : (
+                    <span className="text-soluk">Henüz yok</span>
+                )}
+            </Td>
+            <Td className={cn(hucre, "text-right")}>
+                <div className="inline-flex gap-2">
+                    {s.iptalDonemSonu ? (
+                        <Dugme
+                            className={cn(dugme, "text-vurgu")}
+                            onClick={() => sec("geriAl")}
+                        >
+                            İptali geri al
+                        </Dugme>
+                    ) : SURER.includes(s.durum) ? (
+                        <Dugme className={dugme} onClick={() => sec("iptal")}>
+                            {s.durum === "trialing"
+                                ? "Deneme sonunda iptal et"
+                                : "Dönem sonunda iptal et"}
+                        </Dugme>
+                    ) : null}
+                    {f && iadeEdilebilir > 0 ? (
+                        <Dugme
+                            tur="tehlike"
+                            className={dugme}
+                            onClick={() => sec("iade")}
+                        >
+                            {tutar(f.paraBirimi, iadeEdilebilir)} iade et
+                        </Dugme>
+                    ) : null}
+                </div>
+            </Td>
+        </tr>
+    );
+}
+
+/** Onay satırı: ne olacağını söyler; geri alınamaz adım kırmızı (A19). */
+function OnaySatiri({
+    s,
+    is,
+    calisiyor,
+    vazgec,
+    onayla,
+}: {
+    s: Satir;
+    is: Is;
+    calisiyor: boolean;
+    vazgec: () => void;
+    onayla: () => void;
+}): ReactNode {
+    const kim = s.email ?? "Abone";
+    const deneme = s.durum === "trialing";
+    const [soru, aciklama, dugme]: [string, string, string] =
+        is === "iade"
+            ? [
+                  `${tutar(s.sonFatura?.paraBirimi ?? "EUR", kalan(s))} iade edilsin mi?`,
+                  `${kim} · ${s.sonFatura?.odendi ? `${uzunTarih(s.sonFatura.odendi)} faturası` : "son fatura"}. Geri alınamaz; abonelik sürer.`,
+                  "İade et",
+              ]
+            : is === "iptal"
+              ? [
+                    deneme
+                        ? "Deneme sonunda iptal edilsin mi?"
+                        : "Dönem sonunda iptal edilsin mi?",
+                    `${kim} · ${s.donemSonu ? `${ekliTarih(s.donemSonu, "e")} kadar` : "Dönem sonuna kadar"} açık kalır, sonra ${deneme ? "ücret çekilmez" : "yenilenmez"}. O güne dek geri alınabilir.`,
+                    "İptal et",
+                ]
+              : [
+                    "İptal geri alınsın mı?",
+                    `${kim} · abonelik dönem sonunda yenilenmeye devam eder.`,
+                    "Geri al",
+                ];
+    return (
+        <tr className="bg-zemin/50">
+            <Td colSpan={5} className={cn(hucre, "whitespace-normal")}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span>
+                        <span className="font-semibold">{soru}</span>{" "}
+                        <span className="text-soluk">{aciklama}</span>
+                    </span>
+                    <span className="inline-flex gap-2">
+                        <Dugme
+                            tur="sade"
+                            className="min-h-8"
+                            disabled={calisiyor}
+                            onClick={vazgec}
+                        >
+                            Vazgeç
+                        </Dugme>
+                        <Dugme
+                            tur={is === "geriAl" ? "ana" : "yikici"}
+                            className="min-h-8"
+                            disabled={calisiyor}
+                            onClick={onayla}
+                        >
+                            {dugme}
+                        </Dugme>
+                    </span>
+                </div>
+            </Td>
+        </tr>
     );
 }

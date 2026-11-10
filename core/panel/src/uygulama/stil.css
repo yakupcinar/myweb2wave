@@ -1,5 +1,5 @@
 /* Panel uygulaması görünümü (B5): Tailwind + renk değişkenleri. Açık ve koyu
-   tema sistem ayarından; P6'dan beri Apple tarzı (panel-apple-tarzi.md).
+   tema kullanıcının seçimi (P7a, varsayılan açık); P6'dan beri Apple tarzı (panel-apple-tarzi.md).
    Bileşenler renkleri adlarıyla kullanır (bg-yuzey, text-soluk…), ham renk yazmaz. */
 @import "tailwindcss";
 
@@ -21,6 +21,8 @@
     --color-yuzey: var(--yuzey);
     --color-yuzey-2: var(--yuzey-2);
     --color-kenar: var(--kenar);
+    --color-kenar-2: var(--kenar-2);
+    --color-dolgu: var(--dolgu);
     --color-metin: var(--metin);
     --color-soluk: var(--soluk);
     --color-vurgu: var(--vurgu);
@@ -51,30 +53,35 @@
     --uyari-zemin: #fff1dc;
     --tehlike: #c4312a;
     --tehlike-zemin: #fde7e6;
+    /* P7a: denetim kenarı (arama, ikincil düğme) ve bölmeli seçicinin zemini — taslakla aynı */
+    --kenar-2: #d2d2d7;
+    --dolgu: #e8e8ed;
     /* P4: grafik serileri (kategorik sıra 1–2, doğrulayıcıyla: yüzeye göre geçer) */
     --seri-1: #2a78d6;
     --seri-2: #eb6834;
 }
-@media (prefers-color-scheme: dark) {
-    :root {
-        color-scheme: dark;
-        --zemin: #000000;
-        --yuzey: #1c1c1e;
-        --yuzey-2: #2c2c2e;
-        --kenar: #38383a;
-        --metin: #f5f5f7;
-        --soluk: #a1a1a6;
-        --vurgu: #4c9dff;
-        --vurgu-yazi: #000000;
-        --iyi: #34c759;
-        --iyi-zemin: #34c75926;
-        --uyari: #ff9f0a;
-        --uyari-zemin: #ff9f0a26;
-        --tehlike: #ff6961;
-        --tehlike-zemin: #ff696126;
-        --seri-1: #3987e5;
-        --seri-2: #d95926;
-    }
+/* P7a: koyu tema data-tema ile (kullanıcı: açık varsayılan + seçici) — sistem
+   seçeneği betikte çözülür (tema.ts, şablondaki boyama öncesi betik). */
+:root[data-tema="koyu"] {
+    color-scheme: dark;
+    --zemin: #000000;
+    --yuzey: #1c1c1e;
+    --yuzey-2: #2c2c2e;
+    --kenar: #38383a;
+    --metin: #f5f5f7;
+    --soluk: #a1a1a6;
+    --vurgu: #4c9dff;
+    --vurgu-yazi: #000000;
+    --iyi: #34c759;
+    --iyi-zemin: #34c75926;
+    --uyari: #ff9f0a;
+    --uyari-zemin: #ff9f0a26;
+    --tehlike: #ff6961;
+    --tehlike-zemin: #ff696126;
+    --kenar-2: #48484a;
+    --dolgu: #3a3a3c;
+    --seri-1: #3987e5;
+    --seri-2: #d95926;
 }
 
 @layer base {
