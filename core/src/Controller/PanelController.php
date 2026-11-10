@@ -75,6 +75,9 @@ final class PanelController extends AbstractController
             'gun' => $gun,
             'gunler' => Rapor::GUNLER,
             'sayimlar' => $rapor->sayimlar($gun),
+            // P7b: Özet kartları önceki dönemle karşılaştırır (taslak: "Önceki 30 güne göre").
+            'gelir' => $rapor->gelir($gun),
+            'onceki' => ['sayimlar' => $rapor->sayimlar($gun, null, $gun), 'gelir' => $rapor->gelir($gun, $gun)],
             'izinler' => $rapor->izinler($gun),
             'adimlar' => $rapor->adimlar($gun),
             'cevaplar' => $rapor->cevaplar($gun),

@@ -1673,7 +1673,7 @@ components:
     PanelRaporu:
       type: object
       additionalProperties: false
-      required: [gun, gunler, sayimlar, izinler, adimlar, cevaplar, gunluk, kohort, kampanyalar]
+      required: [gun, gunler, sayimlar, gelir, onceki, izinler, adimlar, cevaplar, gunluk, kohort, kampanyalar]
       properties:
         gun: { type: integer, enum: [7, 30, 90] }
         gunluk:
@@ -1698,6 +1698,24 @@ components:
           properties:
             reklam: { $ref: "#/components/schemas/PanelSayimi" }
             organik: { $ref: "#/components/schemas/PanelSayimi" }
+        gelir:
+          description: "P7b — aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları, iadeler düşülmüş; para birimi başına"
+          type: array
+          items: { $ref: "#/components/schemas/PanelTutar" }
+        onceki:
+          description: "P7b — bir önceki aynı uzunluktaki dönem (Özet kartlarındaki değişim için)"
+          type: object
+          additionalProperties: false
+          required: [sayimlar, gelir]
+          properties:
+            sayimlar:
+              type: object
+              additionalProperties: false
+              required: [reklam, organik]
+              properties:
+                reklam: { $ref: "#/components/schemas/PanelSayimi" }
+                organik: { $ref: "#/components/schemas/PanelSayimi" }
+            gelir: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
         izinler:
           description: Ç56 (3) — yalnız sayı, kim olduğu yok
           type: object

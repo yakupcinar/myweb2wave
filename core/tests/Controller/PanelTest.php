@@ -400,6 +400,33 @@ final class PanelTest extends WebTestCase
     }
 
     /**
+     * P7b: Özet önceki dönemle karşılaştırır — 7 günlük raporda önceki dönem
+     * [14, 7) gün önce; gelir penceredeki ziyaretlerin faturaları eksi iade.
+     * Beklenenler elle (§3).
+     */
+    public function testOncekiDonemVeGelir(): void
+    {
+        $simdi = $this->ziyaretEkle(['fbclid' => 'fb-1'], '1 day');
+        $this->ziyaretEkle([], '2 days');
+        $onceki = $this->ziyaretEkle([], '8 days');
+        $this->ziyaretEkle([], '20 days');
+        foreach ([['cs_s', $simdi, 'sub_s', 'in_s', 999, 300], ['cs_o', $onceki, 'sub_o', 'in_o', 500, 0]] as [$cs, $z, $sub, $in, $tutar, $iade]) {
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => $cs, 'ziyaret_id' => $z, 'stripe_subscription_id' => $sub, 'abonelik_at' => '2026-11-01 10:00:00+00', 'tutar_kucuk' => $tutar, 'para_birimi' => 'eur']);
+            $this->db->insert('odeme_faturalari', ['stripe_invoice_id' => $in, 'stripe_subscription_id' => $sub, 'app' => 'keepchat', 'tutar_kucuk' => $tutar, 'iade_kucuk' => $iade, 'para_birimi' => 'eur', 'odendi_at' => '2026-11-01 10:00:00+00']);
+        }
+        $this->girisYapmis();
+
+        $r = $this->rapor('?gun=7');
+
+        self::assertSame(['ziyaret' => 1, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1], $r['sayimlar']['reklam']);
+        self::assertSame(['ziyaret' => 1, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0], $r['sayimlar']['organik']);
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 6.99]], $r['gelir']);
+        self::assertSame(['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0], $r['onceki']['sayimlar']['reklam']);
+        self::assertSame(['ziyaret' => 1, 'odemeye_gecti' => 1, 'deneme' => 0, 'odedi' => 1], $r['onceki']['sayimlar']['organik']);
+        self::assertSame([['paraBirimi' => 'EUR', 'tutar' => 5]], $r['onceki']['gelir']);
+    }
+
+    /**
      * P7a2: raporun üç listesi sayfalı — toplam aralıktaki tamamı, sayfalar
      * örtüşmez; kaynaklarda toplam grup sayısıdır (ziyaret değil).
      */
@@ -480,6 +507,8 @@ final class PanelTest extends WebTestCase
      * orada ölçüldü, tip açıklaması yalnız erişim için.
      *
      * @return array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>,
+     *               gelir: list<array{paraBirimi: string, tutar: int|float}>,
+     *               onceki: array{sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, gelir: list<array{paraBirimi: string, tutar: int|float}>},
      *               adimlar: list<array{adim: string, ulasan: int}>,
      *               cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>,
      *               gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>,
@@ -491,7 +520,7 @@ final class PanelTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $yanit = $this->client->getResponse();
         Sozlesme::yanitiDogrula('GET', '/panel/api/rapor', $yanit);
-        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
+        /** @var array{gun: int, sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, izinler: array<string, int>, gelir: list<array{paraBirimi: string, tutar: int|float}>, onceki: array{sayimlar: array{reklam: array<string, int>, organik: array<string, int>}, gelir: list<array{paraBirimi: string, tutar: int|float}>}, adimlar: list<array{adim: string, ulasan: int}>, cevaplar: list<array{soru: string, secenek: string, sayi: int, abone: int}>, gunluk: list<array{gun: string, ziyaret: int, odemeBaslatildi: int, odemeTamamlandi: int}>, kampanyalar: list<array<string, mixed>>, kohort: list<array{hafta: string, ziyaret: int, pencereler: list<array{gun: int, olgun: bool, kisiBasi: list<mixed>}>}>} $govde */
         $govde = json_decode((string) $yanit->getContent(), true);
 
         return $govde;

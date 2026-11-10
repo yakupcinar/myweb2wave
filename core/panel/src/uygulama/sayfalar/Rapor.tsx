@@ -1,28 +1,33 @@
 // Rapor (A6/2, B5): reklamdan mı geldi, ödedi mi; izin oranı; anket.
 // Veri /panel/api/rapor (sözleşme PanelRaporu); büyüyen üç liste (ziyaretler,
-// kaynaklar, serbest yanıtlar) kendi uçlarından, sayfalı (P7a2); hesaplama yalnız gösterim
-// (toplam, yüzde, şerit) — sayımların kendisi çekirdekte.
+// kaynaklar, serbest yanıtlar) kendi uçlarından, sayfalı (P7a2); hesaplama
+// yalnız gösterim (toplam, yüzde, şerit) — sayımların kendisi çekirdekte.
+// P7b: düzen onaylı taslakla bire bir (p7b-rapor.md) — Özet (önceki döneme
+// göre), Ziyaretten aboneliğe, Anket, Kaynaklar, Reklam harcaması; günlük
+// grafikler ve ayrıntılar altta (kullanıcı).
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
-import { tutarlar, yuzde, zaman } from "../bicim";
-import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
+import { sayi, tutarlar, yuzde, zaman } from "../bicim";
 import { SayfaBasi } from "../Duzen";
+import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
+import { cn } from "../ui/cn";
+import { dugmeSinifi } from "../ui/Dugme";
+import { Kart } from "../ui/Kart";
+import { Rozet } from "../ui/Rozet";
+import { Sayfalama } from "../ui/Sayfalama";
+import { Tablo, Td, Th } from "../ui/Tablo";
 
 // P4: grafik kitaplığı (Recharts) ayrı parça — Huniler/düzenleyici indirmez.
 const GunlukGrafikler = lazy(async () => ({
     default: (await import("./GunlukGrafikler")).GunlukGrafikler,
 }));
-import { cn } from "../ui/cn";
-import { Kart, KartBasi } from "../ui/Kart";
-import { Rozet } from "../ui/Rozet";
-import { Sayfalama } from "../ui/Sayfalama";
-import { Tablo, Td, Th } from "../ui/Tablo";
 
 type PanelRaporu = components["schemas"]["PanelRaporu"];
 type Sayim = components["schemas"]["PanelSayimi"];
+type Tutar = components["schemas"]["PanelTutar"];
 type Gun = PanelRaporu["gun"];
 
 const GUNLER: Gun[] = [7, 30, 90];
@@ -50,7 +55,7 @@ export function Rapor(): ReactNode {
         <>
             <SayfaBasi
                 baslik="Rapor"
-                aciklama={`Ziyaretçilerin kaçı abone oldu ve ne kadar kazandırdı — son ${gun} gün.`}
+                aciklama="Ziyaretçilerin kaçı abone oldu ve ne kadar kazandırdı."
             >
                 <nav aria-label="Zaman aralığı" className={bolmeliSinif}>
                     {GUNLER.map((g) => (
@@ -58,9 +63,9 @@ export function Rapor(): ReactNode {
                             key={g}
                             to={`/panel?gun=${g}`}
                             aria-current={g === gun ? "page" : undefined}
-                            className={bolmeSinifi}
+                            className={cn(bolmeSinifi, "px-3.5 py-1.5")}
                         >
-                            Son {g} gün
+                            {g} gün
                         </Link>
                     ))}
                 </nav>
@@ -80,310 +85,493 @@ export function Rapor(): ReactNode {
     );
 }
 
-export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
-    const { reklam, organik } = r.sayimlar;
-    // Üstteki özet = reklam + organik (aynı sayımlar, yeni sorgu yok).
-    const toplam: Sayim = {
-        ziyaret: reklam.ziyaret + organik.ziyaret,
-        odemeye_gecti: reklam.odemeye_gecti + organik.odemeye_gecti,
-        deneme: reklam.deneme + organik.deneme,
-        odedi: reklam.odedi + organik.odedi,
-    };
-    const izinToplam = r.izinler.kabul + r.izinler.red + r.izinler.secmeyen;
+/** Taslaktaki bölüm: başlık (20 px), kısa açıklama, altında kart. */
+function Bolum({
+    baslik,
+    aciklama,
+    children,
+}: {
+    baslik: string;
+    aciklama?: ReactNode;
+    children: ReactNode;
+}): ReactNode {
     return (
-        <>
-            <section
-                aria-label="Özet"
-                className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(min(160px,100%),1fr))] gap-3"
-            >
-                <Ozet ad="Sayfayı gördü" deger={toplam.ziyaret} />
-                <Ozet ad="Ödemeye geçti" deger={toplam.odemeye_gecti} />
-                <Ozet ad="Deneme başladı" deger={toplam.deneme} />
-                <Ozet ad="Ödedi" deger={toplam.odedi} />
-                <Ozet ad="Dönüşüm" deger={donusum(toplam)} />
-            </section>
-
-            <Suspense
-                fallback={
-                    <p role="status" className="mb-5 text-soluk">
-                        Grafikler yükleniyor…
-                    </p>
-                }
-            >
-                <GunlukGrafikler gunluk={r.gunluk} />
-            </Suspense>
-
-            <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-3">
-                <SayimKarti baslik="Reklamdan gelen" s={reklam} />
-                <SayimKarti baslik="Organik / doğrudan" s={organik} />
-                {/* Ç56 (3): yalnız sayı — kim kabul etti bilgisi yok. */}
-                <Kart className="p-4.5" aria-label="Reklam ölçümü izni">
-                    <h2 className="mb-3 text-[13px] font-semibold text-soluk">
-                        Reklam ölçümü izni
-                    </h2>
-                    <Liste
-                        satirlar={(
-                            [
-                                ["Kabul etti", r.izinler.kabul],
-                                ["Reddetti", r.izinler.red],
-                                ["Seçmedi", r.izinler.secmeyen],
-                            ] as const
-                        ).map(([ad, n]) => [
-                            ad,
-                            `${n} · ${yuzde(n, izinToplam)}`,
-                        ])}
-                    />
-                </Kart>
-            </div>
-
-            {r.adimlar.length ? <Anket r={r} /> : null}
-
-            <Ziyaretler key={r.gun} gun={r.gun} />
-        </>
+        <section aria-label={baslik} className="flex flex-col gap-2.5">
+            <h2 className="text-[20px] font-semibold">{baslik}</h2>
+            {aciklama ? (
+                <p className="text-[13px] text-soluk">{aciklama}</p>
+            ) : null}
+            {children}
+        </section>
     );
 }
 
-// Ç118: dönüşüm = abone olan ziyaret (deneme dahil) — deneylerle aynı tanım (A17).
-function donusum(s: Pick<Sayim, "deneme" | "odedi" | "ziyaret">): string {
-    return yuzde(s.deneme + s.odedi, s.ziyaret);
-}
+const topla = (a: Sayim, b: Sayim): Sayim => ({
+    ziyaret: a.ziyaret + b.ziyaret,
+    odemeye_gecti: a.odemeye_gecti + b.odemeye_gecti,
+    deneme: a.deneme + b.deneme,
+    odedi: a.odedi + b.odedi,
+});
 
-function Ozet({
-    ad,
-    deger,
-}: {
-    ad: string;
-    deger: number | string;
-}): ReactNode {
+// Ç118: abone = abone olan ziyaret (deneme dahil) — deneylerle aynı tanım (A17).
+const abone = (s: Pick<Sayim, "deneme" | "odedi">): number =>
+    s.deneme + s.odedi;
+
+export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
+    const { reklam, organik } = r.sayimlar;
+    const toplam = topla(reklam, organik);
+    const onceki = topla(r.onceki.sayimlar.reklam, r.onceki.sayimlar.organik);
     return (
-        <div className="rounded-xl border border-kenar bg-yuzey px-4.5 py-4 shadow-xs">
-            <span className="block text-[13px] font-medium text-soluk">
-                {ad}
-            </span>
-            <strong className="mt-1.5 block text-[28px] font-bold tracking-tight tabular-nums">
-                {deger}
-            </strong>
+        <div className="flex flex-col gap-7">
+            <Bolum baslik="Özet" aciklama={`Önceki ${r.gun} güne göre.`}>
+                <Ozet r={r} toplam={toplam} onceki={onceki} />
+            </Bolum>
+
+            <Bolum
+                baslik="Ziyaretten aboneliğe"
+                aciklama="Her adımda kaç kişi kaldı. Reklam: Meta / TikTok tıklaması ya da ücretli kampanya."
+            >
+                <Kart className="overflow-hidden">
+                    <Tablo aria-label="Ziyaretten aboneliğe">
+                        <thead>
+                            <tr>
+                                <Th>Adım</Th>
+                                <Th className="text-right">Reklamdan</Th>
+                                <Th className="text-right">Organik</Th>
+                                <Th className="text-right">Toplam</Th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(
+                                [
+                                    ["Ziyaret", (s: Sayim) => s.ziyaret],
+                                    [
+                                        "Ödeme sayfasını açtı",
+                                        (s: Sayim) => s.odemeye_gecti,
+                                    ],
+                                    [
+                                        "Ücretsiz denemeye başladı",
+                                        (s: Sayim) => s.deneme,
+                                    ],
+                                    ["Ödeme yaptı", (s: Sayim) => s.odedi],
+                                    ["Abone oldu", abone],
+                                ] as const
+                            ).map(([ad, deger]) => (
+                                <tr key={ad}>
+                                    <Td>
+                                        {ad}
+                                        {ad === "Ödeme yaptı" ? (
+                                            <span className="text-soluk">
+                                                {" "}
+                                                · deneme sonrası dahil
+                                            </span>
+                                        ) : null}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {sayi(deger(reklam))}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {sayi(deger(organik))}
+                                    </Td>
+                                    <Td className="text-right font-semibold tabular-nums">
+                                        {sayi(deger(toplam))}
+                                    </Td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Tablo>
+                </Kart>
+            </Bolum>
+
+            {r.adimlar.length ? <Anket r={r} /> : null}
+
+            <Kaynaklar key={`k${r.gun}`} gun={r.gun} />
+
+            <ReklamHarcamasi r={r} />
+
+            <Bolum baslik="Günlük">
+                <Suspense
+                    fallback={
+                        <p role="status" className="text-soluk">
+                            Grafikler yükleniyor…
+                        </p>
+                    }
+                >
+                    <GunlukGrafikler gunluk={r.gunluk} />
+                </Suspense>
+            </Bolum>
+
+            <Kohort r={r} />
+
+            <Izinler r={r} />
+
+            <Ziyaretler key={`z${r.gun}`} gun={r.gun} />
+
+            <SerbestYanitlar key={`s${r.gun}`} gun={r.gun} />
         </div>
     );
 }
 
-function SayimKarti({ baslik, s }: { baslik: string; s: Sayim }): ReactNode {
+type Yon = "artti" | "azaldi" | "ayni" | "yok";
+
+/** Değişim: yön oku + Türkçe yüzde; önceki dönem boşsa söylenir. */
+function Degisim({ metin, yon }: { metin: string; yon: Yon }): ReactNode {
     return (
-        <Kart className="p-4.5" aria-label={baslik}>
-            <h2 className="mb-3 text-[13px] font-semibold text-soluk">
-                {baslik}
-            </h2>
-            <Liste
-                satirlar={[
-                    ["Sayfayı gördü", String(s.ziyaret)],
-                    ["Ödemeye geçti", String(s.odemeye_gecti)],
-                    ["Deneme başladı", String(s.deneme)],
-                    ["Ödedi", String(s.odedi)],
-                    ["Dönüşüm", donusum(s)],
-                ]}
-            />
-        </Kart>
+        <span
+            className={cn(
+                "text-[13px]",
+                yon === "artti"
+                    ? "font-medium text-iyi"
+                    : yon === "azaldi"
+                      ? "font-medium text-tehlike"
+                      : "text-soluk",
+            )}
+        >
+            {metin}
+        </span>
     );
 }
 
-function Liste({
-    satirlar,
+const YOK = { metin: "Önceki dönemde veri yok", yon: "yok" as Yon };
+const KARSILASTIRMA_YOK = { metin: "Karşılaştırma yok", yon: "yok" as Yon };
+
+/** Önceki döneme göre yüzde değişim ("↑ %12"); önceki 0 ise karşılaştırma yok. */
+function degisim(simdi: number, once: number): { metin: string; yon: Yon } {
+    if (once <= 0) return YOK;
+    const fark = Math.round(((simdi - once) / once) * 100);
+    if (fark === 0) return { metin: "Değişmedi", yon: "ayni" };
+    return fark > 0
+        ? { metin: `↑ %${fark}`, yon: "artti" }
+        : { metin: `↓ %${-fark}`, yon: "azaldi" };
+}
+
+/** Tek para birimiyse tutarı; değilse null (farklı birimler karşılaştırılmaz). */
+const tekTutar = (liste: readonly Tutar[]): Tutar | null =>
+    liste.length === 1 ? (liste[0] ?? null) : null;
+
+function Ozet({
+    r,
+    toplam,
+    onceki,
 }: {
-    satirlar: (readonly [string, string])[];
+    r: PanelRaporu;
+    toplam: Sayim;
+    onceki: Sayim;
 }): ReactNode {
+    const gelir = tekTutar(r.gelir);
+    const gelirOnce = tekTutar(r.onceki.gelir);
+    const ayni =
+        gelir !== null &&
+        gelirOnce !== null &&
+        gelir.paraBirimi === gelirOnce.paraBirimi
+            ? { simdi: gelir.tutar, once: gelirOnce.tutar }
+            : null;
+    const oran = (s: Sayim): number =>
+        s.ziyaret > 0 ? (abone(s) / s.ziyaret) * 100 : 0;
+    // Oran değişimi yüzde puanı olarak (oranın yüzdesi yanıltır).
+    const puan = Math.round((oran(toplam) - oran(onceki)) * 10) / 10;
+    const kartlar: [string, string, { metin: string; yon: Yon }][] = [
+        [
+            "Gelir",
+            r.gelir.length ? tutarlar(r.gelir) : "—",
+            ayni ? degisim(ayni.simdi, ayni.once) : KARSILASTIRMA_YOK,
+        ],
+        [
+            "Yeni abone",
+            sayi(abone(toplam)),
+            degisim(abone(toplam), abone(onceki)),
+        ],
+        [
+            "Ziyaretten aboneliğe",
+            yuzde(abone(toplam), toplam.ziyaret),
+            onceki.ziyaret <= 0
+                ? YOK
+                : puan === 0
+                  ? { metin: "Değişmedi", yon: "ayni" }
+                  : {
+                        metin: `${puan > 0 ? "↑" : "↓"} ${String(Math.abs(puan)).replace(".", ",")} puan`,
+                        yon: puan > 0 ? "artti" : "azaldi",
+                    },
+        ],
+        [
+            "Ziyaretçi başına gelir",
+            r.gelir.length && toplam.ziyaret > 0
+                ? tutarlar(
+                      r.gelir.map((t) => ({
+                          paraBirimi: t.paraBirimi,
+                          tutar: t.tutar / toplam.ziyaret,
+                      })),
+                  )
+                : "—",
+            ayni && toplam.ziyaret > 0 && onceki.ziyaret > 0
+                ? degisim(
+                      ayni.simdi / toplam.ziyaret,
+                      ayni.once / onceki.ziyaret,
+                  )
+                : KARSILASTIRMA_YOK,
+        ],
+    ];
     return (
-        <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2">
-            {satirlar.map(([ad, deger]) => (
-                <div key={ad} className="contents">
-                    <dt className="text-soluk">{ad}</dt>
-                    <dd className="text-right font-semibold tabular-nums">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-3">
+            {kartlar.map(([ad, deger, d]) => (
+                <Kart
+                    key={ad}
+                    aria-label={ad}
+                    className="flex flex-col gap-1.5 px-[18px] py-4"
+                >
+                    <span className="text-[13px] text-soluk">{ad}</span>
+                    <span className="text-[28px] font-semibold tracking-tight tabular-nums">
                         {deger}
-                    </dd>
-                </div>
+                    </span>
+                    <Degisim {...d} />
+                </Kart>
             ))}
-        </dl>
+        </div>
     );
 }
 
 function Anket({ r }: { r: PanelRaporu }): ReactNode {
-    // Her huninin ilk adımına ulaşan: oranın paydası.
-    const ilk = new Map<string, number>();
+    // Huni başına adımlar; şerit ilk adıma göre, düşüş bir önceki adıma göre.
+    const huniler = new Map<string, PanelRaporu["adimlar"]>();
     for (const a of r.adimlar) {
         const anahtar = `${a.app}/${a.huni}`;
-        if (!ilk.has(anahtar)) ilk.set(anahtar, a.ulasan);
+        huniler.set(anahtar, [...(huniler.get(anahtar) ?? []), a]);
     }
+    const tekHuni = huniler.size === 1;
     return (
-        <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-3">
-            <Kart aria-label="Anket adımları">
-                <KartBasi
-                    baslik="Anket adımları"
-                    aciklama="Kaç ziyaret ulaştı"
-                />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {[
-                                "Huni",
-                                "#",
-                                "Adım",
-                                "Ulaşan",
-                                "İlk adıma göre",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {r.adimlar.map((a) => {
-                            const payda = ilk.get(`${a.app}/${a.huni}`) ?? 0;
-                            const oran =
-                                payda > 0
-                                    ? Math.min((a.ulasan / payda) * 100, 100)
-                                    : 0;
-                            return (
-                                <tr key={`${a.app}/${a.huni}/${a.sira}`}>
-                                    <Td>
-                                        {a.huni}
-                                        {a.app !== "keepchat" ? (
-                                            <span className="text-soluk">
-                                                {" "}
-                                                ({a.app})
-                                            </span>
-                                        ) : null}
-                                    </Td>
-                                    <Td>{a.sira + 1}</Td>
-                                    <Td>{a.adim}</Td>
-                                    <Td>{a.ulasan}</Td>
-                                    <Td>
-                                        {yuzde(a.ulasan, payda, 0)}
-                                        {/* Huni şeridi: genişlik = ilk adıma göre oran. */}
+        <>
+            <Bolum
+                baslik="Anket"
+                aciklama="Ziyaretçilerin hangi ekranda ayrıldığı."
+            >
+                {[...huniler].map(([anahtar, adimlar]) => {
+                    const ilkAdim = adimlar[0];
+                    const ilk = ilkAdim?.ulasan ?? 0;
+                    return (
+                        <Kart
+                            key={anahtar}
+                            aria-label={`Anket ${anahtar}`}
+                            className="px-[18px] py-1.5"
+                        >
+                            {tekHuni || !ilkAdim ? null : (
+                                <h3 className="pt-2.5 pb-1 text-[13px] font-semibold text-soluk">
+                                    {ilkAdim.huni}
+                                    {ilkAdim.app !== "keepchat"
+                                        ? ` (${ilkAdim.app})`
+                                        : ""}
+                                </h3>
+                            )}
+                            {adimlar.map((a, i) => {
+                                const once = adimlar[i - 1]?.ulasan ?? 0;
+                                const oran =
+                                    ilk > 0
+                                        ? Math.min((a.ulasan / ilk) * 100, 100)
+                                        : 0;
+                                const dusus =
+                                    i > 0 && once > 0
+                                        ? Math.round(
+                                              ((once - a.ulasan) / once) * 100,
+                                          )
+                                        : null;
+                                return (
+                                    <div
+                                        key={a.sira}
+                                        data-adim={a.adim}
+                                        className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)_56px_56px] items-center gap-3.5 border-t border-kenar py-2.5 first:border-t-0 md:grid-cols-[220px_minmax(0,1fr)_70px_80px]"
+                                    >
+                                        <span className="truncate">
+                                            {a.adim}
+                                        </span>
                                         <span
                                             aria-hidden="true"
                                             data-serit=""
-                                            className="ml-2.5 inline-block h-2 w-30 overflow-hidden rounded-full bg-yuzey-2 align-middle"
+                                            className="h-2 rounded bg-dolgu"
                                         >
                                             <span
-                                                className="block h-full rounded-full bg-linear-90 from-vurgu to-[#22c55e]"
+                                                className="block h-2 rounded bg-vurgu"
                                                 style={{
                                                     width: `${oran.toFixed(1)}%`,
                                                 }}
                                             />
                                         </span>
+                                        <span className="text-right tabular-nums">
+                                            {sayi(a.ulasan)}
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                "text-right text-[13px] tabular-nums",
+                                                dusus && dusus > 0
+                                                    ? "text-tehlike"
+                                                    : "text-soluk",
+                                            )}
+                                        >
+                                            {dusus === null
+                                                ? "—"
+                                                : dusus > 0
+                                                  ? `−%${dusus}`
+                                                  : `%${-dusus}`}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </Kart>
+                    );
+                })}
+            </Bolum>
+            {r.cevaplar.length ? (
+                <Bolum
+                    baslik="Cevaplar"
+                    aciklama="Her şıkkı kaç kişi seçti ve seçenlerin kaçı abone oldu (deneme dahil)."
+                >
+                    <Kart className="overflow-hidden">
+                        <Tablo aria-label="Cevaplar">
+                            <thead>
+                                <tr>
+                                    <Th>Soru</Th>
+                                    <Th>Cevap</Th>
+                                    <Th className="text-right">Seçen</Th>
+                                    <Th className="text-right">Abone</Th>
+                                    <Th className="text-right">Dönüşüm</Th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {r.cevaplar.map((c) => (
+                                    <tr key={`${c.app}/${c.soru}/${c.secenek}`}>
+                                        <Td>{c.soru}</Td>
+                                        <Td>{c.secenek}</Td>
+                                        <Td className="text-right tabular-nums">
+                                            {sayi(c.sayi)}
+                                        </Td>
+                                        <Td className="text-right tabular-nums">
+                                            {sayi(c.abone)}
+                                        </Td>
+                                        {/* M5c: seçen ziyaretten abone olan (deneme dahil, A17). */}
+                                        <Td className="text-right tabular-nums">
+                                            {yuzde(c.abone, c.sayi)}
+                                        </Td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Tablo>
+                    </Kart>
+                </Bolum>
+            ) : null}
+        </>
+    );
+}
+
+function ReklamHarcamasi({ r }: { r: PanelRaporu }): ReactNode {
+    return (
+        <Bolum
+            baslik="Reklam harcaması"
+            aciklama={
+                r.kampanyalar.length
+                    ? "Harcama Meta'dan (günlük çekilir); gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerin faturaları. ROAS hesabın para biriminde."
+                    : undefined
+            }
+        >
+            {r.kampanyalar.length ? (
+                <Kart className="overflow-hidden">
+                    <Tablo aria-label="Meta kampanyaları">
+                        <thead>
+                            <tr>
+                                <Th>Kampanya</Th>
+                                <Th className="text-right">Harcama</Th>
+                                <Th className="text-right">Ziyaret</Th>
+                                <Th className="text-right">Ödeyen</Th>
+                                <Th className="text-right">Gelir</Th>
+                                <Th className="text-right">ROAS</Th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {r.kampanyalar.map((k) => (
+                                <tr
+                                    key={`${k.kampanya}/${k.harcama.paraBirimi}`}
+                                >
+                                    <Td>{k.kampanya}</Td>
+                                    <Td className="text-right tabular-nums">
+                                        {tutarlar([k.harcama])}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {sayi(k.ziyaret)}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {sayi(k.odedi)}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {tutarlar(k.gelir)}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {k.roas === null
+                                            ? "—"
+                                            : `${k.roas.toFixed(2).replace(".", ",")}×`}
                                     </Td>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </Tablo>
-            </Kart>
-            <Kart aria-label="Cevaplar">
-                <KartBasi baslik="Cevaplar" />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            <Th>Soru</Th>
-                            <Th>Cevap</Th>
-                            <Th>Sayı</Th>
-                            <Th>Abone</Th>
-                            <Th>Dönüşüm</Th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {r.cevaplar.map((c) => (
-                            <tr key={`${c.app}/${c.soru}/${c.secenek}`}>
-                                <Td>{c.soru}</Td>
-                                <Td>{c.secenek}</Td>
-                                <Td>{c.sayi}</Td>
-                                <Td>{c.abone}</Td>
-                                {/* M5c: seçen ziyaretten abone olan (deneme dahil, A17). */}
-                                <Td>{yuzde(c.abone, c.sayi)}</Td>
-                            </tr>
-                        ))}
-                        {r.cevaplar.length ? null : (
-                            <tr>
-                                <Td colSpan={5} className="text-soluk">
-                                    Henüz cevap yok.
-                                </Td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Tablo>
-            </Kart>
-            <Kaynaklar key={r.gun} gun={r.gun} />
-            <Kart aria-label="Meta kampanyaları">
-                <KartBasi
-                    baslik="Meta kampanyaları"
-                    aciklama="Harcama Meta'dan (günlük çekilir); gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerin faturaları · ROAS hesabın para biriminde"
-                />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {[
-                                "Kampanya",
-                                "Harcama",
-                                "Ziyaret",
-                                "Ödedi",
-                                "Gelir",
-                                "ROAS",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {r.kampanyalar.map((k) => (
-                            <tr key={`${k.kampanya}/${k.harcama.paraBirimi}`}>
-                                <Td>{k.kampanya}</Td>
-                                <Td>{tutarlar([k.harcama])}</Td>
-                                <Td>{k.ziyaret}</Td>
-                                <Td>{k.odedi}</Td>
-                                <Td>{tutarlar(k.gelir)}</Td>
-                                <Td>
-                                    {k.roas === null
-                                        ? "—"
-                                        : `${k.roas.toFixed(2).replace(".", ",")}×`}
-                                </Td>
-                            </tr>
-                        ))}
-                        {r.kampanyalar.length ? null : (
-                            <tr>
-                                <Td colSpan={6} className="text-soluk">
-                                    Bu aralıkta Meta harcaması yok
-                                    (META_AD_ACCOUNT_ID ayarlı değilse
-                                    çekilmez).
-                                </Td>
-                            </tr>
+                        </tbody>
+                    </Tablo>
+                </Kart>
+            ) : (
+                // Harcama yoksa iki sebep olabilir; hangisi olduğu panelden bilinmez (Ç121).
+                <Kart
+                    aria-label="Meta harcaması yok"
+                    className="flex flex-wrap items-center justify-between gap-4 p-7"
+                >
+                    <span className="flex flex-col gap-1">
+                        <span className="text-[15px] font-semibold">
+                            Bu dönemde Meta harcaması yok
+                        </span>
+                        <span className="text-soluk">
+                            Meta reklam hesabı bağlı değilse harcama çekilmez.
+                            Bağlayınca kampanya başına harcama ve getiri (ROAS)
+                            burada görünür.
+                        </span>
+                    </span>
+                    <Link
+                        to="/panel/ayarlar"
+                        className={cn(
+                            dugmeSinifi({ tur: "ana" }),
+                            "min-h-11 px-4.5 text-[14px]",
                         )}
-                    </tbody>
-                </Tablo>
-            </Kart>
-            <Kart aria-label="Kohort geliri">
-                <KartBasi
-                    baslik="Kohort geliri"
-                    aciklama="Ziyaret haftası (UTC, pazartesi) · ziyaret başına birikimli gelir · — = pencere henüz dolmadı"
-                />
-                <Tablo>
+                    >
+                        Meta hesabını bağla
+                    </Link>
+                </Kart>
+            )}
+        </Bolum>
+    );
+}
+
+function Kohort({ r }: { r: PanelRaporu }): ReactNode {
+    return (
+        <Bolum
+            baslik="Kohort geliri"
+            aciklama="Ziyaret haftası (UTC, pazartesi) · ziyaret başına birikimli gelir · — = pencere henüz dolmadı"
+        >
+            <Kart className="overflow-hidden">
+                <Tablo aria-label="Kohort geliri">
                     <thead>
                         <tr>
-                            {[
-                                "Hafta",
-                                "Ziyaret",
-                                "İlk 24 saat",
-                                "7 gün",
-                                "30 gün",
-                                "60 gün",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
-                            ))}
+                            <Th>Hafta</Th>
+                            <Th className="text-right">Ziyaret</Th>
+                            <Th className="text-right">İlk 24 saat</Th>
+                            <Th className="text-right">7 gün</Th>
+                            <Th className="text-right">30 gün</Th>
+                            <Th className="text-right">60 gün</Th>
                         </tr>
                     </thead>
                     <tbody>
                         {r.kohort.map((k) => (
                             <tr key={k.hafta}>
                                 <Td>{k.hafta}</Td>
-                                <Td>{k.ziyaret}</Td>
+                                <Td className="text-right tabular-nums">
+                                    {sayi(k.ziyaret)}
+                                </Td>
                                 {k.pencereler.map((p) => (
-                                    <Td key={p.gun}>
+                                    <Td
+                                        key={p.gun}
+                                        className="text-right tabular-nums"
+                                    >
                                         {p.olgun
                                             ? p.kisiBasi.length
                                                 ? tutarlar(p.kisiBasi)
@@ -403,178 +591,141 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                     </tbody>
                 </Tablo>
             </Kart>
-            <SerbestYanitlar key={r.gun} gun={r.gun} />
-        </div>
+        </Bolum>
     );
 }
 
-function Ziyaretler({ gun }: { gun: Gun }): ReactNode {
+/** Ç56 (3): yalnız sayı — kim kabul etti bilgisi yok. */
+function Izinler({ r }: { r: PanelRaporu }): ReactNode {
+    const toplam = r.izinler.kabul + r.izinler.red + r.izinler.secmeyen;
+    return (
+        <Bolum
+            baslik="Reklam ölçümü izni"
+            aciklama="Huniyi açanların ölçüm izni seçimi."
+        >
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-3">
+                {(
+                    [
+                        ["Kabul etti", r.izinler.kabul],
+                        ["Reddetti", r.izinler.red],
+                        ["Seçmedi", r.izinler.secmeyen],
+                    ] as const
+                ).map(([ad, n]) => (
+                    <Kart
+                        key={ad}
+                        aria-label={ad}
+                        className="flex flex-col gap-1.5 px-[18px] py-4"
+                    >
+                        <span className="text-[13px] text-soluk">{ad}</span>
+                        <span className="text-[22px] font-semibold tabular-nums">
+                            {sayi(n)}
+                        </span>
+                        <span className="text-[13px] text-soluk">
+                            {yuzde(n, toplam)}
+                        </span>
+                    </Kart>
+                ))}
+            </div>
+        </Bolum>
+    );
+}
+
+/** Sayfalı liste kancası: sayfa yerel; gün değişince bileşen yeniden kurulur (key). */
+function useListe<T>(
+    anahtar: string,
+    gun: Gun,
+    al: (sayfa: number) => Promise<T | undefined>,
+) {
     const [sayfa, setSayfa] = useState(1);
     const { data } = useQuery({
-        queryKey: ["rapor", gun, "ziyaretler", sayfa],
+        queryKey: ["rapor", gun, anahtar, sayfa],
         queryFn: async () => {
-            const { data } = await api.GET("/panel/api/rapor/ziyaretler", {
-                params: { query: { gun, sayfa } },
-            });
-            if (!data) throw new Error("liste alınamadı");
-            return data;
+            const veri = await al(sayfa);
+            if (!veri) throw new Error("liste alınamadı");
+            return veri;
         },
         // Yeni sayfa gelene dek önceki kalır — kart boşalıp zıplamasın.
         placeholderData: keepPreviousData,
     });
-    // Kart veri gelince çizilir (boş tablo "ziyaret yok" demesin).
-    if (!data) return null;
-    const { satirlar } = data;
-    return (
-        <div>
-            <Kart aria-label="Ziyaretler">
-                <KartBasi baslik="Ziyaretler" />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {[
-                                "Zaman (UTC)",
-                                "Uygulama",
-                                "Huni",
-                                "Kaynak",
-                                "Kampanya",
-                                "Aşama",
-                                "Abonelik",
-                                "E-posta",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {satirlar.map((s, i) => (
-                            <tr key={i} className="hover:bg-yuzey-2/50">
-                                <Td>{zaman(s.zaman)}</Td>
-                                <Td>{s.app}</Td>
-                                <Td>{s.huni ?? "—"}</Td>
-                                <Td>
-                                    {s.reklam ? (
-                                        <>
-                                            <Rozet tur="uyari">reklam</Rozet>{" "}
-                                            ·{" "}
-                                        </>
-                                    ) : null}
-                                    {s.kaynak}
-                                </Td>
-                                <Td>{s.kampanya ?? "—"}</Td>
-                                <Td>
-                                    <Rozet
-                                        tur={
-                                            s.asama === "ödedi" ? "iyi" : "notr"
-                                        }
-                                    >
-                                        {s.asama}
-                                    </Rozet>
-                                </Td>
-                                <Td>{s.durum ?? "—"}</Td>
-                                <Td>{s.email ?? "—"}</Td>
-                            </tr>
-                        ))}
-                        {satirlar.length ? null : (
-                            <tr>
-                                <Td colSpan={8} className="text-soluk">
-                                    Bu aralıkta ziyaret yok.
-                                </Td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Tablo>
-            </Kart>
-            {
-                <Sayfalama
-                    sayfa={data.sayfa}
-                    boyut={data.boyut}
-                    toplam={data.toplam}
-                    birim="ziyaret"
-                    sec={setSayfa}
-                />
-            }
-        </div>
-    );
+    return { data, setSayfa };
 }
 
 function Kaynaklar({ gun }: { gun: Gun }): ReactNode {
-    const [sayfa, setSayfa] = useState(1);
-    const { data } = useQuery({
-        queryKey: ["rapor", gun, "kaynaklar", sayfa],
-        queryFn: async () => {
-            const { data } = await api.GET("/panel/api/rapor/kaynaklar", {
-                params: { query: { gun, sayfa } },
-            });
-            if (!data) throw new Error("liste alınamadı");
-            return data;
-        },
-        // Yeni sayfa gelene dek önceki kalır — kart boşalıp zıplamasın.
-        placeholderData: keepPreviousData,
-    });
-    // Kart veri gelince çizilir (boş tablo "ziyaret yok" demesin).
+    const { data, setSayfa } = useListe(
+        "kaynaklar",
+        gun,
+        async (sayfa) =>
+            (
+                await api.GET("/panel/api/rapor/kaynaklar", {
+                    params: { query: { gun, sayfa } },
+                })
+            ).data,
+    );
+    // Bölüm veri gelince çizilir (boş tablo "ziyaret yok" demesin).
     if (!data) return null;
-    const { satirlar } = data;
     return (
-        <div>
-            <Kart aria-label="Kaynak kırılımı">
-                <KartBasi
-                    baslik="Kaynak kırılımı"
-                    aciklama="Gelir: bu ziyaretlerin bugüne kadar tahsil edilen faturaları"
-                />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {[
-                                "Kaynak",
-                                "Ortam",
-                                "Kampanya",
-                                "Ziyaret",
-                                "Ödemeye geçti",
-                                "Deneme",
-                                "Ödedi",
-                                "Dönüşüm",
-                                "Gelir",
-                            ].map((b) => (
-                                <Th key={b}>{b}</Th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {satirlar.map((u) => (
-                            <tr
-                                key={`${u.kaynak}/${u.ortam ?? ""}/${u.kampanya ?? ""}/${u.reklam}`}
-                            >
-                                <Td>
-                                    {u.reklam ? (
-                                        <>
-                                            <Rozet tur="uyari">reklam</Rozet>{" "}
-                                            ·{" "}
-                                        </>
-                                    ) : null}
-                                    {u.kaynak}
-                                </Td>
-                                <Td>{u.ortam ?? "—"}</Td>
-                                <Td>{u.kampanya ?? "—"}</Td>
-                                <Td>{u.ziyaret}</Td>
-                                <Td>{u.odemeye_gecti}</Td>
-                                <Td>{u.deneme}</Td>
-                                <Td>{u.odedi}</Td>
-                                <Td>{donusum(u)}</Td>
-                                <Td>{tutarlar(u.gelir)}</Td>
-                            </tr>
-                        ))}
-                        {satirlar.length ? null : (
+        <Bolum
+            baslik="Kaynaklar"
+            aciklama="Gelir, bu ziyaretçilerin bugüne kadar ödediği tutar (iadeler düşülmüş)."
+        >
+            <div>
+                <Kart className="overflow-hidden">
+                    <Tablo aria-label="Kaynaklar">
+                        <thead>
                             <tr>
-                                <Td colSpan={9} className="text-soluk">
-                                    Bu aralıkta ziyaret yok.
-                                </Td>
+                                <Th>Kaynak</Th>
+                                <Th>Kampanya</Th>
+                                <Th className="text-right">Ziyaret</Th>
+                                <Th className="text-right">Ödeyen</Th>
+                                <Th className="text-right">Dönüşüm</Th>
+                                <Th className="text-right">Gelir</Th>
                             </tr>
-                        )}
-                    </tbody>
-                </Tablo>
-            </Kart>
-            {
+                        </thead>
+                        <tbody>
+                            {data.satirlar.map((u) => (
+                                <tr
+                                    key={`${u.kaynak}/${u.ortam ?? ""}/${u.kampanya ?? ""}/${u.reklam}`}
+                                >
+                                    <Td>
+                                        <span className="flex items-center gap-1.5">
+                                            {u.kaynak}
+                                            {u.ortam ? (
+                                                <span className="text-soluk">
+                                                    / {u.ortam}
+                                                </span>
+                                            ) : null}
+                                            {u.reklam ? (
+                                                <Rozet tur="uyari">
+                                                    reklam
+                                                </Rozet>
+                                            ) : null}
+                                        </span>
+                                    </Td>
+                                    <Td>{u.kampanya ?? "—"}</Td>
+                                    <Td className="text-right tabular-nums">
+                                        {sayi(u.ziyaret)}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {sayi(u.odedi)}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {yuzde(abone(u), u.ziyaret)}
+                                    </Td>
+                                    <Td className="text-right tabular-nums">
+                                        {tutarlar(u.gelir)}
+                                    </Td>
+                                </tr>
+                            ))}
+                            {data.satirlar.length ? null : (
+                                <tr>
+                                    <Td colSpan={6} className="text-soluk">
+                                        Bu aralıkta ziyaret yok.
+                                    </Td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Tablo>
+                </Kart>
                 <Sayfalama
                     sayfa={data.sayfa}
                     boyut={data.boyut}
@@ -582,69 +733,155 @@ function Kaynaklar({ gun }: { gun: Gun }): ReactNode {
                     birim="kaynak"
                     sec={setSayfa}
                 />
-            }
-        </div>
+            </div>
+        </Bolum>
+    );
+}
+
+function Ziyaretler({ gun }: { gun: Gun }): ReactNode {
+    const { data, setSayfa } = useListe(
+        "ziyaretler",
+        gun,
+        async (sayfa) =>
+            (
+                await api.GET("/panel/api/rapor/ziyaretler", {
+                    params: { query: { gun, sayfa } },
+                })
+            ).data,
+    );
+    if (!data) return null;
+    return (
+        <Bolum
+            baslik="Ziyaretler"
+            aciklama="En yeni önce. Zaman UTC; e-posta maskeli."
+        >
+            <div>
+                <Kart className="overflow-hidden">
+                    <Tablo aria-label="Ziyaretler">
+                        <thead>
+                            <tr>
+                                {[
+                                    "Zaman (UTC)",
+                                    "Uygulama",
+                                    "Huni",
+                                    "Kaynak",
+                                    "Kampanya",
+                                    "Aşama",
+                                    "Abonelik",
+                                    "E-posta",
+                                ].map((b) => (
+                                    <Th key={b}>{b}</Th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.satirlar.map((s, i) => (
+                                <tr key={i}>
+                                    <Td>{zaman(s.zaman)}</Td>
+                                    <Td>{s.app}</Td>
+                                    <Td>{s.huni ?? "—"}</Td>
+                                    <Td>
+                                        {s.reklam ? (
+                                            <>
+                                                <Rozet tur="uyari">
+                                                    reklam
+                                                </Rozet>{" "}
+                                                ·{" "}
+                                            </>
+                                        ) : null}
+                                        {s.kaynak}
+                                    </Td>
+                                    <Td>{s.kampanya ?? "—"}</Td>
+                                    <Td>
+                                        <Rozet
+                                            tur={
+                                                s.asama === "ödedi"
+                                                    ? "iyi"
+                                                    : "notr"
+                                            }
+                                        >
+                                            {s.asama}
+                                        </Rozet>
+                                    </Td>
+                                    <Td>{s.durum ?? "—"}</Td>
+                                    <Td>{s.email ?? "—"}</Td>
+                                </tr>
+                            ))}
+                            {data.satirlar.length ? null : (
+                                <tr>
+                                    <Td colSpan={8} className="text-soluk">
+                                        Bu aralıkta ziyaret yok.
+                                    </Td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Tablo>
+                </Kart>
+                <Sayfalama
+                    sayfa={data.sayfa}
+                    boyut={data.boyut}
+                    toplam={data.toplam}
+                    birim="ziyaret"
+                    sec={setSayfa}
+                />
+            </div>
+        </Bolum>
     );
 }
 
 function SerbestYanitlar({ gun }: { gun: Gun }): ReactNode {
-    const [sayfa, setSayfa] = useState(1);
-    const { data } = useQuery({
-        queryKey: ["rapor", gun, "serbestYanitlar", sayfa],
-        queryFn: async () => {
-            const { data } = await api.GET("/panel/api/rapor/serbestYanitlar", {
-                params: { query: { gun, sayfa } },
-            });
-            if (!data) throw new Error("liste alınamadı");
-            return data;
-        },
-        // Yeni sayfa gelene dek önceki kalır — kart boşalıp zıplamasın.
-        placeholderData: keepPreviousData,
-    });
-    // Kart veri gelince çizilir (boş tablo "ziyaret yok" demesin).
+    const { data, setSayfa } = useListe(
+        "serbestYanitlar",
+        gun,
+        async (sayfa) =>
+            (
+                await api.GET("/panel/api/rapor/serbestYanitlar", {
+                    params: { query: { gun, sayfa } },
+                })
+            ).data,
+    );
     if (!data) return null;
-    const { satirlar } = data;
     return (
-        <div>
-            <Kart aria-label="Serbest yanıtlar">
-                <KartBasi
-                    baslik="Serbest yanıtlar"
-                    aciklama={`Son ${gun} gün, en yeni önce`}
-                />
-                <Tablo>
-                    <thead>
-                        <tr>
-                            {["Zaman (UTC)", "Uygulama", "Soru", "Yanıt"].map(
-                                (b) => (
-                                    <Th key={b}>{b}</Th>
-                                ),
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {satirlar.map((c, i) => (
-                            <tr key={i}>
-                                <Td>{zaman(c.zaman)}</Td>
-                                <Td>{c.app}</Td>
-                                <Td>{c.soru}</Td>
-                                <Td
-                                    className={cn("min-w-60 whitespace-normal")}
-                                >
-                                    {c.cevap}
-                                </Td>
-                            </tr>
-                        ))}
-                        {satirlar.length ? null : (
+        <Bolum
+            baslik="Serbest yanıtlar"
+            aciklama={`Son ${gun} gün, en yeni önce. 90 gün saklanır.`}
+        >
+            <div>
+                <Kart className="overflow-hidden">
+                    <Tablo aria-label="Serbest yanıtlar">
+                        <thead>
                             <tr>
-                                <Td colSpan={4} className="text-soluk">
-                                    Henüz serbest yanıt yok.
-                                </Td>
+                                {[
+                                    "Zaman (UTC)",
+                                    "Uygulama",
+                                    "Soru",
+                                    "Yanıt",
+                                ].map((b) => (
+                                    <Th key={b}>{b}</Th>
+                                ))}
                             </tr>
-                        )}
-                    </tbody>
-                </Tablo>
-            </Kart>
-            {
+                        </thead>
+                        <tbody>
+                            {data.satirlar.map((c, i) => (
+                                <tr key={i}>
+                                    <Td>{zaman(c.zaman)}</Td>
+                                    <Td>{c.app}</Td>
+                                    <Td>{c.soru}</Td>
+                                    <Td className="min-w-60 whitespace-normal">
+                                        {c.cevap}
+                                    </Td>
+                                </tr>
+                            ))}
+                            {data.satirlar.length ? null : (
+                                <tr>
+                                    <Td colSpan={4} className="text-soluk">
+                                        Henüz serbest yanıt yok.
+                                    </Td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Tablo>
+                </Kart>
                 <Sayfalama
                     sayfa={data.sayfa}
                     boyut={data.boyut}
@@ -652,7 +889,7 @@ function SerbestYanitlar({ gun }: { gun: Gun }): ReactNode {
                     birim="yanıt"
                     sec={setSayfa}
                 />
-            }
-        </div>
+            </div>
+        </Bolum>
     );
 }

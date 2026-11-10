@@ -1184,6 +1184,16 @@ export interface components {
                 reklam: components["schemas"]["PanelSayimi"];
                 organik: components["schemas"]["PanelSayimi"];
             };
+            /** @description P7b — aralıktaki ziyaretlerin bugüne kadar tahsil edilmiş faturaları, iadeler düşülmüş; para birimi başına */
+            gelir: components["schemas"]["PanelTutar"][];
+            /** @description P7b — bir önceki aynı uzunluktaki dönem (Özet kartlarındaki değişim için) */
+            onceki: {
+                sayimlar: {
+                    reklam: components["schemas"]["PanelSayimi"];
+                    organik: components["schemas"]["PanelSayimi"];
+                };
+                gelir: components["schemas"]["PanelTutar"][];
+            };
             /** @description Ç56 (3) — yalnız sayı, kim olduğu yok */
             izinler: {
                 kabul: number;

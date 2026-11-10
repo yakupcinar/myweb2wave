@@ -29,6 +29,14 @@ const RAPOR: PanelRaporu = {
         reklam: { ziyaret: 3, odemeye_gecti: 3, deneme: 1, odedi: 1 },
         organik: { ziyaret: 1, odemeye_gecti: 0, deneme: 0, odedi: 0 },
     },
+    gelir: [{ paraBirimi: "EUR", tutar: 29.97 }],
+    onceki: {
+        sayimlar: {
+            reklam: { ziyaret: 2, odemeye_gecti: 2, deneme: 0, odedi: 1 },
+            organik: { ziyaret: 1, odemeye_gecti: 0, deneme: 0, odedi: 0 },
+        },
+        gelir: [{ paraBirimi: "EUR", tutar: 20 }],
+    },
     izinler: { kabul: 2, red: 1, secmeyen: 1 },
     adimlar: [
         { app: "keepchat", huni: "—", sira: 0, adim: "karsilama", ulasan: 3 },
@@ -191,26 +199,107 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-const dd = (bolum: string): string[] =>
-    within(screen.getByRole("region", { name: bolum }))
-        .getAllByRole("definition")
-        .map((d) => d.textContent ?? "");
+const kartlar = (bolum: string): string[][] =>
+    [
+        ...screen
+            .getByRole("region", { name: bolum })
+            .querySelectorAll<HTMLElement>("section[aria-label]"),
+    ].map((k) =>
+        [...k.querySelectorAll("span")].map((s) => s.textContent ?? ""),
+    );
+
+const hucreler = (tablo: string, satir = 1): (string | null)[] =>
+    [
+        ...within(screen.getByRole("table", { name: tablo }))
+            .getAllByRole("row")
+            [satir]!.querySelectorAll("td"),
+    ].map((h) => h.textContent);
 
 describe("Rapor", () => {
-    it("özet reklam + organik; kaynak kartları ve izin oranı", async () => {
+    it("P7b: Özet önceki döneme göre — gelir, yeni abone, oran (puan), ziyaretçi başına gelir", async () => {
         kur();
-        const ozet = await screen.findByRole("region", { name: "Özet" });
-        // 3+1, 3+0, 1+0, 1+0; Ç118: dönüşüm = (deneme + ödedi) / ziyaret —
-        // yalnız ödedi'den 1/4 = 25 % olurdu, 2/4 = 50 %.
+        await screen.findByRole("region", { name: "Özet" });
+        // Şimdi: ziyaret 3+1, abone (deneme+ödedi) 2+0, gelir €29,97.
+        // Önce: ziyaret 2+1, abone 1, gelir €20. Hesaplar elle (§3):
+        // gelir (29,97−20)/20 = %49,85 → %50; abone 1 → 2 = %100;
+        // oran 2/4 = %50,0, önce 1/3 = %33,3 → 16,7 puan;
+        // kişi başı 29,97/4 = 7,49 (önce 6,67) → %12.
+        expect(kartlar("Özet")).toEqual([
+            ["Gelir", "€29,97", "↑ %50"],
+            ["Yeni abone", "2", "↑ %100"],
+            ["Ziyaretten aboneliğe", "%50,0", "↑ 16,7 puan"],
+            ["Ziyaretçi başına gelir", "€7,49", "↑ %12"],
+        ]);
+        expect(screen.getByText("Önceki 30 güne göre.")).toBeTruthy();
+    });
+
+    it("P7b: önceki dönem boşsa ve para birimleri farklıysa karşılaştırma söylenmez", async () => {
+        kur("/panel", {
+            ...RAPOR,
+            gelir: [
+                { paraBirimi: "EUR", tutar: 10 },
+                { paraBirimi: "TRY", tutar: 20 },
+            ],
+            onceki: {
+                sayimlar: {
+                    reklam: {
+                        ziyaret: 0,
+                        odemeye_gecti: 0,
+                        deneme: 0,
+                        odedi: 0,
+                    },
+                    organik: {
+                        ziyaret: 0,
+                        odemeye_gecti: 0,
+                        deneme: 0,
+                        odedi: 0,
+                    },
+                },
+                gelir: [],
+            },
+        });
+        await screen.findByRole("region", { name: "Özet" });
+        expect(kartlar("Özet").map((k) => k[2])).toEqual([
+            "Karşılaştırma yok",
+            "Önceki dönemde veri yok",
+            "Önceki dönemde veri yok",
+            "Karşılaştırma yok",
+        ]);
+    });
+
+    it("P7b: iki dönemde farklı tek para birimi karşılaştırılmaz", async () => {
+        kur("/panel", {
+            ...RAPOR,
+            onceki: {
+                ...RAPOR.onceki,
+                gelir: [{ paraBirimi: "TRY", tutar: 20 }],
+            },
+        });
+        await screen.findByRole("region", { name: "Özet" });
+        expect(kartlar("Özet").map((k) => k[2])).toEqual([
+            "Karşılaştırma yok",
+            "↑ %100",
+            "↑ 16,7 puan",
+            "Karşılaştırma yok",
+        ]);
+    });
+
+    it("P7b: Ziyaretten aboneliğe tablosu reklam / organik / toplam; izin kartları", async () => {
+        kur();
+        await screen.findByRole("table", { name: "Ziyaretten aboneliğe" });
         expect(
-            [...ozet.querySelectorAll("strong")].map((s) => s.textContent),
-        ).toEqual(["4", "3", "1", "1", "50,0 %"]);
-        expect(dd("Reklamdan gelen")).toEqual(["3", "3", "1", "1", "66,7 %"]);
-        expect(dd("Organik / doğrudan")).toEqual(["1", "0", "0", "0", "0,0 %"]);
-        expect(dd("Reklam ölçümü izni")).toEqual([
-            "2 · 50,0 %",
-            "1 · 25,0 %",
-            "1 · 25,0 %",
+            [1, 2, 3, 4, 5].map((i) => hucreler("Ziyaretten aboneliğe", i)),
+        ).toEqual([
+            ["Ziyaret", "3", "1", "4"],
+            ["Ödeme sayfasını açtı", "3", "0", "3"],
+            ["Ücretsiz denemeye başladı", "1", "0", "1"],
+            ["Ödeme yaptı · deneme sonrası dahil", "1", "0", "1"],
+            ["Abone oldu", "2", "0", "2"],
+        ]);
+        expect(kartlar("Reklam ölçümü izni")).toEqual([
+            ["Kabul etti", "2", "%50,0"],
+            ["Reddetti", "1", "%25,0"],
+            ["Seçmedi", "1", "%25,0"],
         ]);
     });
 
@@ -247,36 +336,24 @@ describe("Rapor", () => {
         expect(satir(ziyaret, "2026-11-02")).toEqual(["2 Kasım Pzt", "0"]);
     });
 
-    it("M5c: kaynak kırılımı, cevaba göre dönüşüm, kohort hücreleri", async () => {
+    it("M5c: kaynaklar, cevaba göre dönüşüm, Meta kampanyaları, kohort hücreleri", async () => {
         kur();
-        const hucreler = (bolum: string, satir = 1) =>
-            [
-                ...within(screen.getByRole("region", { name: bolum }))
-                    .getAllByRole("row")
-                    [satir]!.querySelectorAll("td"),
-            ].map((h) => h.textContent);
-        await screen.findByRole("region", { name: "Kaynak kırılımı" });
+        await screen.findByRole("table", { name: "Kaynaklar" });
         // Dönüşüm (deneme + ödedi) / ziyaret = 2/3; para birimleri toplanmaz.
-        expect(hucreler("Kaynak kırılımı")).toEqual([
-            "reklam · meta",
-            "cpc",
+        expect(hucreler("Kaynaklar")).toEqual([
+            "meta/ cpcreklam",
             "ekim",
             "3",
-            "3",
             "1",
-            "1",
-            "66,7 %",
+            "%66,7",
             "€29,97 · ₺20,00",
         ]);
-        expect(hucreler("Kaynak kırılımı", 2)).toEqual([
+        expect(hucreler("Kaynaklar", 2)).toEqual([
             "doğrudan",
-            "—",
             "—",
             "1",
             "0",
-            "0",
-            "0",
-            "0,0 %",
+            "%0,0",
             "—",
         ]);
         // 1 / 4 seçen abone.
@@ -285,7 +362,7 @@ describe("Rapor", () => {
             "aile",
             "4",
             "1",
-            "25,0 %",
+            "%25,0",
         ]);
         // M5d: ROAS hesabın para biriminde; harcama 0 → tanımsız "—".
         expect(hucreler("Meta kampanyaları")).toEqual([
@@ -308,6 +385,22 @@ describe("Rapor", () => {
         ]);
     });
 
+    it("P7b: Meta harcaması yoksa boş kart ve bağlama bağlantısı", async () => {
+        kur("/panel", { ...RAPOR, kampanyalar: [] });
+        const kart = await screen.findByRole("region", {
+            name: "Meta harcaması yok",
+        });
+        expect(kart.textContent).toContain("Bu dönemde Meta harcaması yok");
+        expect(
+            within(kart)
+                .getByRole("link", { name: "Meta hesabını bağla" })
+                .getAttribute("href"),
+        ).toBe("/panel/ayarlar");
+        expect(
+            screen.queryByRole("table", { name: "Meta kampanyaları" }),
+        ).toBeNull();
+    });
+
     it("P4: kayıtsız aralıkta grafik yerine boş durum", async () => {
         kur("/panel", {
             ...RAPOR,
@@ -324,22 +417,24 @@ describe("Rapor", () => {
         expect(odeme.getByText("Bu aralıkta kayıt yok.")).toBeTruthy();
     });
 
-    it("anket adımı oranı ve şerit genişliği ilk adıma göre", async () => {
+    it("P7b: anket şeridi ilk adıma göre, düşüş bir önceki adıma göre", async () => {
         kur();
-        const tablo = await screen.findByRole("region", {
-            name: "Anket adımları",
-        });
-        const satirlar = within(tablo).getAllByRole("row").slice(1);
-        expect(satirlar.map((s) => s.lastElementChild?.textContent)).toEqual([
-            "100 %",
-            "67 %",
-            "33 %",
-        ]);
+        const anket = await screen.findByRole("region", { name: "Anket" });
+        // 3 → 2 → 1: şerit 100 / 66,7 / 33,3; düşüş —, (3−2)/3 = %33, (2−1)/2 = %50.
         expect(
-            [...tablo.querySelectorAll<HTMLElement>("[data-serit] > span")].map(
+            [...anket.querySelectorAll<HTMLElement>("[data-serit] > span")].map(
                 (s) => s.style.width,
             ),
         ).toEqual(["100.0%", "66.7%", "33.3%"]);
+        expect(
+            [...anket.querySelectorAll("[data-adim]")].map((a) =>
+                [...a.children].map((c) => c.textContent),
+            ),
+        ).toEqual([
+            ["karsilama", "", "3", "—"],
+            ["kiminle", "", "2", "−%33"],
+            ["cihaz", "", "1", "−%50"],
+        ]);
     });
 
     it("zararlı kaynak metni yazı olarak; e-posta maskeli; menüde Rapor işaretli", async () => {
@@ -381,7 +476,7 @@ describe("Rapor", () => {
         // Sunucu seçilen aralığı yanıtta geri verir; listeler onu kullanır.
         kur("/panel?gun=90", { ...RAPOR, gun: 90 });
         await screen.findByRole("region", { name: "Ziyaretler" });
-        await screen.findByRole("region", { name: "Kaynak kırılımı" });
+        await screen.findByRole("region", { name: "Kaynaklar" });
         await screen.findByRole("region", { name: "Serbest yanıtlar" });
         expect(yollar()).toEqual([
             "/panel/api/rapor",
@@ -392,7 +487,7 @@ describe("Rapor", () => {
         expect(gunler()).toEqual(["90"]);
         expect(
             screen
-                .getByRole("link", { name: "Son 90 gün" })
+                .getByRole("link", { name: "90 gün" })
                 .getAttribute("aria-current"),
         ).toBe("page");
         cleanup();
@@ -407,12 +502,9 @@ describe("Rapor", () => {
         const ziyaret = await screen.findByRole("region", {
             name: "Ziyaretler",
         });
-        const sayfalama = within(ziyaret.parentElement!).getByRole(
-            "navigation",
-            {
-                name: "Sayfalama",
-            },
-        );
+        const sayfalama = within(ziyaret).getByRole("navigation", {
+            name: "Sayfalama",
+        });
         expect(sayfalama.textContent).toContain("1–25 / 30 ziyaret");
         const onceki = within(sayfalama).getByRole("button", {
             name: "‹ Önceki",
@@ -445,9 +537,9 @@ describe("Rapor", () => {
         ).toBe(true);
         // Kaynaklar tek sayfaya sığar: yalnız sayı, düğme yok.
         const kaynak = await screen.findByRole("region", {
-            name: "Kaynak kırılımı",
+            name: "Kaynaklar",
         });
-        const k = within(kaynak.parentElement!).getByRole("navigation", {
+        const k = within(kaynak).getByRole("navigation", {
             name: "Sayfalama",
         });
         expect([

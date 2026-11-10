@@ -43,6 +43,12 @@ final readonly class Rapor
     public const KOHORT_GUNLERI = [0, 7, 30, 60];
 
     public const GUNLER = [7, 30, 90];
+
+    /**
+     * P7b: ziyaret penceresi; kaydir = gün, önceki dönem için pencere geriye
+     * kayar ([şimdi − gun − kaydir, şimdi − kaydir)). kaydir 0 = bugüne dek.
+     */
+    private const PENCERE = 'z.created_at >= now() - make_interval(days => CAST(:gun AS int) + CAST(:kaydir AS int)) AND z.created_at < now() - make_interval(days => CAST(:kaydir AS int))';
     public const AZAMI_SATIR = 200;
 
     public function __construct(
@@ -92,7 +98,7 @@ final readonly class Rapor
      *
      * @return array{reklam: array{ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int}, organik: array{ziyaret: int, odemeye_gecti: int, deneme: int, odedi: int}}
      */
-    public function sayimlar(int $gun, ?string $app = null): array
+    public function sayimlar(int $gun, ?string $app = null, int $kaydir = 0): array
     {
         $sayim = ['reklam' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0], 'organik' => ['ziyaret' => 0, 'odemeye_gecti' => 0, 'deneme' => 0, 'odedi' => 0]];
         $satirlar = $this->db->fetchAllAssociative(
@@ -105,9 +111,9 @@ final readonly class Rapor
                  SELECT coalesce(bool_or(o.abonelik_at IS NOT NULL), false) AS abone, coalesce(bool_or('.self::ODEDI.'), false) AS odedi
                  FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id
              ) od
-             WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
+             WHERE '.self::PENCERE.' AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
              GROUP BY 1',
-            ['gun' => $gun, 'app' => $app],
+            ['gun' => $gun, 'app' => $app, 'kaydir' => $kaydir],
         );
         foreach ($satirlar as $s) {
             $sayim[true === $s['reklam'] ? 'reklam' : 'organik'] = [
@@ -403,6 +409,28 @@ final readonly class Rapor
              ORDER BY c.updated_at DESC, c.ziyaret_id, c.soru
              LIMIT :boyut OFFSET :atla',
             ['gun' => $gun, 'boyut' => $boyut, 'atla' => ($sayfa - 1) * $boyut],
+        ));
+    }
+
+    /**
+     * P7b: dönemin geliri — penceredeki ziyaretlerin bugüne kadar tahsil
+     * edilmiş faturaları, iadeler düşülmüş (Kaynaklar'daki gelirle aynı
+     * tanım; Kaynaklar'ın gelir sütunu toplanınca bu çıkar). Para birimi başına.
+     *
+     * @return list<array{paraBirimi: string, tutar: int|float}>
+     */
+    public function gelir(int $gun, int $kaydir = 0): array
+    {
+        return array_map(static function (array $s): array {
+            $para = self::dizge($s['para_birimi']);
+
+            return ['paraBirimi' => strtoupper($para), 'tutar' => ParaBirimi::anaBirim(self::sayi($s['toplam']), $para)];
+        }, $this->db->fetchAllAssociative(
+            'SELECT f.para_birimi, sum(f.tutar_kucuk - f.iade_kucuk) AS toplam
+             FROM huni_ziyaretleri z JOIN odeme_oturumlari o ON o.ziyaret_id = z.id JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id
+             WHERE '.self::PENCERE.'
+             GROUP BY 1 ORDER BY 1',
+            ['gun' => $gun, 'kaydir' => $kaydir],
         ));
     }
 

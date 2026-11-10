@@ -109,6 +109,8 @@ değiştirmez.
 
 **Ekranda ne var**
 
+**Düzen (P7b, taslakla bire bir):** Özet (önceki aynı uzunluktaki döneme göre değişim; oran değişimi yüzde puanı) → Ziyaretten aboneliğe (reklam / organik / toplam) → Anket şeritleri (düşüş bir önceki adıma göre) → Kaynaklar → Reklam harcaması → altta günlük grafikler, kohort, izin, ziyaretler, serbest yanıtlar. Gelir = penceredeki ziyaretlerin bugüne kadar tahsil edilmiş faturaları eksi iade; Kaynaklar'ın gelir sütunuyla aynı tanım.
+
 | Kart | Ne gösterir | Nasıl hesaplanır |
 |---|---|---|
 | Reklamdan gelen / Organik | Ziyaret → ödeme başladı → deneme başladı → ödedi → abone sayıları, iki ayrı sütunda | Ziyarette Meta/TikTok tıklama kimliği (`fbclid`, `ttclid`) ya da ücretli `utm_medium` (cpc, paid…) varsa "reklam", yoksa "organik" ([`Rapor::REKLAM`](../core/src/Panel/Rapor.php#L23)) |
@@ -117,7 +119,7 @@ değiştirmez.
 | Cevaplar | Her şıkkı kaç kişinin seçtiği ve o şıkkı seçenlerin kaçının abone olduğu | `huni_cevaplari` + aynı ziyaretin aboneliği başlamış ödeme oturumu |
 | Kaynak kırılımı | `utm_source` / `utm_campaign`'e göre ziyaret, ödeyen ve gelir | Gelir = bu ziyaretlerin **bugüne kadar** tahsil edilen faturaları eksi iadeler |
 | Meta kampanyaları | Kampanya başına Meta harcaması, getirdiği gelir, ROAS (gelir ÷ harcama) | Harcama Meta'dan çekilir; aynı adlı `utm_campaign` ile **Meta'dan** gelen ziyaretlerin geliri eşleştirilir ([`Rapor::META`](../core/src/Panel/Rapor.php#L40)) |
-| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L347)) |
+| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L353)) |
 | Serbest yanıtlar | Metin sorularına yazılanlar | 90 gün saklanır, sonra silinir |
 
 Ziyaretler, Kaynak kırılımı ve Serbest yanıtlar 25'er satırlık sayfalarla gelir. Her biri kendi ucundan
