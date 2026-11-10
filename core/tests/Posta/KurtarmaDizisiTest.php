@@ -84,6 +84,7 @@ final class KurtarmaDizisiTest extends WebTestCase
         self::assertInstanceOf(Email::class, $mesaj);
         self::assertSame('a@example.com', $mesaj->getTo()[0]->getAddress());
         self::assertSame('Ödemeniz yarım kaldı', $mesaj->getSubject());
+        self::assertSame('KeepChat', $mesaj->getFrom()[0]->getName(), 'M9a: gönderen adı ayarlardan');
         self::assertSame('broadcast', $mesaj->getHeaders()->get('X-PM-Message-Stream')?->getBodyAsString());
         self::assertStringContainsString(self::URL, (string) $mesaj->getTextBody());
         self::assertSame([['cs_1', 1]], $this->kayitlar());

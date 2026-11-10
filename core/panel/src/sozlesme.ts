@@ -411,6 +411,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/ayarlar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** M9a (A23): uygulama kimliği — görünen ad, URL şeması, mağaza adresi, destek e-postası */
+        get: operations["panelUygulamaAyarlari"];
+        /** Ayarları kaydeder (tamamını) */
+        put: operations["panelUygulamaAyarlariKaydet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/huniler": {
         parameters: {
             query?: never;
@@ -879,6 +899,17 @@ export interface components {
             ton: string;
             /** @description Asla yazılmayacaklar / kaçınılacaklar */
             yasaklar: string;
+        };
+        /** @description M9a (A23): uygulama kimliği; e-postalarda gönderen adı ve yanıt adresi, giriş bağlantısında şema */
+        UygulamaAyarlari: {
+            /** @description Görünen ad (e-posta gönderen adı) */
+            ad: string;
+            /** @description Özel URL şeması (<şema>://giris?jeton=…), iOS Info.plist ile aynı */
+            sema: string;
+            /** @description App Store adresi (https://) ya da boş */
+            magazaAdresi: string;
+            /** @description E-postalarda yanıt adresi ya da boş */
+            destekEpostasi: string;
         };
         PanelHatalari: {
             hatalar: string[];
@@ -2738,6 +2769,93 @@ export interface operations {
                 };
             };
             /** @description Alan çok uzun ya da geçersiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUygulamaAyarlari: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ayarlar (boş alanlar "") */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UygulamaAyarlari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUygulamaAyarlariKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u) */
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UygulamaAyarlari"];
+            };
+        };
+        responses: {
+            /** @description Kaydedilen ayarlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UygulamaAyarlari"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Alan geçersiz */
             422: {
                 headers: {
                     [name: string]: unknown;

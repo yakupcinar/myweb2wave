@@ -7,6 +7,7 @@ namespace App\Tests\Posta;
 use App\Kimlik\GirisBaglantisi;
 use App\Posta\AktivasyonDizisi;
 use App\Posta\Bastirma;
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -31,6 +32,7 @@ final class AktivasyonDizisiTest extends KernelTestCase
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
         $this->db->executeStatement('TRUNCATE posta_dizisi, posta_bastirma, giris_jetonlari, baglantilar, kisiler, subscriptions CASCADE');
+        $this->db->executeStatement("UPDATE uygulama_ayarlari SET magaza_adresi = '' WHERE app = 'keepchat'");
     }
 
     public function testZamaniGelenIlkAdimBirKezGiderYeniBaglantiyla(): void
@@ -44,6 +46,7 @@ final class AktivasyonDizisiTest extends KernelTestCase
         self::assertInstanceOf(Email::class, $mesaj);
         self::assertSame('A@Example.com', $mesaj->getTo()[0]->getAddress());
         self::assertSame('Aboneliğiniz hazır — uygulamaya bağlanın', $mesaj->getSubject());
+        self::assertSame('KeepChat', $mesaj->getFrom()[0]->getName(), 'M9a: gönderen adı ayarlardan');
         $govde = (string) $mesaj->getTextBody();
         self::assertMatchesRegularExpression('#keepchat://giris\?jeton=[A-Za-z0-9_-]{43}#', $govde);
         self::assertStringNotContainsString('https://', $govde, 'mağaza adresi boşken yazılmaz');
@@ -115,7 +118,9 @@ final class AktivasyonDizisiTest extends KernelTestCase
     {
         $this->abonelik('sub_1', 'a@example.com', 25);
 
-        self::assertSame(1, $this->dizi(['keepchat' => 'https://apps.apple.com/app/id123'])->gonder());
+        $this->db->executeStatement("UPDATE uygulama_ayarlari SET magaza_adresi = 'https://apps.apple.com/app/id123' WHERE app = 'keepchat'");
+
+        self::assertSame(1, $this->dizi()->gonder());
         $mesaj = self::getMailerMessage();
         self::assertInstanceOf(Email::class, $mesaj);
         self::assertStringContainsString("kurun:\nhttps://apps.apple.com/app/id123", (string) $mesaj->getTextBody());
@@ -131,7 +136,7 @@ final class AktivasyonDizisiTest extends KernelTestCase
             }
         };
 
-        self::assertSame(0, $this->dizi([], $dusen)->gonder());
+        self::assertSame(0, $this->dizi($dusen)->gonder());
         self::assertSame([], $this->kayitlar());
         self::assertSame(0, $this->say('SELECT count(*) FROM giris_jetonlari'), 'yarım kalan bağlantı da geri alınır');
 
@@ -147,21 +152,20 @@ final class AktivasyonDizisiTest extends KernelTestCase
         self::assertStringContainsString('Aktivasyon: 1 e-posta', $tester->getDisplay());
     }
 
-    /** @param array<string, string|null> $magazalar */
-    private function dizi(array $magazalar = [], ?MailerInterface $mailer = null): AktivasyonDizisi
+    private function dizi(?MailerInterface $mailer = null): AktivasyonDizisi
     {
-        if ([] === $magazalar && null === $mailer) {
+        if (null === $mailer) {
             $d = static::getContainer()->get(AktivasyonDizisi::class);
             self::assertInstanceOf(AktivasyonDizisi::class, $d);
 
             return $d;
         }
         $giris = static::getContainer()->get(GirisBaglantisi::class);
-        $posta = $mailer ?? static::getContainer()->get(MailerInterface::class);
+        $ayarlar = static::getContainer()->get(UygulamaAyarlari::class);
         self::assertInstanceOf(GirisBaglantisi::class, $giris);
-        self::assertInstanceOf(MailerInterface::class, $posta);
+        self::assertInstanceOf(UygulamaAyarlari::class, $ayarlar);
 
-        return new AktivasyonDizisi($this->db, $posta, $giris, new NullLogger(), $magazalar, 'no-reply@example.com');
+        return new AktivasyonDizisi($this->db, $mailer, $giris, new NullLogger(), $ayarlar);
     }
 
     private function abonelik(string $id, string $email, int $saatOnce, string $durum = 'active'): void

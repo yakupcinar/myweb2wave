@@ -8,6 +8,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
 import { Anahtarlar } from "./sayfalar/Anahtarlar";
+import { Ayarlar } from "./sayfalar/Ayarlar";
 import { Baglam } from "./sayfalar/Baglam";
 import { Deneyler } from "./sayfalar/Deneyler";
 import { Webhooklar } from "./sayfalar/Webhooklar";
@@ -34,6 +35,7 @@ export const yollar = [
             { path: "webhooklar", element: <Webhooklar /> },
             { path: "baglam", element: <Baglam /> },
             { path: "anahtarlar", element: <Anahtarlar /> },
+            { path: "ayarlar", element: <Ayarlar /> },
         ],
     },
     {

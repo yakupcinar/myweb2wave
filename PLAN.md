@@ -231,7 +231,8 @@
     - [x] M7c1 · 2026-11-09, `docs/decisions/m7c1-okuma-araclari.md`: MCP'de 6 salt-okur rapor aracı (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları), Rapor'a uygulama süzgeci; `GET /apps/{app}/olaylar` (uygulama anahtarı, imleç + devam). Kırma 12/12 (biri testi güçlendirdi); gerçek MCP çağrısı dev'de
     - [x] M7c2 · 2026-11-10, `docs/decisions/m7c2-yazma-araclari.md`: MCP'de abonelik (listele, iptal planla / geri al, son faturayı iade) ve deney (kaydet, durum) araçları — yalnız "yönetim" izinli anahtarda, yıkıcılar işaretli; abonelik uygulamanınsa. Kırma 12/12 (biri testi güçlendirdi)
   - [ ] M8 · e-posta (A22: Postmark, karma izin) — [x] M8a1 sağlayıcı + bastırma (`m8a1-postmark.md`) · [x] M8a2 aktivasyon dizisi (`m8a2-aktivasyon.md`) · [x] M8b terk edilen ödeme (`m8b-kurtarma.md`)
-  - [ ] M9 · proje ayarları + roller · M10 destek kutusu · M11 çeviri (isteğe bağlı)
+  - [ ] M9 · proje ayarları (A23; roller şimdilik yok) — [x] M9a uygulama kimliği (`m9a-uygulama-kimligi.md`) · [ ] M9b yasal veriler + metinler · [ ] M9c varsayılan tema/paywall · [ ] M9d dil/ülke yönlendirmesi
+  - [ ] M10 destek kutusu · M11 çeviri (isteğe bağlı)
 
 ## 2. Açılmamış Görevler & Gelecek Yol Haritası (Backlog)
 

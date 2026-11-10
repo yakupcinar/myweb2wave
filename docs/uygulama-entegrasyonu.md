@@ -45,7 +45,7 @@ Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik �
 
 Web'de ödeyen kişi e-posta yazmadan girer. Başarı sayfası ve ödeme e-postası
 uygulamayı **`<şema>://giris?jeton=<jeton>`** ile açar (KeepChat: `keepchat`,
-çekirdekte `uygulama_semalari`).
+çekirdekte panel → Ayarlar, `uygulama_ayarlari.sema`; M9a).
 
 1. iOS: Info.plist'e şema (`CFBundleURLTypes`); `onOpenURL`'de `giris` ana
    bilgisayarını ve `jeton` sorgusunu oku. Jeton **gizlidir**: günlüğe yazma,

@@ -247,6 +247,12 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - Sıra: M8a aktivasyon (işlem e-postası, izin gerekmez) → M8b terk edilen ödeme kurtarma. Deneme bitiyor
   hatırlatması önce Stripe'ın kendi ayarıyla.
 
+**A23 · M9 proje ayarları** (2026-11-10, kullanıcı: dört ayar alanı da; roller şimdilik yok — tek yönetici).
+- Bölünme: M9a uygulama kimliği → M9b yasal veriler + metinler → M9c varsayılan tema/paywall → M9d dil/ülke yönlendirmesi.
+- M9a: ad, URL şeması, App Store adresi, destek e-postası panelde (`uygulama_ayarlari`); yaml / .env'den taşındı.
+  Uygulama listesi yaml'da kalır (sözleşme enum'u). Reddedilen: yaml'da bırakmak (panelden değişmez), DB + yaml
+  yedeği (§12, hangisinin geçerli olduğu belirsizleşir). Reddedilen roller: ikinci kişi yokken ölçülmemiş ihtiyaç.
+
 **A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
 - Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
   dosyası, yalnız çekme (akış API).

@@ -193,6 +193,25 @@ yazarken bunu okur; boş alan gönderilmez.
 
 ---
 
+### 2.9 Ayarlar — `/panel/ayarlar`
+
+**Ne görürsün / yapabilirsin:** uygulama başına görünen ad, URL şeması, App Store adresi ve destek e-postası.
+
+**Arkada ne çalışıyor**
+- `uygulama_ayarlari` tablosu (`UygulamaAyarlari`). Uygulama **listesi** `uygulamalar.yaml`'da kalır (A4).
+- Kullanıldığı yerler:
+  - **Görünen ad:** her e-postanın gönderen adı ("KeepChat <no-reply@…>").
+  - **Destek e-postası:** yanıt adresi (Reply-To). Beş e-postanın hepsinde: kod, giriş bağlantısı, portal,
+    aktivasyon, kurtarma.
+  - **Şema:** giriş bağlantısı (`<şema>://giris?jeton=…`). iOS Info.plist ile aynı olmalı; değişirse eski bağlantılar
+    açılmaz.
+  - **App Store adresi:** aktivasyon e-postası.
+- Ayar satırı yoksa yedek yok: şema isteyen yol hata verir.
+
+**Henüz ölçülmeyen:** sayfa tarayıcıda denenmedi (giriş). Kayıt: `m9a-uygulama-kimligi.md`.
+
+---
+
 ## 3. Ziyaretçi ve uygulama tarafı (panel dışı)
 
 | Yüz | Ne | Kayıt |
@@ -233,7 +252,7 @@ Bastırılmış adres atlanır.
 - Symfony Mailer. Dev'de Mailpit (`:8025`); testte `null://null` (§24); üretimde Postmark API (A22).
 - İşlem e-postaları (`outbound` akışı): giriş kodu, giriş bağlantısı, portal bağlantısı.
 - **Aktivasyon dizisi (M8a2, işlem e-postası, izin gerekmez):** ödeme e-postasından sonra 24. ve 72. saatte, uygulamaya
-  hâlâ bağlanmamış kişiye yeni giriş bağlantısı (+ `MAGAZA_ADRESI_<APP>` doluysa App Store adresi). Durur: bağlandı,
+  hâlâ bağlanmamış kişiye yeni giriş bağlantısı (+ Ayarlar'daki App Store adresi doluysa). Durur: bağlandı,
   abonelik erişim vermiyor, adres bastırılmış. Gecikmiş adımlardan yalnız sonuncusu gider; 7 günden eski ödemeye
   başlamaz. Kayıt `posta_dizisi` (`m8a2-aktivasyon.md`).
 - **Terk edilen ödeme kurtarma (M8b, pazarlama — yalnız huninin izin kutusu işaretliyse, `broadcast` akışı):**

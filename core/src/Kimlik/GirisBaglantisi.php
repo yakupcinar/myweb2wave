@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Kimlik;
 
 use App\Posta\Bastirma;
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 /**
  * Ödeme sonrası giriş bağlantısı (Ç46; RevenueCat Redemption Links'in
@@ -36,11 +35,8 @@ final readonly class GirisBaglantisi
         private MailerInterface $mailer,
         private Baglama $baglama,
         private LoggerInterface $logger,
-        /** @var array<string, string> uygulama → özel URL şeması */
-        #[Autowire('%uygulama_semalari%')]
-        private array $semalar,
-        #[Autowire('%env(MAIL_GONDEREN)%')]
-        private string $gonderen,
+        /** Ç46: bağlantı uygulamayı ayarlardaki şemayla açar (M9a, A23). */
+        private UygulamaAyarlari $ayarlar,
     ) {
     }
 
@@ -138,8 +134,7 @@ final readonly class GirisBaglantisi
                     }
                     $baglanti = $this->uret($db, $satir['app'], $satir['email'], $oturum);
                     $db->executeStatement('UPDATE subscriptions SET giris_epostasi_at = now() WHERE stripe_checkout_session_id = ?', [$oturum]);
-                    $this->mailer->send((new Email())
-                        ->from($this->gonderen)
+                    $this->mailer->send($this->ayarlar->eposta($satir['app'])
                         ->to($satir['email'])
                         ->subject('Uygulamaya giriş bağlantınız')
                         ->text("Aboneliğiniz için teşekkürler.\n\nUygulamayı telefonunuza kurduktan sonra bu bağlantıya telefonunuzda dokunun:\n{$baglanti['uygulama_adresi']}\n\nBağlantı tek kullanımlıktır ve ".self::GECERLILIK_SA.' saat geçerlidir. Süresi dolarsa uygulamada "Aboneliğimi bağla" ile bu e-posta adresini girin.'));
@@ -158,7 +153,7 @@ final readonly class GirisBaglantisi
      */
     public function uret(Connection $db, string $app, string $email, string $oturum): array
     {
-        $sema = $this->semalar[$app] ?? throw new \LogicException("'{$app}' için URL şeması yapılandırılmamış");
+        $sema = $this->ayarlar->sema($app);
         $jeton = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $son = $db->fetchOne(
             "INSERT INTO giris_jetonlari (app, email, stripe_checkout_session_id, ozet, son_kullanma)

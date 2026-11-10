@@ -197,6 +197,7 @@ final class GirisBaglantisiTest extends WebTestCase
         $mesaj = self::getMailerMessage();
         self::assertInstanceOf(Email::class, $mesaj);
         self::assertSame('ayse@example.com', mb_strtolower($mesaj->getTo()[0]->getAddress()));
+        self::assertSame('KeepChat', $mesaj->getFrom()[0]->getName(), 'M9a: gönderen adı ayarlardan');
         preg_match('#keepchat://giris\?jeton=([A-Za-z0-9_-]{43})#', (string) $mesaj->getTextBody(), $m);
         self::assertArrayHasKey(1, $m, 'e-postada giriş bağlantısı yok');
 

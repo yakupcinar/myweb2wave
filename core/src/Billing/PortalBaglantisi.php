@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Billing;
 
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 /**
  * M6b2 (A19): uygulamayı silen müşteri de aboneliğini yönetebilsin — huni
@@ -30,8 +29,7 @@ final readonly class PortalBaglantisi
         private MailerInterface $mailer,
         private MusteriPortali $portal,
         private LoggerInterface $logger,
-        #[Autowire('%env(MAIL_GONDEREN)%')]
-        private string $gonderen,
+        private UygulamaAyarlari $ayarlar,
     ) {
     }
 
@@ -55,8 +53,7 @@ final readonly class PortalBaglantisi
             [hash('sha256', $jeton), $app, $email],
         );
         try {
-            $this->mailer->send((new Email())
-                ->from($this->gonderen)
+            $this->mailer->send($this->ayarlar->eposta($app)
                 ->to($email)
                 ->subject('Aboneliğinizi yönetin')
                 ->text("Aboneliğinizi yönetmek (kart, iptal, faturalar) için bağlantı:\n{$adres($jeton)}\n\nBağlantı tek kullanımlıktır ve ".self::GECERLILIK_DK.' dakika geçerlidir. Bu isteği siz yapmadıysanız e-postayı yok sayın.'));

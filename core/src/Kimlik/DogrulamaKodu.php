@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Kimlik;
 
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 /**
  * E-posta koduyla bağlama (A5). Kod düz saklanmaz (HMAC özeti), 10 dk
@@ -26,8 +26,7 @@ final readonly class DogrulamaKodu
         private Baglama $baglama,
         #[Autowire('%kernel.secret%')]
         private string $sir,
-        #[Autowire('%env(MAIL_GONDEREN)%')]
-        private string $gonderen,
+        private UygulamaAyarlari $ayarlar,
     ) {
     }
 
@@ -55,8 +54,7 @@ final readonly class DogrulamaKodu
             );
         });
 
-        $this->mailer->send((new Email())
-            ->from($this->gonderen)
+        $this->mailer->send($this->ayarlar->eposta($app)
             ->to($email)
             ->subject('Doğrulama kodunuz')
             ->text("Kodunuz: {$kod}\n\nKod ".self::GECERLILIK_DK.' dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayın.'));

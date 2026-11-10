@@ -76,6 +76,7 @@ final class PortalBaglantisiTest extends WebTestCase
         $epostalar = $this->epostalar();
         self::assertCount(1, $epostalar);
         self::assertSame('ayse@example.com', $epostalar[0]->getTo()[0]->getAddress());
+        self::assertSame('KeepChat', $epostalar[0]->getFrom()[0]->getName(), 'M9a: gönderen adı ayarlardan');
         self::assertSame(1, preg_match('#(http://localhost/portal/([A-Za-z0-9_-]{43}))#', (string) $epostalar[0]->getTextBody(), $m));
         [, $adres, $jeton] = $m;
         // Jeton düz saklanmaz.

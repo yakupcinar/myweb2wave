@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Ai\UrunBaglami;
 use App\Mcp\ApiAnahtarlari;
+use App\Uygulama\UygulamaAyarlari;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -27,6 +28,7 @@ final class PanelUygulamaController extends AbstractController
         #[Autowire('%uygulamalar%')]
         private readonly array $uygulamalar,
         private readonly UrunBaglami $baglam,
+        private readonly UygulamaAyarlari $ayarlar,
         private readonly ApiAnahtarlari $anahtarlar,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
@@ -63,6 +65,33 @@ final class PanelUygulamaController extends AbstractController
 
         return self::korumali([] === $hatalar
             ? new JsonResponse($this->baglam->oku($app))
+            : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** M9a (A23): uygulama kimliği — ad, URL şeması, mağaza adresi, destek e-postası. */
+    #[Route('/{app}/ayarlar', name: 'panel_api_ayarlar', methods: ['GET'])]
+    public function ayarlar(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->ayarlar->oku($app)));
+    }
+
+    #[Route('/{app}/ayarlar', name: 'panel_api_ayarlar_kaydet', methods: ['PUT'])]
+    public function ayarlariKaydet(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $hatalar = $this->ayarlar->kaydet($app, json_decode($request->getContent(), true));
+
+        return self::korumali([] === $hatalar
+            ? new JsonResponse($this->ayarlar->oku($app))
             : new JsonResponse(['hatalar' => $hatalar], 422));
     }
 

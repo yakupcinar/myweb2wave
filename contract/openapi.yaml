@@ -707,6 +707,30 @@ paths:
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Alan çok uzun ya da geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/ayarlar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelUygulamaAyarlari
+      summary: "M9a (A23): uygulama kimliği — görünen ad, URL şeması, mağaza adresi, destek e-postası"
+      responses:
+        "200": { description: Ayarlar (boş alanlar ""), content: { application/json: { schema: { $ref: "#/components/schemas/UygulamaAyarlari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    put:
+      operationId: panelUygulamaAyarlariKaydet
+      summary: Ayarları kaydeder (tamamını)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, description: Panel uygulamasının jetonu (panel-api; kabuğun data-jeton'u), schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UygulamaAyarlari" }
+      responses:
+        "200": { description: Kaydedilen ayarlar, content: { application/json: { schema: { $ref: "#/components/schemas/UygulamaAyarlari" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Alan geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/huniler:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1394,6 +1418,16 @@ components:
         kitle: { type: string, maxLength: 500, description: Hedef kitle }
         ton: { type: string, maxLength: 200, description: Metinlerin tonu }
         yasaklar: { type: string, maxLength: 1000, description: Asla yazılmayacaklar / kaçınılacaklar }
+    UygulamaAyarlari:
+      description: "M9a (A23): uygulama kimliği; e-postalarda gönderen adı ve yanıt adresi, giriş bağlantısında şema"
+      type: object
+      additionalProperties: false
+      required: [ad, sema, magazaAdresi, destekEpostasi]
+      properties:
+        ad: { type: string, maxLength: 60, description: Görünen ad (e-posta gönderen adı) }
+        sema: { type: string, maxLength: 32, description: "Özel URL şeması (<şema>://giris?jeton=…), iOS Info.plist ile aynı" }
+        magazaAdresi: { type: string, maxLength: 300, description: "App Store adresi (https://) ya da boş" }
+        destekEpostasi: { type: string, maxLength: 254, description: E-postalarda yanıt adresi ya da boş }
     PanelHatalari:
       type: object
       additionalProperties: false

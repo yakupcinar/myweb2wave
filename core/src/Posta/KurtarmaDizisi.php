@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Posta;
 
 use App\Kimlik\Hak;
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\Bridge\Postmark\Transport\MessageStreamHeader;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 /**
  * M8b (A22): terk edilen ödeme kurtarma — PAZARLAMA e-postası: yalnız huninin
@@ -44,8 +43,7 @@ final readonly class KurtarmaDizisi
         private Connection $db,
         private MailerInterface $mailer,
         private LoggerInterface $logger,
-        #[Autowire('%env(MAIL_GONDEREN)%')]
-        private string $gonderen,
+        private UygulamaAyarlari $ayarlar,
     ) {
     }
 
@@ -108,15 +106,14 @@ final readonly class KurtarmaDizisi
             [$oturum, self::DIZI, $adim],
         );
         $s = $db->fetchAssociative(
-            'SELECT e.eposta, o.kurtarma_url FROM odeme_oturumlari o JOIN huni_epostalari e ON e.ziyaret_id = o.ziyaret_id
-             WHERE o.stripe_checkout_session_id = ?',
+            'SELECT z.app, e.eposta, o.kurtarma_url FROM odeme_oturumlari o JOIN huni_epostalari e ON e.ziyaret_id = o.ziyaret_id
+             JOIN huni_ziyaretleri z ON z.id = o.ziyaret_id WHERE o.stripe_checkout_session_id = ?',
             [$oturum],
         );
-        if (1 !== $yeni || false === $s || !\is_string($s['eposta']) || !\is_string($s['kurtarma_url'])) {
+        if (1 !== $yeni || false === $s || !\is_string($s['app']) || !\is_string($s['eposta']) || !\is_string($s['kurtarma_url'])) {
             return 0;
         }
-        $posta = (new Email())
-            ->from($this->gonderen)
+        $posta = $this->ayarlar->eposta($s['app'])
             ->to($s['eposta'])
             ->subject(1 === $adim ? 'Ödemeniz yarım kaldı' : 'Aboneliğiniz hâlâ sizi bekliyor')
             ->text("Ödeme sayfasında kaldınız. Kaldığınız yerden devam etmek için:\n{$s['kurtarma_url']}\n\nBağlantı 30 gün geçerlidir; seçtiğiniz plan ve tutar aynı kalır.\n\nBu e-postayı, e-posta almayı kabul ettiğiniz için alıyorsunuz.");

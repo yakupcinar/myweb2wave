@@ -35,6 +35,7 @@ Sol menü sırasıyla:
 | `/panel/webhooklar` | **Webhook'lar** | Giden webhook hedefleri: ekle, etkin/pasif, sil, teslim günlüğü | React (M7b) |
 | `/panel/baglam` | **Ürün bağlamı** | Uygulama başına ürün, kategori, kitle, ton, yasaklar (AI bunu okur) | React |
 | `/panel/anahtarlar` | **API anahtarları** | MCP için kişisel anahtar oluştur / iptal et | React |
+| `/panel/ayarlar` | **Ayarlar** | Uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a) |
 | `/panel/cikis` | **Çıkış** | | |
 
 Örnek: http://localhost:8081/panel/huniler/keepchat/genel
@@ -65,6 +66,6 @@ Sözleşme: `contract/openapi.yaml`.
 | Ödeme | `POST /checkout/sessions` · `POST /webhooks/stripe` | huni · Stripe |
 | Posta bastırma | `POST /webhooks/postmark` (HTTP Basic, `POSTMARK_WEBHOOK_SIFRE` boşsa 404) | Postmark |
 | Uygulama | `POST /apps/{app}/baglama/kod` · `POST /apps/{app}/baglama/dogrula` · `POST /apps/{app}/giris/kullan` · `GET /apps/{app}/kullanicilar/{kullanici}/hak` · `POST /apps/{app}/kullanicilar/{kullanici}/portal` (M6b1) · `GET /apps/{app}/olaylar?imlec=&sinir=` (M7c1, olay akışı) | mobil uygulama sunucusu / dış sistem (uygulama anahtarı) |
-| Panel API | `/panel/api/rapor` · `/panel/api/kullanicilar` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/anahtarlar` · `…/{app}/huniler` (+ `/{ad}`, `/{ad}/varsayilan`, `/{ad}/duzenleyici`) · `…/{app}/kurallar` (+ `/{id}`, `/{id}/tasi`) · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` · `…/{app}/deneyler` (+ `/{ad}/durum`, `/{ad}/sonuclar`) · `POST·DELETE /panel/api/abonelikler/{sub}/iptal` · `POST …/iade` (M6a) · `…/{app}/webhooklar` (+ `/{id}`, `/{id}/teslimler`, `/{id}/teslimler/{teslim}/yeniden`) (M7b) | panel (oturum + CSRF) |
+| Panel API | `/panel/api/rapor` · `/panel/api/kullanicilar` · `/panel/api/uygulamalar` · `…/{app}/baglam` · `…/{app}/ayarlar` (M9a) · `…/{app}/anahtarlar` · `…/{app}/huniler` (+ `/{ad}`, `/{ad}/varsayilan`, `/{ad}/duzenleyici`) · `…/{app}/kurallar` (+ `/{id}`, `/{id}/tasi`) · `/panel/api/ai/durum` · `/panel/api/ai/huniler/{app}/{huni}/sohbet` · `…/{app}/deneyler` (+ `/{ad}/durum`, `/{ad}/sonuclar`) · `POST·DELETE /panel/api/abonelikler/{sub}/iptal` · `POST …/iade` (M6a) · `…/{app}/webhooklar` (+ `/{id}`, `/{id}/teslimler`, `/{id}/teslimler/{teslim}/yeniden`) (M7b) | panel (oturum + CSRF) |
 | Panel huni işlemleri | `/panel/huniler/{app}/…` (yeni, taslak, durum, yayinla, sürüm geri yükle, varsayılan, kaldır, kurallar) · `/panel/medya/{app}` | panel (oturum + CSRF) |
 | Diğer | `GET /medya/{id}.webp` · `GET /health` · `/mcp` | herkes · izleme · Claude |

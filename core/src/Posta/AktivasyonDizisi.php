@@ -6,12 +6,11 @@ namespace App\Posta;
 
 use App\Kimlik\GirisBaglantisi;
 use App\Kimlik\Hak;
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 /**
  * M8a2 (A22): ödeyip uygulamaya bağlanmayana hatırlatma. İşlem e-postası
@@ -39,11 +38,7 @@ final readonly class AktivasyonDizisi
         private MailerInterface $mailer,
         private GirisBaglantisi $giris,
         private LoggerInterface $logger,
-        /** @var array<string, string|null> uygulama → mağaza adresi (boş = yazılmaz) */
-        #[Autowire('%uygulama_magaza_adresleri%')]
-        private array $magazalar,
-        #[Autowire('%env(MAIL_GONDEREN)%')]
-        private string $gonderen,
+        private UygulamaAyarlari $ayarlar,
     ) {
     }
 
@@ -100,12 +95,11 @@ final readonly class AktivasyonDizisi
             return 0;
         }
         $baglanti = $this->giris->uret($db, $s['app'], $s['email'], $s['stripe_checkout_session_id']);
-        $magaza = $this->magazalar[$s['app']] ?? null;
-        $kur = null === $magaza || '' === $magaza
+        $magaza = $this->ayarlar->magazaAdresi($s['app']);
+        $kur = null === $magaza
             ? 'Uygulamayı telefonunuza kurun'
             : "Uygulamayı telefonunuza kurun:\n{$magaza}";
-        $this->mailer->send((new Email())
-            ->from($this->gonderen)
+        $this->mailer->send($this->ayarlar->eposta($s['app'])
             ->to($s['email'])
             ->subject(1 === $adim ? 'Aboneliğiniz hazır — uygulamaya bağlanın' : 'Aboneliğinizi henüz kullanmadınız')
             ->text("Aboneliğiniz etkin, ama uygulamaya henüz bağlanmadınız.\n\n1. {$kur}\n2. Bu bağlantıya telefonunuzda dokunun:\n{$baglanti['uygulama_adresi']}\n\nBağlantı tek kullanımlıktır ve ".GirisBaglantisi::GECERLILIK_SA." saat geçerlidir. Süresi dolarsa uygulamada \"Aboneliğimi bağla\" ile bu e-posta adresini girin.\n\nBu e-postayı aboneliğiniz nedeniyle alıyorsunuz; bağlandığınızda bir daha gönderilmez."));
