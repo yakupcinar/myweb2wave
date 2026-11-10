@@ -9,6 +9,7 @@ use App\Huni\Huniler;
 use App\Huni\Sablonlar;
 use App\Huni\Tanim;
 use App\Huni\Tema;
+use App\Huni\Varsayilanlar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -31,6 +32,7 @@ final class PanelHuniApiController extends AbstractController
         private readonly Planlar $planlar,
         private readonly \App\Billing\EkUrunler $ekUrunler,
         private readonly Sablonlar $sablonlar,
+        private readonly Varsayilanlar $varsayilanlar,
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private readonly array $uygulamalar,
@@ -136,6 +138,22 @@ final class PanelHuniApiController extends AbstractController
         return $this->yaz($request, $app, fn (): JsonResponse => $this->huniler->varsayilanYap($app, $ad)
             ? self::korumali(new JsonResponse(null, 204))
             : self::hata("'{$ad}' yok", 404));
+    }
+
+    /** M9c (A23): bu huninin teması, logosu ve son paywall'ı yeni hunilere kopyalanır. */
+    #[Route('/huniler/{ad}/ornek', name: 'panel_api_huni_ornek', methods: ['POST'])]
+    public function ornek(Request $request, string $app, string $ad): JsonResponse
+    {
+        return $this->yaz($request, $app, function () use ($app, $ad): JsonResponse {
+            $taslak = $this->huniler->taslak($app, $ad);
+            if (null === $taslak) {
+                return self::hata("'{$ad}' yok", 404);
+            }
+
+            return $this->varsayilanlar->al($app, $ad, $taslak)
+                ? self::korumali(new JsonResponse(null, 204))
+                : self::hata('önce Ayarlar sayfasında uygulamanın kimliğini kaydedin', 422);
+        });
     }
 
     #[Route('/kurallar', name: 'panel_api_kural_ekle', methods: ['POST'])]

@@ -436,3 +436,12 @@ Symfony `PostmarkApiTransport` olay dağıtıcısı varsa (çatıda hep var) bun
 yanıtında `send()` atmadı; dinleyici kaldırılınca kayıt da yok (kırma K1).
 **Doğrusu:** olayı dinle, adresi bastırma listesine yaz; kuyruktan göndermeden önce listeye bak.
 
+## §58 — Satır numaralı belge bağlantısı kod değişince sessizce başka yeri gösterir
+**Belirti:** rehberdeki `[Huniler::yayinla](…/Huniler.php#L237)` tıklanınca açılır ama başka bir satırı gösterir; hiçbir
+şey kırmızı olmaz.
+**Sebep:** `#L<n>` bir satır numarasıdır, ada bağlı değildir; dosyaya kod eklenince kayar.
+**Ölçüm (2026-11-10, `m9c-yeni-huni-gorunumu.md`):** `Huniler.php`'ye M9c kodu eklenince rehberdeki 5 bağlantı 1–16
+satır kaydı; betik denetimi yakaladı.
+**Doğrusu:** `bin/belge-baglantilari` (`bin/kontrol` adımı `belge-baglanti`) her `#L` satırında adı arar; kaymışsa
+`--duzelt` tanım satırına taşır. Satır bağlantısı yalnız adı geçen tanıma verilir.
+

@@ -255,6 +255,10 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - M9b (kullanıcı: taslak + düzenlenebilir; şartlar, gizlilik, KVKK, çerez; tr + en): metinler çekirdekten
   `/yasal/{app}/{belge}/{dil}`, kaydedilmeden yayında değil, yer tutucularla. Reddedilen: yalnız kullanıcının metni
   (boş başlangıç), dış adres (sistemle eşleşmez), taslağı otomatik yayınlamak (hukuki görüş değil).
+- M9c (kullanıcı: yeni huniye kopyalansın): bir huninin teması, logosu ve son paywall'ı "yeni hunilere örnek" olarak
+  kopyalanır; boş huni hepsini, şablondan huni tema + logo + paywall'ın uygulama alanlarını alır, kopya huni almaz.
+  Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
+  paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
 **A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
 - Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma

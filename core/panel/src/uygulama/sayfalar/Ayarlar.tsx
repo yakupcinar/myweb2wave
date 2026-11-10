@@ -86,7 +86,10 @@ export function Ayarlar(): ReactNode {
                 ) : null}
             </SayfaBasi>
             {secili ? (
-                <AyarFormu key={secili} app={secili} />
+                <div className="grid gap-4">
+                    <AyarFormu key={secili} app={secili} />
+                    <VarsayilanKarti key={`v-${secili}`} app={secili} />
+                </div>
             ) : (
                 <p className="text-soluk">Yükleniyor…</p>
             )}
@@ -213,6 +216,87 @@ function AyarGovdesi({
                     ) : null}
                 </div>
             </form>
+        </Kart>
+    );
+}
+
+/** M9c (A23): yeni hunilere kopyalanan görünüm — kaynak, tarih, içerik; kaldırılabilir. */
+function VarsayilanKarti({ app }: { app: string }): ReactNode {
+    const istemci = useQueryClient();
+    const sorgu = useQuery({
+        queryKey: ["varsayilanlar", app],
+        queryFn: async () => {
+            const { data } = await api.GET(
+                "/panel/api/uygulamalar/{app}/varsayilanlar",
+                { params: { path: { app } } },
+            );
+            if (!data) throw new Error("varsayılan alınamadı");
+            return data;
+        },
+    });
+    const kaldir = useMutation({
+        mutationFn: async () => {
+            const { data, error } = await api.DELETE(
+                "/panel/api/uygulamalar/{app}/varsayilanlar",
+                { params: { path: { app }, header: { "X-CSRF-Token": "" } } },
+            );
+            if (!data)
+                throw new Error(
+                    (error?.hatalar ?? ["Kaldırılmadı."]).join(" "),
+                );
+            return data;
+        },
+        onSuccess: (data) => istemci.setQueryData(["varsayilanlar", app], data),
+    });
+    const v = sorgu.data;
+    const icerik = v
+        ? [v.tema && "tema", v.logo && "logo", v.paywall && "paywall"].filter(
+              Boolean,
+          )
+        : [];
+
+    return (
+        <Kart>
+            <KartBasi
+                baslik="Yeni huni görünümü"
+                aciklama="Yeni açılan (boş ya da şablondan) huniye kopyalanır; var olan huniler değişmez."
+            />
+            <div className="grid gap-3 px-4.5 py-4">
+                {!v ? (
+                    <p role="status" className="text-soluk">
+                        Yükleniyor…
+                    </p>
+                ) : v.kaynak ? (
+                    <>
+                        <p>
+                            <strong>{v.kaynak}</strong> hunisinden
+                            {v.alindi
+                                ? `, ${new Date(v.alindi).toLocaleDateString("tr-TR")}`
+                                : ""}
+                            : {icerik.join(", ")}.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Dugme
+                                tur="tehlike"
+                                disabled={kaldir.isPending}
+                                onClick={() => kaldir.mutate()}
+                            >
+                                Kaldır
+                            </Dugme>
+                            {kaldir.isError ? (
+                                <span role="alert" className="text-tehlike">
+                                    {kaldir.error.message}
+                                </span>
+                            ) : null}
+                        </div>
+                    </>
+                ) : (
+                    <p className="text-soluk">
+                        Yok — yeni huniler boş başlar. Huniler sayfasında bir
+                        huninin yanındaki "Yeni hunilere örnek yap" ile seçin.
+                    </p>
+                )}
+            </div>
         </Kart>
     );
 }

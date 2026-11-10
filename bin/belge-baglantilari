@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Belgedeki göreli bağlantıları denetler (tuzak §7 ailesi: bağlantı sessizce eskir).
+
+- Her `[metin](yol)` bir dosyaya çözülmeli.
+- `#L<n>` olan bağlantıda n. satır metindeki adı (`Sinif::yontem` → yontem) taşımalı;
+  kod değişince satır numarası kayar ve bağlantı başka yeri gösterir.
+- `--duzelt`: kaymış numarayı adın tanımlandığı satıra (function / const / class) taşır.
+
+Kullanım: bin/belge-baglantilari [--duzelt] <belge.md>...
+"""
+import os
+import re
+import sys
+
+BAGLANTI = re.compile(r'\[([^\]]+)\]\(([^)\s#]+)(?:#L(\d+))?\)')
+
+
+def tanim_satiri(satirlar, ad):
+    desen = re.compile(r'\b(function|const|class|interface|enum)\s+' + re.escape(ad) + r'\b')
+    bulunan = [i + 1 for i, s in enumerate(satirlar) if desen.search(s)]
+    return bulunan[0] if len(bulunan) == 1 else None
+
+
+def main():
+    duzelt = '--duzelt' in sys.argv
+    belgeler = [a for a in sys.argv[1:] if a != '--duzelt']
+    sorun = 0
+    for belge in belgeler:
+        kok = os.path.dirname(os.path.abspath(belge))
+        metin = open(belge, encoding='utf-8').read()
+        yeni = metin
+        for m in BAGLANTI.finditer(metin):
+            etiket, yol, satir = m.group(1), m.group(2), m.group(3)
+            if re.match(r'^[a-z]+:', yol):
+                continue
+            hedef = os.path.normpath(os.path.join(kok, yol))
+            if not os.path.exists(hedef):
+                print(f'{belge}: dosya yok: {yol}')
+                sorun += 1
+                continue
+            if not satir:
+                continue
+            ad = re.sub('`', '', etiket).split('::')[-1]
+            satirlar = open(hedef, encoding='utf-8').read().split('\n')
+            n = int(satir)
+            if n <= len(satirlar) and ad in satirlar[n - 1]:
+                continue
+            dogru = tanim_satiri(satirlar, ad)
+            if duzelt and dogru:
+                yeni = yeni.replace(m.group(0), m.group(0).replace(f'#L{satir})', f'#L{dogru})'), 1)
+                print(f'{belge}: {etiket} #L{satir} → #L{dogru}')
+            else:
+                print(f'{belge}: {etiket} → {yol}#L{satir} satırda "{ad}" yok' + (f' (tanım #L{dogru})' if dogru else ''))
+                sorun += 1
+        if duzelt and yeni != metin:
+            open(belge, 'w', encoding='utf-8').write(yeni)
+    return 1 if sorun else 0
+
+
+sys.exit(main())

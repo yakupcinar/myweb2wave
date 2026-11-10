@@ -86,6 +86,15 @@ function kur() {
             // Düzenleyici sayfası burada ölçülmüyor (HuniDuzenle.test).
             if (adres.endsWith("/duzenleyici"))
                 return j({ hatalar: ["yok"] }, 404);
+            // M9c: görünümü yeni hunilere kopyalanan huni.
+            if (adres.endsWith("/varsayilanlar"))
+                return j({
+                    kaynak: "bos",
+                    alindi: "2026-11-10T10:00:00+00:00",
+                    tema: true,
+                    logo: false,
+                    paywall: true,
+                });
             if (istek.method === "GET") return j(liste);
             if (adres.endsWith("/huniler") && istek.method === "POST") {
                 const { ad } = JSON.parse(metin) as { ad: string };
@@ -213,6 +222,29 @@ describe("P2: Huniler sayfası", () => {
             {
                 yontem: "DELETE",
                 adres: "/panel/api/uygulamalar/keepchat/huniler/eski",
+                jeton: "jeton-kabuk",
+                govde: null,
+            },
+        ]);
+    });
+
+    it("M9c: yeni huni örneği rozeti yalnız kaynakta; 'Yeni hunilere örnek yap' jetonla gider", async () => {
+        const istekler = kur();
+        await waitFor(() =>
+            expect(satir("bos").textContent).toContain("yeni huni örneği"),
+        );
+        expect(satir("genel").textContent).not.toContain("yeni huni örneği");
+
+        fireEvent.click(
+            within(satir("genel")).getByRole("button", {
+                name: "Yeni hunilere örnek yap",
+            }),
+        );
+        await screen.findByText(/Yeni huniler artık 'genel' görünümüyle/);
+        expect(yazmalar(istekler)).toEqual([
+            {
+                yontem: "POST",
+                adres: "/panel/api/uygulamalar/keepchat/huniler/genel/ornek",
                 jeton: "jeton-kabuk",
                 govde: null,
             },

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Ai\UrunBaglami;
+use App\Huni\Varsayilanlar;
 use App\Mcp\ApiAnahtarlari;
 use App\Uygulama\UygulamaAyarlari;
 use App\Yasal\Taslaklar;
@@ -33,6 +34,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly UrunBaglami $baglam,
         private readonly UygulamaAyarlari $ayarlar,
         private readonly YasalMetinler $yasal,
+        private readonly Varsayilanlar $varsayilanlar,
         private readonly ApiAnahtarlari $anahtarlar,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
@@ -97,6 +99,43 @@ final class PanelUygulamaController extends AbstractController
         return self::korumali([] === $hatalar
             ? new JsonResponse($this->ayarlar->oku($app))
             : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** M9c (A23): yeni hunilere kopyalanan görünüm — hangi huniden, ne zaman, neler. */
+    #[Route('/{app}/varsayilanlar', name: 'panel_api_varsayilanlar', methods: ['GET'])]
+    public function varsayilanlar(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->varsayilanOzeti($app)));
+    }
+
+    #[Route('/{app}/varsayilanlar', name: 'panel_api_varsayilanlar_kaldir', methods: ['DELETE'])]
+    public function varsayilanlariKaldir(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $this->varsayilanlar->kaldir($app);
+
+        return self::korumali(new JsonResponse($this->varsayilanOzeti($app)));
+    }
+
+    /** @return array{kaynak: string|null, alindi: string|null, tema: bool, logo: bool, paywall: bool} */
+    private function varsayilanOzeti(string $app): array
+    {
+        $v = $this->varsayilanlar->oku($app) ?? [];
+
+        return [
+            'kaynak' => \is_string($v['kaynak'] ?? null) ? $v['kaynak'] : null,
+            'alindi' => \is_string($v['alindi'] ?? null) ? $v['alindi'] : null,
+            'tema' => isset($v['tema']), 'logo' => isset($v['logo']), 'paywall' => isset($v['paywall']),
+        ];
     }
 
     /** M9b1 (A23): yasal veriler + belge × dil metinleri (kaydedilmemişse taslak) ve herkese açık adresleri. */

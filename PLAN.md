@@ -61,7 +61,7 @@
 | İptal / iade, müşteri portalı (M6a, M6b1–2) | ✅ kırma 19/19, 9/9, 11/11; gerçek Stripe test modunda iptal + 999 EUR iade | `docs/decisions/m6a-iptal-iade.md`, `m6b1-portal.md`, `m6b2-portal-web.md` |
 | Giden webhook, panel, MCP okuma / yazma (M7a–c2) | ✅ kırma 16/16, 12/12, 12/12, 12/12 | `docs/decisions/m7a-giden-webhook.md` … `m7c2-yazma-araclari.md` |
 | E-posta: Postmark + bastırma, aktivasyon, kurtarma (M8a1, M8a2, M8b) | ✅ core 671 → 690 test; kırma 11/11, 12/12, 18/18; Postmark test anahtarı ve Stripe kurtarma kopyası gerçek ölçüldü; hesap / cron yok (Ç123–125) | `docs/decisions/m8a1-postmark.md`, `m8a2-aktivasyon.md`, `m8b-kurtarma.md` |
-| Proje ayarları: kimlik, yasal metinler, huni bağlantısı (M9a, M9b1–2) | ✅ core 708 → 723 test; kırma 18/18, 14/14, 7/7; hukuki gözden geçirme yok (Ç126) | `docs/decisions/m9a-uygulama-kimligi.md`, `m9b1-yasal-metinler.md`, `m9b2-yasal-baglantilar.md` |
+| Proje ayarları: kimlik, yasal metinler, huni bağlantısı, yeni huni görünümü (M9a, M9b1–2, M9c) | ✅ core 708 → 732 test; kırma 18/18, 14/14, 7/7, 13/13; hukuki gözden geçirme yok (Ç126) | `docs/decisions/m9a-uygulama-kimligi.md`, `m9b1-yasal-metinler.md`, `m9b2-yasal-baglantilar.md`, `m9c-yeni-huni-gorunumu.md` |
 | Uygulama rehberi (sayfa sayfa + mimari plan) | ✅ 243 bağlantı betikle denetlendi (dosya + satır) | `docs/uygulama-rehberi.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
@@ -242,7 +242,7 @@
     - [x] M7c1 · 2026-11-09, `docs/decisions/m7c1-okuma-araclari.md`: MCP'de 6 salt-okur rapor aracı (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları), Rapor'a uygulama süzgeci; `GET /apps/{app}/olaylar` (uygulama anahtarı, imleç + devam). Kırma 12/12 (biri testi güçlendirdi); gerçek MCP çağrısı dev'de
     - [x] M7c2 · 2026-11-10, `docs/decisions/m7c2-yazma-araclari.md`: MCP'de abonelik (listele, iptal planla / geri al, son faturayı iade) ve deney (kaydet, durum) araçları — yalnız "yönetim" izinli anahtarda, yıkıcılar işaretli; abonelik uygulamanınsa. Kırma 12/12 (biri testi güçlendirdi)
   - [ ] M8 · e-posta (A22: Postmark, karma izin) — [x] M8a1 sağlayıcı + bastırma (`m8a1-postmark.md`) · [x] M8a2 aktivasyon dizisi (`m8a2-aktivasyon.md`) · [x] M8b terk edilen ödeme (`m8b-kurtarma.md`)
-  - [ ] M9 · proje ayarları (A23; roller şimdilik yok) — [x] M9a uygulama kimliği (`m9a-uygulama-kimligi.md`) · [x] M9b1 yasal veriler + metinler (`m9b1-yasal-metinler.md`) · [x] M9b2 huni yasal sayfalara bağlanır (`m9b2-yasal-baglantilar.md`) · [ ] M9c varsayılan tema/paywall · [ ] M9d dil/ülke yönlendirmesi
+  - [ ] M9 · proje ayarları (A23; roller şimdilik yok) — [x] M9a uygulama kimliği (`m9a-uygulama-kimligi.md`) · [x] M9b1 yasal veriler + metinler (`m9b1-yasal-metinler.md`) · [x] M9b2 huni yasal sayfalara bağlanır (`m9b2-yasal-baglantilar.md`) · [x] M9c yeni huni görünümü (`m9c-yeni-huni-gorunumu.md`) · [ ] M9d dil/ülke yönlendirmesi
   - [ ] web2wave farkından (2026-11-10, `web2wave-platform-yapisi.md` § Ek 2026-11-10): R1 rapor süzgeçleri + önceki dönem · E1 e-posta şablonları panelde (tr/en) · M6c duraklat / sürdür · R2 CSV dışa aktarım
   - [ ] M10 destek kutusu (Postmark gelen e-posta) · M11 çeviri (isteğe bağlı)
 

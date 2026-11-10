@@ -164,6 +164,9 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 
 **Ne yapabilirsin**
 - Yeni huni aç: boş, başka bir huninin kopyası ya da niş şablonundan. Huniyi kaldır ya da varsayılan yap.
+- **"Yeni hunilere örnek yap":** bu huninin teması, logosu ve son paywall adımı, bundan sonra açılacak hunilere
+  kopyalanır (satırda "yeni huni örneği" rozeti). "Varsayılan huni"den farklıdır: o, hiçbir kural tutmayınca açılan
+  hunidir; bu ise yalnız yeni hunilerin başlangıç görünümüdür.
 - Kural ekle, sil, yukarı/aşağı taşı.
 - Taslağı düzenle, kaydet, önizle (imzalı, süreli bir önizleme adresiyle), yayınla. Eski bir sürümü taslağa geri al.
 - AI'a taslak yazdır. **AI yalnız taslağa yazar; yayınlamak her zaman senin işin.**
@@ -171,8 +174,8 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 **Arkada nasıl çalışır**
 1. **Saklama.** Huni tek bir JSON belgesidir: taslak `huniler.taslak`'ta, her yayın `huni_surumleri`'nde yeni sürüm
    numarasıyla dondurulur. Sorular için ayrı tablo yoktur. Servis [`Huniler`](../core/src/Huni/Huniler.php):
-   [`taslakKaydet`](../core/src/Huni/Huniler.php#L203), [`yayinla`](../core/src/Huni/Huniler.php#L237),
-   [`surumuTaslagaAl`](../core/src/Huni/Huniler.php#L294).
+   [`taslakKaydet`](../core/src/Huni/Huniler.php#L219), [`yayinla`](../core/src/Huni/Huniler.php#L253),
+   [`surumuTaslagaAl`](../core/src/Huni/Huniler.php#L310).
 2. **Bekçi.** Kaydedilen her tanım [`Tanim::hatalar`](../core/src/Huni/Tanim.php#L150)'dan geçer: sözleşmedeki
    `HuniTanimi` biçimi, var olan plan adları, metinlerde HTML yasak. Hatalı tanım kaydedilmez, yayınlanmaz.
 3. **Eşzamanlı kayıt.** İki sekmede aynı taslak düzenlenirse eski sekmenin kaydı reddedilir (beklenen imza tutmaz) —
@@ -180,16 +183,22 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 4. **Düzenleyici ↔ tanım.** Puck kendi blok ağacını tutar; [`donustur.ts`](../core/panel/src/donustur.ts) bunu tanıma ve
    geri kayıpsız çevirir. Puck'taki önizleme, huninin kendi bileşenlerini ([`bilesenler.tsx`](../huni-bilesenleri/bilesenler.tsx))
    kullanır; önizleme ile ziyaretçinin gördüğü aynıdır.
-5. **Seçim.** Ziyaretçi geldiğinde [`Huniler::sec`](../core/src/Huni/Huniler.php#L47) kuralları sırayla dener, tutan
+5. **Seçim.** Ziyaretçi geldiğinde [`Huniler::sec`](../core/src/Huni/Huniler.php#L48) kuralları sırayla dener, tutan
    yoksa varsayılan huniyi seçer; yönlendirme deneyi varsa trafiği varyantlara böler (2.5).
 6. **AI.** [`HuniAsistani::calistir`](../core/src/Ai/HuniAsistani.php#L71) Claude'u araçlarla çalıştırır: taslağı okur, düzeltir,
    doğrulatır ve `ekran` kabındaki başsız Chromium'la taslağın telefon görüntüsünü alıp kendi işine bakar. Her isteğe
    Ürün bağlamı (2.7) eklenir; istekler ve maliyetleri `ai_istekleri`'ne yazılır.
 7. **Görseller.** Yüklenen ya da stok aramasından alınan görseller `medya` tablosunda; huni `/medya/{id}.webp` ile çeker.
+8. **Yeni huni görünümü.** "Örnek yap" o anki kopyayı `uygulama_ayarlari.varsayilan`'a yazar
+   ([`Varsayilanlar::al`](../core/src/Huni/Varsayilanlar.php)). Yeni huni açılırken
+   [`Huniler::yeniHuni`](../core/src/Huni/Huniler.php#L121) uygular: **boş** huni temayı, logoyu ve paywall'ın tamamını
+   alır; **şablondan** açılan huni temayı, logoyu ve paywall'ın uygulamaya özgü alanlarını alır (planlar, güvenceler,
+   şart onayı, yasal adresler, downsell; metinler şablonun); **kopya** huni hiçbir şey almaz. Kopya modelidir: örnek
+   değişince var olan huniler değişmez. Örnek artık geçersizse (ör. içindeki plan yok) huni açılmaz ve gerekçe söylenir.
 
 **Bilinen sınırlar:** huniyle ilgili açık uçlar [acik-uclar.md](decisions/acik-uclar.md)'de "huni" geçen satırlarda.
 
-**Kayıtlar:** [huni-yayin](decisions/huni-yayin.md) · [huni-dallanma-h5](decisions/huni-dallanma-h5.md) ·
+**Kayıtlar:** [m9c yeni huni görünümü](decisions/m9c-yeni-huni-gorunumu.md) · [huni-yayin](decisions/huni-yayin.md) · [huni-dallanma-h5](decisions/huni-dallanma-h5.md) ·
 [ai-a2 panel arka uç](decisions/ai-a2-panel-arka-uc.md) · [ai ekran görüntüsü](decisions/ai-ekran-goruntusu.md) ·
 [huni-arsiv](decisions/huni-arsiv.md)
 
@@ -349,7 +358,9 @@ karakterleri; anahtarın kendisi saklanmaz), MCP adresi, yeni anahtar formu ve *
 uygulamayı açtığı adres şeması ve App Store adresi.
 
 **Ekranda ne var / ne yapabilirsin** ([`Ayarlar.tsx`](../core/panel/src/uygulama/sayfalar/Ayarlar.tsx)): dört alan;
-kaydet. Hatalı değer (ör. büyük harfli şema, `http://` adres) sunucuda reddedilir ve gerekçesi satırda görünür.
+kaydet. Hatalı değer (ör. büyük harfli şema, `http://` adres) sunucuda reddedilir ve gerekçesi satırda görünür. Altında
+**"Yeni huni görünümü"** kartı: yeni hunilere kopyalanan görünüm hangi huniden, ne zaman alındı, neleri içeriyor (tema,
+logo, paywall); "Kaldır" ile yeni huniler yeniden boş başlar (2.2, adım 8).
 
 | Alan | Nerede kullanılır |
 |---|---|
@@ -366,7 +377,7 @@ kaydet. Hatalı değer (ör. büyük harfli şema, `http://` adres) sunucuda red
 3. Ayar satırı yoksa yedek değer yoktur: şema isteyen yol açık hata verir. İki kaynak olsaydı hangisinin geçerli olduğu
    görünmezdi (tuzak §12).
 
-**Kayıtlar:** [m9a uygulama kimliği](decisions/m9a-uygulama-kimligi.md)
+**Kayıtlar:** [m9a uygulama kimliği](decisions/m9a-uygulama-kimligi.md) · [m9c yeni huni görünümü](decisions/m9c-yeni-huni-gorunumu.md)
 
 ### 2.10 Yasal metinler — `/panel/yasal`
 

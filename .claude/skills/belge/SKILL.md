@@ -37,7 +37,8 @@ yeniden dener.
 `docs/decisions/acik-uclar.md`'ye bir Ç-no ile.
 
 **4c · Uygulama rehberi.** Blok bir panel sayfasını, uç, tablo ya da arka plan işini değiştirdiyse
-`docs/uygulama-rehberi.md`'de **yalnız o bölümü** güncelle (`grep -n "^### "` ile bul, `sed -n` ile oku).
+`docs/uygulama-rehberi.md`'de **yalnız o bölümü** güncelle (`grep -n "^### "` ile bul, `sed -n` ile oku). Kod
+değiştiyse satır bağlantıları kayar: `bin/belge-baglantilari --duzelt docs/uygulama-rehberi.md` (§58).
 
 **4b · Yöntem el kitabı.** Blokta yeni bir yöntem ya da ders çıktıysa ilgili
 `docs/yontem/<bölüm>.md`'ye 1–5 satır, `07-yolculuk.md`'ye bloğun tek

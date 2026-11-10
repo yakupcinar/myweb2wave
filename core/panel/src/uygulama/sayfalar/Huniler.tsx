@@ -69,6 +69,16 @@ function Uygulama({ app }: { app: string }): ReactNode {
             return data;
         },
     });
+    // M9c: yeni hunilere kopyalanan görünümün kaynağı (rozet için).
+    const varsayilan = useQuery({
+        queryKey: ["varsayilanlar", app],
+        queryFn: async () =>
+            (
+                await api.GET("/panel/api/uygulamalar/{app}/varsayilanlar", {
+                    params: { path: { app } },
+                })
+            ).data ?? null,
+    });
     const [bildirim, setBildirim] = useState<{
         tur: "iyi" | "hata";
         metin: string;
@@ -80,8 +90,12 @@ function Uygulama({ app }: { app: string }): ReactNode {
         },
         onSuccess: (metin) => setBildirim({ tur: "iyi", metin }),
         onError: (e) => setBildirim({ tur: "hata", metin: e.message }),
-        onSettled: () =>
-            istemci.invalidateQueries({ queryKey: ["huniler", app] }),
+        onSettled: () => {
+            void istemci.invalidateQueries({ queryKey: ["huniler", app] });
+            void istemci.invalidateQueries({
+                queryKey: ["varsayilanlar", app],
+            });
+        },
     });
     const calistir = (yap: () => Promise<void>, tamam: string): void =>
         islem.mutate({ yap, tamam });
@@ -115,6 +129,7 @@ function Uygulama({ app }: { app: string }): ReactNode {
             <HuniTablosu
                 app={app}
                 veri={veri}
+                ornek={varsayilan.data?.kaynak ?? null}
                 calistir={calistir}
                 hataGoster={(metin) => setBildirim({ tur: "hata", metin })}
             />
@@ -128,11 +143,14 @@ type Calistir = (yap: () => Promise<void>, tamam: string) => void;
 function HuniTablosu({
     app,
     veri,
+    ornek,
     calistir,
     hataGoster,
 }: {
     app: string;
     veri: Liste;
+    /** M9c: görünümü yeni hunilere kopyalanan huni (yoksa null). */
+    ornek: string | null;
     calistir: Calistir;
     hataGoster: (metin: string) => void;
 }): ReactNode {
@@ -205,6 +223,9 @@ function HuniTablosu({
                                 <strong>{h.ad}</strong>{" "}
                                 {h.varsayilan ? (
                                     <Rozet tur="iyi">varsayılan</Rozet>
+                                ) : null}{" "}
+                                {h.ad === ornek ? (
+                                    <Rozet>yeni huni örneği</Rozet>
                                 ) : null}
                             </Td>
                             <Td>{h.yayinda ? `v${h.yayinda}` : "—"}</Td>
@@ -234,6 +255,31 @@ function HuniTablosu({
                                     >
                                         Aç
                                     </a>
+                                    <Dugme
+                                        title="Teması, logosu ve son paywall'ı yeni hunilere kopyalanır; var olan huniler değişmez"
+                                        onClick={() =>
+                                            calistir(
+                                                () =>
+                                                    hatasiz(
+                                                        api.POST(
+                                                            "/panel/api/uygulamalar/{app}/huniler/{ad}/ornek",
+                                                            {
+                                                                params: {
+                                                                    path: {
+                                                                        app,
+                                                                        ad: h.ad,
+                                                                    },
+                                                                    header: JETON,
+                                                                },
+                                                            },
+                                                        ),
+                                                    ),
+                                                `Yeni huniler artık '${h.ad}' görünümüyle açılacak (tema, logo, paywall). Var olan huniler değişmez.`,
+                                            )
+                                        }
+                                    >
+                                        Yeni hunilere örnek yap
+                                    </Dugme>
                                     {h.varsayilan ? null : (
                                         <>
                                             <Dugme

@@ -29,6 +29,7 @@ final readonly class Huniler
         private Planlar $planlar,
         private \App\Billing\EkUrunler $ekUrunler,
         private Sablonlar $sablonlar,
+        private Varsayilanlar $varsayilanlar,
         /** @var array<string, array<string, string>> uygulama kaydı (A4); planlar veritabanında (M1a) */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
@@ -137,6 +138,21 @@ final readonly class Huniler
             $taslak = null === $kaynak ? $this->bosTaslak($app) : $this->taslak($app, $kaynak);
             if (null === $taslak) {
                 return ["kaynak huni '{$kaynak}' yok"];
+            }
+        }
+        // M9c: boş ve şablondan açılan huni varsayılan görünümü alır; kopya almaz
+        // (zaten bir hunin kopyası). Varsayılan artık geçersizse (ör. plan
+        // yok) sessizce atlanmaz — huni açılmaz, gerekçe söylenir (§12). Boş
+        // taslak zaten eksik (başlıklar sonra yazılır): yalnız varsayılanın
+        // GETİRDİĞİ yeni hatalar sayılır.
+        if (null === $kaynak) {
+            $varsayilanli = $this->varsayilanlar->uygula($app, $taslak, null !== $sablon);
+            if ($varsayilanli !== $taslak) {
+                $hatalar = array_values(array_diff($this->hatalar($app, $varsayilanli), $this->hatalar($app, $taslak)));
+                if ([] !== $hatalar) {
+                    return array_map(static fn (string $h): string => "varsayılan görünüm geçersiz (Ayarlar): {$h}", $hatalar);
+                }
+                $taslak = $varsayilanli;
             }
         }
         try {

@@ -44,6 +44,26 @@ function kur(
                 govde,
             });
             if (istek.method === "PUT") return put(govde);
+            if (istek.method === "DELETE")
+                return new Response(
+                    JSON.stringify({
+                        kaynak: null,
+                        alindi: null,
+                        tema: false,
+                        logo: false,
+                        paywall: false,
+                    }),
+                );
+            if (istek.url.endsWith("/varsayilanlar"))
+                return new Response(
+                    JSON.stringify({
+                        kaynak: "genel",
+                        alindi: "2026-11-10T10:00:00+00:00",
+                        tema: true,
+                        logo: false,
+                        paywall: true,
+                    }),
+                );
             if (istek.url.endsWith("/panel/api/uygulamalar"))
                 return new Response(
                     JSON.stringify({ uygulamalar: ["keepchat"] }),
@@ -139,5 +159,19 @@ describe("Ayarlar", () => {
             ),
         );
         expect(istekler.some((i) => i.yontem === "PUT")).toBe(true);
+    });
+
+    it("M9c: yeni huni görünümü kaynağı ve içeriği; Kaldır jetonla DELETE gönderir", async () => {
+        const istekler = kur();
+        expect(await screen.findByText("genel")).toBeTruthy();
+        expect(screen.getByText(/tema, paywall\./)).toBeTruthy();
+        fireEvent.click(screen.getByRole("button", { name: "Kaldır" }));
+        await screen.findByText(/Yok — yeni huniler boş başlar/);
+        expect(istekler.find((i) => i.yontem === "DELETE")).toEqual({
+            yontem: "DELETE",
+            adres: "/panel/api/uygulamalar/keepchat/varsayilanlar",
+            jeton: "jeton-kabuk",
+            govde: null,
+        });
     });
 });

@@ -431,6 +431,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/varsayilanlar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** M9c: yeni hunilere kopyalanan görünümün özeti */
+        get: operations["panelVarsayilanlar"];
+        put?: never;
+        post?: never;
+        /** Varsayılanı kaldırır (yeni huniler boş başlar); var olan huniler değişmez */
+        delete: operations["panelVarsayilanlariKaldir"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/yasal": {
         parameters: {
             query?: never;
@@ -564,6 +584,26 @@ export interface paths {
         put?: never;
         /** Varsayılan huni (hiçbir kural tutmazsa açılan) */
         post: operations["panelApiHuniVarsayilan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/huniler/{ad}/ornek": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M9c: bu huninin teması, logosu ve son paywall adımı yeni hunilere kopyalanır (varsayılan huniden farklı) */
+        post: operations["panelApiHuniOrnek"];
         delete?: never;
         options?: never;
         head?: never;
@@ -969,6 +1009,15 @@ export interface components {
             magazaAdresi: string;
             /** @description E-postalarda yanıt adresi ya da boş */
             destekEpostasi: string;
+        };
+        /** @description M9c: hangi huniden, ne zaman alındı ve neleri içeriyor; kaynak null = varsayılan yok */
+        YeniHuniVarsayilani: {
+            kaynak: string | null;
+            /** Format: date-time */
+            alindi: string | null;
+            tema: boolean;
+            logo: boolean;
+            paywall: boolean;
         };
         YasalVeriler: {
             /** @description Şirket unvanı (veri sorumlusu) */
@@ -2970,6 +3019,79 @@ export interface operations {
             };
         };
     };
+    panelVarsayilanlar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Özet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YeniHuniVarsayilani"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelVarsayilanlariKaldir: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kaldırıldıktan sonraki özet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YeniHuniVarsayilani"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
     panelYasal: {
         parameters: {
             query?: never;
@@ -3361,6 +3483,56 @@ export interface operations {
             };
             /** @description Bilinmeyen uygulama ya da kayıt */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiHuniOrnek: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                ad: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Örnek alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama ya da huni */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Uygulamanın ayar satırı yok */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

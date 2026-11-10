@@ -74,6 +74,8 @@ adim panel-tip    panel 'npm run -s check'
 adim bilesen-tip  bilesen 'npm run -s check'
 # D1: tanım HTML taşıyamaz — huniyi ve önizlemeyi çizen kodda HTML enjeksiyonu yok.
 adim html-yok     sh -c '! grep -rnF --exclude-dir=node_modules dangerouslySetInnerHTML huni-bilesenleri core/panel/src funnel/src'
+# §58: rehberdeki dosya / satır bağlantıları kod değişince sessizce eskir (düzeltme: --duzelt).
+adim belge-baglanti python3 bin/belge-baglantilari docs/uygulama-rehberi.md
 
 # 3 · Test + derleme
 adim core-testdb  core   'php bin/console doctrine:database:create --env=test --if-not-exists'

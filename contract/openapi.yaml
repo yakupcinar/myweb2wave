@@ -731,6 +731,24 @@ paths:
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Alan geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/varsayilanlar:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelVarsayilanlar
+      summary: "M9c: yeni hunilere kopyalanan görünümün özeti"
+      responses:
+        "200": { description: Özet, content: { application/json: { schema: { $ref: "#/components/schemas/YeniHuniVarsayilani" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    delete:
+      operationId: panelVarsayilanlariKaldir
+      summary: Varsayılanı kaldırır (yeni huniler boş başlar); var olan huniler değişmez
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Kaldırıldıktan sonraki özet, content: { application/json: { schema: { $ref: "#/components/schemas/YeniHuniVarsayilani" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/yasal:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -917,6 +935,20 @@ paths:
         "204": { description: Varsayılan oldu }
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama ya da kayıt, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/huniler/{ad}/ornek:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: ad, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: panelApiHuniOrnek
+      summary: "M9c: bu huninin teması, logosu ve son paywall adımı yeni hunilere kopyalanır (varsayılan huniden farklı)"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Örnek alındı }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama ya da huni, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Uygulamanın ayar satırı yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/kurallar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1475,6 +1507,17 @@ components:
         sema: { type: string, maxLength: 32, description: "Özel URL şeması (<şema>://giris?jeton=…), iOS Info.plist ile aynı" }
         magazaAdresi: { type: string, maxLength: 300, description: "App Store adresi (https://) ya da boş" }
         destekEpostasi: { type: string, maxLength: 254, description: E-postalarda yanıt adresi ya da boş }
+    YeniHuniVarsayilani:
+      description: "M9c: hangi huniden, ne zaman alındı ve neleri içeriyor; kaynak null = varsayılan yok"
+      type: object
+      additionalProperties: false
+      required: [kaynak, alindi, tema, logo, paywall]
+      properties:
+        kaynak: { type: [string, "null"] }
+        alindi: { type: [string, "null"], format: date-time }
+        tema: { type: boolean }
+        logo: { type: boolean }
+        paywall: { type: boolean }
     YasalVeriler:
       type: object
       additionalProperties: false
