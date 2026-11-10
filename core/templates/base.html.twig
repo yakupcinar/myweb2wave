@@ -1,7 +1,7 @@
 {# Panel düzeni. Dış betik/stil yok: yönetim sayfasına üçüncü taraf kod girmez
    (tarifin şablonu sürümü sabitlenmemiş bir CDN betiği yüklüyordu).
-   Görünüm: web2wave panelinin ekran görüntülerinden fikir (sol menü, büyük
-   sayılı özet, huni şeridi) — kod yok; docs/decisions/panel-gorunum.md.
+   Görünüm: P6'dan beri Apple tarzı (docs/decisions/p6-apple-tarzi-panel.md);
+   ilk düzen panel-gorunum.md.
    Açık ve koyu tema sistem ayarından. #}
 <!DOCTYPE html>
 <html lang="tr">
@@ -13,22 +13,23 @@
         <style>
             :root {
                 color-scheme: light;
-                --zemin: #f5f6f8; --yuzey: #ffffff; --yuzey-2: #f0f2f5; --kenar: #e3e6eb;
-                --metin: #111827; --soluk: #6b7280; --vurgu: #2563eb; --vurgu-yazi: #ffffff;
-                --iyi: #15803d; --iyi-zemin: #dcfce7; --reklam: #a16207; --reklam-zemin: #fef3c7;
-                --tehlike: #dc2626; --tehlike-zemin: #fee2e2; --golge: 0 1px 2px #0000000d, 0 1px 3px #0000000a;
+                /* P6: panel/src/uygulama/stil.css ile aynı değerler (kural 7). */
+                --zemin: #f5f5f7; --yuzey: #ffffff; --yuzey-2: #f2f2f7; --kenar: #e5e5ea;
+                --metin: #1d1d1f; --soluk: #6e6e73; --vurgu: #0066cc; --vurgu-yazi: #ffffff;
+                --iyi: #1b7a3a; --iyi-zemin: #e3f4e8; --reklam: #9a5b00; --reklam-zemin: #fff1dc;
+                --tehlike: #c4312a; --tehlike-zemin: #fde7e6; --golge: 0 1px 2px #0000000d, 0 1px 3px #0000000a;
             }
             @media (prefers-color-scheme: dark) {
                 :root {
                     color-scheme: dark;
-                    --zemin: #0b0d12; --yuzey: #141821; --yuzey-2: #1b2030; --kenar: #262c3a;
-                    --metin: #e7e9ee; --soluk: #8b93a7; --vurgu: #5b8cff; --vurgu-yazi: #0b0d12;
-                    --iyi: #4ade80; --iyi-zemin: #14532d66; --reklam: #fbbf24; --reklam-zemin: #78350f55;
-                    --tehlike: #f87171; --tehlike-zemin: #7f1d1d55; --golge: none;
+                    --zemin: #000000; --yuzey: #1c1c1e; --yuzey-2: #2c2c2e; --kenar: #38383a;
+                    --metin: #f5f5f7; --soluk: #a1a1a6; --vurgu: #4c9dff; --vurgu-yazi: #000000;
+                    --iyi: #34c759; --iyi-zemin: #34c75926; --reklam: #ff9f0a; --reklam-zemin: #ff9f0a26;
+                    --tehlike: #ff6961; --tehlike-zemin: #ff696126; --golge: none;
                 }
             }
             * { box-sizing: border-box; }
-            body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: var(--zemin); color: var(--metin); -webkit-font-smoothing: antialiased; }
+            body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; margin: 0; background: var(--zemin); color: var(--metin); -webkit-font-smoothing: antialiased; }
             a { color: var(--vurgu); text-decoration: none; }
             a:hover { text-decoration: underline; }
             code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--yuzey-2); padding: 2px 6px; border-radius: 5px; overflow-wrap: anywhere; }
@@ -42,7 +43,7 @@
             .duzen { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
             .yan { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 4px; padding: 20px 12px; background: var(--yuzey); border-right: 1px solid var(--kenar); }
             .marka { display: flex; align-items: center; gap: 10px; padding: 4px 10px 20px; font-weight: 700; font-size: 15px; color: var(--metin); }
-            .marka-isaret { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #5b8cff, #22c55e); color: #fff; font-size: 15px; font-weight: 800; }
+            .marka-isaret { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--vurgu); color: var(--vurgu-yazi); }
             .yan a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--soluk); font-weight: 550; }
             .yan a:hover { background: var(--yuzey-2); color: var(--metin); text-decoration: none; }
             .yan a[aria-current=page] { background: var(--yuzey-2); color: var(--metin); }
@@ -134,11 +135,12 @@
 
             /* Giriş */
             .giris-sayfasi { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
-            form.giris { width: 100%; max-width: 360px; display: grid; gap: 14px; padding: 28px; background: var(--yuzey); border: 1px solid var(--kenar); border-radius: 16px; box-shadow: 0 10px 40px -12px #0003; }
+            form.giris { width: 100%; max-width: 380px; display: grid; gap: 16px; padding: 32px; background: var(--yuzey); border-radius: 18px; box-shadow: 0 12px 40px -16px #0002; }
+            form.giris h1 { font-size: 26px; letter-spacing: -.02em; }
             form.giris .marka { padding: 0 0 6px; }
             form.giris label { display: grid; gap: 6px; }
-            form.giris input { width: 100%; min-height: 40px; }
-            form.giris button { min-height: 42px; font-size: 14px; }
+            form.giris input { width: 100%; min-height: 44px; border-radius: 10px; background: var(--yuzey); border-color: var(--kenar); font-size: 15px; }
+            form.giris button { min-height: 44px; font-size: 15px; border-radius: 22px; }
         </style>
     </head>
     <body>

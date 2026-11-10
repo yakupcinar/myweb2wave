@@ -26,7 +26,7 @@ export function Anahtarlar(): ReactNode {
         <>
             <SayfaBasi
                 baslik="API anahtarları"
-                aciklama="Claude Code ya da Claude Desktop MCP ile bu anahtarla bağlanır; huniyi yalnız taslağa yazar."
+                aciklama="Claude (Code ya da Desktop) panele bu anahtarla bağlanır. Huniye yalnız taslak olarak yazar."
             />
             {app ? (
                 <AnahtarListesi app={app} />

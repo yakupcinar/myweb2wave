@@ -83,7 +83,7 @@ describe("Ürün bağlamı", () => {
         ).toBe(true);
         expect(
             screen
-                .getByRole("link", { name: "Ürün bağlamı" })
+                .getByRole("link", { name: "Ürün bağlamı (AI)" })
                 .getAttribute("aria-current"),
         ).toBe("page");
         expect(screen.getByText("15/1000")).toBeTruthy();

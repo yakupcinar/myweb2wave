@@ -71,8 +71,8 @@ export function Kullanicilar(): ReactNode {
     return (
         <>
             <SayfaBasi
-                baslik="Kullanıcılar"
-                aciklama="Abonelikler ve geldikleri kaynak — e-posta maskeli (tam adres Stripe'ta)"
+                baslik="Aboneler"
+                aciklama="Kimin aboneliği sürüyor, kim nereden geldi. Tam e-posta adresi yalnız Stripe'ta görünür."
             />
             <form
                 role="search"

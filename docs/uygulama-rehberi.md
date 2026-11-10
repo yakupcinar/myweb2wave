@@ -92,6 +92,13 @@ yapan her istek, sayfanın taşıdığı CSRF jetonunu ister; başka bir siteden
 her sayfanın doğrudan adresle açılabilmesi için sunucu rotası da
 [`PanelController`](../core/src/Controller/PanelController.php)'dadır (tuzak §51).
 
+**Görünüm (P6):** Apple tarzı — açık gri zemin, çerçevesiz beyaz kartlar, sistem yazı tipi, tek mavi vurgu, hap
+düğmeler; açık / koyu mod sistemden. Menü dört grupta: **Analiz** (Rapor, Deneyler) · **Satış** (Huniler, Planlar
+ve fiyatlar) · **Müşteriler** (Aboneler) · **Ayarlar** (Uygulama, Yasal metinler, Ürün bağlamı (AI), Webhook'lar, API
+anahtarları). Renkler [`stil.css`](../core/panel/src/uygulama/stil.css)'te ve giriş sayfası için
+[`base.html.twig`](../core/templates/base.html.twig)'de; iki kopyanın aynı olduğunu ve her metin renginin 4.5:1'i
+geçtiğini [`PanelRenkleriTest`](../core/tests/Panel/PanelRenkleriTest.php) ölçer.
+
 ### 2.1 Rapor — `/panel`
 
 **Ne işe yarar.** Panelin açılış sayfası; "reklamlarım para getiriyor mu?" sorusunu cevaplar. Huniye gelen
@@ -202,7 +209,7 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 [ai-a2 panel arka uç](decisions/ai-a2-panel-arka-uc.md) · [ai ekran görüntüsü](decisions/ai-ekran-goruntusu.md) ·
 [huni-arsiv](decisions/huni-arsiv.md)
 
-### 2.3 Kullanıcılar — `/panel/kullanicilar`
+### 2.3 Aboneler — `/panel/kullanicilar`
 
 **Ne işe yarar.** Abonelerin listesi (basit bir CRM): kim, hangi kaynaktan geldi, aboneliği ne durumda. Destek
 isteğinde "bu kişinin aboneliğini dönem sonunda iptal et" ya da "son ödemesini iade et" işlemleri buradan yapılır.
@@ -237,7 +244,7 @@ misiniz? Evet / Vazgeç"); Stripe'ın verdiği hata satırda görünür.
 
 **Kayıtlar:** [p5 kullanıcılar](decisions/p5-kullanicilar.md) · [m6a iptal ve iade](decisions/m6a-iptal-iade.md)
 
-### 2.4 Planlar — `/panel/planlar`
+### 2.4 Planlar ve fiyatlar — `/panel/planlar`
 
 **Ne işe yarar.** Paywall'un sattığı abonelik planlarının kataloğu (haftalık, aylık, yıllık…). Plan burada açılınca
 Stripe'ta ürün ve fiyat da oluşur; huni plana adıyla (`monthly`) bağlanır.
@@ -317,7 +324,7 @@ teslim günlüğüne bak, başarısız teslimi yeniden gönder.
 
 **Kayıtlar:** [m7a giden webhook](decisions/m7a-giden-webhook.md) · [m7b webhook paneli](decisions/m7b-webhook-paneli.md)
 
-### 2.7 Ürün bağlamı — `/panel/baglam`
+### 2.7 Ürün bağlamı (AI) — `/panel/baglam`
 
 **Ne işe yarar.** AI'a uygulamanı tanıtır: ürün ne yapıyor, kategori, hedef kitle, ton ve asla yazılmaması gerekenler.
 AI huni metinlerini bu bağlamla yazar; bağlam olmadan metinler belirgin şekilde genel ve kötü çıkar.
@@ -352,7 +359,7 @@ karakterleri; anahtarın kendisi saklanmaz), MCP adresi, yeni anahtar formu ve *
 
 **Kayıtlar:** [m7c1 okuma araçları](decisions/m7c1-okuma-araclari.md) · [m7c2 yazma araçları](decisions/m7c2-yazma-araclari.md)
 
-### 2.9 Ayarlar — `/panel/ayarlar`
+### 2.9 Uygulama — `/panel/ayarlar`
 
 **Ne işe yarar.** Uygulamanın kimliği: e-postalarda görünen ad, yanıtların gideceği destek adresi, giriş bağlantısının
 uygulamayı açtığı adres şeması ve App Store adresi.

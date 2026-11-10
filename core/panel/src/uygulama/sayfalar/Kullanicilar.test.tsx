@@ -202,7 +202,7 @@ describe("P5: Kullanıcılar", () => {
         await screen.findByText("3 abonelik");
         expect(
             screen
-                .getByRole("link", { name: "Kullanıcılar" })
+                .getByRole("link", { name: "Aboneler" })
                 .getAttribute("aria-current"),
         ).toBe("page");
         const a = within(

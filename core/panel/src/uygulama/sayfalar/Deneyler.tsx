@@ -101,7 +101,7 @@ function DeneyListesi({ app }: { app: string }): ReactNode {
         <>
             <SayfaBasi
                 baslik="Deneyler"
-                aciklama="Taslakta varyantları kurun; aktif olduktan sonra sonuçlar karışmasın diye kilitlenir."
+                aciklama="İki huniyi ya da iki metni karşılaştır. Başlayan deneyin varyantları sonuçlar karışmasın diye kilitlenir."
             />
             <Kart aria-label="Deneyler">
                 <KartBasi

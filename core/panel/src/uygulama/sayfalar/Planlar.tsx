@@ -82,8 +82,8 @@ export function Planlar(): ReactNode {
     return (
         <>
             <SayfaBasi
-                baslik="Planlar"
-                aciklama="Paywall'un sattığı abonelikler. Plan açınca Stripe'ta ürün ve fiyat oluşur."
+                baslik="Planlar ve fiyatlar"
+                aciklama="Paywall'da satılan abonelikler. Yeni plan Stripe'ta da açılır."
             />
             {app ? (
                 <>

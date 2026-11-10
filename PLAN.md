@@ -63,6 +63,7 @@
 | E-posta: Postmark + bastırma, aktivasyon, kurtarma (M8a1, M8a2, M8b) | ✅ core 671 → 690 test; kırma 11/11, 12/12, 18/18; Postmark test anahtarı ve Stripe kurtarma kopyası gerçek ölçüldü; hesap / cron yok (Ç123–125) | `docs/decisions/m8a1-postmark.md`, `m8a2-aktivasyon.md`, `m8b-kurtarma.md` |
 | Proje ayarları: kimlik, yasal metinler, huni bağlantısı, yeni huni görünümü (M9a, M9b1–2, M9c) | ✅ core 708 → 732 test; kırma 18/18, 14/14, 7/7, 13/13; hukuki gözden geçirme yok (Ç126) | `docs/decisions/m9a-uygulama-kimligi.md`, `m9b1-yasal-metinler.md`, `m9b2-yasal-baglantilar.md`, `m9c-yeni-huni-gorunumu.md` |
 | Uygulama rehberi (sayfa sayfa + mimari plan) | ✅ 243 bağlantı betikle denetlendi (dosya + satır) | `docs/uygulama-rehberi.md` |
+| Panel görünümü Apple tarzı (P6) | ✅ renk değişkenleri + gruplu menü + ortak bileşenler + giriş sayfası; okunabilirlik ve iki kopya testle (kırma 4/4); iç sayfalar tarayıcıda kullanıcıda | `docs/decisions/p6-apple-tarzi-panel.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)

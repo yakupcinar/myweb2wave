@@ -47,18 +47,18 @@ export function Rapor(): ReactNode {
         <>
             <SayfaBasi
                 baslik="Rapor"
-                aciklama={`Ziyaret, ödeme ve anket — son ${gun} gün`}
+                aciklama={`Ziyaretçilerin kaçı abone oldu ve ne kadar kazandırdı — son ${gun} gün.`}
             >
                 <nav
                     aria-label="Zaman aralığı"
-                    className="inline-flex gap-0.5 rounded-[10px] border border-kenar bg-yuzey-2 p-[3px]"
+                    className="inline-flex gap-0.5 rounded-[9px] bg-yuzey-2 p-[2px]"
                 >
                     {GUNLER.map((g) => (
                         <Link
                             key={g}
                             to={`/panel?gun=${g}`}
                             aria-current={g === gun ? "page" : undefined}
-                            className="rounded-[7px] px-3 py-1 text-[13px] whitespace-nowrap font-semibold text-soluk hover:text-metin aria-[current=page]:bg-yuzey aria-[current=page]:text-metin aria-[current=page]:shadow-xs"
+                            className="rounded-[7px] px-3 py-1 text-[13px] whitespace-nowrap text-metin hover:bg-yuzey/60 aria-[current=page]:bg-yuzey aria-[current=page]:font-semibold aria-[current=page]:shadow-sm"
                         >
                             Son {g} gün
                         </Link>

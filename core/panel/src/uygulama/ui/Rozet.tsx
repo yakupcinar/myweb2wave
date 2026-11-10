@@ -10,6 +10,7 @@ const rozetSinifi = cva(
                 notr: "bg-yuzey-2 text-soluk",
                 iyi: "bg-iyi-zemin text-iyi",
                 uyari: "bg-uyari-zemin text-uyari",
+                tehlike: "bg-tehlike-zemin text-tehlike",
             },
         },
         defaultVariants: { tur: "notr" },

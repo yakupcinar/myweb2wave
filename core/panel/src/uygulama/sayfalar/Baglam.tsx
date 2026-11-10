@@ -74,7 +74,7 @@ export function Baglam(): ReactNode {
         <>
             <SayfaBasi
                 baslik="Ürün bağlamı"
-                aciklama="AI asistanı huni metinlerini yazarken bunu okur. Boş alan gönderilmez."
+                aciklama="AI, huni metinlerini yazarken uygulamanı bu bilgilerle tanır. Boş alan gönderilmez."
             >
                 {uygulamalar.data && uygulamalar.data.length > 1 ? (
                     <select

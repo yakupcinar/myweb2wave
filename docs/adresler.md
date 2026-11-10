@@ -28,15 +28,15 @@ Sol menü sırasıyla:
 | `/panel/giris` | — | Yönetici girişi (kullanıcı adı + şifre) | Twig |
 | `/panel` | **Rapor** | Ziyaret, adım, ödeme, izin oranı | React |
 | `/panel/huniler` | **Huniler** | Uygulama başına huniler (Düzenle · Aç · Varsayılan yap · Sil/Arşivle), yeni huni, yönlendirme kuralları | React (P2) |
-| `/panel/kullanicilar` | **Kullanıcılar** | Abonelikler (CRM): durum, maskeli e-posta, kaynak/kampanya, kişi bağlantısı; arama + durum süzgeci | React (P5) |
+| `/panel/kullanicilar` | **Aboneler** | Abonelikler (CRM): durum, maskeli e-posta, kaynak/kampanya, kişi bağlantısı; arama + durum süzgeci | React (P5) |
 | `/panel/huniler/{app}/{ad}` | (Düzenle) | Sürükle-bırak düzenleyici: adımlar, tema/zemin/kart, Kaydet · Önizle · Yayınla · Sürümler, AI sohbeti | React + Puck, panel uygulamasının sayfası (P3) |
-| `/panel/planlar` | **Planlar** | Fiyat kataloğu: plan aç (Stripe'ta ürün + fiyat), fiyatı değiştir (yeni Stripe fiyatı; aboneler eskisinde) | React (M1a) |
+| `/panel/planlar` | **Planlar ve fiyatlar** | Fiyat kataloğu: plan aç (Stripe'ta ürün + fiyat), fiyatı değiştir (yeni Stripe fiyatı; aboneler eskisinde) | React (M1a) |
 | `/panel/deneyler` | **Deneyler** | Deney taslağı, varyantlar, başlat / durdur, sonuçlar | React (M4a) |
 | `/panel/webhooklar` | **Webhook'lar** | Giden webhook hedefleri: ekle, etkin/pasif, sil, teslim günlüğü | React (M7b) |
-| `/panel/baglam` | **Ürün bağlamı** | Uygulama başına ürün, kategori, kitle, ton, yasaklar (AI bunu okur) | React |
+| `/panel/baglam` | **Ürün bağlamı (AI)** | Uygulama başına ürün, kategori, kitle, ton, yasaklar (AI bunu okur) | React |
 | `/panel/anahtarlar` | **API anahtarları** | MCP için kişisel anahtar oluştur / iptal et | React |
 | `/panel/yasal` | **Yasal metinler** | Yasal veriler + 4 belge × 2 dil; kaydet = yayınla | React (M9b1) |
-| `/panel/ayarlar` | **Ayarlar** | Uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a) |
+| `/panel/ayarlar` | **Uygulama** | Uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a) |
 | `/panel/cikis` | **Çıkış** | | |
 
 Örnek: http://localhost:8081/panel/huniler/keepchat/genel

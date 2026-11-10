@@ -39,7 +39,7 @@ export function Huniler(): ReactNode {
         <>
             <SayfaBasi
                 baslik="Huniler"
-                aciklama="Huni sürümleri ve reklam adresinin hangi huniyi açacağı"
+                aciklama="Ziyaretçinin gördüğü anket ve ödeme sayfaları; reklam adresinin hangisini açacağı."
             />
             {uygulamalar.data ? (
                 <div className="grid gap-8">

@@ -69,8 +69,8 @@ export function Ayarlar(): ReactNode {
     return (
         <>
             <SayfaBasi
-                baslik="Ayarlar"
-                aciklama="Uygulamanın kimliği: e-postalarda ve giriş bağlantısında kullanılır."
+                baslik="Uygulama"
+                aciklama="Uygulamanın adı, destek adresi ve uygulamayı açan bağlantı."
             >
                 {uygulamalar.data && uygulamalar.data.length > 1 ? (
                     <select

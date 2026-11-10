@@ -9,10 +9,7 @@ export function Tablo({
     return (
         <div className="overflow-x-auto">
             <table
-                className={cn(
-                    "w-full border-collapse text-[13.5px]",
-                    className,
-                )}
+                className={cn("w-full border-collapse text-[14px]", className)}
                 {...oz}
             />
         </div>
@@ -23,7 +20,7 @@ export function Th({ className, ...oz }: ComponentProps<"th">): ReactNode {
     return (
         <th
             className={cn(
-                "border-b border-kenar bg-yuzey-2 px-3 py-2.5 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-soluk uppercase",
+                "border-b border-kenar px-4 py-3 text-left text-xs font-medium whitespace-nowrap text-soluk",
                 className,
             )}
             {...oz}
@@ -35,7 +32,7 @@ export function Td({ className, ...oz }: ComponentProps<"td">): ReactNode {
     return (
         <td
             className={cn(
-                "border-b border-kenar px-3 py-2.5 whitespace-nowrap [tr:last-child>&]:border-b-0",
+                "border-b border-kenar px-4 py-3 whitespace-nowrap [tr:last-child>&]:border-b-0",
                 className,
             )}
             {...oz}

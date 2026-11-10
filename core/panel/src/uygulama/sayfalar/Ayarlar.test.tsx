@@ -103,7 +103,7 @@ describe("Ayarlar", () => {
         ).toBe(true);
         expect(
             screen
-                .getByRole("link", { name: "Ayarlar" })
+                .getByRole("link", { name: "Uygulama" })
                 .getAttribute("aria-current"),
         ).toBe("page");
     });

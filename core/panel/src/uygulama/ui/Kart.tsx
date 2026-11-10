@@ -9,7 +9,7 @@ export function Kart({
     return (
         <section
             className={cn(
-                "min-w-0 rounded-xl border border-kenar bg-yuzey shadow-xs",
+                "min-w-0 rounded-[14px] bg-yuzey dark:border dark:border-kenar",
                 className,
             )}
             {...oz}
@@ -29,7 +29,7 @@ export function KartBasi({
     return (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-kenar px-4.5 py-4">
             <div>
-                <h2 className="text-[15px] font-semibold">{baslik}</h2>
+                <h2 className="text-[17px] font-semibold">{baslik}</h2>
                 {aciklama ? (
                     <p className="mt-0.5 text-[13px] text-soluk">{aciklama}</p>
                 ) : null}

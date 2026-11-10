@@ -226,17 +226,21 @@ function BelgeKarti({
     return (
         <Kart>
             <KartBasi baslik={secili.baslik}>
-                <div role="group" aria-label="Dil" className="flex gap-1.5">
+                <div
+                    role="group"
+                    aria-label="Dil"
+                    className="inline-flex gap-0.5 rounded-[9px] bg-yuzey-2 p-[2px]"
+                >
                     {diller.map((d) => (
-                        <Dugme
+                        <button
                             key={d.dil}
                             type="button"
                             aria-pressed={d.dil === dil}
-                            tur={d.dil === dil ? "ana" : "ikincil"}
                             onClick={() => setDil(d.dil)}
+                            className="rounded-[7px] px-3 py-1 text-[13px] whitespace-nowrap text-metin hover:bg-yuzey/60 aria-pressed:bg-yuzey aria-pressed:font-semibold aria-pressed:shadow-sm"
                         >
                             {DIL_ADI[d.dil]}
-                        </Dugme>
+                        </button>
                     ))}
                 </div>
             </KartBasi>

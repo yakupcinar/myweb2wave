@@ -5,11 +5,11 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "./cn";
 
 export const dugmeSinifi = cva(
-    "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vurgu disabled:cursor-not-allowed disabled:opacity-45",
+    "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vurgu disabled:cursor-not-allowed disabled:opacity-45",
     {
         variants: {
             tur: {
-                ana: "border-vurgu bg-vurgu text-vurgu-yazi hover:brightness-110",
+                ana: "border-vurgu bg-vurgu text-vurgu-yazi hover:brightness-110 active:brightness-95",
                 ikincil: "border-kenar bg-yuzey text-metin hover:bg-yuzey-2",
                 tehlike:
                     "border-kenar bg-yuzey text-tehlike hover:border-transparent hover:bg-tehlike-zemin",

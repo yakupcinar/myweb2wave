@@ -67,7 +67,7 @@ function HedefListesi({ app }: { app: string }): ReactNode {
         <>
             <SayfaBasi
                 baslik="Webhook'lar"
-                aciklama="Olaylar seçtiğiniz adrese imzalı POST edilir (Standard Webhooks); kişisel veri gitmez, teslim en az bir kez."
+                aciklama="Olaylar kendi sunucuna imzalı olarak gönderilir. Kişisel veri gönderilmez; aynı olay iki kez gelebilir."
             />
             {sir ? (
                 <div

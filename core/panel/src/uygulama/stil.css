@@ -1,6 +1,6 @@
 /* Panel uygulaması görünümü (B5): Tailwind + renk değişkenleri. Açık ve koyu
-   tema sistem ayarından; koyu web2wave'e yakın (panel-gorunum.md). Bileşenler
-   renkleri adlarıyla kullanır (bg-yuzey, text-soluk…), ham renk yazmaz. */
+   tema sistem ayarından; P6'dan beri Apple tarzı (panel-apple-tarzi.md).
+   Bileşenler renkleri adlarıyla kullanır (bg-yuzey, text-soluk…), ham renk yazmaz. */
 @import "tailwindcss";
 
 /* P3: düzenleyici sayfası bu sayfayı tanıyıp kapatır (useYalitim) — Puck
@@ -11,7 +11,9 @@
 }
 
 @theme {
-    --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+        sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     --color-zemin: var(--zemin);
     --color-seri-1: var(--seri-1);
@@ -33,20 +35,22 @@
 
 :root {
     color-scheme: light;
-    --zemin: #f5f6f8;
+    /* P6 (2026-11-10): Apple tarzı (kullanıcı onayı; panel-apple-tarzi.md). Her
+       metin rengi her zeminde ≥ 4.5:1 (WCAG AA) — hesapla ölçüldü. */
+    --zemin: #f5f5f7;
     --yuzey: #ffffff;
-    --yuzey-2: #f0f2f5;
-    --kenar: #e3e6eb;
-    --metin: #111827;
-    --soluk: #6b7280;
-    --vurgu: #2563eb;
+    --yuzey-2: #f2f2f7;
+    --kenar: #e5e5ea;
+    --metin: #1d1d1f;
+    --soluk: #6e6e73;
+    --vurgu: #0066cc;
     --vurgu-yazi: #ffffff;
-    --iyi: #15803d;
-    --iyi-zemin: #dcfce7;
-    --uyari: #a16207;
-    --uyari-zemin: #fef3c7;
-    --tehlike: #dc2626;
-    --tehlike-zemin: #fee2e2;
+    --iyi: #1b7a3a;
+    --iyi-zemin: #e3f4e8;
+    --uyari: #9a5b00;
+    --uyari-zemin: #fff1dc;
+    --tehlike: #c4312a;
+    --tehlike-zemin: #fde7e6;
     /* P4: grafik serileri (kategorik sıra 1–2, doğrulayıcıyla: yüzeye göre geçer) */
     --seri-1: #2a78d6;
     --seri-2: #eb6834;
@@ -54,20 +58,20 @@
 @media (prefers-color-scheme: dark) {
     :root {
         color-scheme: dark;
-        --zemin: #0b0d12;
-        --yuzey: #141821;
-        --yuzey-2: #1b2030;
-        --kenar: #262c3a;
-        --metin: #e7e9ee;
-        --soluk: #8b93a7;
-        --vurgu: #5b8cff;
-        --vurgu-yazi: #0b0d12;
-        --iyi: #4ade80;
-        --iyi-zemin: #14532d66;
-        --uyari: #fbbf24;
-        --uyari-zemin: #78350f55;
-        --tehlike: #f87171;
-        --tehlike-zemin: #7f1d1d55;
+        --zemin: #000000;
+        --yuzey: #1c1c1e;
+        --yuzey-2: #2c2c2e;
+        --kenar: #38383a;
+        --metin: #f5f5f7;
+        --soluk: #a1a1a6;
+        --vurgu: #4c9dff;
+        --vurgu-yazi: #000000;
+        --iyi: #34c759;
+        --iyi-zemin: #34c75926;
+        --uyari: #ff9f0a;
+        --uyari-zemin: #ff9f0a26;
+        --tehlike: #ff6961;
+        --tehlike-zemin: #ff696126;
         --seri-1: #3987e5;
         --seri-2: #d95926;
     }
@@ -75,6 +79,6 @@
 
 @layer base {
     body {
-        @apply bg-zemin text-metin text-sm antialiased;
+        @apply bg-zemin text-metin text-[14px] antialiased;
     }
 }
