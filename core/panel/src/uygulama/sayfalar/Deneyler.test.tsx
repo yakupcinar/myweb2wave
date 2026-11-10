@@ -174,6 +174,10 @@ describe("Deneyler", () => {
             calisan.getAllByRole("button").map((b) => b.textContent),
         ).toEqual(["Durdur", "Bitir"]);
         expect((await satir("biten")).queryAllByRole("button")).toHaveLength(0);
+        // P7-temel: durum Türkçe rozette (ham "aktif" / "bitti" değil).
+        expect((await satir("calisan")).getByText("Çalışıyor")).toBeTruthy();
+        expect((await satir("biten")).getByText("Bitti")).toBeTruthy();
+        expect((await satir("taslakta")).getByText("Taslak")).toBeTruthy();
     });
 
     it("Başlat jetonla PUT durum=aktif gönderir, liste yanıttan", async () => {

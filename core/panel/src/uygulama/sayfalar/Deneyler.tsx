@@ -6,11 +6,22 @@ import { api } from "../api";
 import { yuzde } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import type { components } from "../../sozlesme";
+import { alanSinifi, Satir } from "../ui/Alan";
+import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
+import { Rozet } from "../ui/Rozet";
 import { Tablo, Td, Th } from "../ui/Tablo";
 
 type Liste = components["schemas"]["PanelDeneyleri"];
 type Deney = Liste["deneyler"][number];
+
+// P7-temel: durum rozeti Türkçe (taslakta ham "durdu" yazıyordu).
+const DURUMLAR: Record<Deney["durum"], ["iyi" | "uyari" | "notr", string]> = {
+    taslak: ["notr", "Taslak"],
+    aktif: ["iyi", "Çalışıyor"],
+    durdu: ["uyari", "Durdu"],
+    bitti: ["notr", "Bitti"],
+};
 type Varyant = components["schemas"]["DeneyVaryanti"];
 
 export function Deneyler(): ReactNode {
@@ -109,155 +120,227 @@ function DeneyListesi({ app }: { app: string }): ReactNode {
                     aciklama="Yönlendirme trafiği hunilere böler, içerik ise koşullarda deney.ad olarak kullanılır."
                 />
                 {sorgu.isError ? (
-                    <p role="alert">Deneyler yüklenemedi.</p>
+                    <p role="alert" className="px-[18px] py-4 text-tehlike">
+                        Deneyler yüklenemedi.
+                    </p>
                 ) : null}
                 {sorgu.data?.deneyler.map((d) => (
+                    // Ad, durum ve düğmeler aynı kapta (testler satırı adın kabından bulur).
                     <div
                         key={d.ad}
-                        className="mb-3 rounded-lg border border-kenar p-3"
+                        className="border-t border-kenar px-[18px] py-4 first:border-t-0"
                     >
-                        <strong>{d.ad}</strong> · {d.tur} · {d.huni} · {d.durum}
-                        <br />
-                        <small>
-                            {d.varyantlar
-                                .map(
-                                    (v) =>
-                                        `${v.ad} %${v.pay}${v.huni ? ` → ${v.huni}` : ""}`,
-                                )
-                                .join(" · ")}
-                        </small>
-                        <div className="mt-2 flex gap-2">
-                            {d.durum === "taslak" ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void durum(d.ad, "aktif")}
-                                >
-                                    Başlat
-                                </button>
-                            ) : null}
-                            {d.durum === "aktif" ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void durum(d.ad, "durdu")}
-                                >
-                                    Durdur
-                                </button>
-                            ) : null}
-                            {d.durum === "durdu" ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void durum(d.ad, "aktif")}
-                                >
-                                    Sürdür
-                                </button>
-                            ) : null}
-                            {d.durum === "aktif" || d.durum === "durdu" ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void durum(d.ad, "bitti")}
-                                >
-                                    Bitir
-                                </button>
-                            ) : null}
-                        </div>
+                        <span className="flex flex-wrap items-center justify-between gap-3">
+                            <span className="grid gap-1">
+                                <span className="flex flex-wrap items-center gap-2">
+                                    <strong className="text-[15px] font-semibold">
+                                        {d.ad}
+                                    </strong>
+                                    <Rozet tur={DURUMLAR[d.durum][0]}>
+                                        {DURUMLAR[d.durum][1]}
+                                    </Rozet>
+                                </span>
+                                <span className="text-[13px] text-soluk">
+                                    {d.tur === "yonlendirme"
+                                        ? "Yönlendirme"
+                                        : "İçerik"}{" "}
+                                    · {d.huni} ·{" "}
+                                    {d.varyantlar
+                                        .map(
+                                            (v) =>
+                                                `${v.ad} %${v.pay}${v.huni ? ` → ${v.huni}` : ""}`,
+                                        )
+                                        .join(" · ")}
+                                </span>
+                            </span>
+                            <span className="inline-flex gap-2">
+                                {d.durum === "taslak" ? (
+                                    <Dugme
+                                        tur="ana"
+                                        className="min-h-8 px-3"
+                                        onClick={() =>
+                                            void durum(d.ad, "aktif")
+                                        }
+                                    >
+                                        Başlat
+                                    </Dugme>
+                                ) : null}
+                                {d.durum === "aktif" ? (
+                                    <Dugme
+                                        className="min-h-8 px-3 font-normal"
+                                        onClick={() =>
+                                            void durum(d.ad, "durdu")
+                                        }
+                                    >
+                                        Durdur
+                                    </Dugme>
+                                ) : null}
+                                {d.durum === "durdu" ? (
+                                    <Dugme
+                                        className="min-h-8 px-3 font-normal"
+                                        onClick={() =>
+                                            void durum(d.ad, "aktif")
+                                        }
+                                    >
+                                        Sürdür
+                                    </Dugme>
+                                ) : null}
+                                {d.durum === "aktif" || d.durum === "durdu" ? (
+                                    <Dugme
+                                        tur="tehlike"
+                                        className="min-h-8 px-3 font-normal"
+                                        onClick={() =>
+                                            void durum(d.ad, "bitti")
+                                        }
+                                    >
+                                        Bitir
+                                    </Dugme>
+                                ) : null}
+                            </span>
+                        </span>
                         {d.durum !== "taslak" ? (
                             <Sonuclar app={app} ad={d.ad} />
                         ) : null}
                     </div>
                 ))}
                 {!sorgu.isLoading && !sorgu.data?.deneyler.length ? (
-                    <p className="text-soluk">Henüz deney yok.</p>
+                    <p className="px-[18px] py-4 text-soluk">
+                        Henüz deney yok.
+                    </p>
                 ) : null}
-                {hata ? <p role="alert">{hata}</p> : null}
+                {hata ? (
+                    <p role="alert" className="px-[18px] pb-4 text-tehlike">
+                        {hata}
+                    </p>
+                ) : null}
             </Kart>
             <Kart className="mt-5" aria-label="Yeni deney">
                 <KartBasi baslik="Yeni deney" />
-                <form
-                    aria-label="Yeni deney"
-                    className="grid gap-3"
-                    onSubmit={(e) => void kaydet(e)}
-                >
-                    <label>
-                        Deney adı
-                        <input
-                            required
-                            value={yeni.ad}
-                            onChange={(e) =>
-                                setYeni({ ...yeni, ad: e.target.value })
-                            }
-                        />
-                    </label>
-                    <label>
-                        Tür
-                        <select
-                            value={yeni.tur}
-                            onChange={(e) =>
-                                setYeni({
-                                    ...yeni,
-                                    tur: e.target.value as Deney["tur"],
-                                })
-                            }
-                        >
-                            <option value="icerik">İçerik</option>
-                            <option value="yonlendirme">Yönlendirme</option>
-                        </select>
-                    </label>
-                    <label>
-                        {yeni.tur === "yonlendirme" ? "Kontrol hunisi" : "Huni"}
-                        <input
-                            required
-                            value={yeni.huni}
-                            onChange={(e) =>
-                                setYeni({ ...yeni, huni: e.target.value })
-                            }
-                        />
-                    </label>
-                    <label>
-                        Kontrol varyantı
-                        <input
-                            required
-                            value={yeni.a}
-                            onChange={(e) =>
-                                setYeni({ ...yeni, a: e.target.value })
-                            }
-                        />
-                    </label>
-                    <label>
-                        Kontrol payı (%)
-                        <input
-                            required
-                            type="number"
-                            min="1"
-                            max="99"
-                            value={yeni.oran}
-                            onChange={(e) =>
-                                setYeni({ ...yeni, oran: e.target.value })
-                            }
-                        />
-                    </label>
-                    <label>
-                        Varyant
-                        <input
-                            required
-                            value={yeni.b}
-                            onChange={(e) =>
-                                setYeni({ ...yeni, b: e.target.value })
-                            }
-                        />
-                    </label>
-                    {yeni.tur === "yonlendirme" ? (
-                        <label>
-                            Varyant hunisi
+                <form aria-label="Yeni deney" onSubmit={(e) => void kaydet(e)}>
+                    <Satir
+                        etiket="Deney adı"
+                        yardim="Koşullarda deney.ad olarak geçer; sonradan değişmez."
+                    >
+                        {(id) => (
                             <input
+                                id={id}
                                 required
-                                value={yeni.hedef}
+                                className={alanSinifi}
+                                value={yeni.ad}
                                 onChange={(e) =>
-                                    setYeni({ ...yeni, hedef: e.target.value })
+                                    setYeni({ ...yeni, ad: e.target.value })
                                 }
                             />
-                        </label>
+                        )}
+                    </Satir>
+                    <Satir
+                        etiket="Tür"
+                        yardim="İçerik: aynı hunide metin ya da blok farkı. Yönlendirme: trafiği iki huniye böler."
+                    >
+                        {(id) => (
+                            <select
+                                id={id}
+                                className={alanSinifi}
+                                value={yeni.tur}
+                                onChange={(e) =>
+                                    setYeni({
+                                        ...yeni,
+                                        tur: e.target.value as Deney["tur"],
+                                    })
+                                }
+                            >
+                                <option value="icerik">İçerik</option>
+                                <option value="yonlendirme">Yönlendirme</option>
+                            </select>
+                        )}
+                    </Satir>
+                    <Satir
+                        etiket={
+                            yeni.tur === "yonlendirme"
+                                ? "Kontrol hunisi"
+                                : "Huni"
+                        }
+                    >
+                        {(id) => (
+                            <input
+                                id={id}
+                                required
+                                className={alanSinifi}
+                                value={yeni.huni}
+                                onChange={(e) =>
+                                    setYeni({ ...yeni, huni: e.target.value })
+                                }
+                            />
+                        )}
+                    </Satir>
+                    <Satir etiket="Kontrol varyantı">
+                        {(id) => (
+                            <input
+                                id={id}
+                                required
+                                className={alanSinifi}
+                                value={yeni.a}
+                                onChange={(e) =>
+                                    setYeni({ ...yeni, a: e.target.value })
+                                }
+                            />
+                        )}
+                    </Satir>
+                    <Satir
+                        etiket="Kontrol payı (%)"
+                        yardim="Kalan pay varyanta gider."
+                    >
+                        {(id) => (
+                            <input
+                                id={id}
+                                required
+                                type="number"
+                                min="1"
+                                max="99"
+                                className={alanSinifi}
+                                value={yeni.oran}
+                                onChange={(e) =>
+                                    setYeni({ ...yeni, oran: e.target.value })
+                                }
+                            />
+                        )}
+                    </Satir>
+                    <Satir etiket="Varyant">
+                        {(id) => (
+                            <input
+                                id={id}
+                                required
+                                className={alanSinifi}
+                                value={yeni.b}
+                                onChange={(e) =>
+                                    setYeni({ ...yeni, b: e.target.value })
+                                }
+                            />
+                        )}
+                    </Satir>
+                    {yeni.tur === "yonlendirme" ? (
+                        <Satir etiket="Varyant hunisi">
+                            {(id) => (
+                                <input
+                                    id={id}
+                                    required
+                                    className={alanSinifi}
+                                    value={yeni.hedef}
+                                    onChange={(e) =>
+                                        setYeni({
+                                            ...yeni,
+                                            hedef: e.target.value,
+                                        })
+                                    }
+                                />
+                            )}
+                        </Satir>
                     ) : null}
-                    <button type="submit">Taslağı kaydet</button>
+                    <div className="flex justify-end border-t border-kenar px-[18px] py-3.5">
+                        <Dugme tur="ana" type="submit">
+                            Taslağı kaydet
+                        </Dugme>
+                    </div>
                 </form>
             </Kart>
         </>

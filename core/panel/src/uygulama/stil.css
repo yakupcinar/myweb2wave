@@ -86,6 +86,8 @@
 
 @layer base {
     body {
-        @apply bg-zemin text-metin text-[14px] antialiased;
+        /* P7-temel: satır yüksekliği taslaktaki gibi "normal" (≈1.2); Tailwind'in
+           1.5'i her öğeyi gevşetiyordu (ölçüm: p7-taslak-farki.md). */
+        @apply bg-zemin text-metin text-[14px] leading-[normal] antialiased;
     }
 }

@@ -67,6 +67,7 @@
 | Panel taslakla bire bir — kabuk + Aboneler (P7a) | ✅ tema seçici (açık varsayılan), Aboneler taslaktaki gibi, son fatura tarihi API'de; kırma 15/15, tarayıcıda açık/koyu + onay satırı | `docs/decisions/p7a-aboneler.md` |
 | Büyüyen tablolar sayfalı (P7a2) | ✅ 25'er satır, sunucuda; Aboneler sıralaması sunucuda, Rapor'un üç listesi ayrı uçta; kırma 12/12, tarayıcıda 116 ziyaret sayfalandı | `docs/decisions/p7a2-sayfalama.md` |
 | Panel ↔ taslak farkı ölçüldü (P7) | 🟡 yığın engel değil; fark satır yüksekliği + stilsiz form öğeleri + taşınmamış sayfa yapıları. Sıra: P7-temel (satır yüksekliği, ortak form alanları, Deneyler) → P7b Rapor → P7c Uygulama → P7d Entegrasyonlar (A25) → kalan sayfalar | `docs/decisions/p7-taslak-farki.md` |
+| P7-temel: satır yüksekliği + ortak form + Deneyler | ✅ taslakla aynı satır yüksekliği, `ui/Alan` (satır düzeni), Deneyler listesi ve formu; kırma 3/3 | `docs/decisions/p7-temel.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)
