@@ -63,6 +63,31 @@ final class HuniTest extends WebTestCase
         self::assertSame(['sartlar', 'cerez'], array_keys((array) ($this->jsonYanit()['yasal'] ?? [])));
     }
 
+    /**
+     * M9d2: İngilizce huni İngilizce yasal sayfalara bağlanır (yayında olanlara);
+     * önizleme de. Desteklenmeyen dil kaydedilmez.
+     */
+    public function testIngilizceHuniIngilizceYasalSayfalar(): void
+    {
+        self::assertSame([], $this->huniler->taslakKaydet('keepchat', 'genel', ['dil' => 'en'] + self::tanim('Main')));
+        self::assertSame(1, $this->huniler->yayinla('keepchat', 'genel'));
+        $this->db->executeStatement("INSERT INTO yasal_metinler (app, belge, dil, metin) VALUES
+            ('keepchat', 'sartlar', 'tr', 'x'), ('keepchat', 'gizlilik', 'en', 'x')");
+
+        $this->client->request('GET', '/huni/keepchat');
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        $yanit = $this->jsonYanit();
+        $tanim = $yanit['tanim'] ?? null;
+        self::assertIsArray($tanim);
+        self::assertSame('en', $tanim['dil'] ?? null);
+        self::assertSame(['gizlilik' => 'http://localhost/yasal/keepchat/gizlilik/en'], $yanit['yasal'] ?? null);
+        $anahtar = $this->huniler->onizlemeAnahtari('keepchat', 'genel', time());
+        $this->client->request('GET', '/huni/keepchat/taslak', ['huni' => 'genel', 'anahtar' => $anahtar]);
+        self::assertSame(['gizlilik'], array_keys((array) ($this->jsonYanit()['yasal'] ?? [])));
+
+        self::assertSame(['dil tr ya da en olmalı'], $this->huniler->taslakKaydet('keepchat', 'genel', ['dil' => 'de'] + self::tanim('Main')));
+    }
+
     /** Ç41: ziyaretsiz huni iz bırakmadan silinir (sürümleri ve kuralları da). */
     public function testZiyaretsizHuniSilinir(): void
     {

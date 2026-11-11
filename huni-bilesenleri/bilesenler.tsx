@@ -3,6 +3,7 @@
 // Etkileşim alanları (on…, kapali, hata) isteğe bağlı: Puck geçmez. Metinler yalnız JSX metni —
 // tanım HTML taşıyamaz (D1); ham HTML basan React özniteliği bin/kontrol'de
 // yasak (html-yok adımı; adı burada yazılsa adım kendini yakalar).
+import { METINLER, useMetinler, type Metinler } from "./metinler";
 import {
     createContext,
     useContext,
@@ -220,6 +221,7 @@ function Yanit({
     duzen?: "liste" | "izgara" | undefined;
     medyaKoku: string;
 } & YanitEtkilesimi): ReactNode {
+    const m = useMetinler();
     // V5: 1–5 katılma ölçeği — tek dokunuş geçer (tekli gibi); uç etiketleri altta.
     if (secimTuru === "olcek")
         return (
@@ -252,10 +254,11 @@ function Yanit({
         return (
             <>
                 <label className="serbest-yanit">
-                    E-posta adresiniz{yanitZorunlu ? "" : " (isteğe bağlı)"}
+                    {m.epostaAdresiniz}
+                    {yanitZorunlu ? "" : m.istegeBagli}
                     <input
                         type="email"
-                        aria-label="E-posta adresiniz"
+                        aria-label={m.epostaAdresiniz}
                         autoComplete="email"
                         inputMode="email"
                         required={yanitZorunlu}
@@ -284,9 +287,10 @@ function Yanit({
         );
     return secimTuru === "metin" ? (
         <label className="serbest-yanit">
-            Yanıtınız{yanitZorunlu ? "" : " (isteğe bağlı)"}
+            {m.yanitiniz}
+            {yanitZorunlu ? "" : m.istegeBagli}
             <textarea
-                aria-label="Yanıtınız"
+                aria-label={m.yanitiniz}
                 required={yanitZorunlu}
                 maxLength={500}
                 rows={4}
@@ -337,25 +341,28 @@ function Yanit({
 
 /** M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar (çekirdek GUVENCELER ile aynı). */
 const GUVENCELER = {
-    "guvenli-odeme": ["🔒", "Güvenli ödeme · Stripe"],
-    "kart-saklanmaz": ["💳", "Kart bilgin bizde saklanmaz"],
+    "guvenli-odeme": ["🔒", "guvenliOdeme"],
+    "kart-saklanmaz": ["💳", "kartSaklanmaz"],
 } as const;
 
 /** M2b: kalan süre "2 gün 03:12:45" ya da "03:12:45"; ms ≤ 0 → null. */
-export function kalanSure(ms: number): string | null {
+export function kalanSure(
+    ms: number,
+    m: Metinler = METINLER.tr,
+): string | null {
     if (ms <= 0) return null;
     const sn = Math.floor(ms / 1000);
     const gun = Math.floor(sn / 86400);
     const iki = (n: number) => String(n).padStart(2, "0");
     const saat = `${iki(Math.floor((sn % 86400) / 3600))}:${iki(Math.floor((sn % 3600) / 60))}:${iki(sn % 60)}`;
-    return gun ? `${gun} gün ${saat}` : saat;
+    return gun ? `${m.kalanGun(gun)} ${saat}` : saat;
 }
 
 /** Ç61 (3): yasal bağlantı adları sabit; adresi çekirdek yalnız https ise kabul eder. */
 const YASAL = [
-    ["sartlar", "Kullanım şartları"],
-    ["gizlilik", "Gizlilik politikası"],
-    ["iptal", "İptal ve iade"],
+    ["sartlar", "kullanimSartlari"],
+    ["gizlilik", "gizlilikPolitikasi"],
+    ["iptal", "iptalIade"],
 ] as const;
 
 export function Paywall({
@@ -417,6 +424,7 @@ export function Paywall({
     kapali?: boolean;
     hata?: string;
 } & Tiklama): ReactNode {
+    const m = useMetinler();
     const adresler = { sartlar, gizlilik, iptal };
     const baglantilar = YASAL.filter(([alan]) => adresler[alan]);
     return (
@@ -432,7 +440,7 @@ export function Paywall({
             ) : null}
             {kalan ? (
                 <p className="sayac" role="timer">
-                    Teklifin bitmesine <strong>{kalan}</strong>
+                    {m.teklifBitmesine} <strong>{kalan}</strong>
                 </p>
             ) : null}
             {planlar.length > 1 ? (
@@ -459,7 +467,7 @@ export function Paywall({
                                 ) : null}
                             </span>
                             {p.onerilen ? (
-                                <span className="onerilen">Önerilen</span>
+                                <span className="onerilen">{m.onerilen}</span>
                             ) : null}
                         </button>
                     ))}
@@ -488,9 +496,9 @@ export function Paywall({
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                Kullanım şartlarını
+                                {m.sartlariniBaglanti}
                             </a>{" "}
-                            ve abonelik koşulunu okudum, kabul ediyorum.
+                            {m.sartlarOnay}
                         </span>
                     </label>
                 ) : null}
@@ -515,7 +523,7 @@ export function Paywall({
                                     <span aria-hidden="true">
                                         {GUVENCELER[g][0]}
                                     </span>{" "}
-                                    {GUVENCELER[g][1]}
+                                    {m[GUVENCELER[g][1]]}
                                 </li>
                             ))}
                     </ul>
@@ -531,7 +539,7 @@ export function Paywall({
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                {ad}
+                                {m[ad]}
                             </a>
                         </span>
                     ))}
@@ -645,6 +653,7 @@ export function Blok({
     /** T1b: soru bloğunun durumu ve olayları (oynatıcıdan; Puck geçmez). */
     yanit?: YanitEtkilesimi | undefined;
 }): ReactNode {
+    const m = useMetinler();
     switch (blok.tur) {
         case "soru":
             return (
@@ -690,7 +699,7 @@ export function Blok({
                         <p
                             className="yildizlar"
                             role="img"
-                            aria-label={`5 üzerinden ${blok.puan} puan`}
+                            aria-label={m.puan(blok.puan)}
                         >
                             {"★".repeat(blok.puan) + "☆".repeat(5 - blok.puan)}
                         </p>

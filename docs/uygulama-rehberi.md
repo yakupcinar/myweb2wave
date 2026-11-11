@@ -192,13 +192,16 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
    numarasıyla dondurulur. Sorular için ayrı tablo yoktur. Servis [`Huniler`](../core/src/Huni/Huniler.php):
    [`taslakKaydet`](../core/src/Huni/Huniler.php#L225), [`yayinla`](../core/src/Huni/Huniler.php#L259),
    [`surumuTaslagaAl`](../core/src/Huni/Huniler.php#L316).
-2. **Bekçi.** Kaydedilen her tanım [`Tanim::hatalar`](../core/src/Huni/Tanim.php#L150)'dan geçer: sözleşmedeki
+2. **Bekçi.** Kaydedilen her tanım [`Tanim::hatalar`](../core/src/Huni/Tanim.php#L151)'dan geçer: sözleşmedeki
    `HuniTanimi` biçimi, var olan plan adları, metinlerde HTML yasak. Hatalı tanım kaydedilmez, yayınlanmaz.
 3. **Eşzamanlı kayıt.** İki sekmede aynı taslak düzenlenirse eski sekmenin kaydı reddedilir (beklenen imza tutmaz) —
    biri ötekinin işini sessizce ezemez.
 4. **Düzenleyici ↔ tanım.** Puck kendi blok ağacını tutar; [`donustur.ts`](../core/panel/src/donustur.ts) bunu tanıma ve
    geri kayıpsız çevirir. Puck'taki önizleme, huninin kendi bileşenlerini ([`bilesenler.tsx`](../huni-bilesenleri/bilesenler.tsx))
    kullanır; önizleme ile ziyaretçinin gördüğü aynıdır.
+   **Dil (M9d2a):** kök alanındaki "Dil" (Türkçe / English) oynatıcının sabit metinlerini
+   ([`metinler.ts`](../huni-bilesenleri/metinler.ts)), fiyat cümlesini, `<html lang>`'ı ve yasal bağlantıların dilini
+   seçer; adımların metnini yazar o dilde yazar ([m9d2a](decisions/m9d2a-huni-dili.md)).
 5. **Seçim.** Ziyaretçi geldiğinde [`Huniler::sec`](../core/src/Huni/Huniler.php#L54) kuralları sırayla dener, tutan
    yoksa varsayılan huniyi seçer; yönlendirme deneyi varsa trafiği varyantlara böler (2.5).
 6. **AI.** [`HuniAsistani::calistir`](../core/src/Ai/HuniAsistani.php#L71) Claude'u araçlarla çalıştırır: taslağı okur, düzeltir,

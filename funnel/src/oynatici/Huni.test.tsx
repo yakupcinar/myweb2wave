@@ -168,6 +168,10 @@ afterEach(() => {
 });
 
 describe("D15 · D4 — yükleniyor ve açılamadı", () => {
+  // M9d2: tanım gelmeden dil tarayıcıdan; bu metinler Türkçe tarayıcıda.
+  beforeEach(() => {
+    vi.spyOn(navigator, "language", "get").mockReturnValue("tr-TR");
+  });
   it("tanım gelene kadar Yükleniyor…, sonra kalkar", async () => {
     kur();
     expect(screen.getByText("Yükleniyor…")).toBeTruthy();
@@ -190,6 +194,78 @@ describe("D15 · D4 — yükleniyor ve açılamadı", () => {
     await screen.findByText(
       "Önizleme açılamadı: bağlantının süresi dolmuş olabilir.",
     );
+  });
+});
+
+describe("M9d2 — huninin dili", () => {
+  it("tanım gelmeden tarayıcının dili; ?dil= önce", async () => {
+    vi.spyOn(navigator, "language", "get").mockReturnValue("en-GB");
+    tanim = { durum: 404 };
+    kur();
+    expect(screen.getByText("Loading…")).toBeTruthy();
+    await screen.findByText("The page couldn't load. Please refresh.");
+    cleanup();
+    kur("?dil=tr");
+    await screen.findByText("Sayfa yüklenemedi. Lütfen yenileyin.");
+  });
+
+  it("İngilizce huni: sayfa dili, izin şeridi, geri, plan ve fiyat İngilizce; Türkçe huni tr", async () => {
+    const temel = yayin({ dil: "en" });
+    const adimlar = temel.tanim.adimlar.map((a) =>
+      a.tur === "paywall"
+        ? { ...a, planlar: ["yearly", "monthly"], onerilen: "yearly" }
+        : a,
+    );
+    tanim = {
+      durum: 200,
+      govde: {
+        ...temel,
+        tanim: { ...temel.tanim, adimlar },
+        fiyatlar: {
+          monthly: {
+            tutar: 9.99,
+            paraBirimi: "EUR",
+            aralik: "month",
+            ad: "Monthly",
+            teklif: { tur: "deneme", gun: 7 },
+          },
+          yearly: {
+            tutar: 59.99,
+            paraBirimi: "EUR",
+            aralik: "year",
+            ad: "Yearly",
+          },
+        },
+      },
+    };
+    kur();
+    await yuklendi();
+    expect(document.documentElement.lang).toBe("en");
+    expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Decline" })).toBeTruthy();
+    fireEvent.click(screen.getByText("Başla"));
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+    fireEvent.click(screen.getByText("Ailemle"));
+    const kart = (plan: string) =>
+      document.querySelector<HTMLButtonElement>(
+        `[data-adim="paywall"] [role="radio"][data-plan="${plan}"]`,
+      )!;
+    await waitFor(() => expect(kart("yearly")).toBeTruthy());
+    expect(kart("yearly").textContent).toContain("Recommended");
+    expect(kart("monthly").textContent).toContain(
+      "7\u00a0days free, then\u00a0€9.99\u00a0/\u00a0month",
+    );
+    fireEvent.click(kart("monthly"));
+    expect(
+      document.querySelector('[data-adim="paywall"] p.kosul')?.textContent,
+    ).toBe(
+      "Nothing to pay today. First payment in 7\u00a0days; the subscription renews every\u00a0month at €9.99.",
+    );
+    cleanup();
+    tanim = { durum: 200, govde: yayin() };
+    kur();
+    await yuklendi();
+    expect(document.documentElement.lang).toBe("tr");
   });
 });
 

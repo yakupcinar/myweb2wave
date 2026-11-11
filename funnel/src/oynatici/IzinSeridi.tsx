@@ -2,6 +2,7 @@
 // eşit ağırlıkta (reddetmek kabul etmek kadar kolay). Sayfanın üstünde
 // akışta durur — alttan sabit bir şerit küçük ekranda adım düğmelerini
 // örterdi. Metin hukuken doğrulanmadı (Ç12).
+import { useMetinler } from "../../../huni-bilesenleri/metinler";
 import type { ReactNode } from "react";
 import type { Izin } from "../lib/izin";
 
@@ -19,25 +20,21 @@ export default function IzinSeridi({
   cerez?: string | undefined;
   gizlilik?: string | undefined;
 }): ReactNode {
+  const m = useMetinler();
   return (
-    <aside className="izin-seridi" aria-label="Reklam ölçümü izni">
-      <p>
-        Reklamlarımızın işe yarayıp yaramadığını ölçmek için Meta ve TikTok'un
-        ölçüm araçlarını kullanmak istiyoruz. İzin verirsen hangi reklamdan
-        geldiğin ve abone olursan bu satın alma onlarla paylaşılır. İzin
-        vermesen de her şey aynı çalışır.
-      </p>
+    <aside className="izin-seridi" aria-label={m.izinSeridi}>
+      <p>{m.izinMetni}</p>
       {cerez || gizlilik ? (
         <p className="izin-baglantilari">
           {cerez ? (
             <a href={cerez} target="_blank" rel="noopener noreferrer">
-              Çerez ve izleme bildirimi
+              {m.cerezBildirimi}
             </a>
           ) : null}
           {cerez && gizlilik ? " · " : null}
           {gizlilik ? (
             <a href={gizlilik} target="_blank" rel="noopener noreferrer">
-              Gizlilik politikası
+              {m.gizlilikPolitikasi}
             </a>
           ) : null}
         </p>
@@ -49,13 +46,13 @@ export default function IzinSeridi({
           disabled={bekliyor}
           onClick={() => onSec("hayir")}
         >
-          Reddet
+          {m.reddet}
         </button>
         <button type="button" disabled={bekliyor} onClick={() => onSec("evet")}>
-          Kabul et
+          {m.kabulEt}
         </button>
       </div>
-      {bekliyor ? <p role="status">Tercihiniz kaydediliyor…</p> : null}
+      {bekliyor ? <p role="status">{m.tercihKaydediliyor}</p> : null}
     </aside>
   );
 }

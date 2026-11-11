@@ -1501,6 +1501,11 @@ export interface components {
         /** @description Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok) */
         HuniTanimi: {
             sayfaBasligi: string;
+            /**
+             * @description M9d2: huninin dili (yoksa tr) — oynatıcının sabit metinleri, sayfa dili, yasal bağlantılar; huninin kendi metinleri yazarın
+             * @enum {string}
+             */
+            dil?: "tr" | "en";
             tema?: components["schemas"]["HuniTemasi"];
             /** @description Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız) */
             logo?: components["schemas"]["GorselKimligi"];

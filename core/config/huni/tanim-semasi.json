@@ -247,6 +247,14 @@
                     "minLength": 1,
                     "maxLength": 120
                 },
+                "dil": {
+                    "description": "M9d2: huninin dili (yoksa tr) — oynatıcının sabit metinleri, sayfa dili, yasal bağlantılar; huninin kendi metinleri yazarın",
+                    "type": "string",
+                    "enum": [
+                        "tr",
+                        "en"
+                    ]
+                },
                 "tema": {
                     "$ref": "#/$defs/HuniTemasi"
                 },

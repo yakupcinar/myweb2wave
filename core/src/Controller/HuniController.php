@@ -23,7 +23,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  */
 final readonly class HuniController
 {
-    /** Huni metinlerinin dili (sayfa lang="tr"); yasal adresler bu dilde. */
+    /** Huni tanımında dil yoksa (M9d2); yasal adresler huninin dilinde. */
     private const DIL = 'tr';
 
     /** Yayın en geç bu kadar sonra görünür (tarayıcı/CDN önbelleği). */
@@ -82,7 +82,7 @@ final readonly class HuniController
             }
             $atama += $this->deneyler->icerik($app, $huni, $tohum);
         }
-        $yanit = new JsonResponse(['huni' => $huni] + $yayin + ([] === $atama ? [] : ['deneyler' => $atama]) + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']) + $this->yasalAlani($app));
+        $yanit = new JsonResponse(['huni' => $huni] + $yayin + ([] === $atama ? [] : ['deneyler' => $atama]) + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $yayin['tanim']) + $this->yasalAlani($app, self::dilOku($yayin['tanim'])));
         // M1c: fiyat ziyaretçinin ülkesine (IP) göre — ortak önbellek (CDN) bir
         // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
         $yanit->setPrivate();
@@ -91,6 +91,16 @@ final readonly class HuniController
         $yanit->setVary('Accept-Language');
 
         return $yanit;
+    }
+
+    /**
+     * M9d2: huninin dili (tanımda; Tanim doğruladı), yoksa tr.
+     *
+     * @param array<mixed> $tanim
+     */
+    private static function dilOku(array $tanim): string
+    {
+        return \is_string($tanim['dil'] ?? null) ? $tanim['dil'] : self::DIL;
     }
 
     /** M9d1: ziyaretçinin dili — ?dil= (test, dil değiştirici), yoksa Accept-Language'in ilki; iki harf. */
@@ -108,15 +118,15 @@ final readonly class HuniController
     /**
      * M9b2 (A23): yalnız YAYINDAKİ (kaydedilmiş) yasal sayfaların adresi — paywall
      * adımında adres yoksa ve izin şeridinde kullanılır. Dil şimdilik huninin
-     * dili (tr); dile göre seçim M9d / M11.
+     * dili (M9d2: tanımdaki dil, yoksa tr).
      *
      * @return array{yasal?: non-empty-array<string, string>}
      */
-    private function yasalAlani(string $app): array
+    private function yasalAlani(string $app, string $dil): array
     {
         $adresler = [];
-        foreach ($this->yasal->yayindakiler($app, self::DIL) as $belge) {
-            $adresler[$belge] = $this->adresler->generate('yasal_sayfa', ['app' => $app, 'belge' => $belge, 'dil' => self::DIL], UrlGeneratorInterface::ABSOLUTE_URL);
+        foreach ($this->yasal->yayindakiler($app, $dil) as $belge) {
+            $adresler[$belge] = $this->adresler->generate('yasal_sayfa', ['app' => $app, 'belge' => $belge, 'dil' => $dil], UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
         return [] === $adresler ? [] : ['yasal' => $adresler];
@@ -162,7 +172,7 @@ final readonly class HuniController
         if (null === $sonuc) {
             return new JsonResponse(['error' => 'forbidden'], 403);
         }
-        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $sonuc['tanim']) + $this->yasalAlani($app));
+        $yanit = new JsonResponse(['huni' => $ad] + $sonuc + $this->fiyatAlani($app, $request) + $this->ekUrunAlani($app, $sonuc['tanim']) + $this->yasalAlani($app, self::dilOku($sonuc['tanim'])));
         $yanit->headers->set('Cache-Control', 'no-store');
 
         return $yanit;

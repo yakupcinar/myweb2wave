@@ -94,6 +94,16 @@ describe("tanım ↔ Puck (kayıpsız)", () => {
         expect(puckTanim(tanimdanPuck(temel, VARSAYILAN))).toStrictEqual(temel);
     });
 
+    it("M9d2: İngilizce huni gidiş-dönüş; Türkçe (varsayılan) tanıma yazılmaz", () => {
+        const ingilizce = { ...temel, dil: "en" as const };
+        expect(puckTanim(tanimdanPuck(ingilizce, VARSAYILAN))).toStrictEqual(
+            ingilizce,
+        );
+        const puck = tanimdanPuck(temel, VARSAYILAN);
+        expect(puck.root.props?.dil).toBe("tr");
+        expect("dil" in puckTanim(puck)).toBe(false);
+    });
+
     it("M2a: plan seçici ve önerilen gidiş-dönüş (sıra korunur); tek dolu plan seçici sayılmaz, önerilen de düşer", () => {
         const secici: Tanim = {
             ...temel,

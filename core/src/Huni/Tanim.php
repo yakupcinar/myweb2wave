@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Huni;
 
 use App\Ozellik\Ozellikler;
+use App\Yasal\Taslaklar;
 
 /**
  * Huni tanımının biçimi (A7) — yayından ÖNCE burada doğrulanır; huni
@@ -152,11 +153,16 @@ final class Tanim
         // tema isteğe bağlı (E2.2): yoksa huni sayfası varsayılanı kullanır.
         // logo isteğe bağlı (Ç61 (5)): temadan bağımsız, görsel kimliği.
         // M3b: sonrasi isteğe bağlı — ödeme sonrası ekran (adım değil).
-        $istege = \is_array($tanim) ? array_values(array_intersect(['tema', 'logo', 'sonrasi'], array_map(strval(...), array_keys($tanim)))) : [];
+        // M9d2: dil isteğe bağlı (yoksa tr) — oynatıcının sabit metinleri, sayfa
+        // dili ve yasal bağlantılar bu dilde; diller yasal metinlerinkiyle aynı.
+        $istege = \is_array($tanim) ? array_values(array_intersect(['tema', 'logo', 'sonrasi', 'dil'], array_map(strval(...), array_keys($tanim)))) : [];
         if (!\is_array($tanim) || !self::anahtarlar($tanim, ['sayfaBasligi', 'adimlar', ...$istege])) {
-            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema, logo, sonrasi içermeli'];
+            return ['tanım yalnız sayfaBasligi, adimlar ve (isteğe bağlı) tema, logo, sonrasi, dil içermeli'];
         }
         $h = \array_key_exists('tema', $tanim) ? Tema::hatalar($tanim['tema']) : [];
+        if (\array_key_exists('dil', $tanim) && !\in_array($tanim['dil'], Taslaklar::DILLER, true)) {
+            $h[] = 'dil '.implode(' ya da ', Taslaklar::DILLER).' olmalı';
+        }
         if (\array_key_exists('logo', $tanim)) {
             self::gorsel($tanim['logo'], 'logo', $h);
         }

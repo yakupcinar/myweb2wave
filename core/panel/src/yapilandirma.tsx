@@ -2,6 +2,7 @@
 // (sayfa başlığı ve tema). Adımları huni sayfasıyla ORTAK bileşenler ve
 // huni.css çizer (B4/H1); gerçek doğrulama çekirdekte — burada yalnız giriş
 // kolaylığı.
+import { DilBaglami } from "../../../huni-bilesenleri/metinler";
 import {
     FieldLabel,
     type AppState,
@@ -746,6 +747,16 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                     type: "text",
                     label: "Sayfa başlığı (tarayıcı sekmesi)",
                 },
+                // M9d2: sabit metinler (düğmeler, hata, fiyat cümlesi, izin şeridi)
+                // ve yasal bağlantılar bu dilde; adımların metnini yazar yazar.
+                dil: {
+                    type: "radio",
+                    label: "Dil (sabit metinler ve yasal bağlantılar)",
+                    options: [
+                        { label: "Türkçe", value: "tr" },
+                        { label: "English", value: "en" },
+                    ],
+                },
                 logo: gorselAlani(ortam, "Logo (isteğe bağlı)"),
                 hazirTema: hazirTemaAlani(ortam.hazirTemalar),
                 ozelTema: {
@@ -873,6 +884,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             render: ({
                 children,
+                dil,
                 logo,
                 ozelTema,
                 anaRenk,
@@ -948,28 +960,36 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                                 4,5:1 olmalı, kaydedilemez.
                             </p>
                         ) : null}
-                        <SimgeBaglami.Provider
-                            value={{
-                                stil: tema ? (simgeler ?? "cihaz") : "cihaz",
-                                kok: "",
-                            }}
-                        >
-                            <HareketBaglami.Provider
-                                value={tema ? (hareket ?? "sakin") : "sakin"}
+                        <DilBaglami.Provider value={dil ?? "tr"}>
+                            <SimgeBaglami.Provider
+                                value={{
+                                    stil: tema
+                                        ? (simgeler ?? "cihaz")
+                                        : "cihaz",
+                                    kok: "",
+                                }}
                             >
-                                <div
-                                    className="huni"
-                                    data-hareket={
+                                <HareketBaglami.Provider
+                                    value={
                                         tema ? (hareket ?? "sakin") : "sakin"
                                     }
                                 >
-                                    {logo ? (
-                                        <Logo gorsel={logo} medyaKoku="" />
-                                    ) : null}
-                                    {children}
-                                </div>
-                            </HareketBaglami.Provider>
-                        </SimgeBaglami.Provider>
+                                    <div
+                                        className="huni"
+                                        data-hareket={
+                                            tema
+                                                ? (hareket ?? "sakin")
+                                                : "sakin"
+                                        }
+                                    >
+                                        {logo ? (
+                                            <Logo gorsel={logo} medyaKoku="" />
+                                        ) : null}
+                                        {children}
+                                    </div>
+                                </HareketBaglami.Provider>
+                            </SimgeBaglami.Provider>
+                        </DilBaglami.Provider>
                     </div>
                 );
             },

@@ -1,5 +1,6 @@
 // M2d: Stripe gömülü ödeme paneli — paywall'ın üstünde, kapatınca paywall'a
 // dönülür (oturum Stripe'ta süresi dolunca kendiliğinden kapanır, Ç59).
+import { useMetinler } from "../../../huni-bilesenleri/metinler";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GomuluOdeme as Odeme, StripeYapici } from "../lib/stripe";
 
@@ -14,6 +15,7 @@ export default function GomuluOdeme({
   sir: string;
   onKapat: () => void;
 }): ReactNode {
+  const m = useMetinler();
   const kutu = useRef<HTMLDivElement>(null);
   const kapat = useRef<HTMLButtonElement>(null);
   const [hata, setHata] = useState("");
@@ -27,7 +29,7 @@ export default function GomuluOdeme({
         odeme = o;
         o.mount(kutu.current);
       })
-      .catch(() => setHata("Ödeme formu açılamadı. Lütfen tekrar deneyin."));
+      .catch(() => setHata(m.odemeFormuAcilamadi));
     return () => {
       bitti = true;
       odeme?.destroy();
@@ -46,14 +48,14 @@ export default function GomuluOdeme({
       className="odeme-katmani"
       role="dialog"
       aria-modal="true"
-      aria-label="Ödeme"
+      aria-label={m.odeme}
     >
       <div className="odeme-paneli">
         <button
           ref={kapat}
           type="button"
           className="odeme-kapat"
-          aria-label="Kapat"
+          aria-label={m.kapat}
           onClick={onKapat}
         >
           ×

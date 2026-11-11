@@ -1,6 +1,7 @@
 // M3a (A16): paywall'dan geri dönmeye çalışınca ya da ödeme panelini
 // ödemeden kapatınca BİR KEZ sunulan plan. Fiyat ve ödeme koşulu Stripe'tan
 // (fiyat.ts) — yönetici metni yalnız başlık/açıklama; sahte aciliyet yok.
+import { useMetinler } from "../../../huni-bilesenleri/metinler";
 import { useEffect, useRef, type ReactNode } from "react";
 
 export default function DownsellPenceresi({
@@ -27,6 +28,7 @@ export default function DownsellPenceresi({
   onKabul: () => void;
   onRed: () => void;
 }): ReactNode {
+  const m = useMetinler();
   const ilk = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     ilk.current?.focus();
@@ -41,7 +43,7 @@ export default function DownsellPenceresi({
       className="odeme-katmani"
       role="dialog"
       aria-modal="true"
-      aria-label="Teklif"
+      aria-label={m.teklif}
     >
       <div className="downsell">
         <h2 ref={ilk} tabIndex={-1}>
@@ -62,9 +64,9 @@ export default function DownsellPenceresi({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Kullanım şartlarını
+                {m.sartlariniBaglanti}
               </a>{" "}
-              ve abonelik koşulunu okudum, kabul ediyorum.
+              {m.sartlarOnay}
             </span>
           </label>
         ) : null}
@@ -78,7 +80,7 @@ export default function DownsellPenceresi({
         </button>
         {kosul ? <p className="kosul">{kosul}</p> : null}
         <button type="button" className="downsell-red" onClick={onRed}>
-          Hayır, teşekkürler
+          {m.hayirTesekkurler}
         </button>
       </div>
     </div>

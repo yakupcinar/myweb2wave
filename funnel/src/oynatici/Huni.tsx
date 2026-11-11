@@ -30,6 +30,11 @@ import {
   type Olay,
   type Ozellikler,
 } from "../../../huni-bilesenleri/ozellikler";
+import {
+  DilBaglami,
+  dilOku,
+  METINLER,
+} from "../../../huni-bilesenleri/metinler";
 import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { fiyatMetni, kosulMetni } from "../lib/fiyat";
@@ -120,14 +125,18 @@ export default function Huni({ app }: { app: App }): ReactNode {
     };
   }, [app]);
 
-  if (yayin === undefined) return <p id="durum">Yükleniyor…</p>;
+  // M9d2: tanım gelmeden huninin dili bilinmez — ?dil= ya da tarayıcının dili.
+  const on =
+    METINLER[
+      dilOku(
+        new URLSearchParams(window.location.search).get("dil") ??
+          navigator.language.slice(0, 2),
+      )
+    ];
+  if (yayin === undefined) return <p id="durum">{on.yukleniyor}</p>;
   if (yayin === null)
     return (
-      <p id="durum">
-        {onizleme
-          ? "Önizleme açılamadı: bağlantının süresi dolmuş olabilir."
-          : "Sayfa yüklenemedi. Lütfen yenileyin."}
-      </p>
+      <p id="durum">{onizleme ? on.onizlemeAcilamadi : on.sayfaYuklenemedi}</p>
     );
   return <Oynatici app={app} yayin={yayin} onizleme={onizleme} />;
 }
@@ -168,6 +177,9 @@ function Oynatici({
   onizleme: boolean;
 }): ReactNode {
   const { tanim } = yayin;
+  // M9d2: huninin dili — sabit metinler, sayfa dili, fiyat biçimi.
+  const dil = dilOku(tanim.dil);
+  const m = METINLER[dil];
   // H6a: reklam ölçümü izni — daha önce seçildiyse bu tarayıcıda hatırlanır.
   const [izin, setIzin] = useState<Izin | null>(izinOku);
   const [geriAlGerekir, setGeriAlGerekir] = useState(false);
@@ -318,6 +330,7 @@ function Oynatici({
     // Mobil görünüm 5: sonuç sayfası aynı temayla çizilsin (önizlemede de
     // zararsız — yalnız bu sekmenin oturum belleği).
     temaKaydet(tanim.tema);
+    document.documentElement.lang = dilOku(tanim.dil);
     // V4: hareket düzeyi CSS'te .huni'nin (body) özniteliğinden okunur.
     document.body.dataset["hareket"] = tanim.tema?.hareket ?? "sakin";
     if (!tanim.tema) return;
@@ -417,11 +430,11 @@ function Oynatici({
       hata =
         response.status === 502 &&
         error?.error === "payment_provider_unavailable"
-          ? "Ödeme sağlayıcısına şu an ulaşılamıyor. Lütfen biraz sonra tekrar deneyin."
-          : "Bir şeyler ters gitti. Lütfen tekrar deneyin.";
+          ? m.odemeSaglayicisi
+          : m.birSeylerTers;
     } catch {
       // Ağ hatası: çekirdeğe hiç ulaşılamadı.
-      hata = "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.";
+      hata = m.baglantiKurulamadi;
     }
     setOdeme({ suruyor: false, hata });
   }
@@ -433,9 +446,7 @@ function Oynatici({
       const geriAlindi = await izinGeriAl(ziyaretSozu);
       setIzinKaydediliyor(false);
       if (!geriAlindi) {
-        setIzinHatasi(
-          "İzin tercihiniz sunucuya iletilemedi. Lütfen tekrar deneyin.",
-        );
+        setIzinHatasi(m.izinIletilemedi);
         return;
       }
     }
@@ -450,291 +461,295 @@ function Oynatici({
 
   return (
     // V3a: emoji simgelerinin biçimi temadan; görseller çekirdekte.
-    <SimgeBaglami.Provider
-      value={{ stil: tanim.tema?.simgeler ?? "cihaz", kok: KOK }}
-    >
-      <HareketBaglami.Provider value={tanim.tema?.hareket ?? "sakin"}>
-        {!onizleme && izin === null ? (
-          <IzinSeridi
-            onSec={izinSec}
-            bekliyor={izinKaydediliyor}
-            hata={izinHatasi}
-            cerez={yayin.yasal?.cerez}
-            gizlilik={yayin.yasal?.gizlilik}
-          />
-        ) : null}
-        {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
-        {onizleme && !ekranCekimi ? (
-          <p className="onizleme">
-            Önizleme —{" "}
-            {new URLSearchParams(window.location.search).get("yayin") === "1"
-              ? "yayındaki sürüm"
-              : "taslak"}
-            ; hiçbir şey kaydedilmez, ödeme kapalı.
-          </p>
-        ) : null}
-        {mevcut > 0 || tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
-          // Geri ve ilerleme tek satırda; geri sütunu ilk adımda da yer tutar,
-          // ikinci adımda sayfa kaymaz.
-          <div className="ust-cubuk">
-            {mevcut > 0 ? (
-              // Ç61: tarayıcı geri tuşuyla aynı yol (popstate) — dallanmada da
-              // gelinen adıma döner.
-              <button
-                className="geri"
-                type="button"
-                aria-label="Geri"
-                onClick={() => history.back()}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M15 5l-7 7 7 7"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.25"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            ) : null}
-            {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
-              // L19 / Ç54 (3): yerel progress geçiş desteklemiyor (atlıyordu) —
-              // ekran okuyucu için yerinde ama görünmez; görünen dolgu yumuşak.
-              <div className="ilerleme">
-                {/* M2c: her paywall huninin sonu — öndeki paywall'da da çubuk dolu. */}
-                <progress
-                  max={tanim.adimlar.length}
-                  value={
-                    tanim.adimlar[mevcut]?.tur === "paywall"
-                      ? tanim.adimlar.length
-                      : mevcut + 1
-                  }
-                />
-                <span
-                  className="ilerleme-dolum"
-                  aria-hidden="true"
-                  style={{
-                    width: `${tanim.adimlar[mevcut]?.tur === "paywall" ? 100 : ((mevcut + 1) / tanim.adimlar.length) * 100}%`,
-                  }}
-                />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        <div ref={kutu} className="adimlar" data-gecis={gecis}>
-          {tanim.adimlar.map((ham, i) => {
-            // T3c: değerler çizimde (her adım değişimi yeniden çizer).
-            const adim = kisisel(ham, simdikiOzellikler());
-            const soru = sorusu(adim);
-            const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
-            const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
-            const secili = soru
-              ? (soru.secenekler ?? []).flatMap((s, j) =>
-                  cevaplar.includes(s.id) ? [j] : [],
-                )
-              : [];
-            return (
-              <div
-                key={`${i}-${adim.id}`}
-                data-adim={adim.id}
-                data-sira={i}
-                hidden={i !== mevcut}
-              >
-                <Adim
-                  adim={adim}
-                  medyaKoku={KOK}
-                  onIleri={() =>
-                    cik(adim, adim.tur === "ekran" ? adim.hedef : undefined)
-                  }
-                  onSecim={(s) => {
-                    if (!soru) return;
-                    bildir(mevcut, soru.id, soru.secenekler?.[s]?.id);
-                    cik(adim, soru.secenekler?.[s]?.hedef);
-                  }}
-                  secili={secili}
-                  cevapMetni={cevapMetni}
-                  onMetinDegistir={(metin) => {
-                    if (
-                      soru?.secimTuru !== "metin" &&
-                      soru?.secimTuru !== "eposta"
-                    )
-                      return;
-                    setSerbestYanilar((once) => ({
-                      ...once,
-                      [soru.id]: metin,
-                    }));
-                  }}
-                  izinVar={soru ? !!epostaIzinleri[soru.id] : false}
-                  onIzinDegistir={(izinVar) => {
-                    if (soru?.secimTuru !== "eposta") return;
-                    setEpostaIzinleri((once) => ({
-                      ...once,
-                      [soru.id]: izinVar,
-                    }));
-                  }}
-                  onSecenekDegistir={(s) => {
-                    if (!soru) return;
-                    const id = soru.secenekler?.[s]?.id;
-                    if (!id) return;
-                    setSecimler((once) => {
-                      const seciliCevaplar = once[soru.id] ?? [];
-                      return {
-                        ...once,
-                        [soru.id]: seciliCevaplar.includes(id)
-                          ? seciliCevaplar.filter((cevap) => cevap !== id)
-                          : [...seciliCevaplar, id],
-                      };
-                    });
-                  }}
-                  onCokluDevam={() => {
-                    if (!soru) return;
-                    const hedef = adim.tur === "ekran" ? adim.hedef : undefined;
-                    if (soru.secimTuru === "eposta") {
-                      // Geçersiz/eksik adreste düğme kapalı (Adim); burada
-                      // ikinci denetim ölçülemedi (kırma K16), yazılmadı.
-                      if (cevapMetni.trim())
-                        epostaBildir(
-                          ziyaretSozu,
-                          cevapMetni,
-                          !!epostaIzinleri[soru.id],
-                        );
-                      cik(adim, hedef);
-                      return;
-                    }
-                    if (soru.secimTuru === "metin") {
-                      if (soru.yanitZorunlu && !cevapMetni.trim()) return;
-                      bildir(mevcut, soru.id, undefined, cevapMetni);
-                      cik(adim, hedef);
-                      return;
-                    }
-                    if (!cevaplar.length) return;
-                    bildir(mevcut, soru.id, cevaplar);
-                    cik(adim, hedef);
-                  }}
-                  odeme={{
-                    kapali: (onizleme && !ekranCekimi) || odeme.suruyor,
-                    hata: odeme.hata,
-                    fiyat:
-                      adim.tur === "paywall"
-                        ? fiyatMetni(etkin(adim.plan))
-                        : undefined,
-                    // M1c: fiyat varsa para birimi IP'den bulunan ülkeyle seçildi (DB-IP lisansı).
-                    konumAtfi:
-                      adim.tur === "paywall" &&
-                      (adim.planlar ?? [adim.plan]).some((p) =>
-                        Boolean(yayin.fiyatlar?.[p]),
-                      ),
-                    ...(adim.tur === "paywall"
-                      ? {
-                          planlar: (adim.planlar ?? []).map((p) => ({
-                            anahtar: p,
-                            ad: yayin.fiyatlar?.[p]?.ad ?? p,
-                            fiyat: fiyatMetni(etkin(p)),
-                            onerilen: p === adim.onerilen,
-                          })),
-                          secili: secilenPlan[adim.id] ?? adim.plan,
-                          onPlanSec: (p: string) =>
-                            setSecilenPlan((s) => ({ ...s, [adim.id]: p })),
-                          kosul: kosulMetni(
-                            etkin(secilenPlan[adim.id] ?? adim.plan),
-                          ),
-                          kalan: ((b) =>
-                            b ? kalanSure(Date.parse(b) - simdi) : null)(
-                            etkin(secilenPlan[adim.id] ?? adim.plan)?.teklif
-                              ?.bitis,
-                          ),
-                          guvenceler: adim.guvenceler,
-                          sartOnayi: adim.sartOnayi
-                            ? {
-                                onay: sartOnaylari[adim.id] ?? false,
-                                onDegistir: (onay: boolean) =>
-                                  setSartOnaylari((s) => ({
-                                    ...s,
-                                    [adim.id]: onay,
-                                  })),
-                              }
-                            : undefined,
-                        }
-                      : {}),
-                    onDugme: () => {
-                      // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
-                      if (onizleme) return;
-                      if (adim.tur === "paywall")
-                        void aboneOl(
-                          secilenPlan[adim.id] ?? adim.plan,
-                          Boolean(adim.sartOnayi && sartOnaylari[adim.id]),
-                        );
-                    },
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
-        {gomulu ? (
-          <GomuluOdeme
-            yapici={gomulu.yapici}
-            anahtar={gomulu.anahtar}
-            sir={gomulu.sir}
-            onKapat={() => {
-              setGomulu(null);
-              // M3a: ödemeden kapatılan panel → downsell (gösterildiyse bir daha değil).
-              downsellDene(tanim.adimlar[mevcut]);
-            }}
-          />
-        ) : null}
-        {(() => {
-          const a = tanim.adimlar.find((x) => x.id === downsell);
-          if (gomulu || a?.tur !== "paywall" || !a.downsell) return null;
-          const d = a.downsell;
-          const onayli = Boolean(a.sartOnayi && sartOnaylari[a.id]);
-          return (
-            <DownsellPenceresi
-              baslik={d.baslik}
-              metin={d.metin}
-              dugme={d.dugme}
-              fiyat={fiyatMetni(etkin(d.plan))}
-              kosul={kosulMetni(etkin(d.plan))}
-              sartOnayi={
-                a.sartOnayi && a.sartlar
-                  ? {
-                      adres: a.sartlar,
-                      onay: sartOnaylari[a.id] ?? false,
-                      onDegistir: (onay: boolean) =>
-                        setSartOnaylari((s) => ({ ...s, [a.id]: onay })),
-                    }
-                  : undefined
-              }
-              kapali={(onizleme && !ekranCekimi) || odeme.suruyor}
-              onKabul={() => {
-                setDownsell(null);
-                if (onizleme) return;
-                void aboneOl(d.plan, onayli);
-              }}
-              onRed={downsellKapat}
+    <DilBaglami.Provider value={dil}>
+      <SimgeBaglami.Provider
+        value={{ stil: tanim.tema?.simgeler ?? "cihaz", kok: KOK }}
+      >
+        <HareketBaglami.Provider value={tanim.tema?.hareket ?? "sakin"}>
+          {!onizleme && izin === null ? (
+            <IzinSeridi
+              onSec={izinSec}
+              bekliyor={izinKaydediliyor}
+              hata={izinHatasi}
+              cerez={yayin.yasal?.cerez}
+              gizlilik={yayin.yasal?.gizlilik}
             />
-          );
-        })()}
-        {!onizleme && izin !== null ? (
-          <button
-            className="izin-ayarlari"
-            type="button"
-            onClick={() => {
-              setGeriAlGerekir(izin === "evet");
-              setIzinHatasi("");
-              setIzin(null);
-            }}
-          >
-            Gizlilik ayarları
-          </button>
-        ) : null}
-      </HareketBaglami.Provider>
-    </SimgeBaglami.Provider>
+          ) : null}
+          {tanim.logo ? <Logo gorsel={tanim.logo} medyaKoku={KOK} /> : null}
+          {onizleme && !ekranCekimi ? (
+            <p className="onizleme">
+              Önizleme —{" "}
+              {new URLSearchParams(window.location.search).get("yayin") === "1"
+                ? "yayındaki sürüm"
+                : "taslak"}
+              ; hiçbir şey kaydedilmez, ödeme kapalı.
+            </p>
+          ) : null}
+          {mevcut > 0 || tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+            // Geri ve ilerleme tek satırda; geri sütunu ilk adımda da yer tutar,
+            // ikinci adımda sayfa kaymaz.
+            <div className="ust-cubuk">
+              {mevcut > 0 ? (
+                // Ç61: tarayıcı geri tuşuyla aynı yol (popstate) — dallanmada da
+                // gelinen adıma döner.
+                <button
+                  className="geri"
+                  type="button"
+                  aria-label={m.geri}
+                  onClick={() => history.back()}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="22"
+                    height="22"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M15 5l-7 7 7 7"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              ) : null}
+              {tanim.adimlar[mevcut]?.ilerlemeGoster !== false ? (
+                // L19 / Ç54 (3): yerel progress geçiş desteklemiyor (atlıyordu) —
+                // ekran okuyucu için yerinde ama görünmez; görünen dolgu yumuşak.
+                <div className="ilerleme">
+                  {/* M2c: her paywall huninin sonu — öndeki paywall'da da çubuk dolu. */}
+                  <progress
+                    max={tanim.adimlar.length}
+                    value={
+                      tanim.adimlar[mevcut]?.tur === "paywall"
+                        ? tanim.adimlar.length
+                        : mevcut + 1
+                    }
+                  />
+                  <span
+                    className="ilerleme-dolum"
+                    aria-hidden="true"
+                    style={{
+                      width: `${tanim.adimlar[mevcut]?.tur === "paywall" ? 100 : ((mevcut + 1) / tanim.adimlar.length) * 100}%`,
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <div ref={kutu} className="adimlar" data-gecis={gecis}>
+            {tanim.adimlar.map((ham, i) => {
+              // T3c: değerler çizimde (her adım değişimi yeniden çizer).
+              const adim = kisisel(ham, simdikiOzellikler());
+              const soru = sorusu(adim);
+              const cevaplar = soru ? (secimler[soru.id] ?? []) : [];
+              const cevapMetni = soru ? (serbestYanilar[soru.id] ?? "") : "";
+              const secili = soru
+                ? (soru.secenekler ?? []).flatMap((s, j) =>
+                    cevaplar.includes(s.id) ? [j] : [],
+                  )
+                : [];
+              return (
+                <div
+                  key={`${i}-${adim.id}`}
+                  data-adim={adim.id}
+                  data-sira={i}
+                  hidden={i !== mevcut}
+                >
+                  <Adim
+                    adim={adim}
+                    medyaKoku={KOK}
+                    onIleri={() =>
+                      cik(adim, adim.tur === "ekran" ? adim.hedef : undefined)
+                    }
+                    onSecim={(s) => {
+                      if (!soru) return;
+                      bildir(mevcut, soru.id, soru.secenekler?.[s]?.id);
+                      cik(adim, soru.secenekler?.[s]?.hedef);
+                    }}
+                    secili={secili}
+                    cevapMetni={cevapMetni}
+                    onMetinDegistir={(metin) => {
+                      if (
+                        soru?.secimTuru !== "metin" &&
+                        soru?.secimTuru !== "eposta"
+                      )
+                        return;
+                      setSerbestYanilar((once) => ({
+                        ...once,
+                        [soru.id]: metin,
+                      }));
+                    }}
+                    izinVar={soru ? !!epostaIzinleri[soru.id] : false}
+                    onIzinDegistir={(izinVar) => {
+                      if (soru?.secimTuru !== "eposta") return;
+                      setEpostaIzinleri((once) => ({
+                        ...once,
+                        [soru.id]: izinVar,
+                      }));
+                    }}
+                    onSecenekDegistir={(s) => {
+                      if (!soru) return;
+                      const id = soru.secenekler?.[s]?.id;
+                      if (!id) return;
+                      setSecimler((once) => {
+                        const seciliCevaplar = once[soru.id] ?? [];
+                        return {
+                          ...once,
+                          [soru.id]: seciliCevaplar.includes(id)
+                            ? seciliCevaplar.filter((cevap) => cevap !== id)
+                            : [...seciliCevaplar, id],
+                        };
+                      });
+                    }}
+                    onCokluDevam={() => {
+                      if (!soru) return;
+                      const hedef =
+                        adim.tur === "ekran" ? adim.hedef : undefined;
+                      if (soru.secimTuru === "eposta") {
+                        // Geçersiz/eksik adreste düğme kapalı (Adim); burada
+                        // ikinci denetim ölçülemedi (kırma K16), yazılmadı.
+                        if (cevapMetni.trim())
+                          epostaBildir(
+                            ziyaretSozu,
+                            cevapMetni,
+                            !!epostaIzinleri[soru.id],
+                          );
+                        cik(adim, hedef);
+                        return;
+                      }
+                      if (soru.secimTuru === "metin") {
+                        if (soru.yanitZorunlu && !cevapMetni.trim()) return;
+                        bildir(mevcut, soru.id, undefined, cevapMetni);
+                        cik(adim, hedef);
+                        return;
+                      }
+                      if (!cevaplar.length) return;
+                      bildir(mevcut, soru.id, cevaplar);
+                      cik(adim, hedef);
+                    }}
+                    odeme={{
+                      kapali: (onizleme && !ekranCekimi) || odeme.suruyor,
+                      hata: odeme.hata,
+                      fiyat:
+                        adim.tur === "paywall"
+                          ? fiyatMetni(etkin(adim.plan), dil)
+                          : undefined,
+                      // M1c: fiyat varsa para birimi IP'den bulunan ülkeyle seçildi (DB-IP lisansı).
+                      konumAtfi:
+                        adim.tur === "paywall" &&
+                        (adim.planlar ?? [adim.plan]).some((p) =>
+                          Boolean(yayin.fiyatlar?.[p]),
+                        ),
+                      ...(adim.tur === "paywall"
+                        ? {
+                            planlar: (adim.planlar ?? []).map((p) => ({
+                              anahtar: p,
+                              ad: yayin.fiyatlar?.[p]?.ad ?? p,
+                              fiyat: fiyatMetni(etkin(p), dil),
+                              onerilen: p === adim.onerilen,
+                            })),
+                            secili: secilenPlan[adim.id] ?? adim.plan,
+                            onPlanSec: (p: string) =>
+                              setSecilenPlan((s) => ({ ...s, [adim.id]: p })),
+                            kosul: kosulMetni(
+                              etkin(secilenPlan[adim.id] ?? adim.plan),
+                              dil,
+                            ),
+                            kalan: ((b) =>
+                              b ? kalanSure(Date.parse(b) - simdi, m) : null)(
+                              etkin(secilenPlan[adim.id] ?? adim.plan)?.teklif
+                                ?.bitis,
+                            ),
+                            guvenceler: adim.guvenceler,
+                            sartOnayi: adim.sartOnayi
+                              ? {
+                                  onay: sartOnaylari[adim.id] ?? false,
+                                  onDegistir: (onay: boolean) =>
+                                    setSartOnaylari((s) => ({
+                                      ...s,
+                                      [adim.id]: onay,
+                                    })),
+                                }
+                              : undefined,
+                          }
+                        : {}),
+                      onDugme: () => {
+                        // Düğme ekran çekiminde etkin görünür; önizlemede ödeme hiç başlamaz.
+                        if (onizleme) return;
+                        if (adim.tur === "paywall")
+                          void aboneOl(
+                            secilenPlan[adim.id] ?? adim.plan,
+                            Boolean(adim.sartOnayi && sartOnaylari[adim.id]),
+                          );
+                      },
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          {gomulu ? (
+            <GomuluOdeme
+              yapici={gomulu.yapici}
+              anahtar={gomulu.anahtar}
+              sir={gomulu.sir}
+              onKapat={() => {
+                setGomulu(null);
+                // M3a: ödemeden kapatılan panel → downsell (gösterildiyse bir daha değil).
+                downsellDene(tanim.adimlar[mevcut]);
+              }}
+            />
+          ) : null}
+          {(() => {
+            const a = tanim.adimlar.find((x) => x.id === downsell);
+            if (gomulu || a?.tur !== "paywall" || !a.downsell) return null;
+            const d = a.downsell;
+            const onayli = Boolean(a.sartOnayi && sartOnaylari[a.id]);
+            return (
+              <DownsellPenceresi
+                baslik={d.baslik}
+                metin={d.metin}
+                dugme={d.dugme}
+                fiyat={fiyatMetni(etkin(d.plan), dil)}
+                kosul={kosulMetni(etkin(d.plan), dil)}
+                sartOnayi={
+                  a.sartOnayi && a.sartlar
+                    ? {
+                        adres: a.sartlar,
+                        onay: sartOnaylari[a.id] ?? false,
+                        onDegistir: (onay: boolean) =>
+                          setSartOnaylari((s) => ({ ...s, [a.id]: onay })),
+                      }
+                    : undefined
+                }
+                kapali={(onizleme && !ekranCekimi) || odeme.suruyor}
+                onKabul={() => {
+                  setDownsell(null);
+                  if (onizleme) return;
+                  void aboneOl(d.plan, onayli);
+                }}
+                onRed={downsellKapat}
+              />
+            );
+          })()}
+          {!onizleme && izin !== null ? (
+            <button
+              className="izin-ayarlari"
+              type="button"
+              onClick={() => {
+                setGeriAlGerekir(izin === "evet");
+                setIzinHatasi("");
+                setIzin(null);
+              }}
+            >
+              {m.gizlilikAyarlari}
+            </button>
+          ) : null}
+        </HareketBaglami.Provider>
+      </SimgeBaglami.Provider>
+    </DilBaglami.Provider>
   );
 }

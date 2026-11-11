@@ -163,6 +163,8 @@ export type SoruBloguProps = {
 };
 export type KokProps = {
     sayfaBasligi: string;
+    /** M9d2: huninin dili — tr tanıma yazılmaz (varsayılan; eski tanımlar aynı kalır). */
+    dil: "tr" | "en";
     /** V2: seçilen hazır temanın anahtarı — resolveData alanlara yazıp boşaltır. */
     hazirTema: string;
     /** Ç61 (5): boş dize = logo yok. */
@@ -581,7 +583,7 @@ const hedefli = <T extends object>(
  */
 export function kokTemasi(
     tema: Tema,
-): Omit<KokProps, "sayfaBasligi" | "logo" | "ozelTema" | "hazirTema"> {
+): Omit<KokProps, "sayfaBasligi" | "dil" | "logo" | "ozelTema" | "hazirTema"> {
     return {
         anaRenk: tema.anaRenk,
         arkaPlan: tema.arkaPlan,
@@ -609,6 +611,7 @@ export function tanimdanPuck(tanim: Tanim, varsayilanTema: Tema): HuniVerisi {
         root: {
             props: {
                 sayfaBasligi: tanim.sayfaBasligi,
+                dil: tanim.dil ?? "tr",
                 logo: tanim.logo ?? "",
                 ozelTema: tanim.tema ? "evet" : "hayir",
                 // V2: seçim anlık; tanıma yazılmaz.
@@ -873,6 +876,7 @@ export function puckTanim(veri: HuniVerisi): Tanim {
                 : {}),
         };
     }
+    if (k?.dil === "en") tanim.dil = "en";
     if (k?.logo) tanim.logo = k.logo;
     if (k?.ozelTema === "evet") {
         tanim.tema = {
