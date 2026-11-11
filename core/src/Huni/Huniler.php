@@ -22,6 +22,12 @@ final readonly class Huniler
 
     /** Kuralların bakabildiği adres parametreleri — huni sayfası YALNIZ bunları gönderir. */
     public const SECIM_PARAMETRELERI = ['k', 'utm_source', 'utm_campaign', 'utm_content'];
+    /**
+     * M9d1: kuralda kullanılabilenler — adres parametreleri + çekirdeğin
+     * ziyaretçiden çıkardığı ülke (IP) ve dil (Accept-Language / ?dil=).
+     * Bu ikisi adreste huni sayfasından gelmez; HuniController ekler.
+     */
+    public const KURAL_PARAMETRELERI = [...self::SECIM_PARAMETRELERI, 'ulke', 'dil'];
 
     public function __construct(
         private Connection $db,
@@ -340,11 +346,14 @@ final readonly class Huniler
     public function kuralEkle(string $app, string $parametre, string $deger, string $huni): array
     {
         $deger = mb_strtolower(trim($deger));
-        if (!\in_array($parametre, self::SECIM_PARAMETRELERI, true)) {
-            return ['parametre '.implode(', ', self::SECIM_PARAMETRELERI).' olmalı'];
+        if (!\in_array($parametre, self::KURAL_PARAMETRELERI, true)) {
+            return ['parametre '.implode(', ', self::KURAL_PARAMETRELERI).' olmalı'];
         }
         if ('' === $deger || mb_strlen($deger) > 200) {
             return ['değer 1–200 karakter olmalı'];
+        }
+        if (\in_array($parametre, ['ulke', 'dil'], true) && 1 !== preg_match('/^[a-z]{2}$/', $deger)) {
+            return ['ulke' === $parametre ? 'ülke iki harfli kod olmalı (ör. TR, DE)' : 'dil iki harfli kod olmalı (ör. tr, en)'];
         }
         if (null === $this->taslak($app, $huni)) {
             return ["'{$huni}' adında huni yok"];

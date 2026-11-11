@@ -1,5 +1,6 @@
 // Panel (B5; E2.4 huni düzenleyicisi: React + Puck). Çıktı çekirdeğin public/
 // dizinine, içerik özetli adlarla (tuzak §30) + manifest; Twig manifestten okur.
+/// <reference types="vitest/config" />
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -22,6 +23,8 @@ export default defineConfig({
     // React). dedupe kökten çözdürür (B4/H1).
     resolve: { dedupe: ["react", "react-dom"] },
     base: "/varliklar/panel/",
+    // Ç134: testlerin bekleme üst sınırı tek yerde.
+    test: { setupFiles: ["src/test-kurulum.ts"] },
     build: {
         outDir: "../public/varliklar/panel",
         emptyOutDir: true,

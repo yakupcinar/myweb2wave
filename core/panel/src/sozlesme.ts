@@ -1636,7 +1636,7 @@ export interface components {
         PanelHunileri: {
             /** @description Uygulamanın tek reklam adresi */
             adres: string;
-            /** @description Kuralda kullanılabilen adres parametreleri */
+            /** @description Kuralda kullanılabilenler — adres parametreleri; M9d1: ulke (IP) ve dil (Accept-Language) */
             parametreler: string[];
             huniler: {
                 ad: string;
@@ -2018,8 +2018,10 @@ export interface operations {
                 huni?: components["schemas"]["HuniKimligi"];
                 /** @description M4a: sekme tohumu (sessionStorage) — deney varyantı bundan hesaplanır; yoksa deney yok */
                 tohum?: string;
-                /** @description M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi */
+                /** @description M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi; M9d1: ülke kuralı da buna bakar */
                 ulke?: string;
+                /** @description M9d1: dil (ISO 639-1, ör. en) — Accept-Language yerine; dil kuralı buna bakar */
+                dil?: string;
             };
             header?: never;
             path: {

@@ -88,7 +88,8 @@ final class PanelHuniTest extends WebTestCase
         Sozlesme::yanitiDogrula('GET', '/panel/api/uygulamalar/{app}/huniler', $this->client->getResponse());
         self::assertResponseHeaderSame('Cache-Control', 'no-store, private');
         self::assertSame('https://huni.test/keepchat/', $liste['adres']);
-        self::assertSame(Huniler::SECIM_PARAMETRELERI, $liste['parametreler']);
+        // M9d1: adres parametreleri + ziyaretçiden çıkan ülke ve dil.
+        self::assertSame(['k', 'utm_source', 'utm_campaign', 'utm_content', 'ulke', 'dil'], $liste['parametreler']);
         $huniler = $liste['huniler'];
         self::assertIsArray($huniler);
         self::assertSame(['genel', 'taslak'], array_column($huniler, 'ad'));

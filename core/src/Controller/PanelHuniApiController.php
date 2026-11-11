@@ -51,7 +51,7 @@ final class PanelHuniApiController extends AbstractController
 
         return self::korumali(new JsonResponse([
             'adres' => $this->funnelBaseUrl.'/'.$app.'/',
-            'parametreler' => Huniler::SECIM_PARAMETRELERI,
+            'parametreler' => Huniler::KURAL_PARAMETRELERI,
             // "Aç": yayınlanmışsa yayındaki sürüm, değilse taslak — ikisi de süreli önizleme, ziyaret sayılmaz (Ç70).
             'huniler' => array_map(fn (array $h): array => $h + [
                 'ac' => $this->funnelBaseUrl.'/'.$app.'/?huni='.$h['ad'].(null === $h['yayinda'] ? '' : '&yayin=1')

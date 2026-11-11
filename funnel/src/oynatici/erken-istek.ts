@@ -45,6 +45,9 @@ export function tanimIstegi(app: string, kok: string): Promise<unknown> {
   // M1c: ülke testi (?ulke=DE) fiyatın para birimini seçer — yayında da önizlemede de.
   const ulke = adres.get("ulke");
   if (ulke && /^[A-Z]{2}$/.test(ulke)) sorgu.set("ulke", ulke);
+  // M9d1: dil testi / dil değiştirici (?dil=en) — yoksa çekirdek Accept-Language'e bakar.
+  const dil = adres.get("dil");
+  if (dil && /^[a-z]{2}$/.test(dil)) sorgu.set("dil", dil);
   const metin = sorgu.toString();
   return fetch(`${kok}${yol}${metin ? `?${metin}` : ""}`)
     .then((y) => (y.ok ? y.json() : undefined))

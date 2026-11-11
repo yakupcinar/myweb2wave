@@ -100,6 +100,45 @@ final class HuniSecimTest extends WebTestCase
         self::assertCount(1, $this->huniler->kurallar('keepchat'));
     }
 
+    /**
+     * M9d1: ülke (IP; testte ?ulke=) ve dil (Accept-Language; ?dil= önce)
+     * kurala girer; sıra yine ilk tutanı seçer; yanıt dile göre değişir.
+     */
+    public function testUlkeVeDilKurali(): void
+    {
+        self::assertSame([], $this->huniler->kuralEkle('keepchat', 'ulke', ' DE ', 'fitness'));
+        self::assertSame([], $this->huniler->kuralEkle('keepchat', 'dil', 'en', 'is'));
+        $ingilizce = ['HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,tr;q=0.8'];
+
+        self::assertSame('fitness', $this->sec(['ulke' => 'DE']));
+        Sozlesme::yanitiDogrula('GET', '/huni/{app}', $this->client->getResponse());
+        self::assertSame('genel', $this->sec(['ulke' => 'FR'], ['HTTP_ACCEPT_LANGUAGE' => 'tr']));
+        // Test istemcisi Accept-Language'i kendiliğinden "en-us" gönderir: Türkçe açıkça verilir.
+        self::assertSame('genel', $this->sec([], ['HTTP_ACCEPT_LANGUAGE' => 'tr']), 'testte IP ülkesi yok: ülke kuralı tutmaz');
+        self::assertSame('is', $this->sec([], $ingilizce));
+        self::assertContains('Accept-Language', $this->client->getResponse()->getVary());
+        self::assertSame('genel', $this->sec([], ['HTTP_ACCEPT_LANGUAGE' => 'tr-TR,tr;q=0.9,en;q=0.5']), 'yalnız ilk dil');
+        self::assertSame('is', $this->sec(['dil' => 'en'], ['HTTP_ACCEPT_LANGUAGE' => 'tr-TR']), '?dil= başlığın önünde');
+        self::assertSame('genel', $this->sec(['dil' => 'EN'], ['HTTP_ACCEPT_LANGUAGE' => 'tr-TR']), 'biçimsiz ?dil= yok sayılır');
+        self::assertSame('fitness', $this->sec(['ulke' => 'DE'], $ingilizce), 'ilk tutan kural kazanır');
+    }
+
+    public function testUlkeVeDilDegeriIkiHarf(): void
+    {
+        self::assertSame(['ülke iki harfli kod olmalı (ör. TR, DE)'], $this->huniler->kuralEkle('keepchat', 'ulke', 'Türkiye', 'is'));
+        self::assertSame(['dil iki harfli kod olmalı (ör. tr, en)'], $this->huniler->kuralEkle('keepchat', 'dil', 'eng', 'is'));
+        self::assertSame([], $this->huniler->kurallar('keepchat'));
+        // DB kısıtı ayrıca (tuzak §4): uygulama denetimi atlansa da tutar.
+        try {
+            $this->db->insert('huni_kurallari', ['app' => 'keepchat', 'sira' => 1, 'parametre' => 'ulke', 'deger' => 'türkiye', 'huni' => 'is']);
+            self::fail('iki harf olmayan ülke DB\'ye girdi');
+        } catch (\Doctrine\DBAL\Exception\DriverException $e) {
+            self::assertStringContainsString('huni_kurallari_bolge_check', $e->getMessage());
+        }
+        // Adres parametresinde serbest metin sürer.
+        self::assertSame([], $this->huniler->kuralEkle('keepchat', 'k', 'Türkiye', 'is'));
+    }
+
     public function testYeniHuniKopyalarAdiDenetler(): void
     {
         self::assertSame([], $this->huniler->yeniHuni('keepchat', 'kopya', 'fitness'));
@@ -129,10 +168,13 @@ final class HuniSecimTest extends WebTestCase
         self::assertSame('genel', $this->sec(['k' => str_repeat('a', 201)]));
     }
 
-    /** @param array<string, string> $parametreler */
-    private function sec(array $parametreler): ?string
+    /**
+     * @param array<string, string> $parametreler
+     * @param array<string, string> $basliklar
+     */
+    private function sec(array $parametreler, array $basliklar = []): ?string
     {
-        $this->client->request('GET', '/huni/keepchat', $parametreler);
+        $this->client->request('GET', '/huni/keepchat', $parametreler, server: $basliklar);
         self::assertResponseStatusCodeSame(200);
         $j = json_decode((string) $this->client->getResponse()->getContent(), true);
 

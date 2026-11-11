@@ -26,7 +26,15 @@ type Istek = {
 let yonlendirici: ReturnType<typeof createMemoryRouter>;
 const konum = (): string => yonlendirici.state.location.pathname;
 
-function kur() {
+function kur(
+    ekKurallar: {
+        id: number;
+        sira: number;
+        parametre: string;
+        deger: string;
+        huni: string;
+    }[] = [],
+) {
     const kabuk = document.createElement("div");
     kabuk.id = "panel-uygulama";
     kabuk.dataset["jeton"] = "jeton-kabuk";
@@ -43,7 +51,7 @@ function kur() {
     });
     const liste = {
         adres: "https://huni.test/keepchat/",
-        parametreler: ["k", "utm_campaign"],
+        parametreler: ["k", "utm_campaign", "ulke", "dil"],
         huniler: [
             huni("genel", {
                 varsayilan: true,
@@ -63,6 +71,7 @@ function kur() {
                 deger: "yaz",
                 huni: "eski",
             },
+            ...ekKurallar,
         ],
         sablonlar: [
             { anahtar: "uyku", ad: "Uyku", aciklama: "Uyku düzeni testi" },
@@ -474,5 +483,27 @@ describe("P2: Huniler sayfası", () => {
             ).not.toBeNull(),
         );
         expect(ciplakAlanlar(document.body)).toEqual([]);
+    });
+
+    it("M9d1: ülke ve dil kuralı okunur adla; ülke büyük harfle; seçenekler ve örnek", async () => {
+        kur([{ id: 6, sira: 3, parametre: "ulke", deger: "de", huni: "bos" }]);
+        await waitFor(() =>
+            expect(document.querySelector('tr[data-kural="6"]')).not.toBeNull(),
+        );
+        expect(
+            document.querySelector('tr[data-kural="6"]')?.textContent,
+        ).toContain("ülke (IP)=DE");
+        const form = within(screen.getByRole("form", { name: "Yeni kural" }));
+        const [parametre] = form.getAllByRole(
+            "combobox",
+        ) as HTMLSelectElement[];
+        expect([...parametre!.options].map((o) => o.textContent)).toEqual([
+            "k",
+            "utm_campaign",
+            "ülke (IP)",
+            "dil (tarayıcı)",
+        ]);
+        fireEvent.change(parametre!, { target: { value: "dil" } });
+        expect(form.getByPlaceholderText("en")).toBeTruthy();
     });
 });

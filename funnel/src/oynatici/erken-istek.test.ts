@@ -72,3 +72,23 @@ it("yayin=1 önizlemesi taslak ucuna yayin parametresini taşır", async () => {
     "http://cekirdek/huni/keepchat/taslak?huni=genel&anahtar=a.b&yayin=1",
   ]);
 });
+
+// M9d1: dil testi / dil değiştirici çekirdeğe gider; biçimsiz değer gitmez
+// (çekirdek o zaman Accept-Language'e bakar).
+it("?dil= yalnız iki küçük harfse iletilir", async () => {
+  const istenen: string[] = [];
+  vi.stubGlobal("fetch", (adres: string) => {
+    istenen.push(adres);
+    return Promise.resolve(Response.json({}));
+  });
+  sessionStorage.removeItem("huni-tohum");
+  for (const arama of ["?dil=en", "?dil=EN", "?dil=eng"]) {
+    history.replaceState(null, "", `/keepchat/${arama}`);
+    await tanimIstegi("keepchat", "http://cekirdek");
+  }
+  expect(istenen.map((a) => new URL(a).searchParams.get("dil"))).toEqual([
+    "en",
+    null,
+    null,
+  ]);
+});

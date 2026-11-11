@@ -170,8 +170,9 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 - **Huni listesi** ([`Huniler.tsx`](../core/panel/src/uygulama/sayfalar/Huniler.tsx)): ad, son yayınlanan sürüm,
   varsayılan işareti. Varsayılan huni, hiçbir kural tutmadığında açılır.
 - **Yönlendirme kuralları:** "`utm_campaign` = `yaz` ise `yaz-hunisi`" gibi satırlar. **Üstten alta denenir, ilk tutan
-  kazanır**; sıra değiştirilebilir. Kural yalnız seçim parametrelerine bakar: `k`, `utm_source`, `utm_campaign`,
-  `utm_content`.
+  kazanır**; sıra değiştirilebilir. Kural seçim parametrelerine (`k`, `utm_source`, `utm_campaign`, `utm_content`) ve
+  M9d1'den beri ziyaretçinin **ülkesine** (IP; `?ulke=DE` ile denenir) ve **diline** (`Accept-Language`'in ilki;
+  `?dil=en` önce) bakar. Çeviri ayrı bir huni: kopyalanıp o dilde yazılır ([m9d1](decisions/m9d1-ulke-dil-kurali.md)).
 - **Düzenleyici** ([`HuniDuzenle.tsx`](../core/panel/src/uygulama/sayfalar/HuniDuzenle.tsx)): Puck tabanlı sürükle-bırak.
   Solda bloklar (başlık, metin, görsel, soru, istatistik, yorum…), ortada telefon önizlemesi, üstte Kaydet · Önizle ·
   Yayınla · Sürümler. Yanda **AI sohbeti**: "anketi 5 soruya indir" gibi isteklerle taslağı Claude düzenler.
@@ -189,8 +190,8 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 **Arkada nasıl çalışır**
 1. **Saklama.** Huni tek bir JSON belgesidir: taslak `huniler.taslak`'ta, her yayın `huni_surumleri`'nde yeni sürüm
    numarasıyla dondurulur. Sorular için ayrı tablo yoktur. Servis [`Huniler`](../core/src/Huni/Huniler.php):
-   [`taslakKaydet`](../core/src/Huni/Huniler.php#L219), [`yayinla`](../core/src/Huni/Huniler.php#L253),
-   [`surumuTaslagaAl`](../core/src/Huni/Huniler.php#L310).
+   [`taslakKaydet`](../core/src/Huni/Huniler.php#L225), [`yayinla`](../core/src/Huni/Huniler.php#L259),
+   [`surumuTaslagaAl`](../core/src/Huni/Huniler.php#L316).
 2. **Bekçi.** Kaydedilen her tanım [`Tanim::hatalar`](../core/src/Huni/Tanim.php#L150)'dan geçer: sözleşmedeki
    `HuniTanimi` biçimi, var olan plan adları, metinlerde HTML yasak. Hatalı tanım kaydedilmez, yayınlanmaz.
 3. **Eşzamanlı kayıt.** İki sekmede aynı taslak düzenlenirse eski sekmenin kaydı reddedilir (beklenen imza tutmaz) —
@@ -198,7 +199,7 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 4. **Düzenleyici ↔ tanım.** Puck kendi blok ağacını tutar; [`donustur.ts`](../core/panel/src/donustur.ts) bunu tanıma ve
    geri kayıpsız çevirir. Puck'taki önizleme, huninin kendi bileşenlerini ([`bilesenler.tsx`](../huni-bilesenleri/bilesenler.tsx))
    kullanır; önizleme ile ziyaretçinin gördüğü aynıdır.
-5. **Seçim.** Ziyaretçi geldiğinde [`Huniler::sec`](../core/src/Huni/Huniler.php#L48) kuralları sırayla dener, tutan
+5. **Seçim.** Ziyaretçi geldiğinde [`Huniler::sec`](../core/src/Huni/Huniler.php#L54) kuralları sırayla dener, tutan
    yoksa varsayılan huniyi seçer; yönlendirme deneyi varsa trafiği varyantlara böler (2.5).
 6. **AI.** [`HuniAsistani::calistir`](../core/src/Ai/HuniAsistani.php#L71) Claude'u araçlarla çalıştırır: taslağı okur, düzeltir,
    doğrulatır ve `ekran` kabındaki başsız Chromium'la taslağın telefon görüntüsünü alıp kendi işine bakar. Her isteğe
@@ -206,7 +207,7 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 7. **Görseller.** Yüklenen ya da stok aramasından alınan görseller `medya` tablosunda; huni `/medya/{id}.webp` ile çeker.
 8. **Yeni huni görünümü.** "Örnek yap" o anki kopyayı `uygulama_ayarlari.varsayilan`'a yazar
    ([`Varsayilanlar::al`](../core/src/Huni/Varsayilanlar.php)). Yeni huni açılırken
-   [`Huniler::yeniHuni`](../core/src/Huni/Huniler.php#L121) uygular: **boş** huni temayı, logoyu ve paywall'ın tamamını
+   [`Huniler::yeniHuni`](../core/src/Huni/Huniler.php#L127) uygular: **boş** huni temayı, logoyu ve paywall'ın tamamını
    alır; **şablondan** açılan huni temayı, logoyu ve paywall'ın uygulamaya özgü alanlarını alır (planlar, güvenceler,
    şart onayı, yasal adresler, downsell; metinler şablonun); **kopya** huni hiçbir şey almaz. Kopya modelidir: örnek
    değişince var olan huniler değişmez. Örnek artık geçersizse (ör. içindeki plan yok) huni açılmaz ve gerekçe söylenir.

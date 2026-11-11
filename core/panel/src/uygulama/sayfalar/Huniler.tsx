@@ -24,6 +24,12 @@ const JETON = { "X-CSRF-Token": "" };
 
 const girdi = satirIciAlanSinifi;
 
+/** M9d1: kural parametresinin okunur adı; adres parametreleri olduğu gibi. */
+const PARAMETRE_ADLARI: Record<string, string> = {
+    ulke: "ülke (IP)",
+    dil: "dil (tarayıcı)",
+};
+
 async function hatasiz(
     istek: Promise<{ error?: { hatalar: string[] }; response: Response }>,
 ): Promise<void> {
@@ -466,7 +472,10 @@ function Kurallar({
                         <tr key={k.id} data-kural={k.id}>
                             <Td>{i + 1}</Td>
                             <Td className="font-mono text-[12.5px]">
-                                {k.parametre}={k.deger}
+                                {PARAMETRE_ADLARI[k.parametre] ?? k.parametre}=
+                                {k.parametre === "ulke"
+                                    ? k.deger.toUpperCase()
+                                    : k.deger}
                             </Td>
                             <Td>{k.huni}</Td>
                             <Td className="text-right">
@@ -565,7 +574,7 @@ function Kurallar({
                             >
                                 {veri.parametreler.map((p) => (
                                     <option key={p} value={p}>
-                                        {p}
+                                        {PARAMETRE_ADLARI[p] ?? p}
                                     </option>
                                 ))}
                             </select>
@@ -576,7 +585,13 @@ function Kurallar({
                                 value={deger}
                                 required
                                 maxLength={200}
-                                placeholder="fitness"
+                                placeholder={
+                                    parametre === "ulke"
+                                        ? "DE"
+                                        : parametre === "dil"
+                                          ? "en"
+                                          : "fitness"
+                                }
                                 onChange={(e) =>
                                     setDeger(e.currentTarget.value)
                                 }
@@ -606,7 +621,11 @@ function Kurallar({
                         ya da Meta'da{" "}
                         <code>{"utm_campaign={{campaign.name}}"}</code>.
                         Büyük/küçük harf fark etmez. Yayınlanmamış huniyi
-                        gösteren kural atlanır.
+                        gösteren kural atlanır. Ülke ziyaretçinin IP'sinden (iki
+                        harf: DE, TR), dil tarayıcının dilinden (en, tr);
+                        denemek için adrese <code>?ulke=DE</code> ya da{" "}
+                        <code>?dil=en</code> ekleyin. Çeviri ayrı bir huni:
+                        kopyalayıp metinleri o dilde yazın.
                     </p>
                 </>
             ) : null}

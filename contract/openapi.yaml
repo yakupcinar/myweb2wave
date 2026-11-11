@@ -126,7 +126,8 @@ paths:
         - { name: utm_content, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: huni, in: query, required: false, description: "Doğrudan test adresi; yönlendirme deneyi uygulanmaz (M4a)", schema: { $ref: "#/components/schemas/HuniKimligi" } }
         - { name: tohum, in: query, required: false, description: "M4a: sekme tohumu (sessionStorage) — deney varyantı bundan hesaplanır; yoksa deney yok", schema: { type: string, pattern: "^[A-Za-z0-9-]{8,64}$" } }
-        - { name: ulke, in: query, required: false, description: "M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi", schema: { type: string, pattern: "^[A-Z]{2}$" } }
+        - { name: ulke, in: query, required: false, description: "M1c: ülke testi (ISO 3166-1, ör. DE) — IP yerine bu ülkenin para birimi; M9d1: ülke kuralı da buna bakar", schema: { type: string, pattern: "^[A-Z]{2}$" } }
+        - { name: dil, in: query, required: false, description: "M9d1: dil (ISO 639-1, ör. en) — Accept-Language yerine; dil kuralı buna bakar", schema: { type: string, pattern: "^[a-z]{2}$" } }
       responses:
         "200":
           description: Yayındaki sürüm
@@ -2320,7 +2321,7 @@ components:
       required: [adres, parametreler, huniler, kurallar, sablonlar]
       properties:
         adres: { type: string, description: Uygulamanın tek reklam adresi }
-        parametreler: { type: array, items: { type: string }, description: Kuralda kullanılabilen adres parametreleri }
+        parametreler: { type: array, items: { type: string }, description: "Kuralda kullanılabilenler — adres parametreleri; M9d1: ulke (IP) ve dil (Accept-Language)" }
         huniler:
           type: array
           items:

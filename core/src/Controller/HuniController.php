@@ -54,6 +54,15 @@ final readonly class HuniController
                 $parametreler[$ad] = $deger;
             }
         }
+        // M9d1: ülke ve dil de kurala girer (adresteki ?ulke= / ?dil= testi önce).
+        $ulke = $this->ulkeler->ulke($request->getClientIp(), $request->query->get('ulke'));
+        if (null !== $ulke) {
+            $parametreler['ulke'] = $ulke;
+        }
+        $dil = self::dil($request);
+        if (null !== $dil) {
+            $parametreler['dil'] = $dil;
+        }
         $huni = $this->huniler->sec($app, $parametreler);
         $yayin = null === $huni ? null : $this->huniler->yayinda($app, $huni);
         if (null === $huni || null === $yayin) {
@@ -78,8 +87,22 @@ final readonly class HuniController
         // ülkenin yanıtını ötekine verirdi; yalnız ziyaretçinin tarayıcısı tutar.
         $yanit->setPrivate();
         $yanit->setMaxAge(self::ONBELLEK_SN);
+        // M9d1: dil kuralı tarayıcının diline göre başka huni seçebilir.
+        $yanit->setVary('Accept-Language');
 
         return $yanit;
+    }
+
+    /** M9d1: ziyaretçinin dili — ?dil= (test, dil değiştirici), yoksa Accept-Language'in ilki; iki harf. */
+    private static function dil(Request $request): ?string
+    {
+        $test = $request->query->get('dil');
+        if (\is_string($test) && 1 === preg_match('/^[a-z]{2}$/', $test)) {
+            return $test;
+        }
+        $ilk = $request->getLanguages()[0] ?? null;
+
+        return null !== $ilk && 1 === preg_match('/^([a-z]{2})(_|$)/i', $ilk, $m) ? strtolower($m[1]) : null;
     }
 
     /**

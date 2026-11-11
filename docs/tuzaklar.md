@@ -446,3 +446,12 @@ satır kaydı; betik denetimi yakaladı.
 **Doğrusu:** `bin/belge-baglantilari` (`bin/kontrol` adımı `belge-baglanti`) her `#L` satırında adı arar; kaymışsa
 `--duzelt` tanım satırına taşır. Satır bağlantısı yalnız adı geçen tanıma verilir.
 
+## §59 — Symfony test istemcisi her isteğe `Accept-Language: en-us` ekler
+**Belirti:** "başlıksız istek → varsayılan huni" diye yazılan test, dil kuralı varken İngilizce huniyi alır; dil
+kuralı yokken de geçer. Yani test, ölçtüğünü sandığı "dili bilinmeyen ziyaretçi"yi hiç ölçmez.
+**Sebep:** BrowserKit'in `KernelBrowser`'ı varsayılan sunucu başlıklarına `HTTP_ACCEPT_LANGUAGE: en-us,en;q=0.5`
+koyar; `request()` çağrısında başlık verilmese de gider.
+**Ölçüm (2026-11-11, `m9d1-ulke-dil-kurali.md`):** `dil=en` kuralıyla `sec([])` beklenen `genel` yerine `is` döndü.
+**Doğrusu:** dile bakan testte `Accept-Language`'i her istekte açıkça ver (`server: ['HTTP_ACCEPT_LANGUAGE' => 'tr']`).
+"Başlık yok" durumu gerekiyorsa başlığı boş dizeyle ver.
+
