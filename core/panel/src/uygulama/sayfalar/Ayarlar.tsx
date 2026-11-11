@@ -11,6 +11,7 @@ import { api } from "../api";
 import { uzunTarih } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import { alanSinifi, Satir } from "../ui/Alan";
+import { Bolum } from "../ui/Bolum";
 import { Dugme } from "../ui/Dugme";
 import { cn } from "../ui/cn";
 import { Kart } from "../ui/Kart";
@@ -173,26 +174,6 @@ export function Ayarlar(): ReactNode {
                 <p className="text-soluk">Yükleniyor…</p>
             )}
         </div>
-    );
-}
-
-function Bolum({
-    baslik,
-    sag,
-    children,
-}: {
-    baslik: string;
-    sag?: ReactNode;
-    children: ReactNode;
-}): ReactNode {
-    return (
-        <section aria-label={baslik} className="flex flex-col gap-2.5">
-            <div className="flex items-baseline justify-between gap-3">
-                <h2 className="text-[20px] font-semibold">{baslik}</h2>
-                {sag}
-            </div>
-            {children}
-        </section>
     );
 }
 

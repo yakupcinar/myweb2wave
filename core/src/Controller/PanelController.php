@@ -30,13 +30,11 @@ final class PanelController extends AbstractController
      * veriler /panel/api/* uçlarından. Derlenmemişse açık hata.
      */
     #[Route('/panel', name: 'panel', methods: ['GET'])]
-    #[Route('/panel/baglam', name: 'panel_baglam', methods: ['GET'])]
-    #[Route('/panel/anahtarlar', name: 'panel_anahtarlar', methods: ['GET'])]
     #[Route('/panel/huniler', name: 'panel_huniler', methods: ['GET'])]
     #[Route('/panel/kullanicilar', name: 'panel_kullanicilar', methods: ['GET'])]
     #[Route('/panel/planlar', name: 'panel_planlar', methods: ['GET'])]
     #[Route('/panel/deneyler', name: 'panel_deneyler', methods: ['GET'])]
-    #[Route('/panel/webhooklar', name: 'panel_webhooklar', methods: ['GET'])]
+    #[Route('/panel/entegrasyonlar', name: 'panel_entegrasyonlar', methods: ['GET'])]
     #[Route('/panel/ayarlar', name: 'panel_ayarlar', methods: ['GET'])]
     #[Route('/panel/yasal', name: 'panel_yasal', methods: ['GET'])]
     public function uygulama(Varliklar $varliklar): Response
@@ -47,6 +45,18 @@ final class PanelController extends AbstractController
         }
 
         return self::korumali($this->render('panel/uygulama.html.twig', $giris));
+    }
+
+    /**
+     * P7d (A25): Webhook'lar, API anahtarları ve Ürün bağlamı tek sayfada
+     * (Entegrasyonlar). Eski adres yer imi bozulmasın diye ilgili bölüme gider.
+     */
+    #[Route('/panel/webhooklar', name: 'panel_webhooklar', methods: ['GET'], defaults: ['bolum' => 'webhooklar'])]
+    #[Route('/panel/anahtarlar', name: 'panel_anahtarlar', methods: ['GET'], defaults: ['bolum' => 'anahtarlar'])]
+    #[Route('/panel/baglam', name: 'panel_baglam', methods: ['GET'], defaults: ['bolum' => 'baglam'])]
+    public function eskiEntegrasyon(string $bolum): Response
+    {
+        return $this->redirect('/panel/entegrasyonlar#'.$bolum, Response::HTTP_MOVED_PERMANENTLY);
     }
 
     /** P5: abonelikler (CRM) — e-posta maskeli; arama ve durum süzgeci. P7a2: sayfalı, sıralama sunucuda. */

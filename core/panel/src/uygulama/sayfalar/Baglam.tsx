@@ -1,13 +1,15 @@
 // Ürün bağlamı (A4): uygulama başına ürün tanımı; AI asistanı huni metinlerini
 // yazarken sistem isteminde okur. Veri /panel/api/uygulamalar/{app}/baglam
-// (sözleşme UrunBaglami); yazma kabuğun CSRF jetonuyla (api.ts).
+// (sözleşme UrunBaglami); yazma kabuğun CSRF jetonuyla (api.ts). P7d (A25):
+// Entegrasyonlar'ın bölümü, satır düzeninde (solda etiket).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
-import { SayfaBasi } from "../Duzen";
+import { alanSinifi, Satir } from "../ui/Alan";
+import { Bolum } from "../ui/Bolum";
 import { Dugme } from "../ui/Dugme";
-import { Kart, KartBasi } from "../ui/Kart";
+import { Kart } from "../ui/Kart";
 
 type UrunBaglami = components["schemas"]["UrunBaglami"];
 
@@ -61,40 +63,15 @@ const ALANLAR: {
     },
 ];
 
-export function Baglam(): ReactNode {
-    const uygulamalar = useQuery({
-        queryKey: ["uygulamalar"],
-        queryFn: async () =>
-            (await api.GET("/panel/api/uygulamalar")).data?.uygulamalar ?? [],
-    });
-    const [app, setApp] = useState<string | null>(null);
-    const secili = app ?? uygulamalar.data?.[0] ?? null;
-
+export function BaglamBolumu({ app }: { app: string }): ReactNode {
     return (
-        <>
-            <SayfaBasi
-                baslik="Ürün bağlamı"
-                aciklama="AI, huni metinlerini yazarken uygulamanı bu bilgilerle tanır. Boş alan gönderilmez."
-            >
-                {uygulamalar.data && uygulamalar.data.length > 1 ? (
-                    <select
-                        aria-label="Uygulama"
-                        value={secili ?? ""}
-                        onChange={(e) => setApp(e.currentTarget.value)}
-                        className="min-h-9 rounded-lg border border-kenar bg-yuzey px-2.5"
-                    >
-                        {uygulamalar.data.map((a) => (
-                            <option key={a}>{a}</option>
-                        ))}
-                    </select>
-                ) : null}
-            </SayfaBasi>
-            {secili ? (
-                <BaglamFormu key={secili} app={secili} />
-            ) : (
-                <p className="text-soluk">Yükleniyor…</p>
-            )}
-        </>
+        <Bolum
+            id="baglam"
+            baslik="Ürün bağlamı (AI)"
+            aciklama="AI, huni metinlerini yazarken uygulamanı bu bilgilerle tanır. Boş alan gönderilmez."
+        >
+            <BaglamFormu app={app} />
+        </Bolum>
     );
 }
 
@@ -157,80 +134,70 @@ function BaglamGovdesi({
     const degisti = JSON.stringify(form) !== JSON.stringify(kayitli);
 
     return (
-        <Kart>
-            <KartBasi
-                baslik={app}
-                aciklama="Her istekte Claude'a bu uygulamanın tanımı olarak gider."
-            />
-            <form
-                className="grid gap-5 px-4.5 py-4"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    kayit.mutate(form);
-                }}
-            >
-                {ALANLAR.map((a) => {
-                    const ortak = {
-                        id: `baglam-${a.ad}`,
-                        value: form[a.ad],
-                        maxLength: a.azami,
-                        placeholder: a.ornek,
-                        "aria-describedby": `baglam-${a.ad}-aciklama`,
-                        className:
-                            "w-full rounded-lg border border-kenar bg-zemin px-3 py-2 text-metin",
-                        onChange: (e: { currentTarget: { value: string } }) => {
-                            const deger = e.currentTarget.value;
-                            setForm((f) => ({ ...f, [a.ad]: deger }));
-                        },
-                    };
-                    return (
-                        <div key={a.ad} className="grid gap-1.5">
-                            <div className="flex items-baseline justify-between gap-3">
-                                <label
-                                    htmlFor={ortak.id}
-                                    className="font-semibold"
-                                >
-                                    {a.etiket}
-                                </label>
-                                <span className="text-xs text-soluk tabular-nums">
+        <form
+            className="flex flex-col gap-2.5"
+            onSubmit={(e) => {
+                e.preventDefault();
+                kayit.mutate(form);
+            }}
+        >
+            <Kart>
+                {ALANLAR.map((a) => (
+                    <Satir
+                        key={a.ad}
+                        etiket={a.etiket}
+                        yardim={
+                            <span className="flex justify-between gap-3">
+                                <span>{a.aciklama}</span>
+                                <span className="tabular-nums">
                                     {form[a.ad].length}/{a.azami}
                                 </span>
-                            </div>
-                            {a.uzun ? (
+                            </span>
+                        }
+                    >
+                        {(id) => {
+                            const ortak = {
+                                id,
+                                value: form[a.ad],
+                                maxLength: a.azami,
+                                placeholder: a.ornek,
+                                className: alanSinifi,
+                                onChange: (e: {
+                                    currentTarget: { value: string };
+                                }) => {
+                                    const deger = e.currentTarget.value;
+                                    setForm((f) => ({ ...f, [a.ad]: deger }));
+                                },
+                            };
+                            return a.uzun ? (
                                 <textarea rows={3} {...ortak} />
                             ) : (
                                 <input {...ortak} />
-                            )}
-                            <p
-                                id={`baglam-${a.ad}-aciklama`}
-                                className="text-[13px] text-soluk"
-                            >
-                                {a.aciklama}
-                            </p>
-                        </div>
-                    );
-                })}
-                <div className="flex flex-wrap items-center gap-3">
-                    <Dugme
-                        tur="ana"
-                        type="submit"
-                        disabled={!degisti || kayit.isPending}
-                    >
-                        {kayit.isPending ? "Kaydediliyor…" : "Kaydet"}
-                    </Dugme>
-                    {kayit.isSuccess && !degisti ? (
-                        <span role="status" className="text-iyi">
-                            Kaydedildi. Sonraki AI isteğinden itibaren
-                            kullanılır.
-                        </span>
-                    ) : null}
-                    {kayit.isError ? (
-                        <span role="alert" className="text-tehlike">
-                            {kayit.error.message}
-                        </span>
-                    ) : null}
-                </div>
-            </form>
-        </Kart>
+                            );
+                        }}
+                    </Satir>
+                ))}
+            </Kart>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+                {kayit.isSuccess && !degisti ? (
+                    <span role="status" className="text-iyi">
+                        Kaydedildi. Sonraki AI isteğinden itibaren kullanılır.
+                    </span>
+                ) : null}
+                {kayit.isError ? (
+                    <span role="alert" className="text-tehlike">
+                        {kayit.error.message}
+                    </span>
+                ) : null}
+                <Dugme
+                    tur="ana"
+                    type="submit"
+                    className="min-h-11 px-5.5 text-[15px]"
+                    disabled={!degisti || kayit.isPending}
+                >
+                    {kayit.isPending ? "Kaydediliyor…" : "Kaydet"}
+                </Dugme>
+            </div>
+        </form>
     );
 }

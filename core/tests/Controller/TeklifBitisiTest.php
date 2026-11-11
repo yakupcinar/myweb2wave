@@ -166,7 +166,7 @@ final class TeklifBitisiTest extends WebTestCase
     /** @param array<string, mixed> $govde */
     private function teklif(array $govde): void
     {
-        $this->client->request('GET', '/panel/anahtarlar');
+        $this->client->request('GET', '/panel/entegrasyonlar');
         $jeton = (string) $this->client->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');
         $this->client->request('PUT', '/panel/api/uygulamalar/keepchat/planlar/monthly/teklif', server: ['HTTP_X_CSRF_TOKEN' => $jeton], content: (string) json_encode($govde));
     }

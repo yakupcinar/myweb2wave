@@ -248,6 +248,19 @@ final class PanelUygulamaController extends AbstractController
             : new JsonResponse(['hatalar' => ['Anahtar yok ya da zaten iptal edilmiş.']], 404));
     }
 
+    /** P7d (A25): iptal edilmiş anahtarı kalıcı siler; etkin anahtar önce iptal edilir. */
+    #[Route('/{app}/anahtarlar/iptal-edilenler/{id}', name: 'panel_api_anahtar_sil', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function anahtarSil(Request $request, string $app, int $id): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+
+        return self::korumali($this->anahtarlar->sil($app, $id)
+            ? new JsonResponse(null, 204)
+            : new JsonResponse(['hatalar' => ['Anahtar yok ya da iptal edilmemiş — önce iptal edin.']], 404));
+    }
+
     private static function korumali(JsonResponse $yanit): JsonResponse
     {
         $yanit->headers->set('Cache-Control', 'no-store');

@@ -99,10 +99,10 @@ final class PanelBaglamTest extends WebTestCase
         $this->client->request('PUT', '/panel/api/uygulamalar/keepchat/baglam', server: ['HTTP_X_CSRF_TOKEN' => $jeton], content: (string) json_encode($govde));
     }
 
-    /** Panel uygulamasının kabuğu (/panel/baglam) jetonu taşır. */
+    /** Panel uygulamasının kabuğu (/panel/entegrasyonlar) jetonu taşır. */
     private function jeton(): string
     {
-        $this->client->request('GET', '/panel/baglam');
+        $this->client->request('GET', '/panel/entegrasyonlar');
         self::assertResponseIsSuccessful();
         $jeton = (string) $this->client->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');
         self::assertNotSame('', $jeton);

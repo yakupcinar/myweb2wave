@@ -1,12 +1,22 @@
 // M7b (A20): giden webhook hedefleri — adres + olaylar, sır yalnız eklemede
 // bir kez görünür; etkin / pasif, sil (iki adımlı onay), teslim günlüğü ve
 // yeniden gönder. Gövdede kişisel veri yok; imza Standard Webhooks.
+// P7d (A25): Entegrasyonlar sayfasının bölümü; olaylar Türkçe ve gruplu,
+// grup başına "Tümü".
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+    useEffect,
+    useRef,
+    useState,
+    type FormEvent,
+    type ReactNode,
+} from "react";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { zaman } from "../bicim";
-import { SayfaBasi } from "../Duzen";
+import { gruplar, olayAdi, olayOzeti } from "../olaylar";
+import { alanSinifi, kutuSinifi, Satir } from "../ui/Alan";
+import { Bolum } from "../ui/Bolum";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
@@ -14,20 +24,9 @@ import { Tablo, Td, Th } from "../ui/Tablo";
 
 type Hedef = components["schemas"]["WebhookHedefi"];
 
-export function Webhooklar(): ReactNode {
-    const uygulamalar = useQuery({
-        queryKey: ["uygulamalar"],
-        queryFn: async () =>
-            (await api.GET("/panel/api/uygulamalar")).data?.uygulamalar ?? [],
-    });
-    const app = uygulamalar.data?.[0];
-    if (!app) return <p className="text-soluk">Yükleniyor…</p>;
-    return <HedefListesi app={app} />;
-}
-
 const JETON = { "X-CSRF-Token": "" };
 
-function HedefListesi({ app }: { app: string }): ReactNode {
+export function WebhookBolumu({ app }: { app: string }): ReactNode {
     const anahtar = ["webhooklar", app];
     const istemci = useQueryClient();
     const sorgu = useQuery({
@@ -45,6 +44,7 @@ function HedefListesi({ app }: { app: string }): ReactNode {
     const [secili, setSecili] = useState<string[]>([]);
     const [hata, setHata] = useState("");
     const [sir, setSir] = useState("");
+    const sozluk = sorgu.data?.olaylar ?? [];
     const yenile = () => istemci.invalidateQueries({ queryKey: anahtar });
     const ekle = async (e: FormEvent) => {
         e.preventDefault();
@@ -64,15 +64,15 @@ function HedefListesi({ app }: { app: string }): ReactNode {
         await yenile();
     };
     return (
-        <>
-            <SayfaBasi
-                baslik="Webhook'lar"
-                aciklama="Olaylar kendi sunucuna imzalı olarak gönderilir. Kişisel veri gönderilmez; aynı olay iki kez gelebilir."
-            />
+        <Bolum
+            id="webhooklar"
+            baslik="Webhook'lar"
+            aciklama="Olaylar kendi sunucuna imzalı olarak gönderilir. Kişisel veri gönderilmez; aynı olay iki kez gelebilir."
+        >
             {sir ? (
                 <div
                     role="alert"
-                    className="mb-4 rounded-lg border border-kenar bg-yuzey p-4"
+                    className="rounded-[14px] border border-iyi bg-yuzey p-4"
                 >
                     <strong>
                         Sırrı şimdi kopyalayın — bir daha gösterilmez:
@@ -80,67 +80,7 @@ function HedefListesi({ app }: { app: string }): ReactNode {
                     <code className="font-mono break-all">{sir}</code>
                 </div>
             ) : null}
-            <Kart aria-label="Yeni hedef" className="mb-4 p-4.5">
-                <form onSubmit={(e) => void ekle(e)} className="grid gap-3">
-                    <label className="grid gap-1.5">
-                        <span className="font-semibold">Adres (https)</span>
-                        <input
-                            type="url"
-                            required
-                            value={adres}
-                            placeholder="https://ornek.com/kanca"
-                            onChange={(e) => setAdres(e.currentTarget.value)}
-                            className="min-h-9 rounded-lg border border-kenar bg-zemin px-3"
-                        />
-                    </label>
-                    <fieldset className="grid gap-1.5">
-                        <legend className="font-semibold">Olaylar</legend>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-                            {(sorgu.data?.olaylar ?? []).map((o) => (
-                                <label
-                                    key={o}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={secili.includes(o)}
-                                        onChange={(e) => {
-                                            // Değer şimdi okunur: güncelleyici sonra (çizimde) koşar,
-                                            // currentTarget o an null (test yakaladı).
-                                            const isaretli =
-                                                e.currentTarget.checked;
-                                            setSecili((s) =>
-                                                isaretli
-                                                    ? [...s, o]
-                                                    : s.filter((x) => x !== o),
-                                            );
-                                        }}
-                                    />
-                                    <span className="font-mono text-[12.5px]">
-                                        {o}
-                                    </span>
-                                </label>
-                            ))}
-                        </div>
-                    </fieldset>
-                    {hata ? (
-                        <p role="alert" className="text-tehlike">
-                            {hata}
-                        </p>
-                    ) : null}
-                    <div>
-                        <Dugme
-                            tur="ana"
-                            type="submit"
-                            disabled={!secili.length}
-                        >
-                            Ekle
-                        </Dugme>
-                    </div>
-                </form>
-            </Kart>
             <Kart aria-label="Hedefler">
-                <KartBasi baslik="Hedefler" />
                 {sorgu.isError ? (
                     <p role="alert" className="p-4 text-tehlike">
                         Webhook'lar yüklenemedi.
@@ -166,6 +106,7 @@ function HedefListesi({ app }: { app: string }): ReactNode {
                                     key={h.id}
                                     app={app}
                                     h={h}
+                                    sozluk={sozluk}
                                     yenile={yenile}
                                 />
                             ))}
@@ -180,17 +121,153 @@ function HedefListesi({ app }: { app: string }): ReactNode {
                     </Tablo>
                 )}
             </Kart>
-        </>
+            <Kart aria-label="Yeni hedef">
+                <KartBasi baslik="Yeni hedef" />
+                <form onSubmit={(e) => void ekle(e)}>
+                    <Satir etiket="Adres (https)">
+                        {(id) => (
+                            <input
+                                id={id}
+                                type="url"
+                                required
+                                value={adres}
+                                placeholder="https://ornek.com/kanca"
+                                onChange={(e) =>
+                                    setAdres(e.currentTarget.value)
+                                }
+                                className={alanSinifi}
+                            />
+                        )}
+                    </Satir>
+                    <div className="grid items-start gap-x-4 gap-y-2 border-t border-kenar px-[18px] py-3.5 md:grid-cols-[220px_minmax(0,1fr)]">
+                        <span id="webhook-olaylar" className="text-[15px]">
+                            Olaylar
+                        </span>
+                        <div
+                            role="group"
+                            aria-labelledby="webhook-olaylar"
+                            className="grid gap-3"
+                        >
+                            {gruplar(sozluk).map((g) => (
+                                <OlayGrubu
+                                    key={g.ad}
+                                    ad={g.ad}
+                                    olaylar={g.olaylar}
+                                    secili={secili}
+                                    setSecili={setSecili}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-3 border-t border-kenar px-[18px] py-3.5">
+                        {hata ? (
+                            <p role="alert" className="text-tehlike">
+                                {hata}
+                            </p>
+                        ) : null}
+                        <Dugme
+                            tur="ana"
+                            type="submit"
+                            disabled={!secili.length}
+                        >
+                            Ekle
+                        </Dugme>
+                    </div>
+                </form>
+            </Kart>
+        </Bolum>
+    );
+}
+
+function OlayGrubu({
+    ad,
+    olaylar,
+    secili,
+    setSecili,
+}: {
+    ad: string;
+    olaylar: [string, string][];
+    secili: string[];
+    setSecili: (f: (s: string[]) => string[]) => void;
+}): ReactNode {
+    const tumu = useRef<HTMLInputElement>(null);
+    const adlar = olaylar.map(([o]) => o);
+    const sayi = adlar.filter((o) => secili.includes(o)).length;
+    // Yarım seçim HTML özniteliği değil, yalnız DOM özelliği.
+    useEffect(() => {
+        if (tumu.current)
+            tumu.current.indeterminate = sayi > 0 && sayi < adlar.length;
+    }, [sayi, adlar.length]);
+    return (
+        <div role="group" aria-label={ad} className="grid gap-1.5">
+            <div className="flex items-center gap-3">
+                <span className="text-[13px] font-semibold text-soluk uppercase">
+                    {ad}
+                </span>
+                {adlar.length > 1 ? (
+                    <label className="flex items-center gap-1.5 text-[13px]">
+                        <input
+                            ref={tumu}
+                            type="checkbox"
+                            checked={sayi === adlar.length}
+                            className={kutuSinifi}
+                            onChange={(e) => {
+                                const isaretli = e.currentTarget.checked;
+                                setSecili((s) =>
+                                    isaretli
+                                        ? [
+                                              ...s,
+                                              ...adlar.filter(
+                                                  (o) => !s.includes(o),
+                                              ),
+                                          ]
+                                        : s.filter((x) => !adlar.includes(x)),
+                                );
+                            }}
+                        />
+                        Tümü
+                    </label>
+                ) : null}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {olaylar.map(([o, etiket]) => (
+                    <label
+                        key={o}
+                        title={o}
+                        className="flex items-center gap-1.5 text-[15px]"
+                    >
+                        <input
+                            type="checkbox"
+                            checked={secili.includes(o)}
+                            className={kutuSinifi}
+                            onChange={(e) => {
+                                // Değer şimdi okunur: güncelleyici sonra (çizimde) koşar,
+                                // currentTarget o an null (test yakaladı).
+                                const isaretli = e.currentTarget.checked;
+                                setSecili((s) =>
+                                    isaretli
+                                        ? [...s, o]
+                                        : s.filter((x) => x !== o),
+                                );
+                            }}
+                        />
+                        {etiket}
+                    </label>
+                ))}
+            </div>
+        </div>
     );
 }
 
 function HedefSatiri({
     app,
     h,
+    sozluk,
     yenile,
 }: {
     app: string;
     h: Hedef;
+    sozluk: string[];
     yenile: () => Promise<void>;
 }): ReactNode {
     const [silOnay, setSilOnay] = useState(false);
@@ -210,8 +287,8 @@ function HedefSatiri({
         <>
             <tr data-hedef={h.id}>
                 <Td className="font-mono text-[12.5px]">{h.adres}</Td>
-                <Td className="font-mono text-[12.5px] whitespace-normal">
-                    {h.olaylar.join(", ")}
+                <Td className="whitespace-normal" title={h.olaylar.join(", ")}>
+                    {olayOzeti(h.olaylar, sozluk)}
                 </Td>
                 <Td>
                     {h.aktif ? (
@@ -248,7 +325,7 @@ function HedefSatiri({
                             <>
                                 <span>Silinsin mi?</span>
                                 <Dugme
-                                    tur="ana"
+                                    tur="yikici"
                                     onClick={() =>
                                         void sonuc(
                                             api.DELETE(
@@ -260,12 +337,20 @@ function HedefSatiri({
                                 >
                                     Evet
                                 </Dugme>
-                                <Dugme onClick={() => setSilOnay(false)}>
+                                <Dugme
+                                    tur="sade"
+                                    onClick={() => setSilOnay(false)}
+                                >
                                     Vazgeç
                                 </Dugme>
                             </>
                         ) : (
-                            <Dugme onClick={() => setSilOnay(true)}>Sil</Dugme>
+                            <Dugme
+                                tur="tehlike"
+                                onClick={() => setSilOnay(true)}
+                            >
+                                Sil
+                            </Dugme>
                         )}
                     </div>
                     {hata ? (
@@ -325,7 +410,9 @@ function Gunluk({
                 {sorgu.data.map((t) => (
                     <tr key={t.id} data-teslim={t.id}>
                         <td className="py-1 pr-3">{zaman(t.zaman)}</td>
-                        <td className="py-1 pr-3 font-mono">{t.olay}</td>
+                        <td className="py-1 pr-3" title={t.olay}>
+                            {olayAdi(t.olay)}
+                        </td>
                         <td className="py-1 pr-3">
                             {t.durum} ({t.deneme})
                             {t.sonHata ? ` — ${t.sonHata}` : ""}

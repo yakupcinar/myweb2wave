@@ -1130,6 +1130,19 @@ paths:
         "204": { description: İptal edildi }
         "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Yok ya da zaten iptal, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/anahtarlar/iptal-edilenler/{id}:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    delete:
+      operationId: panelApiAnahtariSil
+      summary: "P7d (A25): iptal edilmiş anahtarı ve çağrı kayıtlarını kalıcı siler; etkin anahtar önce iptal edilir"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Silindi }
+        "403": { description: CSRF, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Yok ya da iptal edilmemiş, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/planlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }

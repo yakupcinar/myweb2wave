@@ -266,7 +266,7 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
 - Webhook olayları Türkçe ve gruplu seçilir (Huni · Ödeme · Abonelik), grup başına "Tümü".
 - İptal edilen API anahtarları listede gizlenir ("İptal edilenler (N)" katlanır) ve silinebilir; etkin anahtar
   önce iptal edilir. Reddedilenler: yalnız gizlemek, iptalde silmek (geçmiş kalmaz).
-- Kaynak: [p7-taslak-farki.md](decisions/p7-taslak-farki.md) (Ç130, Ç131).
+- Kaynak: [p7-taslak-farki.md](decisions/p7-taslak-farki.md) (Ç130, Ç131). Uygulama: [p7d-entegrasyonlar.md](decisions/p7d-entegrasyonlar.md).
 
 **A24 · Panel tabloları sayfalı** (2026-11-10, kullanıcı: numaralı sayfalama, büyüyen tüm tablolar).
 - Sayfa başına 25, sunucuda; sıralama da sunucuda. Aboneler'de sayfa ve sıra adreste. Rapor'un üç listesi

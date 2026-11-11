@@ -32,7 +32,7 @@ final class PanelWebhookTest extends WebTestCase
         $saglayici = static::getContainer()->get(YoneticiSaglayici::class);
         self::assertInstanceOf(YoneticiSaglayici::class, $saglayici);
         $this->client->loginUser($saglayici->loadUserByIdentifier('yonetici'), 'panel');
-        $this->client->request('GET', '/panel/webhooklar');
+        $this->client->request('GET', '/panel/entegrasyonlar');
         self::assertResponseIsSuccessful('doğrudan adres de açılır (tuzak §51)');
         $this->jeton = (string) $this->client->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');
     }

@@ -240,7 +240,7 @@ final class DeneylerTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
         self::assertSame([], $this->db->fetchFirstColumn('SELECT ad FROM deneyler'));
 
-        $this->istemci->request('GET', '/panel/anahtarlar');
+        $this->istemci->request('GET', '/panel/entegrasyonlar');
         $jeton = (string) $this->istemci->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');
         $this->istemci->jsonRequest('POST', '/panel/api/uygulamalar/keepchat/deneyler', $govde, ['HTTP_X-CSRF-Token' => $jeton]);
         self::assertResponseStatusCodeSame(201);

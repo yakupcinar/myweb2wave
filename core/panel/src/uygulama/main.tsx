@@ -7,11 +7,9 @@ import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Duzen } from "./Duzen";
-import { Anahtarlar } from "./sayfalar/Anahtarlar";
 import { Ayarlar } from "./sayfalar/Ayarlar";
-import { Baglam } from "./sayfalar/Baglam";
 import { Deneyler } from "./sayfalar/Deneyler";
-import { Webhooklar } from "./sayfalar/Webhooklar";
+import { Entegrasyonlar } from "./sayfalar/Entegrasyonlar";
 import { Yasal } from "./sayfalar/Yasal";
 import { Huniler } from "./sayfalar/Huniler";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
@@ -33,11 +31,10 @@ export const yollar = [
             { path: "kullanicilar", element: <Kullanicilar /> },
             { path: "planlar", element: <Planlar /> },
             { path: "deneyler", element: <Deneyler /> },
-            { path: "webhooklar", element: <Webhooklar /> },
-            { path: "baglam", element: <Baglam /> },
-            { path: "anahtarlar", element: <Anahtarlar /> },
             { path: "ayarlar", element: <Ayarlar /> },
             { path: "yasal", element: <Yasal /> },
+            // P7d: eski /panel/webhooklar, /anahtarlar, /baglam sunucuda buraya yönlenir.
+            { path: "entegrasyonlar", element: <Entegrasyonlar /> },
         ],
     },
     {

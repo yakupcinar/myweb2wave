@@ -2,18 +2,17 @@
 // sayfa NavLink'le işaretlenir (aria-current). P6: Apple tarzı — menü dört
 // grupta (Analiz · Satış · Müşteriler · Ayarlar); dar ekranda grup adları
 // gizlenir, bağlantılar tek satırda kayar. P7a: menünün altında tema seçici.
+// P7d (A25): Webhook'lar, API anahtarları, Ürün bağlamı → tek Entegrasyonlar.
 import {
     ChartColumn,
     FlaskConical,
     Filter,
-    KeyRound,
     LogOut,
+    Plug,
     Scale,
     Settings,
-    Sparkles,
     Tags,
     Users,
-    Webhook,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router";
@@ -110,17 +109,9 @@ export function Duzen(): ReactNode {
                         <Scale aria-hidden="true" className="size-4.5" />
                         Yasal metinler
                     </NavLink>
-                    <NavLink to="/panel/baglam" className={ogeSinifi}>
-                        <Sparkles aria-hidden="true" className="size-4.5" />
-                        Ürün bağlamı (AI)
-                    </NavLink>
-                    <NavLink to="/panel/webhooklar" className={ogeSinifi}>
-                        <Webhook aria-hidden="true" className="size-4.5" />
-                        Webhook'lar
-                    </NavLink>
-                    <NavLink to="/panel/anahtarlar" className={ogeSinifi}>
-                        <KeyRound aria-hidden="true" className="size-4.5" />
-                        API anahtarları
+                    <NavLink to="/panel/entegrasyonlar" className={ogeSinifi}>
+                        <Plug aria-hidden="true" className="size-4.5" />
+                        Entegrasyonlar
                     </NavLink>
                 </Grup>
                 <TemaSecici />

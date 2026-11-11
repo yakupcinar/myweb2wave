@@ -779,6 +779,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/anahtarlar/iptal-edilenler/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** P7d (A25): iptal edilmiş anahtarı ve çağrı kayıtlarını kalıcı siler; etkin anahtar önce iptal edilir */
+        delete: operations["panelApiAnahtariSil"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/planlar": {
         parameters: {
             query?: never;
@@ -4079,6 +4099,47 @@ export interface operations {
                 };
             };
             /** @description Yok ya da zaten iptal */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiAnahtariSil: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Silindi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description CSRF */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Yok ya da iptal edilmemiş */
             404: {
                 headers: {
                     [name: string]: unknown;

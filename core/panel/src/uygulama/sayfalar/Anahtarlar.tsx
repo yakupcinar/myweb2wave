@@ -1,13 +1,15 @@
 // Kişisel API anahtarları (A5a, B6): MCP istemcisi (Claude Code, Claude
 // Desktop…) bununla bağlanır. Anahtar YALNIZ oluşturulunca bir kez görünür;
 // listede önek. İptal geri alınamaz — tarayıcı onay penceresi yerine iki
-// adımlı düğme (diyalog akışı kilitler).
+// adımlı düğme (diyalog akışı kilitler). P7d (A25): Entegrasyonlar'ın
+// bölümü; iptal edilenler katlanır bölümde, oradan kalıcı silinir.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { zaman } from "../bicim";
-import { SayfaBasi } from "../Duzen";
+import { alanSinifi, kutuSinifi, Satir } from "../ui/Alan";
+import { Bolum } from "../ui/Bolum";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
@@ -15,25 +17,17 @@ import { Tablo, Td, Th } from "../ui/Tablo";
 
 type ApiAnahtari = components["schemas"]["ApiAnahtari"];
 
-export function Anahtarlar(): ReactNode {
-    const uygulamalar = useQuery({
-        queryKey: ["uygulamalar"],
-        queryFn: async () =>
-            (await api.GET("/panel/api/uygulamalar")).data?.uygulamalar ?? [],
-    });
-    const app = uygulamalar.data?.[0];
+const JETON = { "X-CSRF-Token": "" };
+
+export function AnahtarBolumu({ app }: { app: string }): ReactNode {
     return (
-        <>
-            <SayfaBasi
-                baslik="API anahtarları"
-                aciklama="Claude (Code ya da Desktop) panele bu anahtarla bağlanır. Huniye yalnız taslak olarak yazar."
-            />
-            {app ? (
-                <AnahtarListesi app={app} />
-            ) : (
-                <p className="text-soluk">Yükleniyor…</p>
-            )}
-        </>
+        <Bolum
+            id="anahtarlar"
+            baslik="API anahtarları"
+            aciklama="Claude (Code ya da Desktop) panele bu anahtarla bağlanır. Huniye yalnız taslak olarak yazar."
+        >
+            <AnahtarListesi app={app} />
+        </Bolum>
     );
 }
 
@@ -57,6 +51,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
         null,
     );
     const [iptalSor, setIptalSor] = useState<number | null>(null);
+    const [iptallerAcik, setIptallerAcik] = useState(false);
     const yenile = (): Promise<void> =>
         istemci.invalidateQueries({ queryKey: ["anahtarlar", app] });
 
@@ -66,7 +61,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                 "/panel/api/uygulamalar/{app}/anahtarlar",
                 {
                     // Sözleşme başlığı zorunlu tutuyor; asıl jetonu api.ts yazar.
-                    params: { path: { app }, header: { "X-CSRF-Token": "" } },
+                    params: { path: { app }, header: JETON },
                     body: { ad: adi, yonetim: izin },
                 },
             );
@@ -87,12 +82,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
         mutationFn: async (id: number) => {
             const { error } = await api.DELETE(
                 "/panel/api/uygulamalar/{app}/anahtarlar/{id}",
-                {
-                    params: {
-                        path: { app, id },
-                        header: { "X-CSRF-Token": "" },
-                    },
-                },
+                { params: { path: { app, id }, header: JETON } },
             );
             if (error) throw new Error(error.hatalar.join(" "));
         },
@@ -115,73 +105,15 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
             </p>
         );
     const mcp = sorgu.data.mcpAdresi;
+    const etkinler = sorgu.data.anahtarlar.filter((a) => !a.iptal);
+    const iptaller = sorgu.data.anahtarlar.filter((a) => a.iptal);
 
     return (
-        <div className="grid gap-5">
+        <>
             {yeni ? (
                 <YeniAnahtar {...yeni} mcp={mcp} kapat={() => setYeni(null)} />
             ) : null}
-            <Kart>
-                <KartBasi
-                    baslik="Yeni anahtar"
-                    aciklama={`MCP adresi: ${mcp}`}
-                />
-                <form
-                    className="flex flex-wrap items-end gap-3 px-4.5 py-4"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        olustur.mutate({ adi: ad, izin: yonetim });
-                    }}
-                >
-                    <label className="grid gap-1.5">
-                        <span className="font-semibold">Ad</span>
-                        <input
-                            value={ad}
-                            maxLength={100}
-                            placeholder="Claude Code — dizüstü"
-                            onChange={(e) => setAd(e.currentTarget.value)}
-                            className="min-h-9 w-72 max-w-full rounded-lg border border-kenar bg-zemin px-3"
-                        />
-                    </label>
-                    <label className="flex max-w-md items-start gap-2">
-                        <input
-                            type="checkbox"
-                            checked={yonetim}
-                            onChange={(e) =>
-                                setYonetim(e.currentTarget.checked)
-                            }
-                            className="mt-1"
-                        />
-                        <span>
-                            <span className="font-semibold">
-                                Abonelik ve deney yönetimi
-                            </span>
-                            <span className="block text-[12.5px] text-soluk">
-                                MCP'de iptal planlama, iade ve deney başlat /
-                                durdur araçları açılır. Yalnız güvendiğiniz
-                                istemciye verin.
-                            </span>
-                        </span>
-                    </label>
-                    <Dugme
-                        tur="ana"
-                        type="submit"
-                        disabled={!ad.trim() || olustur.isPending}
-                    >
-                        Oluştur
-                    </Dugme>
-                    {olustur.isError ? (
-                        <span role="alert" className="text-tehlike">
-                            {olustur.error.message}
-                        </span>
-                    ) : null}
-                </form>
-            </Kart>
             <Kart aria-label="Anahtarlar">
-                <KartBasi
-                    baslik="Anahtarlar"
-                    aciklama="Anahtarın kendisi saklanmaz; tanımak için ilk karakterleri görünür."
-                />
                 <Tablo>
                     <thead>
                         <tr>
@@ -190,7 +122,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                                 "Önek",
                                 "Oluşturma (UTC)",
                                 "Son kullanım (UTC)",
-                                "Durum",
+                                "İzin",
                                 "",
                             ].map((b) => (
                                 <Th key={b}>{b}</Th>
@@ -198,7 +130,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                         </tr>
                     </thead>
                     <tbody>
-                        {sorgu.data.anahtarlar.map((a: ApiAnahtari) => (
+                        {etkinler.map((a: ApiAnahtari) => (
                             <tr key={a.id}>
                                 <Td>{a.ad}</Td>
                                 <Td className="font-mono text-[12.5px]">
@@ -209,20 +141,19 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                                     {a.sonKullanim ? zaman(a.sonKullanim) : "—"}
                                 </Td>
                                 <Td>
-                                    {a.iptal ? (
-                                        <Rozet>iptal</Rozet>
-                                    ) : (
-                                        <Rozet tur="iyi">etkin</Rozet>
-                                    )}{" "}
                                     {a.yonetim ? (
                                         <Rozet tur="uyari">yönetim</Rozet>
-                                    ) : null}
+                                    ) : (
+                                        <span className="text-soluk">
+                                            okuma
+                                        </span>
+                                    )}
                                 </Td>
                                 <Td className="text-right">
-                                    {a.iptal ? null : iptalSor === a.id ? (
+                                    {iptalSor === a.id ? (
                                         <span className="inline-flex gap-2">
                                             <Dugme
-                                                tur="tehlike"
+                                                tur="yikici"
                                                 onClick={() =>
                                                     iptal.mutate(a.id)
                                                 }
@@ -230,6 +161,7 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                                                 Evet, iptal et
                                             </Dugme>
                                             <Dugme
+                                                tur="sade"
                                                 onClick={() =>
                                                     setIptalSor(null)
                                                 }
@@ -248,17 +180,175 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                                 </Td>
                             </tr>
                         ))}
-                        {sorgu.data.anahtarlar.length ? null : (
+                        {etkinler.length ? null : (
                             <tr>
                                 <Td colSpan={6} className="text-soluk">
-                                    Henüz anahtar yok.
+                                    Etkin anahtar yok.
                                 </Td>
                             </tr>
                         )}
                     </tbody>
                 </Tablo>
+                {iptaller.length ? (
+                    <div className="border-t border-kenar">
+                        <button
+                            type="button"
+                            aria-expanded={iptallerAcik}
+                            className="w-full px-[18px] py-3 text-left text-sm text-vurgu"
+                            onClick={() => setIptallerAcik((x) => !x)}
+                        >
+                            İptal edilenler ({iptaller.length})
+                        </button>
+                        {iptallerAcik ? (
+                            <IptalEdilenler
+                                app={app}
+                                anahtarlar={iptaller}
+                                yenile={yenile}
+                            />
+                        ) : null}
+                    </div>
+                ) : null}
             </Kart>
-        </div>
+            <Kart>
+                <KartBasi
+                    baslik="Yeni anahtar"
+                    aciklama={`MCP adresi: ${mcp}`}
+                />
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        olustur.mutate({ adi: ad, izin: yonetim });
+                    }}
+                >
+                    <Satir etiket="Ad">
+                        {(id) => (
+                            <input
+                                id={id}
+                                value={ad}
+                                maxLength={100}
+                                placeholder="Claude Code — dizüstü"
+                                onChange={(e) => setAd(e.currentTarget.value)}
+                                className={alanSinifi}
+                            />
+                        )}
+                    </Satir>
+                    <div className="grid items-start gap-x-4 gap-y-1.5 border-t border-kenar px-[18px] py-3.5 md:grid-cols-[220px_minmax(0,1fr)]">
+                        <span className="text-[15px]">İzin</span>
+                        <label className="flex items-start gap-2">
+                            <input
+                                type="checkbox"
+                                checked={yonetim}
+                                onChange={(e) =>
+                                    setYonetim(e.currentTarget.checked)
+                                }
+                                className={`${kutuSinifi} mt-0.5`}
+                            />
+                            <span>
+                                <span className="text-[15px]">
+                                    Abonelik ve deney yönetimi
+                                </span>
+                                <span className="block text-[13px] text-soluk">
+                                    MCP'de iptal planlama, iade ve deney başlat
+                                    / durdur araçları açılır. Yalnız
+                                    güvendiğiniz istemciye verin.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-3 border-t border-kenar px-[18px] py-3.5">
+                        {olustur.isError ? (
+                            <span role="alert" className="text-tehlike">
+                                {olustur.error.message}
+                            </span>
+                        ) : null}
+                        <Dugme
+                            tur="ana"
+                            type="submit"
+                            disabled={!ad.trim() || olustur.isPending}
+                        >
+                            Oluştur
+                        </Dugme>
+                    </div>
+                </form>
+            </Kart>
+        </>
+    );
+}
+
+/** P7d (A25): iptal edilmiş anahtarlar — kalıcı silme iki adımlı. */
+function IptalEdilenler({
+    app,
+    anahtarlar,
+    yenile,
+}: {
+    app: string;
+    anahtarlar: ApiAnahtari[];
+    yenile: () => Promise<void>;
+}): ReactNode {
+    const [silSor, setSilSor] = useState<number | null>(null);
+    const sil = useMutation({
+        mutationFn: async (id: number) => {
+            const { error } = await api.DELETE(
+                "/panel/api/uygulamalar/{app}/anahtarlar/iptal-edilenler/{id}",
+                { params: { path: { app, id }, header: JETON } },
+            );
+            if (error) throw new Error(error.hatalar.join(" "));
+        },
+        onSuccess: async () => {
+            setSilSor(null);
+            await yenile();
+        },
+    });
+    return (
+        <Tablo aria-label="İptal edilen anahtarlar">
+            <tbody>
+                {anahtarlar.map((a) => (
+                    <tr key={a.id} className="text-soluk">
+                        <Td>{a.ad}</Td>
+                        <Td className="font-mono text-[12.5px]">{a.onek}…</Td>
+                        <Td>{zaman(a.olusturma)}</Td>
+                        <Td>{a.sonKullanim ? zaman(a.sonKullanim) : "—"}</Td>
+                        <Td className="text-right">
+                            {silSor === a.id ? (
+                                <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                                    <span className="text-metin">
+                                        Kalıcı silinsin mi? Geri alınamaz.
+                                    </span>
+                                    <Dugme
+                                        tur="yikici"
+                                        disabled={sil.isPending}
+                                        onClick={() => sil.mutate(a.id)}
+                                    >
+                                        Evet, sil
+                                    </Dugme>
+                                    <Dugme
+                                        tur="sade"
+                                        onClick={() => setSilSor(null)}
+                                    >
+                                        Vazgeç
+                                    </Dugme>
+                                </span>
+                            ) : (
+                                <Dugme
+                                    tur="tehlike"
+                                    onClick={() => setSilSor(a.id)}
+                                >
+                                    Sil
+                                </Dugme>
+                            )}
+                            {sil.isError && silSor === a.id ? (
+                                <span
+                                    role="alert"
+                                    className="block text-tehlike"
+                                >
+                                    {sil.error.message}
+                                </span>
+                            ) : null}
+                        </Td>
+                    </tr>
+                ))}
+            </tbody>
+        </Tablo>
     );
 }
 

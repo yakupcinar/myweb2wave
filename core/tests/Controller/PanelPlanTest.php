@@ -282,7 +282,7 @@ final class PanelPlanTest extends WebTestCase
 
     private function jeton(): string
     {
-        $this->client->request('GET', '/panel/anahtarlar');
+        $this->client->request('GET', '/panel/entegrasyonlar');
         self::assertResponseIsSuccessful();
 
         return (string) $this->client->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');

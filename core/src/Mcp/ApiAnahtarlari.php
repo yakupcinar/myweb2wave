@@ -88,6 +88,25 @@ final readonly class ApiAnahtarlari
         );
     }
 
+    /**
+     * P7d (A25): yalnız iptal edilmiş anahtar silinir; çağrı kayıtları da
+     * gider (yalnız bu anahtara bağlı, başka yerde okunmuyor). Etkin anahtar
+     * önce iptal edilir — tek tıkla kalıcı kayıp olmasın.
+     */
+    public function sil(string $app, int $id): bool
+    {
+        return $this->db->transactional(function (Connection $db) use ($app, $id): bool {
+            $var = $db->fetchOne('SELECT 1 FROM api_anahtarlari WHERE id = :id AND app = :app AND iptal_at IS NOT NULL FOR UPDATE', ['id' => $id, 'app' => $app]);
+            if (false === $var) {
+                return false;
+            }
+            $db->executeStatement('DELETE FROM mcp_cagrilari WHERE anahtar_id = :id', ['id' => $id]);
+            $db->executeStatement('DELETE FROM api_anahtarlari WHERE id = :id', ['id' => $id]);
+
+            return true;
+        });
+    }
+
     public function cagriKaydet(int $anahtarId, string $arac, bool $hata): void
     {
         $this->db->insert('mcp_cagrilari', ['anahtar_id' => $anahtarId, 'arac' => $arac, 'hata' => $hata ? 'true' : 'false']);

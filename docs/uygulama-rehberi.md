@@ -95,8 +95,9 @@ her sayfanın doğrudan adresle açılabilmesi için sunucu rotası da
 **Görünüm (P6):** Apple tarzı — açık gri zemin, çerçevesiz beyaz kartlar, sistem yazı tipi, tek mavi vurgu, hap
 düğmeler. Tema menünün altındaki seçiciden: Açık (varsayılan) / Koyu / Sistem; seçim tarayıcıda saklanır ve
 sayfa boyanmadan önce uygulanır ([`tema.html.twig`](../core/templates/panel/tema.html.twig), [`tema.ts`](../core/panel/src/uygulama/tema.ts); P7a). Menü dört grupta: **Analiz** (Rapor, Deneyler) · **Satış** (Huniler, Planlar
-ve fiyatlar) · **Müşteriler** (Aboneler) · **Ayarlar** (Uygulama, Yasal metinler, Ürün bağlamı (AI), Webhook'lar, API
-anahtarları). Renkler [`stil.css`](../core/panel/src/uygulama/stil.css)'te ve giriş sayfası için
+ve fiyatlar) · **Müşteriler** (Aboneler) · **Ayarlar** (Uygulama, Yasal metinler, Entegrasyonlar).
+Entegrasyonlar (P7d, A25) üç bölümlü tek sayfadır: Webhook'lar (2.6) · API anahtarları (2.8) · Ürün bağlamı (2.7);
+eski adresler `/panel/webhooklar`, `/anahtarlar`, `/baglam` ilgili bölüme 301 ile yönlenir. Renkler [`stil.css`](../core/panel/src/uygulama/stil.css)'te ve giriş sayfası için
 [`base.html.twig`](../core/templates/base.html.twig)'de; iki kopyanın aynı olduğunu ve her metin renginin 4.5:1'i
 geçtiğini [`PanelRenkleriTest`](../core/tests/Panel/PanelRenkleriTest.php) ölçer.
 
@@ -316,13 +317,15 @@ sonradan değişen deney sonuçları karıştırırdı. Bitmiş deney yeniden ba
 
 **Kayıtlar:** [m4a deneyler](decisions/m4a-deneyler.md) · [m4b deney sonuçları](decisions/m4b-deney-sonuclari.md)
 
-### 2.6 Webhook'lar — `/panel/webhooklar`
+### 2.6 Webhook'lar — `/panel/entegrasyonlar#webhooklar`
 
 **Ne işe yarar.** Uygulamadaki olayları (ödeme, abonelik durumu, adım, cevap…) senin seçtiğin bir sunucuya gerçek
 zamanlı gönderir; ör. kendi CRM'ine ya da Zapier'e. Kişisel veri gönderilmez, yalnız kimlikler.
 
 **Ekranda ne var** ([`Webhooklar.tsx`](../core/panel/src/uygulama/sayfalar/Webhooklar.tsx)): uygulama başına hedefler
-(adres, olay türleri, etkin / pasif) ve her hedefin teslim günlüğü (başarılı, başarısız, yeniden denenecek).
+(adres, olaylar, etkin / pasif) ve her hedefin teslim günlüğü (başarılı, başarısız, yeniden denenecek). Olaylar
+Türkçe adlarıyla üç grupta seçilir (Huni · Ödeme · Abonelik), grup başına "Tümü"; adlar
+[`olaylar.ts`](../core/panel/src/uygulama/olaylar.ts)'te, sözlükle eşliğini `PanelOlayAdlariTest` ölçer.
 
 **Ne yapabilirsin.** Hedef ekle (imza sırrı **bir kez** görünür, sakla), etkinleştir / durdur, sil (iki adımlı onay),
 teslim günlüğüne bak, başarısız teslimi yeniden gönder.
@@ -338,11 +341,11 @@ teslim günlüğüne bak, başarısız teslimi yeniden gönder.
    doğrular. İstekler özel ağ adreslerine gidemez (iç sunuculara saldırı yolu olmasın).
 5. Teslim "en az bir kez"dir: alıcı aynı olayı iki kez alabilir, olay kimliğiyle tekilleştirmelidir.
 
-**Bilinen sınırlar:** cron tanımlı değil (üretim yok).
+**Bilinen sınırlar:** dağıtım betiğinde `app:webhook:gonder` cron'u yok (Ç133).
 
-**Kayıtlar:** [m7a giden webhook](decisions/m7a-giden-webhook.md) · [m7b webhook paneli](decisions/m7b-webhook-paneli.md)
+**Kayıtlar:** [m7a giden webhook](decisions/m7a-giden-webhook.md) · [m7b webhook paneli](decisions/m7b-webhook-paneli.md) · [p7d entegrasyonlar](decisions/p7d-entegrasyonlar.md)
 
-### 2.7 Ürün bağlamı (AI) — `/panel/baglam`
+### 2.7 Ürün bağlamı (AI) — `/panel/entegrasyonlar#baglam`
 
 **Ne işe yarar.** AI'a uygulamanı tanıtır: ürün ne yapıyor, kategori, hedef kitle, ton ve asla yazılmaması gerekenler.
 AI huni metinlerini bu bağlamla yazar; bağlam olmadan metinler belirgin şekilde genel ve kötü çıkar.
@@ -355,7 +358,7 @@ sistem bilgisine eklenir.
 
 **Kayıtlar:** [ai-a4 ürün bağlamı](decisions/ai-a4-urun-baglami.md)
 
-### 2.8 API anahtarları — `/panel/anahtarlar`
+### 2.8 API anahtarları — `/panel/entegrasyonlar#anahtarlar`
 
 **Ne işe yarar.** Claude Code ya da Claude Desktop'un MCP ile panele bağlanmasını sağlar: Claude raporları okuyabilir,
 huni taslağı düzenleyebilir; izin verilirse abonelik ve deney işlemleri de yapabilir.
@@ -363,7 +366,9 @@ huni taslağı düzenleyebilir; izin verilirse abonelik ve deney işlemleri de y
 **Ekranda ne var** ([`Anahtarlar.tsx`](../core/panel/src/uygulama/sayfalar/Anahtarlar.tsx)): anahtarlar (yalnız ilk
 karakterleri; anahtarın kendisi saklanmaz), MCP adresi, yeni anahtar formu ve **"Abonelik ve deney yönetimi"** kutusu.
 
-**Ne yapabilirsin.** Anahtar oluştur (bir kez gösterilir, hemen kopyala), iptal et.
+**Ne yapabilirsin.** Anahtar oluştur (bir kez gösterilir, hemen kopyala), iptal et. İptal edilenler listede değil,
+katlanır **"İptal edilenler (N)"** bölümündedir; oradan iki adımlı onayla kalıcı silinir. Etkin anahtar silinemez,
+önce iptal edilir (A25).
 
 **Arkada nasıl çalışır**
 1. Anahtarın yalnız özeti `api_anahtarlari`'nda ([`ApiAnahtarlari::olustur`](../core/src/Mcp/ApiAnahtarlari.php#L30)).
@@ -373,7 +378,7 @@ karakterleri; anahtarın kendisi saklanmaz), MCP adresi, yeni anahtar formu ve *
    abonelik listele / iptal planla / geri al / iade ve deney kaydet / durum
    ([`YonetimAraclari`](../core/src/Mcp/YonetimAraclari.php)). İzinsiz anahtar bu araçları hiç görmez — yalnız
    istemcinin onay sorusuna güvenilmez.
-4. Her çağrı `mcp_cagrilari`'na yazılır.
+4. Her çağrı `mcp_cagrilari`'na yazılır; anahtar silinince ([`sil`](../core/src/Mcp/ApiAnahtarlari.php)) yalnız onunkiler de silinir.
 
 **Kayıtlar:** [m7c1 okuma araçları](decisions/m7c1-okuma-araclari.md) · [m7c2 yazma araçları](decisions/m7c2-yazma-araclari.md)
 

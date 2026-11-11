@@ -12,6 +12,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { bosEntegrasyon } from "./entegrasyonSahte";
 
 const KAYITLI = {
     urun: "Sade mesajlaşma",
@@ -23,6 +24,7 @@ const KAYITLI = {
 
 function kur(
     put: (govde: unknown) => Response = (g) => new Response(JSON.stringify(g)),
+    adres = "/panel/entegrasyonlar",
 ) {
     const kabuk = document.createElement("div");
     kabuk.id = "panel-uygulama";
@@ -45,18 +47,17 @@ function kur(
                 govde,
             });
             if (istek.method === "PUT") return put(govde);
-            if (istek.url.endsWith("/panel/api/uygulamalar"))
-                return new Response(
-                    JSON.stringify({ uygulamalar: ["keepchat"] }),
-                );
-            return new Response(JSON.stringify(KAYITLI));
+            const yol = new URL(istek.url, "http://x").pathname;
+            if (yol.endsWith("/baglam"))
+                return new Response(JSON.stringify(KAYITLI));
+            return bosEntegrasyon(yol) ?? new Response("{}", { status: 404 });
         }),
     );
     render(
         <QueryClientProvider client={new QueryClient()}>
             <RouterProvider
                 router={createMemoryRouter(yollar, {
-                    initialEntries: ["/panel/baglam"],
+                    initialEntries: [adres],
                 })}
             />
         </QueryClientProvider>,
@@ -83,7 +84,7 @@ describe("Ürün bağlamı", () => {
         ).toBe(true);
         expect(
             screen
-                .getByRole("link", { name: "Ürün bağlamı (AI)" })
+                .getByRole("link", { name: "Entegrasyonlar" })
                 .getAttribute("aria-current"),
         ).toBe("page");
         expect(screen.getByText("15/1000")).toBeTruthy();
@@ -129,5 +130,18 @@ describe("Ürün bağlamı", () => {
                 "kitle: en çok 500 karakter",
             ),
         );
+    });
+
+    it("P7d: eski adresten gelen #baglam bölümüne kaydırılır", async () => {
+        const kaydirilan: string[] = [];
+        vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(
+            function (this: Element) {
+                kaydirilan.push(this.id);
+            },
+        );
+        kur(undefined, "/panel/entegrasyonlar#baglam");
+        await screen.findByDisplayValue("Sade mesajlaşma");
+        expect(kaydirilan).toEqual(["baglam"]);
+        vi.restoreAllMocks();
     });
 });
