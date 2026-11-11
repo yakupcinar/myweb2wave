@@ -2,6 +2,7 @@
 // M6b2: "Aboneliğimi yönet" sayfası — e-postayı çekirdeğe yollar; 202'de
 // abonelik olsun olmasın aynı metin (hesap sızdırmaz), hata metinleri ayrı.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { METINLER } from "../../../huni-bilesenleri/metinler";
 import { portalFormu } from "./abonelik";
 
 // openapi-fetch fetch'i istemci kurulurken yakalar — sahte, modüllerden önce
@@ -80,5 +81,22 @@ describe("M6b2 — portal bağlantısı formu", () => {
     expect(ikinci.durum.textContent).toBe(
       "Şu an gönderilemedi, birazdan yeniden dene.",
     );
+  });
+});
+
+// M9d2b: sayfa huninin dilinde — İngilizce sözlükle durum metni İngilizce.
+describe("M9d2b — İngilizce", () => {
+  it("202'de İngilizce gönderildi metni", async () => {
+    document.body.innerHTML = `<form id="f"><input name="eposta" value="a@b.co"><button>Send</button></form><p id="d" hidden></p>`;
+    const durum = document.getElementById("d")!;
+    portalFormu(
+      document.getElementById("f") as HTMLFormElement,
+      durum,
+      METINLER.en,
+    );
+    ag.yanitlar.push(() => new Response(null, { status: 202 }));
+    (document.getElementById("f") as HTMLFormElement).requestSubmit();
+    await vi.waitFor(() => expect(durum.hidden).toBe(false));
+    expect(durum.textContent).toBe(METINLER.en.portalGonderildi);
   });
 });

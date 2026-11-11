@@ -3,11 +3,17 @@
 // olmasın aynı (hesap sızdırmaz); sayfa da aynı metni gösterir.
 import "../../../huni-bilesenleri/huni.css";
 import { cekirdek } from "../lib/cekirdek";
+import { METINLER, type Metinler } from "../../../huni-bilesenleri/metinler";
+import { metinleriUygula, sonucDili } from "../lib/sonuc-dil";
 import { temaUygula } from "../lib/sonuc-tema";
 
 temaUygula(import.meta.env.PUBLIC_CORE_URL);
 
-export function portalFormu(form: HTMLFormElement, durum: HTMLElement): void {
+export function portalFormu(
+  form: HTMLFormElement,
+  durum: HTMLElement,
+  m: Metinler = METINLER.tr,
+): void {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const eposta = String(new FormData(form).get("eposta") ?? "").trim();
@@ -17,12 +23,10 @@ export function portalFormu(form: HTMLFormElement, durum: HTMLElement): void {
       .POST("/huni/portal-baglantisi", { body: { app: "keepchat", eposta } })
       .then(({ response }) => {
         durum.textContent =
-          response.status === 202
-            ? "Bu adrese bağlı bir abonelik varsa bağlantıyı gönderdik. E-postanı kontrol et (1 saat geçerli)."
-            : "E-posta adresini kontrol edip yeniden dene.";
+          response.status === 202 ? m.portalGonderildi : m.portalEpostaKontrol;
       })
       .catch(() => {
-        durum.textContent = "Şu an gönderilemedi, birazdan yeniden dene.";
+        durum.textContent = m.portalGonderilemedi;
       })
       .finally(() => {
         durum.hidden = false;
@@ -33,4 +37,6 @@ export function portalFormu(form: HTMLFormElement, durum: HTMLElement): void {
 
 const form = document.getElementById("portal-formu");
 const durum = document.getElementById("portal-durum");
-if (form instanceof HTMLFormElement && durum) portalFormu(form, durum);
+// M9d2b: e-postadaki bağlantıyla da gelinir — oturum belleği yoksa ?dil= / tarayıcı.
+const m = metinleriUygula(sonucDili());
+if (form instanceof HTMLFormElement && durum) portalFormu(form, durum, m);

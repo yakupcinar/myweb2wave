@@ -3,27 +3,34 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Teşekkürler</title>
+    <title data-metin="tesekkurler">Teşekkürler</title>
   </head>
   <body class="huni">
     <main>
       <section>
-        <h1>Teşekkürler!</h1>
-        <p id="durum">Aboneliğiniz başlatılıyor…</p>
+        <h1 data-metin="tesekkurlerBaslik">Teşekkürler!</h1>
+        <p id="durum" data-metin="aboneligBaslatiliyor">
+          Aboneliğiniz başlatılıyor…
+        </p>
         <!-- M3b: huninin ödeme sonrası ekranının blokları (varsa). -->
         <div id="sonrasi"></div>
-        <p id="kurulum" hidden>
+        <p id="kurulum" hidden data-metin="kurulumMetni">
           KeepChat telefonunuzda kurulu değilse önce App Store'dan kurun, sonra
           bu sayfaya dönüp bağlantıya yeniden dokunun. Aynı bağlantıyı
           e-postanıza da gönderdik; tek kullanımlıktır, 24 saat geçerlidir.
         </p>
-        <p id="yedek" hidden>
+        <p id="yedek" hidden data-metin="yedekMetni">
           Giriş bağlantısını e-postanıza gönderdik. Bulamazsanız KeepChat'te
           Ayarlar → Abonelik → Aboneliğimi bağla'ya gidip ödemede yazdığınız
           e-postayı girin.
         </p>
         <div class="eylem" id="giris" hidden>
-          <a id="giris-baglantisi" class="ana" href="#">
+          <a
+            id="giris-baglantisi"
+            class="ana"
+            href="#"
+            data-metin="uygulamayiAc"
+          >
             KeepChat'i aç ve giriş yap
           </a>
         </div>

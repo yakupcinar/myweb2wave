@@ -241,6 +241,8 @@ describe("M9d2 — huninin dili", () => {
     kur();
     await yuklendi();
     expect(document.documentElement.lang).toBe("en");
+    // M9d2b: Stripe dönüşündeki sayfalar için oturum belleğinde.
+    expect(sessionStorage.getItem("huni-dil")).toBe("en");
     expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Decline" })).toBeTruthy();
     fireEvent.click(screen.getByText("Başla"));

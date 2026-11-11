@@ -2,15 +2,17 @@
 // tekrar girilmez; tutar düğmede yazar. Banka doğrulama isterse 3D Secure
 // sayfada (Stripe.js), sonra aynı istek satışı kapatır.
 import { useState } from "preact/hooks";
+import { METINLER, useDil } from "../../../huni-bilesenleri/metinler";
 import { cekirdek } from "../lib/cekirdek";
 import { tutarMetni } from "../lib/fiyat";
 import { stripeYukle } from "../lib/stripe";
 
-const HATA: Record<string, string> = {
-  card_declined: "Kartınız bu ödemeyi kabul etmedi.",
-  session_not_eligible: "Bu teklifin süresi doldu.",
-  currency_mismatch: "Bu teklif şu an kullanılamıyor.",
-};
+// M9d2b: çekirdeğin hata kodu → sözlük anahtarı.
+const HATA = {
+  card_declined: "kartReddetti",
+  session_not_eligible: "teklifSuresiDoldu",
+  currency_mismatch: "teklifKullanilamiyor",
+} as const;
 
 export default function Upsell({
   app,
@@ -31,6 +33,8 @@ export default function Upsell({
   tutar: number;
   paraBirimi: string;
 }) {
+  const dil = useDil();
+  const m = METINLER[dil];
   const [durum, setDurum] = useState<"bos" | "suruyor" | "odendi">("bos");
   const [hata, setHata] = useState("");
   async function sat(): Promise<void> {
@@ -50,7 +54,7 @@ export default function Upsell({
         : { error: { message: "" } };
       if (sonuc.error) {
         setDurum("bos");
-        setHata("Banka doğrulaması tamamlanmadı.");
+        setHata(m.bankaDogrulamasi);
         return;
       }
       ({ data, error } = await iste());
@@ -60,10 +64,8 @@ export default function Upsell({
       return;
     }
     setDurum("bos");
-    setHata(
-      (error && "error" in error && HATA[String(error.error)]) ||
-        "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
-    );
+    const kod = error && "error" in error ? String(error.error) : "";
+    setHata(kod in HATA ? m[HATA[kod as keyof typeof HATA]] : m.birSeylerTers);
   }
   return (
     <div className="upsell">
@@ -71,7 +73,7 @@ export default function Upsell({
       {metin ? <p>{metin}</p> : null}
       {durum === "odendi" ? (
         <p role="status" className="upsell-tamam">
-          Eklendi — ödemeniz alındı.
+          {m.eklendiOdendi}
         </p>
       ) : (
         <>
@@ -82,11 +84,9 @@ export default function Upsell({
             disabled={durum === "suruyor"}
             onClick={() => void sat()}
           >
-            {dugme} · {tutarMetni(tutar, paraBirimi)}
+            {dugme} · {tutarMetni(tutar, paraBirimi, dil)}
           </button>
-          <p className="kosul">
-            Tek seferlik ödeme; abonelikte kullandığın kartından alınır.
-          </p>
+          <p className="kosul">{m.tekSeferlik}</p>
         </>
       )}
     </div>

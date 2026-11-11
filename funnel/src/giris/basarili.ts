@@ -6,12 +6,16 @@
 // (oturum belleğinden, lib/sonuc-tema.ts).
 import "../../../huni-bilesenleri/huni.css";
 import { cekirdek } from "../lib/cekirdek";
+import { dilOku } from "../../../huni-bilesenleri/metinler";
+import { metinleriUygula, sonucDili } from "../lib/sonuc-dil";
 import { temaUygula } from "../lib/sonuc-tema";
 import { izinOku } from "../lib/izin";
 import { satinAlmaOlayiGonder } from "../lib/reklam-pikselleri";
 import { sonrasiCiz } from "./sonrasi";
 
 temaUygula(import.meta.env.PUBLIC_CORE_URL);
+// M9d2b: önce oturum belleğindeki dil; huninin tanımı gelince o esas.
+let m = metinleriUygula(sonucDili());
 
 const DENEME = 8;
 const ARALIK_MS = 1500;
@@ -32,6 +36,7 @@ if (huni && /^[a-z0-9_-]{1,64}$/.test(huni))
       params: { path: { app: "keepchat" }, query: { huni } },
     })
     .then(({ data }) => {
+      if (data) m = metinleriUygula(dilOku(data.tanim.dil));
       if (data?.tanim.sonrasi)
         sonrasiCiz(
           data.tanim.sonrasi,
@@ -39,6 +44,7 @@ if (huni && /^[a-z0-9_-]{1,64}$/.test(huni))
           data.tanim.tema,
           data.ekUrunler,
           oturum,
+          dilOku(data.tanim.dil),
         );
     })
     .catch(() => undefined);
@@ -69,7 +75,7 @@ async function iste(): Promise<
 
 void iste().then((baglanti) => {
   const adres = baglanti?.uygulama_adresi;
-  if (durum) durum.textContent = "Ödemeniz alındı.";
+  if (durum) durum.textContent = m.odemenizAlindi;
   const a = document.getElementById("giris-baglantisi");
   if (adres && a) {
     // Giriş bağlantısı yalnız ödenmiş Stripe oturumu doğrulanınca verilir.

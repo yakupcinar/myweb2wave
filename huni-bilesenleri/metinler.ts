@@ -47,6 +47,34 @@ const tr = {
     teklifBitmesine: "Teklifin bitmesine",
     onerilen: "Önerilen",
     kalanGun: (gun: number) => `${gun} gün`,
+    // M9d2b: ödeme sonrası sayfalar (başarılı, iptal, abonelik) ve ek ürün.
+    odemeTamamlanmadi: "Ödeme tamamlanmadı",
+    ucretAlinmadi: "Ücret alınmadı. Planına istediğin zaman geri dönebilirsin.",
+    planaGeriDon: "Plana geri dön",
+    tesekkurler: "Teşekkürler",
+    tesekkurlerBaslik: "Teşekkürler!",
+    aboneligBaslatiliyor: "Aboneliğiniz başlatılıyor…",
+    odemenizAlindi: "Ödemeniz alındı.",
+    kurulumMetni:
+        "KeepChat telefonunuzda kurulu değilse önce App Store'dan kurun, sonra bu sayfaya dönüp bağlantıya yeniden dokunun. Aynı bağlantıyı e-postanıza da gönderdik; tek kullanımlıktır, 24 saat geçerlidir.",
+    yedekMetni:
+        "Giriş bağlantısını e-postanıza gönderdik. Bulamazsanız KeepChat'te Ayarlar → Abonelik → Aboneliğimi bağla'ya gidip ödemede yazdığınız e-postayı girin.",
+    uygulamayiAc: "KeepChat'i aç ve giriş yap",
+    aboneligimiYonet: "Aboneliğimi yönet",
+    portalAciklama:
+        "Abone olduğun e-posta adresini yaz; kartını güncellemen, aboneliğini iptal etmen ve faturalarını görmen için bir bağlantı gönderelim.",
+    eposta: "E-posta",
+    baglantiGonder: "Bağlantı gönder",
+    portalGonderildi:
+        "Bu adrese bağlı bir abonelik varsa bağlantıyı gönderdik. E-postanı kontrol et (1 saat geçerli).",
+    portalEpostaKontrol: "E-posta adresini kontrol edip yeniden dene.",
+    portalGonderilemedi: "Şu an gönderilemedi, birazdan yeniden dene.",
+    kartReddetti: "Kartınız bu ödemeyi kabul etmedi.",
+    teklifSuresiDoldu: "Bu teklifin süresi doldu.",
+    teklifKullanilamiyor: "Bu teklif şu an kullanılamıyor.",
+    bankaDogrulamasi: "Banka doğrulaması tamamlanmadı.",
+    eklendiOdendi: "Eklendi — ödemeniz alındı.",
+    tekSeferlik: "Tek seferlik ödeme; abonelikte kullandığın kartından alınır.",
 };
 
 export type Metinler = typeof tr;
@@ -89,6 +117,35 @@ const en: Metinler = {
     teklifBitmesine: "Offer ends in",
     onerilen: "Recommended",
     kalanGun: (gun: number) => (gun === 1 ? "1 day" : `${gun} days`),
+    odemeTamamlanmadi: "Payment not completed",
+    ucretAlinmadi:
+        "You haven't been charged. You can return to your plan anytime.",
+    planaGeriDon: "Back to the plan",
+    tesekkurler: "Thank you",
+    tesekkurlerBaslik: "Thank you!",
+    aboneligBaslatiliyor: "Starting your subscription…",
+    odemenizAlindi: "Payment received.",
+    kurulumMetni:
+        "If KeepChat isn't installed on your phone, install it from the App Store first, then come back to this page and tap the link again. We also emailed you the same link; it works once and is valid for 24 hours.",
+    // Ç138: KeepChat'in İngilizce menü adları doğrulanmadı — yol adsız anlatılır.
+    yedekMetni:
+        "We emailed you a sign-in link. If you can't find it, open KeepChat, go to the subscription section in settings and enter the email you used at checkout.",
+    uygulamayiAc: "Open KeepChat and sign in",
+    aboneligimiYonet: "Manage my subscription",
+    portalAciklama:
+        "Enter the email you subscribed with and we'll send you a link to update your card, cancel your subscription or see your invoices.",
+    eposta: "Email",
+    baglantiGonder: "Send link",
+    portalGonderildi:
+        "If a subscription is linked to this address, we've sent the link. Check your email (valid for 1 hour).",
+    portalEpostaKontrol: "Check the email address and try again.",
+    portalGonderilemedi: "Couldn't send right now, please try again shortly.",
+    kartReddetti: "Your card declined this payment.",
+    teklifSuresiDoldu: "This offer has expired.",
+    teklifKullanilamiyor: "This offer isn't available right now.",
+    bankaDogrulamasi: "Bank verification wasn't completed.",
+    eklendiOdendi: "Added — payment received.",
+    tekSeferlik: "One-time payment, charged to the card you subscribed with.",
 };
 
 export const METINLER: Record<Dil, Metinler> = { tr, en };
@@ -99,6 +156,10 @@ export function dilOku(deger: unknown): Dil {
 }
 
 export const DilBaglami = createContext<Dil>("tr");
+
+export function useDil(): Dil {
+    return useContext(DilBaglami);
+}
 
 export function useMetinler(): Metinler {
     return METINLER[useContext(DilBaglami)];

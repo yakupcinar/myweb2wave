@@ -52,6 +52,15 @@ describe("M3b — ödeme sonrası ekran", () => {
     expect(document.querySelector(".upsell button")?.textContent).toBe(
       "Ekle · €19,99",
     );
+    // M9d2b: İngilizce huninin ödeme sonrası ekranı — ek ürün İngilizce, en-US tutar.
+    document.body.innerHTML = SAYFA;
+    sonrasiCiz(s, "", undefined, fiyat, "cs_test_x", "en");
+    expect(document.querySelector(".upsell button")?.textContent).toBe(
+      "Ekle · €19.99",
+    );
+    expect(document.querySelector(".upsell .kosul")?.textContent).toBe(
+      "One-time payment, charged to the card you subscribed with.",
+    );
     for (const [f, o] of [
       [undefined, "cs_test_x"],
       [fiyat, null],

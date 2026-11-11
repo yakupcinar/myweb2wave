@@ -39,6 +39,7 @@ import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
 import { cekirdek } from "../lib/cekirdek";
 import { fiyatMetni, kosulMetni } from "../lib/fiyat";
 import { izinOku, izinYaz, type Izin } from "../lib/izin";
+import { dilKaydet } from "../lib/sonuc-dil";
 import { temaKaydet } from "../lib/sonuc-tema";
 import {
   epostaBildir,
@@ -331,6 +332,8 @@ function Oynatici({
     // zararsız — yalnız bu sekmenin oturum belleği).
     temaKaydet(tanim.tema);
     document.documentElement.lang = dilOku(tanim.dil);
+    // M9d2b: Stripe dönüşündeki sayfalar da bu dilde (tema gibi oturum belleğinde).
+    dilKaydet(dilOku(tanim.dil));
     // V4: hareket düzeyi CSS'te .huni'nin (body) özniteliğinden okunur.
     document.body.dataset["hareket"] = tanim.tema?.hareket ?? "sakin";
     if (!tanim.tema) return;

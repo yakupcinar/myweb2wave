@@ -4,6 +4,7 @@
 // değiştirir — müşteriyi uygulamaya girilemez bırakamaz.
 import { render } from "preact";
 import { Blok, SimgeBaglami } from "../../../huni-bilesenleri/bilesenler";
+import { DilBaglami, type Dil } from "../../../huni-bilesenleri/metinler";
 import type { components } from "../sozlesme/api";
 import Upsell from "./Upsell";
 
@@ -18,6 +19,8 @@ export function sonrasiCiz(
   // M3c: upsell yalnız ödenmiş oturum kimliği ve okunabilen ürün fiyatıyla.
   ekUrunler?: EkUrunler,
   oturum?: string | null,
+  // M9d2b: huninin dili — bloklar ve ek ürün bu dilde.
+  dil: Dil = "tr",
 ): void {
   const u = sonrasi.upsell;
   const fiyat = u ? ekUrunler?.[u.urun] : undefined;
@@ -26,27 +29,29 @@ export function sonrasiCiz(
   const kutu = document.getElementById("sonrasi");
   if (kutu)
     render(
-      <SimgeBaglami.Provider
-        value={{ stil: tema?.simgeler ?? "cihaz", kok: medyaKoku }}
-      >
-        <div className="bloklar">
-          {sonrasi.bloklar.map((b, i) => (
-            <Blok key={i} blok={b} medyaKoku={medyaKoku} />
-          ))}
-        </div>
-        {u && fiyat && oturum ? (
-          <Upsell
-            app="keepchat"
-            oturum={oturum}
-            urun={u.urun}
-            baslik={u.baslik}
-            metin={u.metin}
-            dugme={u.dugme}
-            tutar={fiyat.tutar}
-            paraBirimi={fiyat.paraBirimi}
-          />
-        ) : null}
-      </SimgeBaglami.Provider>,
+      <DilBaglami.Provider value={dil}>
+        <SimgeBaglami.Provider
+          value={{ stil: tema?.simgeler ?? "cihaz", kok: medyaKoku }}
+        >
+          <div className="bloklar">
+            {sonrasi.bloklar.map((b, i) => (
+              <Blok key={i} blok={b} medyaKoku={medyaKoku} />
+            ))}
+          </div>
+          {u && fiyat && oturum ? (
+            <Upsell
+              app="keepchat"
+              oturum={oturum}
+              urun={u.urun}
+              baslik={u.baslik}
+              metin={u.metin}
+              dugme={u.dugme}
+              tutar={fiyat.tutar}
+              paraBirimi={fiyat.paraBirimi}
+            />
+          ) : null}
+        </SimgeBaglami.Provider>
+      </DilBaglami.Provider>,
       kutu,
     );
   const dugme = document.getElementById("giris-baglantisi");

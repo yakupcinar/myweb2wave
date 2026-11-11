@@ -9,6 +9,7 @@ import {
 } from "@testing-library/preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stripeYukle } from "../lib/stripe";
+import { DilBaglami } from "../../../huni-bilesenleri/metinler";
 import Upsell from "./Upsell";
 
 vi.mock("../lib/stripe", () => ({ stripeYukle: vi.fn() }));
@@ -107,5 +108,32 @@ describe("M3c — upsell", () => {
       ),
     );
     expect(screen.getByText("Ekle · €19,99")).toBeTruthy();
+  });
+});
+
+// M9d2b: İngilizce huninin ödeme sonrası ekranında ek ürün İngilizce, tutar en-US.
+describe("M9d2b — İngilizce", () => {
+  it("koşul ve tutar İngilizce; hata kodu İngilizce metne", async () => {
+    render(
+      <DilBaglami.Provider value="en">
+        <Upsell
+          app="keepchat"
+          oturum="cs_test_x"
+          urun="kocluk"
+          baslik="Add coaching"
+          dugme="Add"
+          tutar={19.99}
+          paraBirimi="EUR"
+        />
+      </DilBaglami.Provider>,
+    );
+    expect(
+      screen.getByText(
+        "One-time payment, charged to the card you subscribed with.",
+      ),
+    ).toBeTruthy();
+    ag.yanitlar.push({ durum: 402, govde: { error: "card_declined" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add · €19.99" }));
+    await screen.findByText("Your card declined this payment.");
   });
 });
