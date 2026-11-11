@@ -60,6 +60,27 @@ services:
     environment:
       EKRAN_HUNI: ${EKRAN_HUNI:-huni-dev:4321}
 
+  # P7f: panel ekran döngüsü (bin/panel-ekran). Çekirdekle aynı kod ve
+  # geliştirme veritabanı; panel kullanıcısı yalnız bu iş için üretilmiş test
+  # kullanıcısı (core/var/ekran/panel.env, git dışı, ilk koşuda üretilir).
+  # Gerçek ortam değişkeni .env.local'i ezer. Host'a port AÇILMAZ: yalnız
+  # `ekran` tarayıcısı ulaşır. Oturum tablosu ortak, ama bu kullanıcı
+  # 8081'deki panelde yok (refreshUser düşer).
+  panel-ekran:
+    image: myweb2wave-core:dev
+    profiles: [ekran]
+    environment:
+      SERVER_NAME: ":80"
+      APP_VERSION: ekran
+    env_file: ./core/var/ekran/panel.env
+    volumes:
+      - ./core:/app
+      - ./contract/openapi.yaml:/contract/openapi.yaml:ro
+      - ./huni-bilesenleri:/huni-bilesenleri:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
   # Yerel e-posta yakalayıcı (MIT): kod e-postaları buraya düşer,
   # http://localhost:8025 — gerçek kutuya gitmez.
   mailpit:

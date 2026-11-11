@@ -124,11 +124,21 @@ const ADIMLAR: {
         baslik: "Otomatik görevler",
         aciklama: ({ gorevler }) =>
             gorevler.eksikler.length
-                ? `Çalışmayan: ${gorevler.eksikler.join(", ")}.`
+                ? `Çalışmayan: ${gorevler.eksikler.map((k) => GOREV_ADLARI[k] ?? k).join(", ")}.`
                 : "Hatırlatma e-postaları, webhook'lar ve harcama çekme düzenli çalışıyor.",
         nasil: "Sunucuda her komut için bir cron satırı gerekir (deploy/sunucu-hazirla.sh). Komut başarıyla bitince burada görünür.",
     },
 ];
+
+/** P7f: zamanlı komutların okunur adı (CanliyaGecis::GOREVLER); bilinmeyen komut adıyla. */
+const GOREV_ADLARI: Record<string, string> = {
+    "app:webhook:gonder": "webhook gönderimi",
+    "app:posta:dizi": "hatırlatma e-postaları",
+    "app:reklam-donusumleri:gonder": "reklam dönüşümleri",
+    "app:revenuecat:gonder": "RevenueCat aktarımı",
+    "app:reklam-harcamalari:cek": "Meta harcaması",
+    "app:huni-metin-cevaplari-sil": "eski yanıtların silinmesi",
+};
 
 /** "1'i", "2'si", "6'sı" — belirtme hâli eki (0–9). */
 function belirtme(n: number): string {
@@ -383,9 +393,20 @@ function AyarGovdesi({
                                         value={form[a.ad]}
                                         maxLength={a.azami}
                                         placeholder={a.ornek}
+                                        // P7f: şema yazıldığı kadar geniş (field-sizing; desteklemeyen tarayıcıda size); ek (://giris) hemen
+                                        // arkasında (sabit 140 px'te arada boşluk kalıyordu).
+                                        size={
+                                            a.ad === "sema"
+                                                ? Math.max(
+                                                      (form.sema || a.ornek)
+                                                          .length,
+                                                      4,
+                                                  )
+                                                : undefined
+                                        }
                                         className={
                                             a.ad === "sema"
-                                                ? "min-w-15 flex-[0_1_140px] bg-transparent px-2.5 py-2 text-[15px] text-metin outline-none"
+                                                ? "min-w-0 bg-transparent py-2 pl-2.5 text-[15px] text-metin outline-none [field-sizing:content]"
                                                 : alanSinifi
                                         }
                                         onChange={(e) => {

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# P7f: panel ekran döngüsü — her panel sayfasının ekran görüntüsünü açık ve
+# koyu temada, masaüstü (1440) ve telefon (390) genişliğinde çeker; yerleşim
+# ölçümünü (yatay taşma, taşan metin, küçük hedef) yanına yazar.
+# Çıktı: core/var/ekran/panel/<sayfa>-<tema>-<genişlik>.png + olcum.json
+#
+# Giriş yalnız bu iş için üretilmiş test kullanıcısıyla (panel-ekran kabı,
+# host'a port açmaz). Gerçek panel şifresi kullanılmaz ve okunmaz.
+#
+# Kullanım: bin/panel-ekran [sayfa…]   (ör. bin/panel-ekran ayarlar yasal)
+
+set -eu
+cd "$(dirname "$0")/.."
+DOSYA=core/var/ekran/panel.env
+
+if [ ! -f "$DOSYA" ]; then
+  mkdir -p core/var/ekran
+  SIFRE=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+  OZET=$(docker compose run --rm -T core bin/console security:hash-password "$SIFRE" 'Symfony\Component\Security\Core\User\InMemoryUser' -n 2>/dev/null \
+    | sed -n 's/^ *Password hash *\(\$[^ ]*\).*/\1/p')
+  [ -n "$OZET" ] || { echo "şifre özeti üretilemedi" >&2; exit 1; }
+  # Tek tırnak: özetteki $ değişken sayılmasın (tuzak §26).
+  umask 077
+  printf "PANEL_KULLANICI='ekran'\nPANEL_SIFRE_OZETI='%s'\nEKRAN_SIFRE='%s'\n" "$OZET" "$SIFRE" > "$DOSYA"
+fi
+
+docker compose --profile ekran up -d --wait ekran panel-ekran > /dev/null
+docker compose run --rm -T core php bin/panel-ekran.php "$@"

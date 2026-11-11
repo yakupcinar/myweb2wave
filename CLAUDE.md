@@ -96,6 +96,7 @@ Stripe (test) — `docs/pre-setup.md` §B2, gerekçesi ve reddedilenlerle.
 | AI araçları (A0/A1) | `… core bin/console app:huni-arac keepchat --liste` · `… app:huni-arac keepchat taslak_kaydet < istek.json` · `ekran_goruntusu` → `core/var/ekran/*.jpg` (`ekran` kabı + `huni-dev` gerekir) |
 | Özellik deposu (T2) | `… core bin/console app:ozellikler <ziyaret>` · `--kisi <kişi>` · `--sozluk` |
 | Panel (React, B5; Puck dahil) | `docker compose run --rm panel npm run build` · `… panel npm test` |
+| Panel ekran döngüsü (A26) | `bin/panel-ekran [sayfa…]` → `core/var/ekran/panel/*.jpg` + `olcum.json` (önce panel derlenmeli; test kullanıcısıyla) |
 
 ---
 

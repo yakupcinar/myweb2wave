@@ -87,10 +87,11 @@ export function Planlar(): ReactNode {
                 aciklama="Paywall'da satılan abonelikler. Yeni plan Stripe'ta da açılır."
             />
             {app ? (
-                <>
+                // P7f: iki liste arasında da kart aralığı (ekran döngüsünde yapışık çıktı).
+                <div className="grid gap-5">
                     <PlanListesi app={app} />
                     <EkUrunListesi app={app} />
-                </>
+                </div>
             ) : (
                 <p className="text-soluk">Yükleniyor…</p>
             )}

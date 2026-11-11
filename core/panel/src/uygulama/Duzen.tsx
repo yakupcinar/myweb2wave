@@ -20,8 +20,10 @@ import { sistemiDinle, temaOku, temaSec, type Tema } from "./tema";
 import { bolmeliSinif, bolmeSinifi } from "./ui/bolmeli";
 import { cn } from "./ui/cn";
 
+// P7f: telefonda menü tek satırda kayar, hedef en az 36 px (ekran döngüsü:
+// altı satıra sarılıp ekranın üçte birini kaplıyordu, bağlantılar 31 px).
 const ogeSinifi =
-    "flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-metin hover:bg-yuzey-2 [&>svg]:text-vurgu aria-[current=page]:bg-vurgu aria-[current=page]:font-medium aria-[current=page]:text-vurgu-yazi [&[aria-current=page]>svg]:text-vurgu-yazi";
+    "flex min-h-9 shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-[7px] whitespace-nowrap md:min-h-0 text-metin hover:bg-yuzey-2 [&>svg]:text-vurgu aria-[current=page]:bg-vurgu aria-[current=page]:font-medium aria-[current=page]:text-vurgu-yazi [&[aria-current=page]>svg]:text-vurgu-yazi";
 
 function Grup({
     ad,
@@ -45,11 +47,11 @@ export function Duzen(): ReactNode {
         <div className="grid min-h-screen grid-cols-[minmax(0,1fr)] md:grid-cols-[248px_minmax(0,1fr)]">
             <nav
                 aria-label="Panel"
-                className="flex flex-wrap items-center gap-1 border-b border-kenar bg-yuzey-2 px-3 py-2.5 md:sticky md:top-0 md:h-screen md:flex-col md:flex-nowrap md:items-stretch md:gap-4.5 md:overflow-y-auto md:border-r md:border-b-0 md:px-3 md:py-5"
+                className="flex items-center gap-1 overflow-x-auto border-b border-kenar bg-yuzey-2 px-3 py-2.5 md:sticky md:top-0 md:h-screen md:flex-col md:flex-nowrap md:items-stretch md:gap-4.5 md:overflow-y-auto md:border-r md:border-b-0 md:px-3 md:py-5"
             >
                 <Link
                     to="/panel"
-                    className="flex items-center gap-2.5 px-2.5 font-semibold text-metin md:pb-1"
+                    className="flex shrink-0 items-center gap-2.5 px-2.5 font-semibold text-metin md:pb-1"
                 >
                     <span
                         aria-hidden="true"

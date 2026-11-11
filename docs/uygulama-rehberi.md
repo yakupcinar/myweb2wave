@@ -751,8 +751,9 @@ Tablo grupları §5'te. Kullanılan desenler:
   - Panel sayfa testleri çizilmiş sayfada her alanın ortak stilde olduğunu denetler ([`ciplakAlanlar`](../core/panel/src/uygulama/ui/stilDenetimi.ts), P7e); Vitest'te CSS boş olduğu için sınıfa bakar (tuzak §32).
 - **Kırma:** her blokta kararlar tek tek bozulur, test kırmızı olmalı; tutmayan denemede önce test suçlanır
   ([`/kirma`](../.claude/skills/kirma/SKILL.md)).
-- **Gerçek sistem:** dev'de curl, Mailpit, Stripe test modu, başsız Chromium. Panel ekranları giriş istediği için
-  kullanıcıda.
+- **Gerçek sistem:** dev'de curl, Mailpit, Stripe test modu, başsız Chromium. Panel ekranları
+  [`bin/panel-ekran`](../bin/panel-ekran) ile: ayrı kapta test kullanıcısıyla 8 sayfa × 2 tema × 2 genişlik, yanında
+  yerleşim ölçümü (A26, [p7f](decisions/p7f-ekran-dongusu.md)).
 - **Tam kontrol:** [`bin/kontrol`](../bin/kontrol) (biçim + statik analiz + testler + derleme); CI aynı komutu koşar
   ([`kontrol.yml`](../.github/workflows/kontrol.yml)).
 

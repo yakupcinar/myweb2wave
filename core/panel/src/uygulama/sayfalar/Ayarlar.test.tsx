@@ -246,7 +246,7 @@ describe("Ayarlar", () => {
                 .getAttribute("href"),
         ).toBe("/panel/yasal");
         expect(gorev.textContent).toContain(
-            "Çalışmayan: app:posta:dizi, app:webhook:gonder.",
+            "Çalışmayan: hatırlatma e-postaları, webhook gönderimi.",
         );
 
         const nasil = within(bildirim).getByRole("button", {

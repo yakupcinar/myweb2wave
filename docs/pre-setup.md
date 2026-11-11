@@ -260,6 +260,11 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A26 · Panel ekran döngüsü** (2026-11-11, kullanıcı: "1'i onaylıyorum, ekran döngüsünü kur").
+- Ekran görüntüsü için ayrı, yerel bir panel kabı (`panel-ekran`) ve yalnız bu iş için üretilmiş test kullanıcısı.
+  Gerçek panel şifresi kullanılmaz. Reddedilenler: Chrome eklentisine bağlı kalmak, geliştirme ortamında girişi
+  atlayan yol. Ayrıntı: [p7f-ekran-dongusu.md](decisions/p7f-ekran-dongusu.md).
+
 **A25 · Entegrasyonlar ve anahtarlar** (2026-11-11, kullanıcı).
 - Menüde Webhook'lar, API anahtarları ve Ürün bağlamı (AI) yerine tek **Entegrasyonlar** sayfası (taslaktaki
   gibi). Reddedilenler: ayrı kalmaları; Ürün bağlamı'nın ayrı kalması.
