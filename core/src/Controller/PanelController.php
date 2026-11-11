@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Panel\Kullanicilar;
 use App\Panel\Rapor;
+use App\Panel\RaporSuzgeci;
 use App\Panel\Varliklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -80,21 +81,33 @@ final class PanelController extends AbstractController
     public function rapor(Request $request, Rapor $rapor): JsonResponse
     {
         $gun = self::gun($request);
+        // R1a: bütün bölümler aynı süzgeçle (önceki dönem de).
+        $s = RaporSuzgeci::istekten($request);
+        if (\is_array($s)) {
+            return self::korumali(new JsonResponse(['hatalar' => $s], 422));
+        }
 
         return self::korumali(new JsonResponse([
             'gun' => $gun,
             'gunler' => Rapor::GUNLER,
-            'sayimlar' => $rapor->sayimlar($gun),
+            'sayimlar' => $rapor->sayimlar($gun, $s),
             // P7b: Özet kartları önceki dönemle karşılaştırır (taslak: "Önceki 30 güne göre").
-            'gelir' => $rapor->gelir($gun),
-            'onceki' => ['sayimlar' => $rapor->sayimlar($gun, null, $gun), 'gelir' => $rapor->gelir($gun, $gun)],
-            'izinler' => $rapor->izinler($gun),
-            'adimlar' => $rapor->adimlar($gun),
-            'cevaplar' => $rapor->cevaplar($gun),
-            'kohort' => $rapor->kohort($gun),
-            'kampanyalar' => $rapor->kampanyalar($gun),
-            'gunluk' => $rapor->gunluk($gun),
+            'gelir' => $rapor->gelir($gun, 0, $s),
+            'onceki' => ['sayimlar' => $rapor->sayimlar($gun, $s, $gun), 'gelir' => $rapor->gelir($gun, $gun, $s)],
+            'izinler' => $rapor->izinler($gun, $s),
+            'adimlar' => $rapor->adimlar($gun, $s),
+            'cevaplar' => $rapor->cevaplar($gun, $s),
+            'kohort' => $rapor->kohort($gun, $s),
+            'kampanyalar' => $rapor->kampanyalar($gun, $s),
+            'gunluk' => $rapor->gunluk($gun, $s),
         ]));
+    }
+
+    /** R1a: süzgeç seçenekleri — dönemde görülen değerler, çok ziyaretliden aza. */
+    #[Route('/panel/api/rapor/secenekler', name: 'panel_api_rapor_secenekler', methods: ['GET'])]
+    public function raporSecenekleri(Request $request, Rapor $rapor): JsonResponse
+    {
+        return self::korumali(new JsonResponse($rapor->secenekler(self::gun($request))));
     }
 
     /**
@@ -106,13 +119,17 @@ final class PanelController extends AbstractController
     {
         $gun = self::gun($request);
         $sayfa = self::sayfa($request);
+        $s = RaporSuzgeci::istekten($request);
+        if (\is_array($s)) {
+            return self::korumali(new JsonResponse(['hatalar' => $s], 422));
+        }
 
         return self::korumali(new JsonResponse([
-            ...self::sayfali($sayfa, $rapor->toplam($liste, $gun)),
+            ...self::sayfali($sayfa, $rapor->toplam($liste, $gun, $s)),
             'satirlar' => match ($liste) {
-                'ziyaretler' => $rapor->satirlar($gun, $sayfa, self::SAYFA_BOYUTU),
-                'kaynaklar' => $rapor->utm($gun, null, $sayfa, self::SAYFA_BOYUTU),
-                default => $rapor->metinCevaplari($gun, $sayfa, self::SAYFA_BOYUTU),
+                'ziyaretler' => $rapor->satirlar($gun, $sayfa, self::SAYFA_BOYUTU, $s),
+                'kaynaklar' => $rapor->utm($gun, $s, $sayfa, self::SAYFA_BOYUTU),
+                default => $rapor->metinCevaplari($gun, $sayfa, self::SAYFA_BOYUTU, $s),
             },
         ]));
     }

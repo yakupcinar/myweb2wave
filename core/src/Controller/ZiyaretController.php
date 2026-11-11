@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Atif\Ziyaretler;
+use App\Billing\UlkeBulucu;
 use App\Huni\Deneyler;
 use App\Huni\Tanim;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -27,6 +28,7 @@ final readonly class ZiyaretController
         private array $uygulamalar,
         private RateLimiterFactory $huniZiyaretLimiter,
         private Deneyler $deneyler,
+        private UlkeBulucu $ulkeler,
     ) {
     }
 
@@ -61,7 +63,9 @@ final readonly class ZiyaretController
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
 
-        $ziyaret = $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum, $izin);
+        // R1a: rapor ülkeye göre süzülür — fiyatla aynı kaynak (IP; testte ?ulke= gövdede).
+        $ulke = $this->ulkeler->ulke($request->getClientIp(), $govde['ulke'] ?? null);
+        $ziyaret = $this->ziyaretler->kaydet($app, $alanlar, $huni, $surum, $izin, $ulke);
         // M4a: yalnız aktif deneyin bu huniye düşen geçerli varyantı yazılır.
         $this->deneyler->ziyaretKaydet($ziyaret, $app, null === $surum ? null : $huni, $deneyler);
 

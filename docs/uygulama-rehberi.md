@@ -50,7 +50,7 @@ sequenceDiagram
 1. **Ziyaret.** Huni ([`Huni.tsx`](../funnel/src/oynatici/Huni.tsx)) açılınca çekirdeğe ziyaret bildirir
    ([`ziyaretBaslat`](../funnel/src/lib/ziyaret.ts#L61) → [`Ziyaretler::kaydet`](../core/src/Atif/Ziyaretler.php#L49)).
    UTM'ler saklanır; reklam tıklama kimlikleri (`fbclid`, `ttclid`) **yalnız izin şeridinde "Kabul et" denirse**.
-2. **Anket.** Her ekran geçişi ve cevap bildirilir ([`ilerlemeBildir`](../funnel/src/lib/ziyaret.ts#L102) →
+2. **Anket.** Her ekran geçişi ve cevap bildirilir ([`ilerlemeBildir`](../funnel/src/lib/ziyaret.ts#L105) →
    [`Ziyaretler::ilerle`](../core/src/Atif/Ziyaretler.php#L222)). Hangi ekranın gösterileceğine tarayıcıdaki koşul
    motoru karar verir ([`kosul.ts`](../huni-bilesenleri/kosul.ts)). E-posta sorusu adresi ve pazarlama iznini kaydeder
    ([`Ziyaretler::epostaKaydet`](../core/src/Atif/Ziyaretler.php#L176)).
@@ -110,6 +110,8 @@ değiştirmez.
 
 **Ekranda ne var**
 
+**Süzgeç (R1a):** her bölüm aynı süzgeçle — huni, kaynak, kampanya, ülke, deney (+ varyant), önceki dönem dahil ([`RaporSuzgeci`](../core/src/Panel/RaporSuzgeci.php)); ülke ziyarete IP'den yazılır ([r1a](decisions/r1a-rapor-suzgecleri.md)).
+
 **Düzen (P7i, sekmeler; adreste `?sekme=`):** **Genel bakış** — Özet (önceki aynı uzunluktaki döneme göre değişim; oran değişimi yüzde puanı), günlük grafikler, Ziyaretten aboneliğe (reklam / organik / toplam), Reklam harcaması · **Anket** — tek huni (seçici, varsayılan en çok ziyaretli; `huni=`), şeritler (düşüş bir önceki adıma göre), o huninin cevapları, serbest yanıtlar · **Kaynaklar** — kaynak tablosu, reklam ölçümü izni · **Gelir** — kohort · **Ziyaretler** — sayfalı liste. Liste uçları yalnız açık sekmede istenir. Gelir = penceredeki ziyaretlerin bugüne kadar tahsil edilmiş faturaları eksi iade; Kaynaklar'ın gelir sütunuyla aynı tanım.
 
 | Kart | Ne gösterir | Nasıl hesaplanır |
@@ -120,7 +122,7 @@ değiştirmez.
 | Cevaplar | Her şıkkı kaç kişinin seçtiği ve o şıkkı seçenlerin kaçının abone olduğu | `huni_cevaplari` + aynı ziyaretin aboneliği başlamış ödeme oturumu |
 | Kaynak kırılımı | `utm_source` / `utm_campaign`'e göre ziyaret, ödeyen ve gelir | Gelir = bu ziyaretlerin **bugüne kadar** tahsil edilen faturaları eksi iadeler |
 | Meta kampanyaları | Kampanya başına Meta harcaması, getirdiği gelir, ROAS (gelir ÷ harcama) | Harcama Meta'dan çekilir; aynı adlı `utm_campaign` ile **Meta'dan** gelen ziyaretlerin geliri eşleştirilir ([`Rapor::META`](../core/src/Panel/Rapor.php#L40)) |
-| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L355)) |
+| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L354)) |
 | Serbest yanıtlar | Metin sorularına yazılanlar | 90 gün saklanır, sonra silinir |
 
 Ziyaretler, Kaynak kırılımı ve Serbest yanıtlar 25'er satırlık sayfalarla gelir. Her biri kendi ucundan

@@ -46,21 +46,21 @@ final readonly class Ziyaretler
      *
      * @param array<value-of<self::ALANLAR>, string|null> $alanlar
      */
-    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null, ?bool $izin = null): string
+    public function kaydet(string $app, array $alanlar, ?string $huni = null, ?int $surum = null, ?bool $izin = null, ?string $ulke = null): string
     {
         // Ç56 (3): null = şeritte henüz seçmedi; false = daha önce reddetti.
         if (true !== $izin) {
             $alanlar = array_merge($alanlar, array_fill_keys(self::TIKLAMA, null));
         }
 
-        return $this->db->transactional(function (Connection $db) use ($app, $alanlar, $huni, $surum, $izin): string {
+        return $this->db->transactional(function (Connection $db) use ($app, $alanlar, $huni, $surum, $izin, $ulke): string {
             $z = $db->fetchAssociative(
                 'WITH s AS (SELECT ad, surum FROM huni_surumleri WHERE app = :app AND ad = :huni AND surum = CAST(:surum AS int))
-                 INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at, izin_red_at)
+                 INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, ttclid, huni, surum, izin_at, izin_red_at, ulke)
                  VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :utm_content, :utm_term, :fbclid, :ttclid,
-                         (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :kabul THEN now() END, CASE WHEN :red THEN now() END)
+                         (SELECT ad FROM s), (SELECT surum FROM s), CASE WHEN :kabul THEN now() END, CASE WHEN :red THEN now() END, :ulke)
                  RETURNING id, huni, surum',
-                ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'kabul' => true === $izin, 'red' => false === $izin] + $alanlar,
+                ['app' => $app, 'huni' => $huni, 'surum' => $surum, 'kabul' => true === $izin, 'red' => false === $izin, 'ulke' => $ulke] + $alanlar,
                 ['kabul' => \Doctrine\DBAL\ParameterType::BOOLEAN, 'red' => \Doctrine\DBAL\ParameterType::BOOLEAN],
             );
             \assert(\is_array($z) && \is_string($z['id']));

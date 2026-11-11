@@ -86,6 +86,9 @@ export function ziyaretBaslat(
     const deger = adres.get(ad)?.slice(0, 500);
     if (deger) govde[ad] = deger;
   }
+  // R1a: ülke testi (?ulke=DE) ziyarete de yazılsın — rapor ülkeye göre süzülür.
+  const ulke = adres.get("ulke");
+  if (ulke && /^[A-Z]{2}$/.test(ulke)) govde.ulke = ulke;
   if (izin === "evet")
     Object.assign(govde, tiklamaKimlikleri(), { izin: true });
   else if (izin === "hayir") govde.izin = false;

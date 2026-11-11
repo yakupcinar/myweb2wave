@@ -55,6 +55,21 @@ final class AtifTest extends WebTestCase
         self::assertSame(1, $this->say('huni_ziyaretleri WHERE izin_at IS NOT NULL'));
     }
 
+    /**
+     * R1a: ziyarete ülke yazılır (rapor süzgeci) — fiyatla aynı kaynak; testte
+     * gövdedeki ?ulke=, yoksa IP (testte 127.0.0.1 → bilinmiyor). Biçimsiz
+     * test değeri yok sayılır; ziyaret yine açılır.
+     */
+    public function testZiyareteUlkeYazilir(): void
+    {
+        foreach ([['DE', 'DE'], ['de', null], [null, null]] as [$gonderilen, $beklenen]) {
+            $this->db->executeStatement('TRUNCATE huni_ziyaretleri CASCADE');
+            $this->client->jsonRequest('POST', '/huni/ziyaretler', array_filter(['app' => 'keepchat', 'ulke' => $gonderilen]));
+            self::assertResponseStatusCodeSame(201);
+            self::assertSame($beklenen, $this->db->fetchOne('SELECT ulke FROM huni_ziyaretleri'), (string) $gonderilen);
+        }
+    }
+
     /** H6a (A12): izin yoksa tıklama kimlikleri atılır — eski önbellekli betik gönderse bile; UTM kalır. */
     public function testIzinsizZiyaretTiklamaKimligiSaklamaz(): void
     {

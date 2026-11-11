@@ -6,6 +6,7 @@ namespace App\Mcp;
 
 use App\Huni\Deneyler;
 use App\Panel\Rapor;
+use App\Panel\RaporSuzgeci;
 
 /**
  * M7c1 (A21): MCP'de yalnız okuyan rapor araçları — anahtarın uygulamasıyla
@@ -58,11 +59,11 @@ final readonly class RaporAraclari
         }
 
         return match ($ad) {
-            'rapor_ozet' => ['icerik' => ['gun' => $gun, 'sayimlar' => $this->rapor->sayimlar($gun, $app), 'izinler' => $this->rapor->izinler($gun, $app), 'gunluk' => $this->rapor->gunluk($gun, $app)], 'hata' => false],
-            'rapor_kaynaklar' => ['icerik' => ['gun' => $gun, 'kaynaklar' => $this->rapor->utm($gun, $app)], 'hata' => false],
-            'rapor_kohort' => ['icerik' => ['gun' => $gun, 'kohort' => $this->rapor->kohort($gun, $app)], 'hata' => false],
-            'rapor_kampanyalar' => ['icerik' => ['gun' => $gun, 'kampanyalar' => $this->rapor->kampanyalar($gun, $app)], 'hata' => false],
-            'rapor_cevaplar' => ['icerik' => ['gun' => $gun, 'cevaplar' => $this->rapor->cevaplar($gun, $app)], 'hata' => false],
+            'rapor_ozet' => ['icerik' => ['gun' => $gun, 'sayimlar' => $this->rapor->sayimlar($gun, RaporSuzgeci::uygulama($app)), 'izinler' => $this->rapor->izinler($gun, RaporSuzgeci::uygulama($app)), 'gunluk' => $this->rapor->gunluk($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
+            'rapor_kaynaklar' => ['icerik' => ['gun' => $gun, 'kaynaklar' => $this->rapor->utm($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
+            'rapor_kohort' => ['icerik' => ['gun' => $gun, 'kohort' => $this->rapor->kohort($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
+            'rapor_kampanyalar' => ['icerik' => ['gun' => $gun, 'kampanyalar' => $this->rapor->kampanyalar($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
+            'rapor_cevaplar' => ['icerik' => ['gun' => $gun, 'cevaplar' => $this->rapor->cevaplar($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
             'deney_sonuclari' => $this->deneyler($app, $girdi['ad'] ?? null),
             default => ['icerik' => ['hata' => "bilinmeyen araç: {$ad}"], 'hata' => true],
         };

@@ -272,6 +272,27 @@ describe("M9d2 — huninin dili", () => {
 });
 
 describe("D5 — seçim parametreleri", () => {
+  // R1a: ülke testi ziyarete de yazılır (rapor ülkeye göre süzülür); biçimsiz gitmez.
+  it("?ulke= ziyaret gövdesinde yalnız iki büyük harfse", async () => {
+    for (const [arama, beklenen] of [
+      ["?ulke=DE", "DE"],
+      ["?ulke=de", undefined],
+    ] as const) {
+      ag.istekler = [];
+      window.sessionStorage.clear();
+      kur(arama);
+      await yuklendi();
+      await waitFor(() =>
+        expect(istekler("POST", "/huni/ziyaretler")).toHaveLength(1),
+      );
+      expect(
+        (istekler("POST", "/huni/ziyaretler")[0]?.govde as { ulke?: string })
+          .ulke,
+      ).toBe(beklenen);
+      cleanup();
+    }
+  });
+
   it("yalnız k/utm_source/utm_campaign/utm_content/huni gider, her biri ≤ 200", async () => {
     const uzun = "h".repeat(250);
     kur(

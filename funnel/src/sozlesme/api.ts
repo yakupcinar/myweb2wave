@@ -331,6 +331,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/rapor/secenekler": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** R1a — süzgeç seçenekleri: dönemde görülen huni, kaynak, kampanya, ülke, deney/varyant (çok ziyaretliden aza, en çok 50) */
+        get: operations["panelRaporSecenekleri"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/ai/durum": {
         parameters: {
             query?: never;
@@ -1243,6 +1260,16 @@ export interface components {
             paraBirimi: string;
             tutar: number;
         };
+        RaporSecenekleri: {
+            huniler: string[];
+            kaynaklar: string[];
+            kampanyalar: string[];
+            ulkeler: string[];
+            deneyler: {
+                deney: string;
+                varyantlar: string[];
+            }[];
+        };
         PanelRaporu: {
             /** @enum {integer} */
             gun: 7 | 30 | 90;
@@ -1860,6 +1887,18 @@ export interface components {
     };
     parameters: {
         App: string;
+        /** @description R1a — yalnız bu huninin ziyaretleri */
+        SuzgecHuni: components["schemas"]["HuniKimligi"];
+        /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+        SuzgecKaynak: string;
+        /** @description R1a — utm_campaign */
+        SuzgecKampanya: string;
+        /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+        SuzgecUlke: string;
+        /** @description R1a — bu deneye atanmış ziyaretler */
+        SuzgecDeney: string;
+        /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+        SuzgecVaryant: string;
         /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
         Sayfa: number;
     };
@@ -1968,6 +2007,8 @@ export interface operations {
                     surum?: number;
                     /** @description Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz */
                     izin?: boolean;
+                    /** @description R1a: ülke testi (adresteki ?ulke=); yoksa IP'den */
+                    ulke?: string;
                     deneyler?: components["schemas"]["DeneyAtamasi"];
                 };
             };
@@ -2668,6 +2709,18 @@ export interface operations {
             query?: {
                 /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
                 gun?: 7 | 30 | 90;
+                /** @description R1a — yalnız bu huninin ziyaretleri */
+                huni?: components["parameters"]["SuzgecHuni"];
+                /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+                kaynak?: components["parameters"]["SuzgecKaynak"];
+                /** @description R1a — utm_campaign */
+                kampanya?: components["parameters"]["SuzgecKampanya"];
+                /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+                ulke?: components["parameters"]["SuzgecUlke"];
+                /** @description R1a — bu deneye atanmış ziyaretler */
+                deney?: components["parameters"]["SuzgecDeney"];
+                /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+                varyant?: components["parameters"]["SuzgecVaryant"];
             };
             header?: never;
             path?: never;
@@ -2684,6 +2737,15 @@ export interface operations {
                     "application/json": components["schemas"]["PanelRaporu"];
                 };
             };
+            /** @description R1a — süzgeç değeri biçimsiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
         };
     };
     panelRaporZiyaretleri: {
@@ -2693,6 +2755,18 @@ export interface operations {
                 gun?: 7 | 30 | 90;
                 /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
                 sayfa?: components["parameters"]["Sayfa"];
+                /** @description R1a — yalnız bu huninin ziyaretleri */
+                huni?: components["parameters"]["SuzgecHuni"];
+                /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+                kaynak?: components["parameters"]["SuzgecKaynak"];
+                /** @description R1a — utm_campaign */
+                kampanya?: components["parameters"]["SuzgecKampanya"];
+                /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+                ulke?: components["parameters"]["SuzgecUlke"];
+                /** @description R1a — bu deneye atanmış ziyaretler */
+                deney?: components["parameters"]["SuzgecDeney"];
+                /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+                varyant?: components["parameters"]["SuzgecVaryant"];
             };
             header?: never;
             path?: never;
@@ -2709,6 +2783,15 @@ export interface operations {
                     "application/json": components["schemas"]["RaporZiyaretleri"];
                 };
             };
+            /** @description R1a — süzgeç değeri biçimsiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
         };
     };
     panelRaporKaynaklari: {
@@ -2718,6 +2801,18 @@ export interface operations {
                 gun?: 7 | 30 | 90;
                 /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
                 sayfa?: components["parameters"]["Sayfa"];
+                /** @description R1a — yalnız bu huninin ziyaretleri */
+                huni?: components["parameters"]["SuzgecHuni"];
+                /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+                kaynak?: components["parameters"]["SuzgecKaynak"];
+                /** @description R1a — utm_campaign */
+                kampanya?: components["parameters"]["SuzgecKampanya"];
+                /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+                ulke?: components["parameters"]["SuzgecUlke"];
+                /** @description R1a — bu deneye atanmış ziyaretler */
+                deney?: components["parameters"]["SuzgecDeney"];
+                /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+                varyant?: components["parameters"]["SuzgecVaryant"];
             };
             header?: never;
             path?: never;
@@ -2734,6 +2829,15 @@ export interface operations {
                     "application/json": components["schemas"]["RaporKaynaklari"];
                 };
             };
+            /** @description R1a — süzgeç değeri biçimsiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
         };
     };
     panelRaporSerbestYanitlari: {
@@ -2743,6 +2847,18 @@ export interface operations {
                 gun?: 7 | 30 | 90;
                 /** @description P7a2 — 1'den başlar; sayfa başına 25 satır; bozuk değer 1, üst sınır 10000 */
                 sayfa?: components["parameters"]["Sayfa"];
+                /** @description R1a — yalnız bu huninin ziyaretleri */
+                huni?: components["parameters"]["SuzgecHuni"];
+                /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+                kaynak?: components["parameters"]["SuzgecKaynak"];
+                /** @description R1a — utm_campaign */
+                kampanya?: components["parameters"]["SuzgecKampanya"];
+                /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+                ulke?: components["parameters"]["SuzgecUlke"];
+                /** @description R1a — bu deneye atanmış ziyaretler */
+                deney?: components["parameters"]["SuzgecDeney"];
+                /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+                varyant?: components["parameters"]["SuzgecVaryant"];
             };
             header?: never;
             path?: never;
@@ -2757,6 +2873,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RaporSerbestYanitlari"];
+                };
+            };
+            /** @description R1a — süzgeç değeri biçimsiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelRaporSecenekleri: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Seçenekler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaporSecenekleri"];
                 };
             };
         };

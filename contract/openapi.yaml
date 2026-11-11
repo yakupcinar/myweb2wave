@@ -90,6 +90,7 @@ paths:
                 huni: { $ref: "#/components/schemas/HuniKimligi" }
                 surum: { type: integer, minimum: 1, description: "Görülen huni ve sürümü (A7, A8); yayınlanmış bir çift değilse yok sayılır" }
                 izin: { type: boolean, description: "Reklam ölçümü izni önceden verildi (H6a, A12). Yoksa fbclid/ttclid saklanmaz" }
+                ulke: { type: string, pattern: "^[A-Z]{2}$", description: "R1a: ülke testi (adresteki ?ulke=); yoksa IP'den" }
                 deneyler: { $ref: "#/components/schemas/DeneyAtamasi" }
       responses:
         "201":
@@ -537,7 +538,14 @@ paths:
           required: false
           description: Zaman aralığı; tanınmayan değer 30 sayılır
           schema: { type: integer, enum: [7, 30, 90], default: 30 }
+        - { $ref: "#/components/parameters/SuzgecHuni" }
+        - { $ref: "#/components/parameters/SuzgecKaynak" }
+        - { $ref: "#/components/parameters/SuzgecKampanya" }
+        - { $ref: "#/components/parameters/SuzgecUlke" }
+        - { $ref: "#/components/parameters/SuzgecDeney" }
+        - { $ref: "#/components/parameters/SuzgecVaryant" }
       responses:
+        "422": { description: "R1a — süzgeç değeri biçimsiz", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "200":
           description: Seçilen aralıktaki sayımlar, izin oranı, anket ve ziyaret satırları
           content:
@@ -550,7 +558,14 @@ paths:
       parameters:
         - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
         - { $ref: "#/components/parameters/Sayfa" }
+        - { $ref: "#/components/parameters/SuzgecHuni" }
+        - { $ref: "#/components/parameters/SuzgecKaynak" }
+        - { $ref: "#/components/parameters/SuzgecKampanya" }
+        - { $ref: "#/components/parameters/SuzgecUlke" }
+        - { $ref: "#/components/parameters/SuzgecDeney" }
+        - { $ref: "#/components/parameters/SuzgecVaryant" }
       responses:
+        "422": { description: "R1a — süzgeç değeri biçimsiz", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "200":
           description: Bir sayfa satır ve toplam
           content:
@@ -563,7 +578,14 @@ paths:
       parameters:
         - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
         - { $ref: "#/components/parameters/Sayfa" }
+        - { $ref: "#/components/parameters/SuzgecHuni" }
+        - { $ref: "#/components/parameters/SuzgecKaynak" }
+        - { $ref: "#/components/parameters/SuzgecKampanya" }
+        - { $ref: "#/components/parameters/SuzgecUlke" }
+        - { $ref: "#/components/parameters/SuzgecDeney" }
+        - { $ref: "#/components/parameters/SuzgecVaryant" }
       responses:
+        "422": { description: "R1a — süzgeç değeri biçimsiz", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "200":
           description: Bir sayfa satır ve toplam
           content:
@@ -576,12 +598,31 @@ paths:
       parameters:
         - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
         - { $ref: "#/components/parameters/Sayfa" }
+        - { $ref: "#/components/parameters/SuzgecHuni" }
+        - { $ref: "#/components/parameters/SuzgecKaynak" }
+        - { $ref: "#/components/parameters/SuzgecKampanya" }
+        - { $ref: "#/components/parameters/SuzgecUlke" }
+        - { $ref: "#/components/parameters/SuzgecDeney" }
+        - { $ref: "#/components/parameters/SuzgecVaryant" }
       responses:
+        "422": { description: "R1a — süzgeç değeri biçimsiz", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "200":
           description: Bir sayfa satır ve toplam
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RaporSerbestYanitlari" }
+  /panel/api/rapor/secenekler:
+    get:
+      operationId: panelRaporSecenekleri
+      summary: "R1a — süzgeç seçenekleri: dönemde görülen huni, kaynak, kampanya, ülke, deney/varyant (çok ziyaretliden aza, en çok 50)"
+      parameters:
+        - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
+      responses:
+        "200":
+          description: Seçenekler
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RaporSecenekleri" }
   /panel/api/ai/durum:
     get:
       operationId: panelAiDurumu
@@ -1530,6 +1571,12 @@ components:
       in: path
       required: true
       schema: { type: string }
+    SuzgecHuni: { name: huni, in: query, required: false, description: "R1a — yalnız bu huninin ziyaretleri", schema: { $ref: "#/components/schemas/HuniKimligi" } }
+    SuzgecKaynak: { name: kaynak, in: query, required: false, description: "R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa \"meta (fbclid)\" / \"doğrudan\")", schema: { type: string, maxLength: 200 } }
+    SuzgecKampanya: { name: kampanya, in: query, required: false, description: "R1a — utm_campaign", schema: { type: string, maxLength: 200 } }
+    SuzgecUlke: { name: ulke, in: query, required: false, description: "R1a — ziyaretin ülkesi (IP'den, ISO 3166-1)", schema: { type: string, pattern: "^[A-Z]{2}$" } }
+    SuzgecDeney: { name: deney, in: query, required: false, description: "R1a — bu deneye atanmış ziyaretler", schema: { type: string, pattern: "^[a-z0-9_-]{1,64}$" } }
+    SuzgecVaryant: { name: varyant, in: query, required: false, description: "R1a — deneyin bu varyantı (deney ile birlikte)", schema: { type: string, maxLength: 200 } }
     Sayfa:
       name: sayfa
       in: query
@@ -1744,6 +1791,24 @@ components:
       properties:
         paraBirimi: { type: string, pattern: "^[A-Z]{3}$" }
         tutar: { type: number, minimum: 0 }
+    RaporSecenekleri:
+      type: object
+      additionalProperties: false
+      required: [huniler, kaynaklar, kampanyalar, ulkeler, deneyler]
+      properties:
+        huniler: { type: array, items: { type: string } }
+        kaynaklar: { type: array, items: { type: string } }
+        kampanyalar: { type: array, items: { type: string } }
+        ulkeler: { type: array, items: { type: string, pattern: "^[A-Z]{2}$" } }
+        deneyler:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [deney, varyantlar]
+            properties:
+              deney: { type: string }
+              varyantlar: { type: array, items: { type: string } }
     PanelRaporu:
       type: object
       additionalProperties: false
