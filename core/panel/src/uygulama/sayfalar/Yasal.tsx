@@ -1,15 +1,20 @@
 // Yasal metinler (M9b1, A23): şirket verileri + belge × dil metinleri. Kaydedilmemiş
 // belge taslaktır ve yayında değildir; kaydetmek yayınlar. Veri
 // /panel/api/uygulamalar/{app}/yasal (sözleşme PanelYasal); yazma kabuğun CSRF
-// jetonuyla (api.ts).
+// jetonuyla (api.ts). P7e: Uygulama sayfasının dilinde — Şirket bilgileri
+// (solda etiket) ve Metinler bölümleri; belge kartında durum ve dil.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
 import { SayfaBasi } from "../Duzen";
+import { alanSinifi, Satir } from "../ui/Alan";
+import { Bolum } from "../ui/Bolum";
+import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
-import { Kart, KartBasi } from "../ui/Kart";
+import { Kart } from "../ui/Kart";
+import { Rozet } from "../ui/Rozet";
 
 type PanelYasal = components["schemas"]["PanelYasal"];
 type YasalVeriler = components["schemas"]["YasalVeriler"];
@@ -52,7 +57,7 @@ export function Yasal(): ReactNode {
     const secili = app ?? uygulamalar.data?.[0] ?? null;
 
     return (
-        <>
+        <div className="max-w-[880px]">
             <SayfaBasi
                 baslik="Yasal metinler"
                 aciklama="Kullanım şartları, gizlilik, KVKK ve çerez sayfaları — Türkçe ve İngilizce."
@@ -62,7 +67,7 @@ export function Yasal(): ReactNode {
                         aria-label="Uygulama"
                         value={secili ?? ""}
                         onChange={(e) => setApp(e.currentTarget.value)}
-                        className="min-h-9 rounded-lg border border-kenar bg-yuzey px-2.5"
+                        className="min-h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5"
                     >
                         {uygulamalar.data.map((a) => (
                             <option key={a}>{a}</option>
@@ -72,7 +77,7 @@ export function Yasal(): ReactNode {
             </SayfaBasi>
             <p
                 role="note"
-                className="mb-4 rounded-lg border border-kenar bg-yuzey px-4 py-3 text-[14px]"
+                className="mb-7 rounded-[14px] bg-uyari-zemin px-[18px] py-3.5 text-[14px] text-metin"
             >
                 Hazır gelen metinler{" "}
                 <strong>taslaktır, hukuki görüş değildir</strong>; yayınlamadan
@@ -84,7 +89,7 @@ export function Yasal(): ReactNode {
             ) : (
                 <p className="text-soluk">Yükleniyor…</p>
             )}
-        </>
+        </div>
     );
 }
 
@@ -115,17 +120,22 @@ function YasalIcerik({ app }: { app: string }): ReactNode {
         );
     const belgeler = [...new Set(sorgu.data.belgeler.map((b) => b.belge))];
     return (
-        <div className="grid gap-4">
+        <div className="flex flex-col gap-7">
             <VeriFormu app={app} kayitli={sorgu.data.veriler} />
-            {belgeler.map((belge) => (
-                <BelgeKarti
-                    key={belge}
-                    app={app}
-                    diller={sorgu.data.belgeler.filter(
-                        (b) => b.belge === belge,
-                    )}
-                />
-            ))}
+            <Bolum
+                baslik="Metinler"
+                aciklama="Kaydetmek yayınlar; kaydedilmemiş belgenin sayfası yoktur."
+            >
+                {belgeler.map((belge) => (
+                    <BelgeKarti
+                        key={belge}
+                        app={app}
+                        diller={sorgu.data.belgeler.filter(
+                            (b) => b.belge === belge,
+                        )}
+                    />
+                ))}
+            </Bolum>
         </div>
     );
 }
@@ -156,48 +166,41 @@ function VeriFormu({
     const degisti = JSON.stringify(form) !== JSON.stringify(kayitli);
 
     return (
-        <Kart>
-            <KartBasi
-                baslik="Yasal veriler"
-                aciklama="Metinlerdeki {{unvan}}, {{adres}}, {{kayitNo}} yerine geçer; iletişim e-postası ve uygulama adı Ayarlar'dan."
-            />
+        <Bolum
+            baslik="Şirket bilgileri"
+            aciklama="Metinlerdeki {{unvan}}, {{adres}}, {{kayitNo}} yerine geçer; iletişim e-postası ve uygulama adı Uygulama sayfasından."
+        >
             <form
-                className="grid gap-4 px-4.5 py-4"
+                className="flex flex-col gap-2.5"
                 noValidate
                 onSubmit={(e) => {
                     e.preventDefault();
                     kayit.mutate(form);
                 }}
             >
-                {VERI_ALANLARI.map((a) => (
-                    <div key={a.ad} className="grid gap-1.5">
-                        <label
-                            htmlFor={`yasal-${a.ad}`}
-                            className="font-semibold"
-                        >
-                            {a.etiket}
-                        </label>
-                        <input
-                            id={`yasal-${a.ad}`}
-                            value={form[a.ad]}
-                            maxLength={a.azami}
-                            placeholder={a.ornek}
-                            className="w-full rounded-lg border border-kenar bg-zemin px-3 py-2 text-metin"
-                            onChange={(e) => {
-                                const deger = e.currentTarget.value;
-                                setForm((f) => ({ ...f, [a.ad]: deger }));
-                            }}
-                        />
-                    </div>
-                ))}
-                <div className="flex flex-wrap items-center gap-3">
-                    <Dugme
-                        tur="ana"
-                        type="submit"
-                        disabled={!degisti || kayit.isPending}
-                    >
-                        {kayit.isPending ? "Kaydediliyor…" : "Kaydet"}
-                    </Dugme>
+                <Kart>
+                    {VERI_ALANLARI.map((a) => (
+                        <Satir key={a.ad} etiket={a.etiket}>
+                            {(id) => (
+                                <input
+                                    id={id}
+                                    value={form[a.ad]}
+                                    maxLength={a.azami}
+                                    placeholder={a.ornek}
+                                    className={alanSinifi}
+                                    onChange={(e) => {
+                                        const deger = e.currentTarget.value;
+                                        setForm((f) => ({
+                                            ...f,
+                                            [a.ad]: deger,
+                                        }));
+                                    }}
+                                />
+                            )}
+                        </Satir>
+                    ))}
+                </Kart>
+                <div className="flex flex-wrap items-center justify-end gap-3">
                     {kayit.isSuccess && !degisti ? (
                         <span role="status" className="text-iyi">
                             Kaydedildi.
@@ -208,9 +211,17 @@ function VeriFormu({
                             {kayit.error.message}
                         </span>
                     ) : null}
+                    <Dugme
+                        tur="ana"
+                        type="submit"
+                        className="min-h-11 px-5.5 text-[15px]"
+                        disabled={!degisti || kayit.isPending}
+                    >
+                        {kayit.isPending ? "Kaydediliyor…" : "Kaydet"}
+                    </Dugme>
                 </div>
             </form>
-        </Kart>
+        </Bolum>
     );
 }
 
@@ -226,7 +237,8 @@ function BelgeKarti({
     if (!secili) return null;
     return (
         <Kart>
-            <KartBasi baslik={secili.baslik}>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-kenar px-[18px] py-3.5">
+                <h3 className="text-[17px] font-semibold">{secili.baslik}</h3>
                 <div role="group" aria-label="Dil" className={bolmeliSinif}>
                     {diller.map((d) => (
                         <button
@@ -240,7 +252,7 @@ function BelgeKarti({
                         </button>
                     ))}
                 </div>
-            </KartBasi>
+            </div>
             <MetinFormu
                 key={`${secili.belge}/${secili.dil}/${secili.guncellendi ?? ""}`}
                 app={app}
@@ -274,25 +286,27 @@ function MetinFormu({ app, belge }: { app: string; belge: Belge }): ReactNode {
 
     return (
         <form
-            className="grid gap-3 px-4.5 py-4"
+            className="grid gap-3 px-[18px] py-4"
             onSubmit={(e) => {
                 e.preventDefault();
                 kayit.mutate(metin);
             }}
         >
-            <p className="text-[14px]">
+            <p className="flex min-w-0 flex-wrap items-center gap-2 text-[14px]">
                 {belge.kayitli ? (
                     <>
-                        <span className="font-semibold text-iyi">Yayında</span>
-                        {" · "}
-                        <a href={belge.adres} target="_blank" rel="noreferrer">
+                        <Rozet tur="iyi">Yayında</Rozet>
+                        <a
+                            href={belge.adres}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="min-w-0 truncate text-vurgu"
+                        >
                             {belge.adres}
                         </a>
                     </>
                 ) : (
-                    <span className="font-semibold text-soluk">
-                        Taslak — yayında değil
-                    </span>
+                    <Rozet>Taslak — yayında değil</Rozet>
                 )}
             </p>
             <label htmlFor={id} className="sr-only">
@@ -303,7 +317,7 @@ function MetinFormu({ app, belge }: { app: string; belge: Belge }): ReactNode {
                 rows={14}
                 value={metin}
                 onChange={(e) => setMetin(e.currentTarget.value)}
-                className="w-full rounded-lg border border-kenar bg-zemin px-3 py-2 font-mono text-[13px] text-metin"
+                className={cn(alanSinifi, "font-mono text-[13px]")}
             />
             <p className="text-[13px] text-soluk">
                 "## " başlık, "- " madde, **kalın**, boş satır paragraf. HTML
@@ -315,15 +329,15 @@ function MetinFormu({ app, belge }: { app: string; belge: Belge }): ReactNode {
                     {belge.eksikler.map((e) => `{{${e}}}`).join(", ")}
                 </p>
             ) : null}
-            <div className="flex flex-wrap items-center gap-3">
-                <Dugme tur="ana" type="submit" disabled={kayit.isPending}>
-                    {kayit.isPending ? "Kaydediliyor…" : "Kaydet ve yayınla"}
-                </Dugme>
+            <div className="flex flex-wrap items-center justify-end gap-3">
                 {kayit.isError ? (
                     <span role="alert" className="text-tehlike">
                         {kayit.error.message}
                     </span>
                 ) : null}
+                <Dugme tur="ana" type="submit" disabled={kayit.isPending}>
+                    {kayit.isPending ? "Kaydediliyor…" : "Kaydet ve yayınla"}
+                </Dugme>
             </div>
         </form>
     );

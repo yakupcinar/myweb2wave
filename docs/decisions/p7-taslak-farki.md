@@ -41,7 +41,7 @@ Kaynakta `className`'siz `<input>` / `<select>` / `<button>` sayısı (Tailwind'
 | Yasal | select 1, textarea 1, button 1 |
 | Ayarlar | select 1 |
 
-Sayı düzenli ifadeyle yaklaşık bulundu; bir kısmı başka bir sarmalayıcıdan stil alıyor olabilir.
+Sayı düzenli ifadeyle yaklaşık bulundu; bir kısmı başka bir sarmalayıcıdan stil alıyor olabilir. **Düzeltme (P7e, 2026-11-11):** çizilmiş sayfada Huniler ve Planlar'da çıplak alan yoktu; sayım `=>` içindeki `>`'de kesilip `className={değişken}`'i görmüyordu. Asıl fark eski sınıflardı ([p7e-kalan-sayfalar.md](p7e-kalan-sayfalar.md)).
 Ekranda ölçülerek doğrulanmalı. Deneyler, Webhooklar ve Anahtarlar ekranda görüldü. Bu sorun P6'dan
 değil: P6'dan önceki `stil.css`'te de form öğeleri için temel stil yoktu.
 

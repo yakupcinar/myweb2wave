@@ -1,13 +1,15 @@
 // Huniler (P2; A7, A8): uygulama başına huniler ve reklam adresinin hangi
 // huniyi açacağını seçen kurallar. "Düzenle" ve yeni huni düzenleyiciyi
 // sayfa yenilemeden açar (P3). Kaldırma geri
-// alınamaz: tarayıcı onay penceresi yerine iki adımlı düğme.
+// alınamaz: tarayıcı onay penceresi yerine iki adımlı düğme. P7e: alanlar
+// ortak stilde (ui/Alan), onay adımı dolu kırmızı.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { SayfaBasi } from "../Duzen";
+import { kisaEtiketSinifi, satirIciAlanSinifi } from "../ui/Alan";
 import { Dugme, dugmeSinifi } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
@@ -19,7 +21,7 @@ type Huni = Liste["huniler"][number];
 // Sözleşme başlığı zorunlu tutuyor; asıl jetonu api.ts yazar.
 const JETON = { "X-CSRF-Token": "" };
 
-const girdi = "min-h-9 rounded-lg border border-kenar bg-zemin px-3 text-metin";
+const girdi = satirIciAlanSinifi;
 
 async function hatasiz(
     istek: Promise<{ error?: { hatalar: string[] }; response: Response }>,
@@ -309,7 +311,7 @@ function HuniTablosu({
                                             {kaldirSor === h.ad ? (
                                                 <>
                                                     <Dugme
-                                                        tur="tehlike"
+                                                        tur="yikici"
                                                         onClick={() =>
                                                             kaldir(h)
                                                         }
@@ -319,6 +321,7 @@ function HuniTablosu({
                                                             : "Evet, sil"}
                                                     </Dugme>
                                                     <Dugme
+                                                        tur="sade"
                                                         onClick={() =>
                                                             setKaldirSor(null)
                                                         }
@@ -363,7 +366,7 @@ function HuniTablosu({
                 }}
             >
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Yeni huni adı</span>
+                    <span className={kisaEtiketSinifi}>Yeni huni adı</span>
                     <input
                         value={ad}
                         required
@@ -374,7 +377,7 @@ function HuniTablosu({
                     />
                 </label>
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Başlangıç</span>
+                    <span className={kisaEtiketSinifi}>Başlangıç</span>
                     <select
                         value={baslangic}
                         onChange={(e) => setBaslangic(e.currentTarget.value)}
@@ -548,7 +551,7 @@ function Kurallar({
                         }}
                     >
                         <label className="grid gap-1.5">
-                            <span className="font-semibold">Adreste</span>
+                            <span className={kisaEtiketSinifi}>Adreste</span>
                             <select
                                 value={parametre}
                                 onChange={(e) =>
@@ -564,7 +567,7 @@ function Kurallar({
                             </select>
                         </label>
                         <label className="grid gap-1.5">
-                            <span className="font-semibold">=</span>
+                            <span className={kisaEtiketSinifi}>=</span>
                             <input
                                 value={deger}
                                 required
@@ -577,7 +580,7 @@ function Kurallar({
                             />
                         </label>
                         <label className="grid gap-1.5">
-                            <span className="font-semibold">→ Huni</span>
+                            <span className={kisaEtiketSinifi}>→ Huni</span>
                             <select
                                 value={huni}
                                 onChange={(e) => setHuni(e.currentTarget.value)}

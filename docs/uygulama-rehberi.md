@@ -748,6 +748,7 @@ Tablo grupları §5'te. Kullanılan desenler:
   - E-posta: `null://null` + Symfony'nin e-posta iddiaları.
   - Sözleşme: yanıt [`openapi.yaml`](../contract/openapi.yaml)'a karşı doğrulanır.
 - **Panel ve huni:** Vitest + happy-dom + Testing Library; ağ yerine sahte `fetch`.
+  - Panel sayfa testleri çizilmiş sayfada her alanın ortak stilde olduğunu denetler ([`ciplakAlanlar`](../core/panel/src/uygulama/ui/stilDenetimi.ts), P7e); Vitest'te CSS boş olduğu için sınıfa bakar (tuzak §32).
 - **Kırma:** her blokta kararlar tek tek bozulur, test kırmızı olmalı; tutmayan denemede önce test suçlanır
   ([`/kirma`](../.claude/skills/kirma/SKILL.md)).
 - **Gerçek sistem:** dev'de curl, Mailpit, Stripe test modu, başsız Chromium. Panel ekranları giriş istediği için

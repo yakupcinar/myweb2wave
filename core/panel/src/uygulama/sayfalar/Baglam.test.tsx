@@ -12,6 +12,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 import { bosEntegrasyon } from "./entegrasyonSahte";
 
 const KAYITLI = {
@@ -143,5 +144,11 @@ describe("Ürün bağlamı", () => {
         await screen.findByDisplayValue("Sade mesajlaşma");
         expect(kaydirilan).toEqual(["baglam"]);
         vi.restoreAllMocks();
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur();
+        await screen.findByDisplayValue("Sade mesajlaşma");
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });

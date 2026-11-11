@@ -14,6 +14,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 
 const KAYITLI = {
     ad: "KeepChat",
@@ -284,5 +285,12 @@ describe("Ayarlar", () => {
         });
         expect(await screen.findByText("6 adımdan 0'ı tamam")).toBeTruthy();
         expect(screen.getByText(/Anahtar yok/)).toBeTruthy();
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur();
+        await screen.findByDisplayValue("KeepChat");
+        await screen.findByText("6 adımdan 2'si tamam");
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });

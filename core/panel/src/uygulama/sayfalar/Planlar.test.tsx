@@ -14,6 +14,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 
 type Istek = {
     yontem: string;
@@ -341,5 +342,12 @@ describe("Planlar", () => {
                 "'monthly' planı zaten var.",
             ),
         );
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur();
+        await screen.findByRole("region", { name: "Planlar" });
+        await screen.findByText("Henüz ek ürün yok.");
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });

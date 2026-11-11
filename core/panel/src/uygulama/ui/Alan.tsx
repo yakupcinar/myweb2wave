@@ -4,8 +4,19 @@
 // alan bu sınıfı kullanır (p7-taslak-farki.md).
 import { useId, type ReactNode } from "react";
 
-export const alanSinifi =
-    "w-full min-w-0 rounded-lg border border-kenar-2 bg-yuzey px-2.5 py-2 text-[15px] text-metin placeholder:text-soluk focus:outline-2 focus:-outline-offset-1 focus:outline-vurgu disabled:bg-yuzey-2 disabled:text-soluk";
+const temel =
+    "min-w-0 rounded-lg border border-kenar-2 bg-yuzey px-2.5 py-2 text-[15px] text-metin placeholder:text-soluk focus:outline-2 focus:-outline-offset-1 focus:outline-vurgu disabled:bg-yuzey-2 disabled:text-soluk";
+
+export const alanSinifi = `w-full ${temel}`;
+
+/**
+ * P7e: satır içi ekleme formları (Huniler, Planlar) — aynı görünüm, genişlik
+ * içerikten ya da çağıranın w-40'ı gibi (w-full ile çakışmasın).
+ */
+export const satirIciAlanSinifi = `max-w-full ${temel}`;
+
+/** P7e: satır içi formda alanın üstündeki kısa etiket. */
+export const kisaEtiketSinifi = "text-[13px] text-soluk";
 
 export const kutuSinifi = "size-4 shrink-0 accent-vurgu";
 

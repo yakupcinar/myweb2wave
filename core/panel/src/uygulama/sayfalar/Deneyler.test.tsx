@@ -15,6 +15,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 
 type Istek = {
     yontem: string;
@@ -275,5 +276,11 @@ describe("Deneyler", () => {
         expect((await screen.findByRole("alert")).textContent).toBe(
             "'genel' hunisi yayında değil — önce yayınla.",
         );
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur();
+        await screen.findByRole("table", { name: "calisan sonuçları" });
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });

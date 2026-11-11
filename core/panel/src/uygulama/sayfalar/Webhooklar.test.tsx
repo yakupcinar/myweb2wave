@@ -14,6 +14,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 import { olayOzeti } from "../olaylar";
 import { bosEntegrasyon } from "./entegrasyonSahte";
 
@@ -233,5 +234,12 @@ describe("M7b — Webhook'lar", () => {
         expect(olayOzeti(["odeme.fatura", "yeni.olay"], SOZLUK)).toBe(
             "Fatura tahsil edildi · yeni.olay",
         );
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur();
+        await screen.findByText(HEDEF.adres);
+        await screen.findByRole("group", { name: "Ödeme" });
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });

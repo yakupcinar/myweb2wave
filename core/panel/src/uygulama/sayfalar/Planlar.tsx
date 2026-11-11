@@ -10,11 +10,13 @@
 // fiyatı da gelmez ("Stripe'tan okunamadı").
 // M1c: ek para birimleri elle sabit tutar; ziyaretçi ülkesinin para birimini
 // görür (IP), yoksa ana para birimini. Değişiklik yeni Stripe fiyatı açar.
+// P7e: alanlar ortak stilde (ui/Alan satır içi).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { SayfaBasi } from "../Duzen";
+import { kisaEtiketSinifi, satirIciAlanSinifi } from "../ui/Alan";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Tablo, Td, Th } from "../ui/Tablo";
@@ -24,8 +26,7 @@ type PlanFiyati = components["schemas"]["PlanFiyati"];
 
 const ARALIK = { day: "gün", week: "hafta", month: "ay", year: "yıl" } as const;
 const PARA_BIRIMLERI = ["EUR", "USD", "GBP", "TRY"] as const;
-const girdiSinifi =
-    "min-h-9 rounded-lg border border-kenar bg-zemin px-3 max-w-full";
+const girdiSinifi = satirIciAlanSinifi;
 
 function fiyatYazisi(f: PlanFiyati | null): string {
     if (!f) return "Stripe'tan okunamadı";
@@ -388,7 +389,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         }}
                     >
                         <label className="grid gap-1.5">
-                            <span className="font-semibold">Plan</span>
+                            <span className={kisaEtiketSinifi}>Plan</span>
                             <select
                                 value={ekPlan}
                                 onChange={(e) => {
@@ -427,7 +428,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                     )?.fiyat?.paraBirimi,
                         ).map((para) => (
                             <label key={para} className="grid gap-1.5">
-                                <span className="font-semibold">{para}</span>
+                                <span className={kisaEtiketSinifi}>{para}</span>
                                 <input
                                     type="number"
                                     min="0.01"
@@ -473,7 +474,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         }}
                     >
                         <label className="grid gap-1.5">
-                            <span className="font-semibold">Plan</span>
+                            <span className={kisaEtiketSinifi}>Plan</span>
                             <select
                                 value={teklif.anahtar}
                                 onChange={(e) =>
@@ -493,7 +494,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                             </select>
                         </label>
                         <label className="grid gap-1.5">
-                            <span className="font-semibold">Tür</span>
+                            <span className={kisaEtiketSinifi}>Tür</span>
                             <select
                                 value={teklif.tur}
                                 onChange={(e) =>
@@ -516,7 +517,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         </label>
                         {teklif.tur === "deneme" || teklif.tur === "giris" ? (
                             <label className="grid gap-1.5">
-                                <span className="font-semibold">Gün</span>
+                                <span className={kisaEtiketSinifi}>Gün</span>
                                 <input
                                     type="number"
                                     min="1"
@@ -534,7 +535,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         ) : null}
                         {teklif.tur === "giris" ? (
                             <label className="grid gap-1.5">
-                                <span className="font-semibold">
+                                <span className={kisaEtiketSinifi}>
                                     Giriş ücreti
                                 </span>
                                 <input
@@ -555,7 +556,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         ) : null}
                         {teklif.tur ? (
                             <label className="grid gap-1.5">
-                                <span className="font-semibold">
+                                <span className={kisaEtiketSinifi}>
                                     Bitiş (isteğe bağlı)
                                 </span>
                                 <input
@@ -573,7 +574,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         ) : null}
                         {teklif.tur === "indirim" ? (
                             <label className="grid gap-1.5">
-                                <span className="font-semibold">
+                                <span className={kisaEtiketSinifi}>
                                     İndirim (%)
                                 </span>
                                 <input
@@ -623,7 +624,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                     }}
                 >
                     <label className="grid gap-1.5">
-                        <span className="font-semibold">Anahtar</span>
+                        <span className={kisaEtiketSinifi}>Anahtar</span>
                         <input
                             value={yeni.anahtar}
                             maxLength={32}
@@ -638,7 +639,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         />
                     </label>
                     <label className="grid gap-1.5">
-                        <span className="font-semibold">Ad</span>
+                        <span className={kisaEtiketSinifi}>Ad</span>
                         <input
                             value={yeni.ad}
                             maxLength={100}
@@ -650,7 +651,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         />
                     </label>
                     <label className="grid gap-1.5">
-                        <span className="font-semibold">Tutar</span>
+                        <span className={kisaEtiketSinifi}>Tutar</span>
                         <input
                             type="number"
                             min="0.01"
@@ -667,7 +668,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         />
                     </label>
                     <label className="grid gap-1.5">
-                        <span className="font-semibold">Para birimi</span>
+                        <span className={kisaEtiketSinifi}>Para birimi</span>
                         <select
                             value={yeni.paraBirimi}
                             onChange={(e) =>
@@ -685,7 +686,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                         </select>
                     </label>
                     <label className="grid gap-1.5">
-                        <span className="font-semibold">Aralık</span>
+                        <span className={kisaEtiketSinifi}>Aralık</span>
                         <select
                             value={yeni.aralik}
                             onChange={(e) =>
@@ -819,7 +820,7 @@ function EkUrunListesi({ app }: { app: string }): ReactNode {
                 }}
             >
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Ürün anahtarı</span>
+                    <span className={kisaEtiketSinifi}>Ürün anahtarı</span>
                     <input
                         value={yeni.anahtar}
                         maxLength={32}
@@ -831,7 +832,7 @@ function EkUrunListesi({ app }: { app: string }): ReactNode {
                     />
                 </label>
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Ürün adı</span>
+                    <span className={kisaEtiketSinifi}>Ürün adı</span>
                     <input
                         value={yeni.ad}
                         maxLength={100}
@@ -843,7 +844,7 @@ function EkUrunListesi({ app }: { app: string }): ReactNode {
                     />
                 </label>
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Ürün tutarı</span>
+                    <span className={kisaEtiketSinifi}>Ürün tutarı</span>
                     <input
                         type="number"
                         min="0.01"
@@ -857,7 +858,7 @@ function EkUrunListesi({ app }: { app: string }): ReactNode {
                     />
                 </label>
                 <label className="grid gap-1.5">
-                    <span className="font-semibold">Ürün para birimi</span>
+                    <span className={kisaEtiketSinifi}>Ürün para birimi</span>
                     <select
                         value={yeni.paraBirimi}
                         onChange={(e) =>

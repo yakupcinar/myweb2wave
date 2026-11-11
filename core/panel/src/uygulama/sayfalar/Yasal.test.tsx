@@ -14,6 +14,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 
 const belge = (dil: "tr" | "en", ek: object = {}) => ({
     belge: "sartlar",
@@ -100,6 +101,8 @@ describe("Yasal metinler", () => {
         expect(
             await screen.findByDisplayValue("TR taslak {{unvan}}"),
         ).toBeTruthy();
+        // P7e: çerçevesiz alan kalmadı.
+        expect(ciplakAlanlar(document.body)).toEqual([]);
         expect(screen.getByRole("note").textContent).toContain(
             "hukuki görüş değildir",
         );

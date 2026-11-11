@@ -14,6 +14,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 
 const satir = (abonelik: string, ek: object) => ({
     abonelik,
@@ -402,5 +403,11 @@ describe("P5: Aboneler", () => {
                 ) as HTMLInputElement
             ).value,
         ).toBe("yok");
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur();
+        await screen.findAllByRole("row");
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });

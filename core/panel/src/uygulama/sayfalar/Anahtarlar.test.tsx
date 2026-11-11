@@ -14,6 +14,7 @@ import {
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { yollar } from "../main";
+import { ciplakAlanlar } from "../ui/stilDenetimi";
 import { bosEntegrasyon } from "./entegrasyonSahte";
 
 const ANAHTAR = `mw2w_${"a".repeat(48)}`;
@@ -249,5 +250,13 @@ describe("API anahtarları", () => {
             jeton: "jeton-kabuk",
         });
         expect(within(tablo).getByText("Eski")).toBeTruthy();
+    });
+
+    it("P7e: her alan ortak stilde (ui/Alan), her kutu vurgu renginde", async () => {
+        kur([IPTAL]);
+        fireEvent.click(
+            await screen.findByRole("button", { name: "İptal edilenler (1)" }),
+        );
+        expect(ciplakAlanlar(document.body)).toEqual([]);
     });
 });
