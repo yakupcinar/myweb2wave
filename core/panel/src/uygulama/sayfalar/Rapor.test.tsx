@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 // Rapor ekranı (B5): eski Twig sayfasının ölçtüğü gösterim kararları —
 // özet = reklam + organik, yüzde biçimi, huni şeridi, menü işareti, zararlı
-// metin yazı olarak. Beklenenler elle hesaplandı (tuzak §3).
+// metin yazı olarak. Beklenenler elle hesaplandı (tuzak §3). P7i: bölümler
+// sekmelerde — her test ilgili sekmeyi adresle açar.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     cleanup,
@@ -46,6 +47,7 @@ const RAPOR: PanelRaporu = {
     cevaplar: [
         {
             app: "keepchat",
+            huni: "—",
             soru: "kiminle",
             secenek: "aile",
             sayi: 4,
@@ -296,6 +298,9 @@ describe("Rapor", () => {
             ["Ödeme yaptı · deneme sonrası dahil", "1", "0", "1"],
             ["Abone oldu", "2", "0", "2"],
         ]);
+        cleanup();
+        kur("/panel?sekme=kaynaklar");
+        await screen.findByRole("region", { name: "Reklam ölçümü izni" });
         expect(kartlar("Reklam ölçümü izni")).toEqual([
             ["Kabul etti", "2", "%50,0"],
             ["Reddetti", "1", "%25,0"],
@@ -337,7 +342,7 @@ describe("Rapor", () => {
     });
 
     it("M5c: kaynaklar, cevaba göre dönüşüm, Meta kampanyaları, kohort hücreleri", async () => {
-        kur();
+        kur("/panel?sekme=kaynaklar");
         await screen.findByRole("table", { name: "Kaynaklar" });
         // Dönüşüm (deneme + ödedi) / ziyaret = 2/3; para birimleri toplanmaz.
         expect(hucreler("Kaynaklar")).toEqual([
@@ -356,6 +361,9 @@ describe("Rapor", () => {
             "%0,0",
             "—",
         ]);
+        cleanup();
+        kur("/panel?sekme=anket");
+        await screen.findByRole("table", { name: "Cevaplar" });
         // 1 / 4 seçen abone.
         expect(hucreler("Cevaplar")).toEqual([
             "kiminle",
@@ -364,6 +372,9 @@ describe("Rapor", () => {
             "1",
             "%25,0",
         ]);
+        cleanup();
+        kur();
+        await screen.findByRole("table", { name: "Meta kampanyaları" });
         // M5d: ROAS hesabın para biriminde; harcama 0 → tanımsız "—".
         expect(hucreler("Meta kampanyaları")).toEqual([
             "ekim",
@@ -374,6 +385,9 @@ describe("Rapor", () => {
             "0,67×",
         ]);
         expect(hucreler("Meta kampanyaları", 2).at(-1)).toBe("—");
+        cleanup();
+        kur("/panel?sekme=gelir");
+        await screen.findByRole("table", { name: "Kohort geliri" });
         // Olgun + gelirsiz "0", olgun değil "—" (yarım pencere sıfır sanılmasın).
         expect(hucreler("Kohort geliri")).toEqual([
             "2026-11-02",
@@ -418,7 +432,7 @@ describe("Rapor", () => {
     });
 
     it("P7b: anket şeridi ilk adıma göre, düşüş bir önceki adıma göre", async () => {
-        kur();
+        kur("/panel?sekme=anket");
         const anket = await screen.findByRole("region", { name: "Anket" });
         // 3 → 2 → 1: şerit 100 / 66,7 / 33,3; düşüş —, (3−2)/3 = %33, (2−1)/2 = %50.
         expect(
@@ -438,7 +452,7 @@ describe("Rapor", () => {
     });
 
     it("zararlı kaynak metni yazı olarak; e-posta maskeli; menüde Rapor işaretli", async () => {
-        kur();
+        kur("/panel?sekme=ziyaretler");
         const ziyaret = await screen.findByRole("region", {
             name: "Ziyaretler",
         });
@@ -474,31 +488,43 @@ describe("Rapor", () => {
         const yollar = (): string[] =>
             istenen.map((u) => new URL(u, "http://x").pathname).sort();
         // Sunucu seçilen aralığı yanıtta geri verir; listeler onu kullanır.
-        kur("/panel?gun=90", { ...RAPOR, gun: 90 });
+        kur("/panel?gun=90&sekme=ziyaretler", { ...RAPOR, gun: 90 });
         await screen.findByRole("region", { name: "Ziyaretler" });
-        await screen.findByRole("region", { name: "Kaynaklar" });
-        await screen.findByRole("region", { name: "Serbest yanıtlar" });
+        // P7i: yalnız açık sekmenin listesi istenir.
         expect(yollar()).toEqual([
             "/panel/api/rapor",
-            "/panel/api/rapor/kaynaklar",
-            "/panel/api/rapor/serbestYanitlar",
             "/panel/api/rapor/ziyaretler",
         ]);
         expect(gunler()).toEqual(["90"]);
-        expect(
-            screen
-                .getByRole("link", { name: "90 gün" })
-                .getAttribute("aria-current"),
-        ).toBe("page");
+        const gun = (ad: string): HTMLElement =>
+            within(
+                screen.getByRole("navigation", { name: "Zaman aralığı" }),
+            ).getByRole("link", { name: ad });
+        expect(gun("90 gün").getAttribute("aria-current")).toBe("page");
+        // Gün seçicisi sekmeyi korur.
+        expect(gun("7 gün").getAttribute("href")).toBe(
+            "/panel?gun=7&sekme=ziyaretler",
+        );
+        expect(gun("30 gün").getAttribute("href")).toBe(
+            "/panel?sekme=ziyaretler",
+        );
         cleanup();
-        kur("/panel?gun=5");
-        await screen.findByRole("region", { name: "Ziyaretler" });
+        kur("/panel?gun=90&sekme=anket", { ...RAPOR, gun: 90 });
+        await screen.findByRole("region", { name: "Serbest yanıtlar" });
+        expect(yollar()).toEqual([
+            "/panel/api/rapor",
+            "/panel/api/rapor/serbestYanitlar",
+        ]);
+        expect(gunler()).toEqual(["90"]);
+        cleanup();
+        kur("/panel?gun=5&sekme=kaynaklar");
+        await screen.findByRole("region", { name: "Kaynaklar" });
         expect(gunler()).toEqual(["30"]);
     });
 
     it("P7a2: liste sayfalı — sayı, sonraki sayfa isteği, sınırda düğme kapalı", async () => {
         toplamlar = { ziyaretler: 30 };
-        kur();
+        kur("/panel?sekme=ziyaretler");
         const ziyaret = await screen.findByRole("region", {
             name: "Ziyaretler",
         });
@@ -536,6 +562,8 @@ describe("Rapor", () => {
             ).disabled,
         ).toBe(true);
         // Kaynaklar tek sayfaya sığar: yalnız sayı, düğme yok.
+        cleanup();
+        kur("/panel?sekme=kaynaklar");
         const kaynak = await screen.findByRole("region", {
             name: "Kaynaklar",
         });
@@ -546,5 +574,118 @@ describe("Rapor", () => {
             k.textContent,
             within(k).queryAllByRole("button").length,
         ]).toEqual(["2 kaynak", 0]);
+    });
+
+    it("P7i: sekmeler — varsayılan Genel bakış, günü korur, bölümler sekmesinde; tanınmayan sekme genel", async () => {
+        const bolumler = (): string[] =>
+            [...document.querySelectorAll("main section[aria-label]")]
+                .filter((b) => !b.parentElement?.closest("section[aria-label]"))
+                .map((b) => b.getAttribute("aria-label") ?? "");
+        const sekme = (ad: string): HTMLElement =>
+            within(
+                screen.getByRole("navigation", { name: "Rapor bölümleri" }),
+            ).getByRole("link", { name: ad });
+        kur("/panel?gun=7");
+        await screen.findByRole("region", { name: "Özet" });
+        expect(bolumler()).toEqual([
+            "Özet",
+            "Günlük",
+            "Ziyaretten aboneliğe",
+            "Reklam harcaması",
+        ]);
+        expect(sekme("Genel bakış").getAttribute("aria-current")).toBe("page");
+        expect(
+            ["Genel bakış", "Anket", "Kaynaklar", "Gelir", "Ziyaretler"].map(
+                (ad) => sekme(ad).getAttribute("href"),
+            ),
+        ).toEqual([
+            "/panel?gun=7",
+            "/panel?gun=7&sekme=anket",
+            "/panel?gun=7&sekme=kaynaklar",
+            "/panel?gun=7&sekme=gelir",
+            "/panel?gun=7&sekme=ziyaretler",
+        ]);
+        // Genel bakışta liste uçları istenmez.
+        expect(istenen.some((u) => u.includes("/panel/api/rapor/"))).toBe(
+            false,
+        );
+
+        fireEvent.click(sekme("Kaynaklar"));
+        await screen.findByRole("region", { name: "Kaynaklar" });
+        expect(bolumler()).toEqual(["Kaynaklar", "Reklam ölçümü izni"]);
+        expect(sekme("Kaynaklar").getAttribute("aria-current")).toBe("page");
+        fireEvent.click(sekme("Gelir"));
+        await screen.findByRole("region", { name: "Kohort geliri" });
+        expect(bolumler()).toEqual(["Kohort geliri"]);
+
+        cleanup();
+        kur("/panel?sekme=yok");
+        await screen.findByRole("region", { name: "Özet" });
+        expect(sekme("Genel bakış").getAttribute("aria-current")).toBe("page");
+    });
+
+    it("P7i: Anket tek huni — varsayılan en çok ziyaretli; seçim adrese; Cevaplar o huniden; tek hunide seçici yok", async () => {
+        const adim = (
+            huni: string,
+            sira: number,
+            adim: string,
+            ulasan: number,
+        ) => ({
+            app: "keepchat",
+            huni,
+            sira,
+            adim,
+            ulasan,
+        });
+        const cevap = (huni: string, secenek: string) => ({
+            app: "keepchat",
+            huni,
+            soru: "kiminle",
+            secenek,
+            sayi: 2,
+            abone: 1,
+        });
+        kur("/panel?sekme=anket", {
+            ...RAPOR,
+            adimlar: [
+                adim("fitness", 0, "giris", 3),
+                adim("fitness", 1, "hedef", 1),
+                adim("genel", 0, "karsilama", 5),
+                adim("genel", 1, "kiminle", 4),
+            ],
+            cevaplar: [cevap("fitness", "spor"), cevap("genel", "aile")],
+        });
+        const secim = (await screen.findByRole("combobox", {
+            name: "Huni",
+        })) as HTMLSelectElement;
+        expect([...secim.options].map((o) => o.textContent)).toEqual([
+            "genel · 5 ziyaret",
+            "fitness · 3 ziyaret",
+        ]);
+        const adimlar = (): string[] =>
+            [...document.querySelectorAll("[data-adim]")].map(
+                (a) => a.getAttribute("data-adim") ?? "",
+            );
+        expect(adimlar()).toEqual(["karsilama", "kiminle"]);
+        expect(hucreler("Cevaplar")[1]).toBe("aile");
+        expect(
+            within(
+                screen.getByRole("table", { name: "Cevaplar" }),
+            ).getAllByRole("row").length,
+        ).toBe(2);
+
+        fireEvent.change(secim, { target: { value: "keepchat/fitness" } });
+        await waitFor(() => expect(adimlar()).toEqual(["giris", "hedef"]));
+        expect(hucreler("Cevaplar")[1]).toBe("spor");
+        expect(
+            within(screen.getByRole("navigation", { name: "Zaman aralığı" }))
+                .getByRole("link", { name: "7 gün" })
+                .getAttribute("href"),
+        ).toBe("/panel?gun=7&sekme=anket&huni=keepchat%2Ffitness");
+
+        cleanup();
+        kur("/panel?sekme=anket");
+        await screen.findByRole("region", { name: "Anket" });
+        expect(screen.queryByRole("combobox", { name: "Huni" })).toBeNull();
     });
 });

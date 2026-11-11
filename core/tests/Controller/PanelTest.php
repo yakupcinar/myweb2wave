@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Huni\Huniler;
 use App\Panel\YoneticiSaglayici;
 use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
@@ -245,6 +246,13 @@ final class PanelTest extends WebTestCase
         foreach ([[$a, 'aile'], [$b, 'aile'], [$c, 'is'], [$d, 'is']] as [$z, $secenek]) {
             $this->db->insert('huni_cevaplari', ['ziyaret_id' => $z, 'soru' => 'kiminle', 'secenek' => $secenek]);
         }
+        // P7i: cevaplar huni başına — A fitness'ta, diğerleri hunisiz ("—").
+        $huniler = static::getContainer()->get(Huniler::class);
+        self::assertInstanceOf(Huniler::class, $huniler);
+        self::assertSame([], $huniler->yeniHuni('keepchat', 'fitness', null, 'fitness'));
+        $surum = $huniler->yayinla('keepchat', 'fitness');
+        self::assertIsInt($surum);
+        $this->db->update('huni_ziyaretleri', ['huni' => 'fitness', 'surum' => $surum], ['id' => $a]);
         $this->girisYapmis();
 
         $r = $this->rapor('?gun=90');
@@ -260,8 +268,9 @@ final class PanelTest extends WebTestCase
         self::assertSame(['ziyaret' => 7, 'odemeye_gecti' => 6, 'deneme' => 0, 'odedi' => 5], $r['sayimlar']['reklam']);
         self::assertSame(['ziyaret' => 2, 'odemeye_gecti' => 2, 'deneme' => 1, 'odedi' => 1], $r['sayimlar']['organik']);
         self::assertSame([
-            ['app' => 'keepchat', 'soru' => 'kiminle', 'secenek' => 'aile', 'sayi' => 2, 'abone' => 2],
-            ['app' => 'keepchat', 'soru' => 'kiminle', 'secenek' => 'is', 'sayi' => 2, 'abone' => 1],
+            ['app' => 'keepchat', 'huni' => 'fitness', 'soru' => 'kiminle', 'secenek' => 'aile', 'sayi' => 1, 'abone' => 1],
+            ['app' => 'keepchat', 'huni' => '—', 'soru' => 'kiminle', 'secenek' => 'is', 'sayi' => 2, 'abone' => 1],
+            ['app' => 'keepchat', 'huni' => '—', 'soru' => 'kiminle', 'secenek' => 'aile', 'sayi' => 1, 'abone' => 1],
         ], $r['cevaplar']);
 
         // Hafta = UTC pazartesi, PHP saatinden (sorgudan bağımsız).

@@ -4,7 +4,9 @@
 // yalnız gösterim (toplam, yüzde, şerit) — sayımların kendisi çekirdekte.
 // P7b: düzen onaylı taslakla bire bir (p7b-rapor.md) — Özet (önceki döneme
 // göre), Ziyaretten aboneliğe, Anket, Kaynaklar, Reklam harcaması; günlük
-// grafikler ve ayrıntılar altta (kullanıcı).
+// grafikler ve ayrıntılar altta (kullanıcı). P7i (A27): sayfa 6.604 px'e
+// uzamıştı — web2wave gibi sekmeler (Genel bakış · Anket · Kaynaklar · Gelir ·
+// Ziyaretler); sekme ve Anket'in hunisi adreste.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -37,9 +39,36 @@ function gunOku(deger: string | null): Gun {
     return GUNLER.find((g) => g === n) ?? 30;
 }
 
+const SEKMELER = [
+    ["genel", "Genel bakış"],
+    ["anket", "Anket"],
+    ["kaynaklar", "Kaynaklar"],
+    ["gelir", "Gelir"],
+    ["ziyaretler", "Ziyaretler"],
+] as const;
+type Sekme = (typeof SEKMELER)[number][0];
+
+function sekmeOku(deger: string | null): Sekme {
+    return SEKMELER.find(([s]) => s === deger)?.[0] ?? "genel";
+}
+
+/** Adres: gün ve sekme birbirini korur; varsayılanlar adrese yazılmaz. */
+function adres(gun: Gun, sekme: Sekme, huni?: string | null): string {
+    const p = new URLSearchParams();
+    if (gun !== 30) p.set("gun", String(gun));
+    if (sekme !== "genel") p.set("sekme", sekme);
+    if (huni) p.set("huni", huni);
+    const q = p.toString();
+    return q ? `/panel?${q}` : "/panel";
+}
+
+const sekmeSinifi =
+    "-mb-px shrink-0 border-b-2 border-transparent px-3 pb-2.5 text-[15px] whitespace-nowrap text-soluk hover:text-metin aria-[current=page]:border-vurgu aria-[current=page]:font-medium aria-[current=page]:text-metin";
+
 export function Rapor(): ReactNode {
     const [sorgu] = useSearchParams();
     const gun = gunOku(sorgu.get("gun"));
+    const sekme = sekmeOku(sorgu.get("sekme"));
     const { data, isError } = useQuery({
         queryKey: ["rapor", gun],
         queryFn: async () => {
@@ -61,7 +90,7 @@ export function Rapor(): ReactNode {
                     {GUNLER.map((g) => (
                         <Link
                             key={g}
-                            to={`/panel?gun=${g}`}
+                            to={adres(g, sekme, sorgu.get("huni"))}
                             aria-current={g === gun ? "page" : undefined}
                             className={cn(bolmeSinifi, "px-3.5 py-1.5")}
                         >
@@ -70,6 +99,21 @@ export function Rapor(): ReactNode {
                     ))}
                 </nav>
             </SayfaBasi>
+            <nav
+                aria-label="Rapor bölümleri"
+                className="mb-7 flex gap-1 overflow-x-auto border-b border-kenar"
+            >
+                {SEKMELER.map(([s, ad]) => (
+                    <Link
+                        key={s}
+                        to={adres(gun, s)}
+                        aria-current={s === sekme ? "page" : undefined}
+                        className={sekmeSinifi}
+                    >
+                        {ad}
+                    </Link>
+                ))}
+            </nav>
             {isError ? (
                 <p role="alert" className="text-tehlike">
                     Rapor yüklenemedi. Sayfayı yenileyin.
@@ -79,7 +123,7 @@ export function Rapor(): ReactNode {
                     Yükleniyor…
                 </p>
             ) : (
-                <RaporIcerik r={data} />
+                <RaporIcerik r={data} sekme={sekme} huni={sorgu.get("huni")} />
             )}
         </>
     );
@@ -89,15 +133,20 @@ export function Rapor(): ReactNode {
 function Bolum({
     baslik,
     aciklama,
+    sag,
     children,
 }: {
     baslik: string;
     aciklama?: ReactNode;
+    sag?: ReactNode;
     children: ReactNode;
 }): ReactNode {
     return (
         <section aria-label={baslik} className="flex flex-col gap-2.5">
-            <h2 className="text-[20px] font-semibold">{baslik}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-[20px] font-semibold">{baslik}</h2>
+                {sag}
+            </div>
             {aciklama ? (
                 <p className="text-[13px] text-soluk">{aciklama}</p>
             ) : null}
@@ -117,14 +166,64 @@ const topla = (a: Sayim, b: Sayim): Sayim => ({
 const abone = (s: Pick<Sayim, "deneme" | "odedi">): number =>
     s.deneme + s.odedi;
 
-export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
+export function RaporIcerik({
+    r,
+    sekme = "genel",
+    huni = null,
+}: {
+    r: PanelRaporu;
+    sekme?: Sekme;
+    huni?: string | null;
+}): ReactNode {
     const { reklam, organik } = r.sayimlar;
     const toplam = topla(reklam, organik);
     const onceki = topla(r.onceki.sayimlar.reklam, r.onceki.sayimlar.organik);
+    if (sekme === "anket")
+        return (
+            <div className="flex flex-col gap-7">
+                {r.adimlar.length ? (
+                    <Anket r={r} secili={huni} />
+                ) : (
+                    <p className="text-soluk">Bu aralıkta anket verisi yok.</p>
+                )}
+                <SerbestYanitlar key={`s${r.gun}`} gun={r.gun} />
+            </div>
+        );
+    if (sekme === "kaynaklar")
+        return (
+            <div className="flex flex-col gap-7">
+                <Kaynaklar key={`k${r.gun}`} gun={r.gun} />
+                <Izinler r={r} />
+            </div>
+        );
+    if (sekme === "gelir")
+        return (
+            <div className="flex flex-col gap-7">
+                <Kohort r={r} />
+            </div>
+        );
+    if (sekme === "ziyaretler")
+        return (
+            <div className="flex flex-col gap-7">
+                <Ziyaretler key={`z${r.gun}`} gun={r.gun} />
+            </div>
+        );
     return (
         <div className="flex flex-col gap-7">
             <Bolum baslik="Özet" aciklama={`Önceki ${r.gun} güne göre.`}>
                 <Ozet r={r} toplam={toplam} onceki={onceki} />
+            </Bolum>
+
+            <Bolum baslik="Günlük">
+                <Suspense
+                    fallback={
+                        <p role="status" className="text-soluk">
+                            Grafikler yükleniyor…
+                        </p>
+                    }
+                >
+                    <GunlukGrafikler gunluk={r.gunluk} />
+                </Suspense>
             </Bolum>
 
             <Bolum
@@ -183,31 +282,7 @@ export function RaporIcerik({ r }: { r: PanelRaporu }): ReactNode {
                 </Kart>
             </Bolum>
 
-            {r.adimlar.length ? <Anket r={r} /> : null}
-
-            <Kaynaklar key={`k${r.gun}`} gun={r.gun} />
-
             <ReklamHarcamasi r={r} />
-
-            <Bolum baslik="Günlük">
-                <Suspense
-                    fallback={
-                        <p role="status" className="text-soluk">
-                            Grafikler yükleniyor…
-                        </p>
-                    }
-                >
-                    <GunlukGrafikler gunluk={r.gunluk} />
-                </Suspense>
-            </Bolum>
-
-            <Kohort r={r} />
-
-            <Izinler r={r} />
-
-            <Ziyaretler key={`z${r.gun}`} gun={r.gun} />
-
-            <SerbestYanitlar key={`s${r.gun}`} gun={r.gun} />
         </div>
     );
 }
@@ -330,21 +405,61 @@ function Ozet({
     );
 }
 
-function Anket({ r }: { r: PanelRaporu }): ReactNode {
+function Anket({
+    r,
+    secili,
+}: {
+    r: PanelRaporu;
+    secili: string | null;
+}): ReactNode {
+    const [sorgu, setSorgu] = useSearchParams();
     // Huni başına adımlar; şerit ilk adıma göre, düşüş bir önceki adıma göre.
     const huniler = new Map<string, PanelRaporu["adimlar"]>();
     for (const a of r.adimlar) {
         const anahtar = `${a.app}/${a.huni}`;
         huniler.set(anahtar, [...(huniler.get(anahtar) ?? []), a]);
     }
-    const tekHuni = huniler.size === 1;
+    // P7i: tek huni gösterilir (beş huni alt alta 1.710 px'ti); varsayılan ilk
+    // adımına en çok ziyaret gelen.
+    const sirali = [...huniler].sort(
+        ([, a], [, b]) => (b[0]?.ulasan ?? 0) - (a[0]?.ulasan ?? 0),
+    );
+    const anahtar =
+        secili && huniler.has(secili) ? secili : (sirali[0]?.[0] ?? "");
+    const adimlar = huniler.get(anahtar) ?? [];
+    const [app, huniAdi] = [adimlar[0]?.app, adimlar[0]?.huni];
+    const cevaplar = r.cevaplar.filter(
+        (c) => c.app === app && c.huni === huniAdi,
+    );
+    const ad = (k: string, a: PanelRaporu["adimlar"]): string =>
+        `${a[0]?.huni ?? k}${a[0] && a[0].app !== "keepchat" ? ` (${a[0].app})` : ""} · ${sayi(a[0]?.ulasan ?? 0)} ziyaret`;
     return (
         <>
             <Bolum
                 baslik="Anket"
                 aciklama="Ziyaretçilerin hangi ekranda ayrıldığı."
+                sag={
+                    huniler.size > 1 ? (
+                        <select
+                            aria-label="Huni"
+                            value={anahtar}
+                            onChange={(e) => {
+                                const yeni = new URLSearchParams(sorgu);
+                                yeni.set("huni", e.currentTarget.value);
+                                setSorgu(yeni);
+                            }}
+                            className="min-h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5 text-[14px]"
+                        >
+                            {sirali.map(([k, a]) => (
+                                <option key={k} value={k}>
+                                    {ad(k, a)}
+                                </option>
+                            ))}
+                        </select>
+                    ) : null
+                }
             >
-                {[...huniler].map(([anahtar, adimlar]) => {
+                {[[anahtar, adimlar] as const].map(([anahtar, adimlar]) => {
                     const ilkAdim = adimlar[0];
                     const ilk = ilkAdim?.ulasan ?? 0;
                     return (
@@ -353,14 +468,6 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                             aria-label={`Anket ${anahtar}`}
                             className="px-[18px] py-1.5"
                         >
-                            {tekHuni || !ilkAdim ? null : (
-                                <h3 className="pt-2.5 pb-1 text-[13px] font-semibold text-soluk">
-                                    {ilkAdim.huni}
-                                    {ilkAdim.app !== "keepchat"
-                                        ? ` (${ilkAdim.app})`
-                                        : ""}
-                                </h3>
-                            )}
                             {adimlar.map((a, i) => {
                                 const once = adimlar[i - 1]?.ulasan ?? 0;
                                 const oran =
@@ -418,7 +525,7 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                     );
                 })}
             </Bolum>
-            {r.cevaplar.length ? (
+            {cevaplar.length ? (
                 <Bolum
                     baslik="Cevaplar"
                     aciklama="Her şıkkı kaç kişi seçti ve seçenlerin kaçı abone oldu (deneme dahil)."
@@ -435,8 +542,10 @@ function Anket({ r }: { r: PanelRaporu }): ReactNode {
                                 </tr>
                             </thead>
                             <tbody>
-                                {r.cevaplar.map((c) => (
-                                    <tr key={`${c.app}/${c.soru}/${c.secenek}`}>
+                                {cevaplar.map((c) => (
+                                    <tr
+                                        key={`${c.app}/${c.huni}/${c.soru}/${c.secenek}`}
+                                    >
                                         <Td>{c.soru}</Td>
                                         <Td>{c.secenek}</Td>
                                         <Td className="text-right tabular-nums">

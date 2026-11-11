@@ -1815,9 +1815,10 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [app, soru, secenek, sayi, abone]
+            required: [app, huni, soru, secenek, sayi, abone]
             properties:
               app: { type: string }
+              huni: { type: string, description: "P7i — hunisiz ziyarette tire" }
               soru: { type: string }
               secenek: { type: string }
               sayi: { type: integer, minimum: 0, description: Bu seçeneği seçen ziyaret }

@@ -1284,6 +1284,8 @@ export interface components {
             }[];
             cevaplar: {
                 app: string;
+                /** @description P7i — hunisiz ziyarette tire */
+                huni: string;
                 soru: string;
                 secenek: string;
                 /** @description Bu seçeneği seçen ziyaret */

@@ -75,7 +75,7 @@
 | P7f: panel ekran döngüsü (A26) | ✅ `bin/panel-ekran`: 8 sayfa × 2 tema × 2 genişlik + yerleşim ölçümü; bulduğu 5 kusur düzeltildi (telefonda menü, Aboneler taşması, şema alanı, görev adları, Planlar aralığı); kırma 3/3; karar bekleyen Ç135, Ç136 | `docs/decisions/p7f-ekran-dongusu.md` |
 | P7g: Huniler menüsü + Aboneler telefon kartı (Ç135, Ç136) | ✅ satırda Düzenle · Aç · "…" (ortak `EylemMenusu`, klavye ve ekran içi konum); Aboneler telefonda kart, tek DOM; ekran döngüsüne açılır durum + kayan kap ölçümü; kırma 7/7; karar bekleyen Ç137 | `docs/decisions/p7g-menu-ve-telefon-kartlari.md` |
 | P7h: özel onay kutusu (A27) | ✅ `.kutu`: seçili tikli, yarım çizgili, iki temada; kırma 1/1; ekranda görüldü | `docs/decisions/p7h-onay-kutusu.md` |
-| P7i: Rapor sekmeleri (A27) | ⏳ sırada | — |
+| P7i: Rapor sekmeleri (A27) | ✅ Genel bakış · Anket (tek huni) · Kaynaklar · Gelir · Ziyaretler; sayfa 6.604 → 1.425 px; cevaplar huni başına; kırma 7/7 | `docs/decisions/p7i-rapor-sekmeleri.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)

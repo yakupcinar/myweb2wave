@@ -207,23 +207,25 @@ final readonly class Rapor
      * M5c: seçenek başına seçen ziyaret ve bunlardan abone olan (deneme dahil —
      * dönüşüm tanımı deneylerle aynı, A17). Cevap son hâli.
      *
-     * @return list<array{app: string, soru: string, secenek: string, sayi: int, abone: int}>
+     * @return list<array{app: string, huni: string, soru: string, secenek: string, sayi: int, abone: int}>
      */
     public function cevaplar(int $gun, ?string $app = null): array
     {
         return array_map(static fn (array $s): array => [
             'app' => self::dizge($s['app']),
+            // P7i: huni başına (Rapor'un Anket sekmesi tek huni gösterir); adımlarla aynı yedek.
+            'huni' => self::dizgeYaDaNull($s['huni']) ?? '—',
             'soru' => self::dizge($s['soru']),
             'secenek' => self::dizge($s['secenek']),
             'sayi' => self::sayi($s['sayi']),
             'abone' => self::sayi($s['abone']),
         ], $this->db->fetchAllAssociative(
-            'SELECT z.app, c.soru, c.secenek, count(*) AS sayi,
+            'SELECT z.app, z.huni, c.soru, c.secenek, count(*) AS sayi,
                     count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = c.ziyaret_id AND o.abonelik_at IS NOT NULL)) AS abone
              FROM huni_cevaplari c JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
              WHERE z.created_at >= now() - make_interval(days => :gun) AND (CAST(:app AS text) IS NULL OR z.app = CAST(:app AS text))
-             GROUP BY z.app, c.soru, c.secenek
-             ORDER BY z.app, c.soru, sayi DESC, c.secenek',
+             GROUP BY z.app, z.huni, c.soru, c.secenek
+             ORDER BY z.app, z.huni NULLS LAST, c.soru, sayi DESC, c.secenek',
             ['gun' => $gun, 'app' => $app],
         ));
     }

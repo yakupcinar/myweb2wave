@@ -20,6 +20,10 @@ const ADRES = 'http://panel-ekran';
 const SURE_MS = 20000;
 const SAYFALAR = [
     'rapor' => '/panel',
+    'rapor-anket' => '/panel?sekme=anket',
+    'rapor-kaynaklar' => '/panel?sekme=kaynaklar',
+    'rapor-gelir' => '/panel?sekme=gelir',
+    'rapor-ziyaretler' => '/panel?sekme=ziyaretler',
     'huniler' => '/panel/huniler',
     'kullanicilar' => '/panel/kullanicilar',
     'planlar' => '/panel/planlar',
