@@ -126,6 +126,26 @@ function kur() {
 
 const satir = (ad: string): HTMLElement =>
     document.querySelector<HTMLElement>(`tr[data-huni="${ad}"]`)!;
+/** P7g (Ç135): satırın "…" menüsünü açar. */
+const menuyuAc = (ad: string): HTMLElement => {
+    fireEvent.click(
+        within(satir(ad)).getByRole("button", {
+            name: `${ad}: diğer işlemler`,
+        }),
+    );
+    return within(satir(ad)).getByRole("menu");
+};
+const menuOgeleri = (ad: string): string[] => {
+    const menu = menuyuAc(ad);
+    const adlar = within(menu)
+        .getAllByRole("menuitem")
+        .map((o) => o.getAttribute("aria-label") ?? "");
+    fireEvent.keyDown(menu, { key: "Escape" });
+    return adlar;
+};
+const menudenSec = (ad: string, oge: string): void => {
+    fireEvent.click(within(menuyuAc(ad)).getByRole("menuitem", { name: oge }));
+};
 const yazmalar = (istekler: Istek[]) =>
     istekler.filter((i) => i.yontem !== "GET");
 
@@ -153,10 +173,7 @@ describe("P2: Huniler sayfası", () => {
         expect(genel.getByText("varsayılan")).toBeTruthy();
         expect(genel.getByText("v3")).toBeTruthy();
         expect(genel.getByText("yayındakiyle aynı")).toBeTruthy();
-        expect(genel.queryByRole("button", { name: "Sil" })).toBeNull();
-        expect(
-            genel.queryByRole("button", { name: "Varsayılan yap" }),
-        ).toBeNull();
+        expect(menuOgeleri("genel")).toEqual(["Yeni hunilere örnek yap"]);
         const ac = genel.getByRole("link", { name: "Aç" });
         expect(ac.getAttribute("href")).toBe(
             "https://huni.test/keepchat/?huni=genel&yayin=1&onizleme=y",
@@ -170,12 +187,12 @@ describe("P2: Huniler sayfası", () => {
         ).toBeTruthy();
         expect(within(satir("bos")).getByText("—")).toBeTruthy();
         // Ç41: ziyaretsiz "Sil", ziyaretli "Arşivle".
-        expect(
-            within(satir("bos")).getByRole("button", { name: "Sil" }),
-        ).toBeTruthy();
-        expect(
-            within(satir("eski")).getByRole("button", { name: "Arşivle" }),
-        ).toBeTruthy();
+        expect(menuOgeleri("bos")).toEqual([
+            "Yeni hunilere örnek yap",
+            "Varsayılan yap",
+            "Sil",
+        ]);
+        expect(menuOgeleri("eski").at(-1)).toBe("Arşivle");
     });
 
     it("Düzenle düzenleyiciyi aynı uygulamada açar (P3)", async () => {
@@ -200,19 +217,17 @@ describe("P2: Huniler sayfası", () => {
                 document.querySelector('tr[data-huni="genel"]'),
             ).not.toBeNull(),
         );
-        fireEvent.click(
-            within(satir("eski")).getByRole("button", { name: "Arşivle" }),
-        );
+        menudenSec("eski", "Arşivle");
         expect(yazmalar(istekler)).toEqual([]);
         fireEvent.click(
             within(satir("eski")).getByRole("button", { name: "Vazgeç" }),
         );
         expect(
-            within(satir("eski")).getByRole("button", { name: "Arşivle" }),
+            within(satir("eski")).getByRole("button", {
+                name: "eski: diğer işlemler",
+            }),
         ).toBeTruthy();
-        fireEvent.click(
-            within(satir("eski")).getByRole("button", { name: "Arşivle" }),
-        );
+        menudenSec("eski", "Arşivle");
         fireEvent.click(
             within(satir("eski")).getByRole("button", {
                 name: "Evet, arşivle",
@@ -236,11 +251,7 @@ describe("P2: Huniler sayfası", () => {
         );
         expect(satir("genel").textContent).not.toContain("yeni huni örneği");
 
-        fireEvent.click(
-            within(satir("genel")).getByRole("button", {
-                name: "Yeni hunilere örnek yap",
-            }),
-        );
+        menudenSec("genel", "Yeni hunilere örnek yap");
         await screen.findByText(/Yeni huniler artık 'genel' görünümüyle/);
         expect(yazmalar(istekler)).toEqual([
             {
@@ -259,11 +270,7 @@ describe("P2: Huniler sayfası", () => {
                 document.querySelector('tr[data-huni="genel"]'),
             ).not.toBeNull(),
         );
-        fireEvent.click(
-            within(satir("bos")).getByRole("button", {
-                name: "Varsayılan yap",
-            }),
-        );
+        menudenSec("bos", "Varsayılan yap");
         await screen.findByText("Varsayılan huni artık 'bos'.");
         expect(yazmalar(istekler)).toEqual([
             {
@@ -273,6 +280,40 @@ describe("P2: Huniler sayfası", () => {
                 govde: null,
             },
         ]);
+    });
+
+    it("P7g: satırda yalnız Düzenle, Aç ve menü; menü klavyeyle gezilir, Esc ve dışarı tıklama kapatır", async () => {
+        kur();
+        await waitFor(() =>
+            expect(
+                document.querySelector('tr[data-huni="bos"]'),
+            ).not.toBeNull(),
+        );
+        const bos = within(satir("bos"));
+        expect(
+            [...bos.getAllByRole("link"), ...bos.getAllByRole("button")].map(
+                (e) => e.getAttribute("aria-label") ?? e.textContent,
+            ),
+        ).toEqual(["Düzenle", "Aç", "bos: diğer işlemler"]);
+        const dugme = bos.getByRole("button", { name: "bos: diğer işlemler" });
+        expect(dugme.getAttribute("aria-expanded")).toBe("false");
+
+        const menu = menuyuAc("bos");
+        expect(dugme.getAttribute("aria-expanded")).toBe("true");
+        const ogeler = within(menu).getAllByRole("menuitem");
+        expect(document.activeElement).toBe(ogeler[0]);
+        fireEvent.keyDown(menu, { key: "ArrowDown" });
+        expect(document.activeElement).toBe(ogeler[1]);
+        fireEvent.keyDown(menu, { key: "ArrowUp" });
+        fireEvent.keyDown(menu, { key: "ArrowUp" });
+        expect(document.activeElement).toBe(ogeler[2]);
+        fireEvent.keyDown(menu, { key: "Escape" });
+        expect(bos.queryByRole("menu")).toBeNull();
+        expect(document.activeElement).toBe(dugme);
+
+        menuyuAc("bos");
+        fireEvent.mouseDown(document.body);
+        expect(bos.queryByRole("menu")).toBeNull();
     });
 
     it("yeni huni kopyadan açılır ve düzenleyiciye sayfa yenilemeden gidilir", async () => {

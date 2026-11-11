@@ -220,6 +220,16 @@ export function Kullanicilar(): ReactNode {
 type Is = "iptal" | "geriAl" | "iade";
 
 const hucre = "px-[18px] py-3.5";
+/**
+ * P7g (Ç136): telefonda aynı satır karta döner — e-posta solda, durum sağda,
+ * altında geldiği yer, son ödeme ve işlemler. Tek DOM (ikinci bir kart
+ * listesi yok): testler ve ekran okuyucu tek kaynak görür. Masaüstü tablo
+ * olduğu gibi.
+ */
+const kartSatir =
+    "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-x-3 max-md:gap-y-2 max-md:border-b max-md:border-kenar max-md:px-[18px] max-md:py-3.5 max-md:last:border-b-0";
+const kartHucre = "max-md:block max-md:border-0 max-md:p-0";
+const kartTam = "max-md:col-span-2 max-md:whitespace-normal";
 
 function Liste({
     liste,
@@ -274,8 +284,8 @@ function Liste({
     return (
         <>
             <Kart aria-label="Abonelikler" className="overflow-hidden">
-                <Tablo className="min-w-[860px]">
-                    <thead>
+                <Tablo className="max-md:block md:min-w-[860px]">
+                    <thead className="max-md:hidden">
                         <tr>
                             {SUTUNLAR.map(([sutun, ad]) => (
                                 <Th
@@ -309,7 +319,7 @@ function Liste({
                             <Th className="px-[18px] text-right">İşlem</Th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="max-md:block">
                         {satirlar.map((s) => (
                             <Fragment key={s.abonelik}>
                                 <SatirGorunumu
@@ -331,12 +341,12 @@ function Liste({
                                     />
                                 ) : null}
                                 {hata?.abonelik === s.abonelik ? (
-                                    <tr>
+                                    <tr className="max-md:block">
                                         <Td
                                             colSpan={5}
                                             className={cn(
                                                 hucre,
-                                                "whitespace-normal",
+                                                "whitespace-normal max-md:block",
                                             )}
                                         >
                                             <span
@@ -351,10 +361,13 @@ function Liste({
                             </Fragment>
                         ))}
                         {satirlar.length ? null : (
-                            <tr>
+                            <tr className="max-md:block">
                                 <Td
                                     colSpan={5}
-                                    className={cn(hucre, "text-soluk")}
+                                    className={cn(
+                                        hucre,
+                                        "text-soluk max-md:block",
+                                    )}
                                 >
                                     Eşleşen abonelik yok.
                                 </Td>
@@ -401,18 +414,23 @@ function SatirGorunumu({
     const f = s.sonFatura;
     const iadeEdilebilir = kalan(s);
     const dugme = "min-h-8 px-3 font-normal";
+    // Telefonda işlemsiz kartın altında boş satır kalmasın.
+    const islemVar =
+        !!s.iptalDonemSonu ||
+        SURER.includes(s.durum) ||
+        (!!f && iadeEdilebilir > 0);
 
     return (
-        <tr data-abonelik={s.abonelik}>
-            <Td className={hucre}>
+        <tr data-abonelik={s.abonelik} className={kartSatir}>
+            <Td className={cn(hucre, kartHucre, "max-md:whitespace-normal")}>
                 <div className="flex flex-col gap-0.5">
-                    <span>{s.email ?? "—"}</span>
+                    <span className="max-md:break-all">{s.email ?? "—"}</span>
                     <span className="text-xs text-soluk">
                         {alt.join(" · ")}
                     </span>
                 </div>
             </Td>
-            <Td className={hucre}>
+            <Td className={cn(hucre, kartHucre, "max-md:text-right")}>
                 <span
                     className="inline-flex items-center gap-1.5 text-[13px]"
                     title={s.durum || undefined}
@@ -424,7 +442,7 @@ function SatirGorunumu({
                     {durumMetni}
                 </span>
             </Td>
-            <Td className={hucre}>
+            <Td className={cn(hucre, kartHucre, kartTam)}>
                 <div className="flex flex-col gap-0.5">
                     <span className="flex items-center gap-1.5">
                         {s.kaynak
@@ -435,7 +453,7 @@ function SatirGorunumu({
                     <span className="text-xs text-soluk">{nereden || "—"}</span>
                 </div>
             </Td>
-            <Td className={hucre}>
+            <Td className={cn(hucre, kartHucre, kartTam)}>
                 {f ? (
                     <div className="flex flex-col gap-0.5">
                         <span>
@@ -451,11 +469,23 @@ function SatirGorunumu({
                         ) : null}
                     </div>
                 ) : (
-                    <span className="text-soluk">Henüz yok</span>
+                    <span className="text-soluk">
+                        {/* Telefonda sütun başlığı yok; ne olduğunu söyle. */}
+                        <span className="md:hidden">Son ödeme henüz yok</span>
+                        <span className="max-md:hidden">Henüz yok</span>
+                    </span>
                 )}
             </Td>
-            <Td className={cn(hucre, "text-right")}>
-                <div className="inline-flex gap-2">
+            <Td
+                className={cn(
+                    hucre,
+                    kartHucre,
+                    kartTam,
+                    "text-right max-md:text-left",
+                    !islemVar && "max-md:hidden",
+                )}
+            >
+                <div className="inline-flex flex-wrap gap-2">
                     {s.iptalDonemSonu ? (
                         <Dugme
                             className={cn(dugme, "text-vurgu")}
@@ -522,8 +552,11 @@ function OnaySatiri({
                     "Geri al",
                 ];
     return (
-        <tr className="bg-zemin/50">
-            <Td colSpan={5} className={cn(hucre, "whitespace-normal")}>
+        <tr className="bg-zemin/50 max-md:block">
+            <Td
+                colSpan={5}
+                className={cn(hucre, "whitespace-normal max-md:block")}
+            >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <span>
                         <span className="font-semibold">{soru}</span>{" "}

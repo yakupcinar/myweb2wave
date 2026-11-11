@@ -11,6 +11,7 @@ import { api } from "../api";
 import { SayfaBasi } from "../Duzen";
 import { kisaEtiketSinifi, satirIciAlanSinifi } from "../ui/Alan";
 import { Dugme, dugmeSinifi } from "../ui/Dugme";
+import { EylemMenusu } from "../ui/EylemMenusu";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
 import { Tablo, Td, Th } from "../ui/Tablo";
@@ -241,7 +242,7 @@ function HuniTablosu({
                                 )}
                             </Td>
                             <Td className="text-right">
-                                <span className="inline-flex flex-wrap justify-end gap-2">
+                                <span className="inline-flex items-center justify-end gap-2">
                                     <Link
                                         to={h.duzenle}
                                         className={dugmeSinifi({ tur: "ana" })}
@@ -257,92 +258,95 @@ function HuniTablosu({
                                     >
                                         Aç
                                     </a>
-                                    <Dugme
-                                        title="Teması, logosu ve son paywall'ı yeni hunilere kopyalanır; var olan huniler değişmez"
-                                        onClick={() =>
-                                            calistir(
-                                                () =>
-                                                    hatasiz(
-                                                        api.POST(
-                                                            "/panel/api/uygulamalar/{app}/huniler/{ad}/ornek",
-                                                            {
-                                                                params: {
-                                                                    path: {
-                                                                        app,
-                                                                        ad: h.ad,
-                                                                    },
-                                                                    header: JETON,
-                                                                },
-                                                            },
-                                                        ),
-                                                    ),
-                                                `Yeni huniler artık '${h.ad}' görünümüyle açılacak (tema, logo, paywall). Var olan huniler değişmez.`,
-                                            )
-                                        }
-                                    >
-                                        Yeni hunilere örnek yap
-                                    </Dugme>
-                                    {h.varsayilan ? null : (
+                                    {kaldirSor === h.ad ? (
                                         <>
                                             <Dugme
+                                                tur="yikici"
+                                                onClick={() => kaldir(h)}
+                                            >
+                                                {h.ziyaretli
+                                                    ? "Evet, arşivle"
+                                                    : "Evet, sil"}
+                                            </Dugme>
+                                            <Dugme
+                                                tur="sade"
                                                 onClick={() =>
-                                                    calistir(
-                                                        () =>
-                                                            hatasiz(
-                                                                api.POST(
-                                                                    "/panel/api/uygulamalar/{app}/huniler/{ad}/varsayilan",
-                                                                    {
-                                                                        params: {
-                                                                            path: {
-                                                                                app,
-                                                                                ad: h.ad,
-                                                                            },
-                                                                            header: JETON,
-                                                                        },
-                                                                    },
-                                                                ),
-                                                            ),
-                                                        `Varsayılan huni artık '${h.ad}'.`,
-                                                    )
+                                                    setKaldirSor(null)
                                                 }
                                             >
-                                                Varsayılan yap
+                                                Vazgeç
                                             </Dugme>
-                                            {kaldirSor === h.ad ? (
-                                                <>
-                                                    <Dugme
-                                                        tur="yikici"
-                                                        onClick={() =>
-                                                            kaldir(h)
-                                                        }
-                                                    >
-                                                        {h.ziyaretli
-                                                            ? "Evet, arşivle"
-                                                            : "Evet, sil"}
-                                                    </Dugme>
-                                                    <Dugme
-                                                        tur="sade"
-                                                        onClick={() =>
-                                                            setKaldirSor(null)
-                                                        }
-                                                    >
-                                                        Vazgeç
-                                                    </Dugme>
-                                                </>
-                                            ) : (
-                                                // Ç41: ziyaret verisi silinmez — o zaman arşiv.
-                                                <Dugme
-                                                    tur="tehlike"
-                                                    onClick={() =>
-                                                        setKaldirSor(h.ad)
-                                                    }
-                                                >
-                                                    {h.ziyaretli
-                                                        ? "Arşivle"
-                                                        : "Sil"}
-                                                </Dugme>
-                                            )}
                                         </>
+                                    ) : (
+                                        // P7g (Ç135): seyrek eylemler menüde; satırda Düzenle + Aç.
+                                        <EylemMenusu
+                                            etiket={`${h.ad}: diğer işlemler`}
+                                            ogeler={[
+                                                {
+                                                    ad: "Yeni hunilere örnek yap",
+                                                    aciklama:
+                                                        "Teması, logosu ve son paywall'ı yeni hunilere kopyalanır.",
+                                                    sec: () =>
+                                                        calistir(
+                                                            () =>
+                                                                hatasiz(
+                                                                    api.POST(
+                                                                        "/panel/api/uygulamalar/{app}/huniler/{ad}/ornek",
+                                                                        {
+                                                                            params: {
+                                                                                path: {
+                                                                                    app,
+                                                                                    ad: h.ad,
+                                                                                },
+                                                                                header: JETON,
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                            `Yeni huniler artık '${h.ad}' görünümüyle açılacak (tema, logo, paywall). Var olan huniler değişmez.`,
+                                                        ),
+                                                },
+                                                ...(h.varsayilan
+                                                    ? []
+                                                    : [
+                                                          {
+                                                              ad: "Varsayılan yap",
+                                                              aciklama:
+                                                                  "Hiçbir kural tutmazsa bu huni açılır.",
+                                                              sec: () =>
+                                                                  calistir(
+                                                                      () =>
+                                                                          hatasiz(
+                                                                              api.POST(
+                                                                                  "/panel/api/uygulamalar/{app}/huniler/{ad}/varsayilan",
+                                                                                  {
+                                                                                      params: {
+                                                                                          path: {
+                                                                                              app,
+                                                                                              ad: h.ad,
+                                                                                          },
+                                                                                          header: JETON,
+                                                                                      },
+                                                                                  },
+                                                                              ),
+                                                                          ),
+                                                                      `Varsayılan huni artık '${h.ad}'.`,
+                                                                  ),
+                                                          },
+                                                          // Ç41: ziyaret verisi silinmez — o zaman arşiv.
+                                                          {
+                                                              ad: h.ziyaretli
+                                                                  ? "Arşivle"
+                                                                  : "Sil",
+                                                              tehlike: true,
+                                                              sec: () =>
+                                                                  setKaldirSor(
+                                                                      h.ad,
+                                                                  ),
+                                                          },
+                                                      ]),
+                                            ]}
+                                        />
                                     )}
                                 </span>
                             </Td>

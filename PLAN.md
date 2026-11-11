@@ -73,6 +73,7 @@
 | P7d: Entegrasyonlar (A25) | 🟡 Webhook'lar + API anahtarları + Ürün bağlamı tek sayfada; olaylar Türkçe ve gruplu (Tümü); iptal edilen anahtar katlı ve silinebilir; eski adresler 301; kırma 19/19; **tarayıcıda bakılmadı** | `docs/decisions/p7d-entegrasyonlar.md` |
 | P7e: kalan sayfalar (Yasal, Huniler, Planlar) | 🟡 Yasal bölümlü; Huniler ve Planlar alanları ortak stilde; ortak alan denetimi 8 sayfa testinde; kırma 7/7; **tarayıcıda bakılmadı** | `docs/decisions/p7e-kalan-sayfalar.md` |
 | P7f: panel ekran döngüsü (A26) | ✅ `bin/panel-ekran`: 8 sayfa × 2 tema × 2 genişlik + yerleşim ölçümü; bulduğu 5 kusur düzeltildi (telefonda menü, Aboneler taşması, şema alanı, görev adları, Planlar aralığı); kırma 3/3; karar bekleyen Ç135, Ç136 | `docs/decisions/p7f-ekran-dongusu.md` |
+| P7g: Huniler menüsü + Aboneler telefon kartı (Ç135, Ç136) | ✅ satırda Düzenle · Aç · "…" (ortak `EylemMenusu`, klavye ve ekran içi konum); Aboneler telefonda kart, tek DOM; ekran döngüsüne açılır durum + kayan kap ölçümü; kırma 7/7; karar bekleyen Ç137 | `docs/decisions/p7g-menu-ve-telefon-kartlari.md` |
 | Giriş bağlantısı (A10) | ✅ 168 test, kırma 10/10 (+K7 çift yedek filtre), gerçek HTTP + tarayıcıda geç webhook; KeepChat tarafı yok (Ç47) | `docs/decisions/giris-baglantisi.md` |
 
 ## 1. Şu an üzerinde çalışılan AKTİF GÖREVLER (en çok 3-4)

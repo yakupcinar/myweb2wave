@@ -28,6 +28,10 @@ const SAYFALAR = [
     'yasal' => '/panel/yasal',
     'entegrasyonlar' => '/panel/entegrasyonlar',
 ];
+/** Açılır öğelerin görünümü (P7g): sayfa çizilince bu betik koşar, sonra çekilir. Ad açıkça verilince. */
+const DURUMLAR = [
+    'huniler-menu' => ['/panel/huniler', "document.querySelector('[aria-haspopup=menu]').click()"],
+];
 /** genişlik => [yükseklik, telefon mu] */
 const BOYUTLAR = [1440 => [900, false], 390 => [844, true]];
 const TEMALAR = ['acik', 'koyu'];
@@ -61,7 +65,19 @@ const OLCUM = <<<'JS'
             const r = e.getBoundingClientRect();
             return r.height > 0 && r.height < 36 && e.type !== 'checkbox' && e.type !== 'radio' && !e.closest('p, td, li span');
         }).map(ad) : [];
+        // P7g: içeriği yatay kaydırmanın arkasında kalan kaplar (tablo telefonda) ve
+        // görünür alandan taşan açık menü.
+        const kaydirilan = [...document.querySelectorAll('main *')].filter((e) => {
+            const s = getComputedStyle(e);
+            return (s.overflowX === 'auto' || s.overflowX === 'scroll') && e.scrollWidth > e.clientWidth + 1;
+        }).map((e) => (e.querySelector('table')?.getAttribute('aria-label') || e.closest('[aria-label]')?.getAttribute('aria-label') || ad(e)));
+        const menuDisari = [...document.querySelectorAll('[role=menu]')].some((m) => {
+            const r = m.getBoundingClientRect();
+            return r.left < 0 || r.right > G;
+        });
         return JSON.stringify({
+            kaydirilanKaplar: [...new Set(kaydirilan)].slice(0, 8),
+            menuEkranDisi: menuDisari,
             sayfaGenisligi: document.documentElement.scrollWidth,
             yatayKayma: document.documentElement.scrollWidth > G + 1,
             tasanlar: [...new Set(tasanlar)].slice(0, 8),
@@ -74,9 +90,10 @@ $ortam = @file_get_contents(\dirname(__DIR__).'/var/ekran/panel.env') ?: throw n
 preg_match("/^EKRAN_SIFRE='([^']+)'$/m", $ortam, $m) ?: throw new RuntimeException('EKRAN_SIFRE okunamadı');
 $sifre = $m[1];
 $secilen = array_slice($argv, 1);
-$sayfalar = [] === $secilen ? SAYFALAR : array_intersect_key(SAYFALAR, array_flip($secilen));
+$hepsi = SAYFALAR + array_map(static fn (array $d): string => $d[0], DURUMLAR);
+$sayfalar = [] === $secilen ? SAYFALAR : array_intersect_key($hepsi, array_flip($secilen));
 if ([] === $sayfalar) {
-    fwrite(STDERR, 'bilinmeyen sayfa; seçenekler: '.implode(' ', array_keys(SAYFALAR))."\n");
+    fwrite(STDERR, 'bilinmeyen sayfa; seçenekler: '.implode(' ', array_keys($hepsi))."\n");
     exit(2);
 }
 $cikti = \dirname(__DIR__).'/var/ekran/panel';
@@ -115,9 +132,20 @@ try {
                     }
                     usleep(150_000);
                 }
+                if (isset(DURUMLAR[$ad])) {
+                    $sayfa->evaluate(DURUMLAR[$ad][1]);
+                    usleep(300_000);
+                }
                 usleep(400_000);
                 $dosya = "{$ad}-{$tema}-{$genislik}.jpg";
-                $sayfa->screenshot(['format' => 'jpeg', 'quality' => 80, 'captureBeyondViewport' => true, 'clip' => $sayfa->getFullPageClip()])->saveToFile("{$cikti}/{$dosya}", SURE_MS);
+                if (isset(DURUMLAR[$ad])) {
+                    // Tam sayfa çekim görünür alanı yeniden boyutlar; boyut değişince kapanan
+                    // açılır öğe (EylemMenusu) kaybolurdu (ölçüldü) — yalnız görünür alan.
+                    echo $ad, ' açık öğe: ', json_encode($sayfa->evaluate("!!document.querySelector('[role=menu]')")->getReturnValue()), "\n";
+                    $sayfa->screenshot(['format' => 'jpeg', 'quality' => 80])->saveToFile("{$cikti}/{$dosya}", SURE_MS);
+                } else {
+                    $sayfa->screenshot(['format' => 'jpeg', 'quality' => 80, 'captureBeyondViewport' => true, 'clip' => $sayfa->getFullPageClip()])->saveToFile("{$cikti}/{$dosya}", SURE_MS);
+                }
                 $json = $sayfa->evaluate(OLCUM."({$genislik})")->getReturnValue();
                 $olcumler[$dosya] = is_string($json) ? json_decode($json, true) : null;
                 echo $dosya, ' ', is_string($json) ? $json : 'ölçüm yok', "\n";

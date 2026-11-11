@@ -178,6 +178,7 @@ yapılan değişiklik "Yayınla"ya basılmadan ziyaretçiye ulaşmaz.
 
 **Ne yapabilirsin**
 - Yeni huni aç: boş, başka bir huninin kopyası ya da niş şablonundan. Huniyi kaldır ya da varsayılan yap.
+- Satırda Düzenle ve Aç görünür; örnek yap, varsayılan yap ve kaldır **"…" menüsünde** ([`EylemMenusu`](../core/panel/src/uygulama/ui/EylemMenusu.tsx), P7g).
 - **"Yeni hunilere örnek yap":** bu huninin teması, logosu ve son paywall adımı, bundan sonra açılacak hunilere
   kopyalanır (satırda "yeni huni örneği" rozeti). "Varsayılan huni"den farklıdır: o, hiçbir kural tutmayınca açılan
   hunidir; bu ise yalnız yeni hunilerin başlangıç görünümüdür.
@@ -753,7 +754,8 @@ Tablo grupları §5'te. Kullanılan desenler:
   ([`/kirma`](../.claude/skills/kirma/SKILL.md)).
 - **Gerçek sistem:** dev'de curl, Mailpit, Stripe test modu, başsız Chromium. Panel ekranları
   [`bin/panel-ekran`](../bin/panel-ekran) ile: ayrı kapta test kullanıcısıyla 8 sayfa × 2 tema × 2 genişlik, yanında
-  yerleşim ölçümü (A26, [p7f](decisions/p7f-ekran-dongusu.md)).
+  yerleşim ölçümü (taşma, kayan kap, ekran dışı menü; açılır durumlar ad ile, ör. `huniler-menu`) (A26,
+  [p7f](decisions/p7f-ekran-dongusu.md), [p7g](decisions/p7g-menu-ve-telefon-kartlari.md)).
 - **Tam kontrol:** [`bin/kontrol`](../bin/kontrol) (biçim + statik analiz + testler + derleme); CI aynı komutu koşar
   ([`kontrol.yml`](../.github/workflows/kontrol.yml)).
 
