@@ -24,6 +24,8 @@ const SAYFALAR = [
     'rapor-kaynaklar' => '/panel?sekme=kaynaklar',
     'rapor-gelir' => '/panel?sekme=gelir',
     'rapor-ziyaretler' => '/panel?sekme=ziyaretler',
+    // R1b: süzgeç satırı seçiliyken.
+    'rapor-suzgecli' => '/panel?kaynak=meta&deney=baslik',
     'huniler' => '/panel/huniler',
     'kullanicilar' => '/panel/kullanicilar',
     'planlar' => '/panel/planlar',

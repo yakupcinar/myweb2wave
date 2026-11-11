@@ -9,7 +9,7 @@
 // Ziyaretler); sekme ve Anket'in hunisi adreste.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { sayi, tutarlar, yuzde, zaman } from "../bicim";
@@ -52,12 +52,46 @@ function sekmeOku(deger: string | null): Sekme {
     return SEKMELER.find(([s]) => s === deger)?.[0] ?? "genel";
 }
 
-/** Adres: gün ve sekme birbirini korur; varsayılanlar adrese yazılmaz. */
-function adres(gun: Gun, sekme: Sekme, huni?: string | null): string {
+/** R1b: süzgeç alanları (çekirdek RaporSuzgeci::ALANLAR ile aynı sıra). */
+const SUZGECLER = [
+    "huni",
+    "kaynak",
+    "kampanya",
+    "ulke",
+    "deney",
+    "varyant",
+] as const;
+type SuzgecAdi = (typeof SUZGECLER)[number];
+type Suzgec = Partial<Record<SuzgecAdi, string>>;
+
+/** Adresteki süzgeç (boşlar yok). */
+function suzgecOku(sorgu: URLSearchParams): Suzgec {
+    const s: Suzgec = {};
+    for (const ad of SUZGECLER) {
+        const v = sorgu.get(ad);
+        if (v) s[ad] = v;
+    }
+    return s;
+}
+
+/**
+ * Adres: gün, sekme, Anket hunisi ve süzgeç birbirini korur; sabit sırayla
+ * yazılır, varsayılanlar (30 gün, Genel bakış, boş) yazılmaz.
+ */
+function adres(
+    mevcut: URLSearchParams,
+    degis: Record<string, string | null>,
+): string {
     const p = new URLSearchParams();
-    if (gun !== 30) p.set("gun", String(gun));
-    if (sekme !== "genel") p.set("sekme", sekme);
-    if (huni) p.set("huni", huni);
+    for (const ad of ["gun", "sekme", "anket", ...SUZGECLER]) {
+        const v = ad in degis ? degis[ad] : mevcut.get(ad);
+        if (
+            v &&
+            !(ad === "gun" && v === "30") &&
+            !(ad === "sekme" && v === "genel")
+        )
+            p.set(ad, v);
+    }
     const q = p.toString();
     return q ? `/panel?${q}` : "/panel";
 }
@@ -69,11 +103,12 @@ export function Rapor(): ReactNode {
     const [sorgu] = useSearchParams();
     const gun = gunOku(sorgu.get("gun"));
     const sekme = sekmeOku(sorgu.get("sekme"));
+    const suzgec = suzgecOku(sorgu);
     const { data, isError } = useQuery({
-        queryKey: ["rapor", gun],
+        queryKey: ["rapor", gun, suzgec],
         queryFn: async () => {
             const { data } = await api.GET("/panel/api/rapor", {
-                params: { query: { gun } },
+                params: { query: { gun, ...suzgec } },
             });
             if (!data) throw new Error("rapor alınamadı");
             return data;
@@ -90,7 +125,7 @@ export function Rapor(): ReactNode {
                     {GUNLER.map((g) => (
                         <Link
                             key={g}
-                            to={adres(g, sekme, sorgu.get("huni"))}
+                            to={adres(sorgu, { gun: String(g) })}
                             aria-current={g === gun ? "page" : undefined}
                             className={cn(bolmeSinifi, "px-3.5 py-1.5")}
                         >
@@ -106,7 +141,7 @@ export function Rapor(): ReactNode {
                 {SEKMELER.map(([s, ad]) => (
                     <Link
                         key={s}
-                        to={adres(gun, s)}
+                        to={adres(sorgu, { sekme: s })}
                         aria-current={s === sekme ? "page" : undefined}
                         className={sekmeSinifi}
                     >
@@ -114,6 +149,7 @@ export function Rapor(): ReactNode {
                     </Link>
                 ))}
             </nav>
+            <SuzgecSatiri gun={gun} suzgec={suzgec} />
             {isError ? (
                 <p role="alert" className="text-tehlike">
                     Rapor yüklenemedi. Sayfayı yenileyin.
@@ -123,9 +159,138 @@ export function Rapor(): ReactNode {
                     Yükleniyor…
                 </p>
             ) : (
-                <RaporIcerik r={data} sekme={sekme} huni={sorgu.get("huni")} />
+                <RaporIcerik
+                    r={data}
+                    sekme={sekme}
+                    huni={sorgu.get("anket")}
+                    suzgec={suzgec}
+                />
             )}
         </>
+    );
+}
+
+const hapSinifi =
+    "min-h-8 max-w-[220px] rounded-full border border-kenar-2 bg-yuzey px-3 text-[13px] text-metin";
+// Seçili hap halkayla (çerçeve rengi ortak alan denetiminde border-kenar-2 kalsın).
+const etkinHapSinifi = "bg-vurgu/10 font-medium text-vurgu ring-1 ring-vurgu";
+
+const ulkeAdlari = new Intl.DisplayNames(["tr"], { type: "region" });
+
+/**
+ * R1b: süzgeç satırı — seçenekler dönemde görülen değerlerden (çekirdek
+ * rapor/secenekler). Seçim adrese yazılır; rapor ve listeler aynı süzgeçle
+ * istenir. Deney değişince varyant sıfırlanır.
+ */
+function SuzgecSatiri({
+    gun,
+    suzgec,
+}: {
+    gun: Gun;
+    suzgec: Suzgec;
+}): ReactNode {
+    const [sorgu] = useSearchParams();
+    const git = useNavigate();
+    const { data } = useQuery({
+        queryKey: ["rapor-secenekler", gun],
+        queryFn: async () =>
+            (
+                await api.GET("/panel/api/rapor/secenekler", {
+                    params: { query: { gun } },
+                })
+            ).data,
+    });
+    const degistir = (ad: SuzgecAdi, deger: string): void => {
+        void git(
+            adres(
+                sorgu,
+                ad === "deney"
+                    ? { deney: deger || null, varyant: null }
+                    : { [ad]: deger || null },
+            ),
+        );
+    };
+    const secim = (
+        ad: SuzgecAdi,
+        etiket: string,
+        tumu: string,
+        secenekler: string[],
+        yazi: (v: string) => string = (v) => v,
+    ): ReactNode => {
+        const deger = suzgec[ad] ?? "";
+        // Seçili değer bu dönemde yoksa da listede kalsın (kaybolup "Tümü" görünmesin).
+        const liste =
+            deger && !secenekler.includes(deger)
+                ? [deger, ...secenekler]
+                : secenekler;
+        return (
+            <select
+                aria-label={etiket}
+                value={deger}
+                onChange={(e) => degistir(ad, e.currentTarget.value)}
+                className={cn(hapSinifi, deger && etkinHapSinifi)}
+            >
+                <option value="">{tumu}</option>
+                {liste.map((v) => (
+                    <option key={v} value={v}>
+                        {yazi(v)}
+                    </option>
+                ))}
+            </select>
+        );
+    };
+    const deneyler = data?.deneyler ?? [];
+    const varyantlar =
+        deneyler.find((d) => d.deney === suzgec.deney)?.varyantlar ?? [];
+    return (
+        <div
+            role="group"
+            aria-label="Süzgeç"
+            className="-mt-3 mb-7 flex flex-wrap items-center gap-2"
+        >
+            {secim("huni", "Huni", "Tüm huniler", data?.huniler ?? [])}
+            {secim("kaynak", "Kaynak", "Tüm kaynaklar", data?.kaynaklar ?? [])}
+            {secim(
+                "kampanya",
+                "Kampanya",
+                "Tüm kampanyalar",
+                data?.kampanyalar ?? [],
+            )}
+            {secim(
+                "ulke",
+                "Ülke",
+                "Tüm ülkeler",
+                data?.ulkeler ?? [],
+                (v) => ulkeAdlari.of(v) ?? v,
+            )}
+            {secim(
+                "deney",
+                "Deney",
+                "Deney fark etmez",
+                deneyler.map((d) => d.deney),
+            )}
+            {suzgec.deney
+                ? secim("varyant", "Varyant", "Tüm varyantlar", varyantlar)
+                : null}
+            {Object.keys(suzgec).length ? (
+                <button
+                    type="button"
+                    className="px-2 text-[13px] text-vurgu"
+                    onClick={() =>
+                        void git(
+                            adres(
+                                sorgu,
+                                Object.fromEntries(
+                                    SUZGECLER.map((a) => [a, null]),
+                                ),
+                            ),
+                        )
+                    }
+                >
+                    Süzgeçleri temizle
+                </button>
+            ) : null}
+        </div>
     );
 }
 
@@ -170,10 +335,12 @@ export function RaporIcerik({
     r,
     sekme = "genel",
     huni = null,
+    suzgec = {},
 }: {
     r: PanelRaporu;
     sekme?: Sekme;
     huni?: string | null;
+    suzgec?: Suzgec;
 }): ReactNode {
     const { reklam, organik } = r.sayimlar;
     const toplam = topla(reklam, organik);
@@ -186,13 +353,17 @@ export function RaporIcerik({
                 ) : (
                     <p className="text-soluk">Bu aralıkta anket verisi yok.</p>
                 )}
-                <SerbestYanitlar key={`s${r.gun}`} gun={r.gun} />
+                <SerbestYanitlar
+                    key={`s${r.gun}`}
+                    gun={r.gun}
+                    suzgec={suzgec}
+                />
             </div>
         );
     if (sekme === "kaynaklar")
         return (
             <div className="flex flex-col gap-7">
-                <Kaynaklar key={`k${r.gun}`} gun={r.gun} />
+                <Kaynaklar key={`k${r.gun}`} gun={r.gun} suzgec={suzgec} />
                 <Izinler r={r} />
             </div>
         );
@@ -205,7 +376,7 @@ export function RaporIcerik({
     if (sekme === "ziyaretler")
         return (
             <div className="flex flex-col gap-7">
-                <Ziyaretler key={`z${r.gun}`} gun={r.gun} />
+                <Ziyaretler key={`z${r.gun}`} gun={r.gun} suzgec={suzgec} />
             </div>
         );
     return (
@@ -441,11 +612,11 @@ function Anket({
                 sag={
                     huniler.size > 1 ? (
                         <select
-                            aria-label="Huni"
+                            aria-label="Anket hunisi"
                             value={anahtar}
                             onChange={(e) => {
                                 const yeni = new URLSearchParams(sorgu);
-                                yeni.set("huni", e.currentTarget.value);
+                                yeni.set("anket", e.currentTarget.value);
                                 setSorgu(yeni);
                             }}
                             className="min-h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5 text-[14px]"
@@ -743,11 +914,12 @@ function Izinler({ r }: { r: PanelRaporu }): ReactNode {
 function useListe<T>(
     anahtar: string,
     gun: Gun,
+    suzgec: Suzgec,
     al: (sayfa: number) => Promise<T | undefined>,
 ) {
     const [sayfa, setSayfa] = useState(1);
     const { data } = useQuery({
-        queryKey: ["rapor", gun, anahtar, sayfa],
+        queryKey: ["rapor", gun, suzgec, anahtar, sayfa],
         queryFn: async () => {
             const veri = await al(sayfa);
             if (!veri) throw new Error("liste alınamadı");
@@ -759,14 +931,15 @@ function useListe<T>(
     return { data, setSayfa };
 }
 
-function Kaynaklar({ gun }: { gun: Gun }): ReactNode {
+function Kaynaklar({ gun, suzgec }: { gun: Gun; suzgec: Suzgec }): ReactNode {
     const { data, setSayfa } = useListe(
         "kaynaklar",
         gun,
+        suzgec,
         async (sayfa) =>
             (
                 await api.GET("/panel/api/rapor/kaynaklar", {
-                    params: { query: { gun, sayfa } },
+                    params: { query: { gun, sayfa, ...suzgec } },
                 })
             ).data,
     );
@@ -847,14 +1020,15 @@ function Kaynaklar({ gun }: { gun: Gun }): ReactNode {
     );
 }
 
-function Ziyaretler({ gun }: { gun: Gun }): ReactNode {
+function Ziyaretler({ gun, suzgec }: { gun: Gun; suzgec: Suzgec }): ReactNode {
     const { data, setSayfa } = useListe(
         "ziyaretler",
         gun,
+        suzgec,
         async (sayfa) =>
             (
                 await api.GET("/panel/api/rapor/ziyaretler", {
-                    params: { query: { gun, sayfa } },
+                    params: { query: { gun, sayfa, ...suzgec } },
                 })
             ).data,
     );
@@ -938,14 +1112,21 @@ function Ziyaretler({ gun }: { gun: Gun }): ReactNode {
     );
 }
 
-function SerbestYanitlar({ gun }: { gun: Gun }): ReactNode {
+function SerbestYanitlar({
+    gun,
+    suzgec,
+}: {
+    gun: Gun;
+    suzgec: Suzgec;
+}): ReactNode {
     const { data, setSayfa } = useListe(
         "serbestYanitlar",
         gun,
+        suzgec,
         async (sayfa) =>
             (
                 await api.GET("/panel/api/rapor/serbestYanitlar", {
-                    params: { query: { gun, sayfa } },
+                    params: { query: { gun, sayfa, ...suzgec } },
                 })
             ).data,
     );

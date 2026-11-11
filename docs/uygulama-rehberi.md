@@ -110,7 +110,7 @@ değiştirmez.
 
 **Ekranda ne var**
 
-**Süzgeç (R1a):** her bölüm aynı süzgeçle — huni, kaynak, kampanya, ülke, deney (+ varyant), önceki dönem dahil ([`RaporSuzgeci`](../core/src/Panel/RaporSuzgeci.php)); ülke ziyarete IP'den yazılır ([r1a](decisions/r1a-rapor-suzgecleri.md)).
+**Süzgeç (R1a, R1b):** sekmelerin altındaki haplar (Huni · Kaynak · Kampanya · Ülke · Deney/Varyant; seçenekler dönemin verisinden, adreste); her bölüm aynı süzgeçle — huni, kaynak, kampanya, ülke, deney (+ varyant), önceki dönem dahil ([`RaporSuzgeci`](../core/src/Panel/RaporSuzgeci.php)); ülke ziyarete IP'den yazılır ([r1a](decisions/r1a-rapor-suzgecleri.md)).
 
 **Düzen (P7i, sekmeler; adreste `?sekme=`):** **Genel bakış** — Özet (önceki aynı uzunluktaki döneme göre değişim; oran değişimi yüzde puanı), günlük grafikler, Ziyaretten aboneliğe (reklam / organik / toplam), Reklam harcaması · **Anket** — tek huni (seçici, varsayılan en çok ziyaretli; `huni=`), şeritler (düşüş bir önceki adıma göre), o huninin cevapları, serbest yanıtlar · **Kaynaklar** — kaynak tablosu, reklam ölçümü izni · **Gelir** — kohort · **Ziyaretler** — sayfalı liste. Liste uçları yalnız açık sekmede istenir. Gelir = penceredeki ziyaretlerin bugüne kadar tahsil edilmiş faturaları eksi iade; Kaynaklar'ın gelir sütunuyla aynı tanım.
 

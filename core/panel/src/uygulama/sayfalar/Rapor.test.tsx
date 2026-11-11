@@ -161,6 +161,14 @@ const LISTELER: Record<string, unknown[]> = {
 let istenen: string[] = [];
 let toplamlar: Record<string, number> = {};
 
+const SECENEKLER = {
+    huniler: ["genel", "fitness"],
+    kaynaklar: ["meta", "doğrudan"],
+    kampanyalar: ["ekim"],
+    ulkeler: ["TR", "DE"],
+    deneyler: [{ deney: "d1", varyantlar: ["a", "b"] }],
+};
+
 function kur(adres = "/panel", veri: PanelRaporu = RAPOR): void {
     istenen = [];
     vi.stubGlobal(
@@ -169,6 +177,11 @@ function kur(adres = "/panel", veri: PanelRaporu = RAPOR): void {
             istenen.push(istek.url);
             const adres = new URL(istek.url, "http://x");
             const liste = adres.pathname.split("/panel/api/rapor/")[1];
+            // R1b: süzgeç seçenekleri.
+            if (liste === "secenekler")
+                return new Response(JSON.stringify(SECENEKLER), {
+                    headers: { "Content-Type": "application/json" },
+                });
             if (liste) {
                 const satirlar = LISTELER[liste] ?? [];
                 return new Response(
@@ -493,6 +506,7 @@ describe("Rapor", () => {
         // P7i: yalnız açık sekmenin listesi istenir.
         expect(yollar()).toEqual([
             "/panel/api/rapor",
+            "/panel/api/rapor/secenekler",
             "/panel/api/rapor/ziyaretler",
         ]);
         expect(gunler()).toEqual(["90"]);
@@ -513,6 +527,7 @@ describe("Rapor", () => {
         await screen.findByRole("region", { name: "Serbest yanıtlar" });
         expect(yollar()).toEqual([
             "/panel/api/rapor",
+            "/panel/api/rapor/secenekler",
             "/panel/api/rapor/serbestYanitlar",
         ]);
         expect(gunler()).toEqual(["90"]);
@@ -606,9 +621,13 @@ describe("Rapor", () => {
             "/panel?gun=7&sekme=ziyaretler",
         ]);
         // Genel bakışta liste uçları istenmez.
-        expect(istenen.some((u) => u.includes("/panel/api/rapor/"))).toBe(
-            false,
-        );
+        expect(
+            istenen.some(
+                (u) =>
+                    u.includes("/panel/api/rapor/") &&
+                    !u.includes("/panel/api/rapor/secenekler"),
+            ),
+        ).toBe(false);
 
         fireEvent.click(sekme("Kaynaklar"));
         await screen.findByRole("region", { name: "Kaynaklar" });
@@ -656,7 +675,7 @@ describe("Rapor", () => {
             cevaplar: [cevap("fitness", "spor"), cevap("genel", "aile")],
         });
         const secim = (await screen.findByRole("combobox", {
-            name: "Huni",
+            name: "Anket hunisi",
         })) as HTMLSelectElement;
         expect([...secim.options].map((o) => o.textContent)).toEqual([
             "genel · 5 ziyaret",
@@ -681,11 +700,116 @@ describe("Rapor", () => {
             within(screen.getByRole("navigation", { name: "Zaman aralığı" }))
                 .getByRole("link", { name: "7 gün" })
                 .getAttribute("href"),
-        ).toBe("/panel?gun=7&sekme=anket&huni=keepchat%2Ffitness");
+        ).toBe("/panel?gun=7&sekme=anket&anket=keepchat%2Ffitness");
 
         cleanup();
         kur("/panel?sekme=anket");
         await screen.findByRole("region", { name: "Anket" });
-        expect(screen.queryByRole("combobox", { name: "Huni" })).toBeNull();
+        expect(
+            screen.queryByRole("combobox", { name: "Anket hunisi" }),
+        ).toBeNull();
+    });
+
+    it("R1b: süzgeç — seçenekler ve ülke adları; seçim rapora, listeye ve bağlantılara; deney varyantı sıfırlar; temizle", async () => {
+        const son = (yol: string): URLSearchParams =>
+            new URL(
+                [...istenen]
+                    .reverse()
+                    .find((u) => new URL(u, "http://x").pathname === yol) ??
+                    "http://x/",
+                "http://x",
+            ).searchParams;
+        kur("/panel?gun=7&sekme=ziyaretler");
+        const grup = within(
+            await screen.findByRole("group", { name: "Süzgeç" }),
+        );
+        const kutu = (ad: string) =>
+            grup.getByRole("combobox", { name: ad }) as HTMLSelectElement;
+        await waitFor(() =>
+            expect([...kutu("Huni").options].map((o) => o.textContent)).toEqual(
+                ["Tüm huniler", "genel", "fitness"],
+            ),
+        );
+        expect([...kutu("Ülke").options].map((o) => o.textContent)).toEqual([
+            "Tüm ülkeler",
+            "Türkiye",
+            "Almanya",
+        ]);
+        expect(grup.queryByRole("combobox", { name: "Varyant" })).toBeNull();
+        expect(
+            grup.queryByRole("button", { name: "Süzgeçleri temizle" }),
+        ).toBeNull();
+
+        fireEvent.change(kutu("Huni"), { target: { value: "genel" } });
+        await waitFor(() =>
+            expect(son("/panel/api/rapor").get("huni")).toBe("genel"),
+        );
+        await waitFor(() =>
+            expect(son("/panel/api/rapor/ziyaretler").get("huni")).toBe(
+                "genel",
+            ),
+        );
+        expect(
+            screen.getByRole("link", { name: "90 gün" }).getAttribute("href"),
+        ).toBe("/panel?gun=90&sekme=ziyaretler&huni=genel");
+        expect(
+            screen
+                .getByRole("link", { name: "Kaynaklar" })
+                .getAttribute("href"),
+        ).toBe("/panel?gun=7&sekme=kaynaklar&huni=genel");
+        // Üç listenin üçü de süzülür (kırma B2 ilk koşuda tutmadı: yalnız ziyaretlere bakılıyordu).
+        fireEvent.click(screen.getByRole("link", { name: "Kaynaklar" }));
+        await waitFor(() =>
+            expect(son("/panel/api/rapor/kaynaklar").get("huni")).toBe("genel"),
+        );
+        fireEvent.click(screen.getByRole("link", { name: "Anket" }));
+        await waitFor(() =>
+            expect(son("/panel/api/rapor/serbestYanitlar").get("huni")).toBe(
+                "genel",
+            ),
+        );
+
+        fireEvent.change(kutu("Deney"), { target: { value: "d1" } });
+        await waitFor(() =>
+            expect(
+                [...kutu("Varyant").options].map((o) => o.textContent),
+            ).toEqual(["Tüm varyantlar", "a", "b"]),
+        );
+        fireEvent.change(kutu("Varyant"), { target: { value: "b" } });
+        await waitFor(() =>
+            expect(son("/panel/api/rapor").get("varyant")).toBe("b"),
+        );
+        fireEvent.change(kutu("Deney"), { target: { value: "" } });
+        await waitFor(() =>
+            expect(son("/panel/api/rapor").get("deney")).toBeNull(),
+        );
+        expect(son("/panel/api/rapor").get("varyant")).toBeNull();
+        expect(grup.queryByRole("combobox", { name: "Varyant" })).toBeNull();
+
+        fireEvent.click(
+            grup.getByRole("button", { name: "Süzgeçleri temizle" }),
+        );
+        await waitFor(() =>
+            expect(son("/panel/api/rapor").get("huni")).toBeNull(),
+        );
+        expect(
+            screen.getByRole("link", { name: "90 gün" }).getAttribute("href"),
+        ).toBe("/panel?gun=90&sekme=anket");
+
+        // Dönemde görülmeyen seçili değer listede kalır.
+        cleanup();
+        kur("/panel?kaynak=tiktok");
+        const k = within(
+            await screen.findByRole("group", { name: "Süzgeç" }),
+        ).getByRole("combobox", { name: "Kaynak" }) as HTMLSelectElement;
+        await waitFor(() =>
+            expect([...k.options].map((o) => o.value)).toEqual([
+                "",
+                "tiktok",
+                "meta",
+                "doğrudan",
+            ]),
+        );
+        expect(k.value).toBe("tiktok");
     });
 });
