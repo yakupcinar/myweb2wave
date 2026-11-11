@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 // M9a (A23): ayarlar sayfası — yükler, düzenler, kabuğun CSRF jetonuyla PUT
 // eder; sunucunun hatasını gösterir; menüde işaretli. Sunucu yerine sahte fetch.
+// P7c: canlıya geçiş adımları sunucunun ölçtüğü durumla çizilir.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     cleanup,
@@ -8,6 +9,7 @@ import {
     render,
     screen,
     waitFor,
+    within,
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -20,8 +22,22 @@ const KAYITLI = {
     destekEpostasi: "",
 };
 
+/** Test ortamına benzer: Stripe test anahtarı, Meta dolu, gerisi eksik. */
+const CANLI = {
+    odeme: { tamam: true, kip: "test" },
+    stripeBildirimleri: { tamam: false, son: null },
+    eposta: { tamam: false },
+    yasal: { tamam: false, eksikler: ["gizlilik"] },
+    metaReklam: { tamam: true },
+    gorevler: {
+        tamam: false,
+        eksikler: ["app:posta:dizi", "app:webhook:gonder"],
+    },
+};
+
 function kur(
     put: (govde: unknown) => Response = (g) => new Response(JSON.stringify(g)),
+    canli: unknown = CANLI,
 ) {
     const kabuk = document.createElement("div");
     kabuk.id = "panel-uygulama";
@@ -54,6 +70,8 @@ function kur(
                         paywall: false,
                     }),
                 );
+            if (istek.url.endsWith("/canliya-gecis"))
+                return new Response(JSON.stringify(canli));
             if (istek.url.endsWith("/varsayilanlar"))
                 return new Response(
                     JSON.stringify({
@@ -163,8 +181,14 @@ describe("Ayarlar", () => {
 
     it("M9c: yeni huni görünümü kaynağı ve içeriği; Kaldır jetonla DELETE gönderir", async () => {
         const istekler = kur();
-        expect(await screen.findByText("genel")).toBeTruthy();
-        expect(screen.getByText(/tema, paywall\./)).toBeTruthy();
+        expect(
+            await screen.findByText('"genel" hunisinden · 10 Kasım'),
+        ).toBeTruthy();
+        expect(
+            screen.getByText(
+                "Tema ve paywall yeni açılan hunilere kopyalanır. Var olan huniler değişmez.",
+            ),
+        ).toBeTruthy();
         fireEvent.click(screen.getByRole("button", { name: "Kaldır" }));
         await screen.findByText(/Yok — yeni huniler boş başlar/);
         expect(istekler.find((i) => i.yontem === "DELETE")).toEqual({
@@ -173,5 +197,92 @@ describe("Ayarlar", () => {
             jeton: "jeton-kabuk",
             govde: null,
         });
+    });
+
+    it("P7c: canlıya geçiş — sayı, çubuk; eksik adımda Aç / Nasıl yapılır, tamamda yok", async () => {
+        kur();
+        expect(await screen.findByText("6 adımdan 2'si tamam")).toBeTruthy();
+        const cubuk = screen.getByRole("progressbar", {
+            name: "Canlıya geçiş",
+        });
+        expect(cubuk.getAttribute("aria-valuenow")).toBe("2");
+        const satirlar = within(
+            screen.getByRole("region", { name: "Canlıya geçiş" }),
+        ).getAllByRole("listitem");
+        expect(
+            satirlar.map(
+                (s) =>
+                    within(s).getByRole("img").getAttribute("aria-label") ?? "",
+            ),
+        ).toEqual([
+            "Tamam",
+            "Yapılmadı",
+            "Yapılmadı",
+            "Yapılmadı",
+            "Tamam",
+            "Yapılmadı",
+        ]);
+        const [odeme, bildirim, , yasal, meta, gorev] = satirlar as [
+            HTMLElement,
+            HTMLElement,
+            HTMLElement,
+            HTMLElement,
+            HTMLElement,
+            HTMLElement,
+        ];
+        expect(odeme.textContent).toContain("Test modunda.");
+        for (const s of [odeme, meta])
+            expect(
+                within(s).queryAllByRole("button").length +
+                    within(s).queryAllByRole("link").length,
+            ).toBe(0);
+        expect(yasal.textContent).toContain(
+            "Yayında değil: Gizlilik politikası.",
+        );
+        expect(
+            within(yasal)
+                .getByRole("link", { name: "Aç" })
+                .getAttribute("href"),
+        ).toBe("/panel/yasal");
+        expect(gorev.textContent).toContain(
+            "Çalışmayan: app:posta:dizi, app:webhook:gonder.",
+        );
+
+        const nasil = within(bildirim).getByRole("button", {
+            name: "Nasıl yapılır",
+        });
+        expect(nasil.getAttribute("aria-expanded")).toBe("false");
+        expect(bildirim.textContent).not.toContain("STRIPE_WEBHOOK_SECRET");
+        fireEvent.click(nasil);
+        expect(nasil.getAttribute("aria-expanded")).toBe("true");
+        expect(bildirim.textContent).toContain("STRIPE_WEBHOOK_SECRET");
+    });
+
+    it("P7c: hepsi tamamsa 6'sı; hiçbiri değilse 0'ı; son bildirim tarihi", async () => {
+        kur(undefined, {
+            odeme: { tamam: true, kip: "canli" },
+            stripeBildirimleri: {
+                tamam: true,
+                son: "2026-11-10T09:00:00+00:00",
+            },
+            eposta: { tamam: true },
+            yasal: { tamam: true, eksikler: [] },
+            metaReklam: { tamam: true },
+            gorevler: { tamam: true, eksikler: [] },
+        });
+        expect(await screen.findByText("6 adımdan 6'sı tamam")).toBeTruthy();
+        expect(screen.getByText(/Canlı modda/)).toBeTruthy();
+        expect(screen.getByText(/^Son bildirim 10 Kasım\./)).toBeTruthy();
+        cleanup();
+        kur(undefined, {
+            odeme: { tamam: false, kip: null },
+            stripeBildirimleri: { tamam: false, son: null },
+            eposta: { tamam: false },
+            yasal: { tamam: false, eksikler: ["sartlar", "gizlilik"] },
+            metaReklam: { tamam: false },
+            gorevler: { tamam: false, eksikler: [] },
+        });
+        expect(await screen.findByText("6 adımdan 0'ı tamam")).toBeTruthy();
+        expect(screen.getByText(/Anahtar yok/)).toBeTruthy();
     });
 });

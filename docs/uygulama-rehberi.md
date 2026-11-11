@@ -379,19 +379,24 @@ karakterleri; anahtarın kendisi saklanmaz), MCP adresi, yeni anahtar formu ve *
 
 ### 2.9 Uygulama — `/panel/ayarlar`
 
-**Ne işe yarar.** Uygulamanın kimliği: e-postalarda görünen ad, yanıtların gideceği destek adresi, giriş bağlantısının
-uygulamayı açtığı adres şeması ve App Store adresi.
+**Ne işe yarar.** Canlıya çıkmadan önce yapılacaklar ve uygulamanın kimliği: e-postalarda görünen ad, yanıtların
+gideceği destek adresi, App Store adresi, giriş bağlantısının uygulamayı açtığı adres şeması.
 
-**Ekranda ne var / ne yapabilirsin** ([`Ayarlar.tsx`](../core/panel/src/uygulama/sayfalar/Ayarlar.tsx)): dört alan;
-kaydet. Hatalı değer (ör. büyük harfli şema, `http://` adres) sunucuda reddedilir ve gerekçesi satırda görünür. Altında
-**"Yeni huni görünümü"** kartı: yeni hunilere kopyalanan görünüm hangi huniden, ne zaman alındı, neleri içeriyor (tema,
-logo, paywall); "Kaldır" ile yeni huniler yeniden boş başlar (2.2, adım 8).
+**Ekranda ne var / ne yapabilirsin** ([`Ayarlar.tsx`](../core/panel/src/uygulama/sayfalar/Ayarlar.tsx)), üç bölüm (P7c):
+1. **Canlıya geçiş:** altı adım (Stripe, Stripe bildirimleri, Postmark, yasal metinler, Meta reklam hesabı, otomatik
+   görevler), sayaç ve çubuk. Her adım sistemden ölçülür
+   ([`CanliyaGecis`](../core/src/Uygulama/CanliyaGecis.php), ölçütler [p7c kaydında](decisions/p7c-uygulama.md)).
+   Eksik adımda "Nasıl yapılır" hangi ortam değişkeninin yazılacağını söyler.
+2. **Uygulama bilgileri:** dört alan; kaydet. Hatalı değer (ör. büyük harfli şema, `http://` adres) sunucuda
+   reddedilir ve gerekçesi satırda görünür.
+3. **Yeni hunilerin görünümü:** yeni hunilere kopyalanan görünüm hangi huniden, ne zaman alındı, neleri içeriyor (tema,
+   logo, paywall); "Kaldır" ile yeni huniler yeniden boş başlar (2.2, adım 8).
 
 | Alan | Nerede kullanılır |
 |---|---|
 | Görünen ad | Her e-postanın gönderen adı ("KeepChat <no-reply@…>") |
 | Destek e-postası | Her e-postanın yanıt adresi (Reply-To): kod, giriş bağlantısı, portal, aktivasyon, kurtarma |
-| URL şeması | Giriş bağlantısı `keepchat://giris?jeton=…`. **iOS uygulamasının Info.plist'indekiyle aynı olmalı**; değiştirirsen daha önce gönderilen bağlantılar açılmaz |
+| Uygulamayı açan bağlantı (URL şeması) | Giriş bağlantısı `keepchat://giris?jeton=…`. **iOS uygulamasının Info.plist'indekiyle aynı olmalı**; değiştirirsen daha önce gönderilen bağlantılar açılmaz |
 | App Store adresi | Aktivasyon e-postasındaki "uygulamayı kurun" bağlantısı |
 
 **Arkada nasıl çalışır**
@@ -401,8 +406,10 @@ logo, paywall); "Kaldır" ile yeni huniler yeniden boş başlar (2.2, adım 8).
    e-posta da böyle kurulmalı (§20).
 3. Ayar satırı yoksa yedek değer yoktur: şema isteyen yol açık hata verir. İki kaynak olsaydı hangisinin geçerli olduğu
    görünmezdi (tuzak §12).
+4. Zamanlı komutlar başarıyla bitince [`GorevKaydi`](../core/src/Uygulama/GorevKaydi.php) `zamanli_gorevler`'e yazar;
+   "Otomatik görevler" adımı buradan okunur.
 
-**Kayıtlar:** [m9a uygulama kimliği](decisions/m9a-uygulama-kimligi.md) · [m9c yeni huni görünümü](decisions/m9c-yeni-huni-gorunumu.md)
+**Kayıtlar:** [m9a uygulama kimliği](decisions/m9a-uygulama-kimligi.md) · [m9c yeni huni görünümü](decisions/m9c-yeni-huni-gorunumu.md) · [p7c canlıya geçiş](decisions/p7c-uygulama.md)
 
 ### 2.10 Yasal metinler — `/panel/yasal`
 
@@ -470,7 +477,7 @@ kayıtlar ve e-postalar. Hepsi aynı ilkeyle çalışır: **önce veritabanına 
 
 ### 4.2 Giden işler — kuyruk + komut
 
-Üretimde her biri bir cron ister; **henüz hiçbiri tanımlı değil** (üretim yok).
+Üretimde her biri bir cron ister. `deploy/sunucu-hazirla.sh` yalnız üçünü kuruyor (Ç133); her komutun son başarılı çalışması `zamanli_gorevler`'de, panelde Uygulama → Canlıya geçiş.
 
 | Komut | Ne yapar | Kuyruk tablosu | Sıklık önerisi |
 |---|---|---|---|
@@ -527,7 +534,7 @@ kuralların bir kısmı veritabanında da durur (`CHECK` kısıtları, tetikleyi
 | Para | `planlar`, `ek_urunler`, `ek_satislar`, `odeme_oturumlari`, `subscriptions`, `odeme_faturalari`, `fatura_odemeleri`, `processed_webhook_events` | Katalog, ödeme oturumları (ziyaret bağı), abonelikler, faturalar ve iadeler, işlenmiş Stripe olayları |
 | Kimlik | `kisiler`, `baglantilar`, `dogrulama_kodlari`, `giris_jetonlari`, `portal_jetonlari` | Kişiler, uygulama bağları, kısa ömürlü kod ve jetonlar (yalnız özetleri) |
 | Dışa | `reklam_donusumleri`, `reklam_harcamalari`, `revenuecat_gidenler`, `webhook_hedefleri`, `webhook_teslimleri`, `posta_bastirma`, `posta_dizisi` | Giden kutuları, harcama, bastırma listesi, dizi kayıtları |
-| Ayar ve erişim | `uygulama_ayarlari`, `yasal_metinler`, `api_anahtarlari`, `mcp_cagrilari`, `sessions` | Uygulama kimliği, yasal metinler, MCP anahtarları ve çağrıları, panel oturumları |
+| Ayar ve erişim | `uygulama_ayarlari`, `yasal_metinler`, `api_anahtarlari`, `mcp_cagrilari`, `sessions`, `zamanli_gorevler` | Uygulama kimliği, yasal metinler, MCP anahtarları ve çağrıları, panel oturumları, zamanlı komutların son çalışması |
 
 ---
 

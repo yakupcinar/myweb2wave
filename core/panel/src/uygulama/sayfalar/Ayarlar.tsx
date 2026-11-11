@@ -1,15 +1,22 @@
 // Uygulama ayarları (M9a, A23): görünen ad, URL şeması, mağaza adresi, destek
 // e-postası. Veri /panel/api/uygulamalar/{app}/ayarlar (sözleşme
-// UygulamaAyarlari); yazma kabuğun CSRF jetonuyla (api.ts).
+// UygulamaAyarlari); yazma kabuğun CSRF jetonuyla (api.ts). P7c: taslaktaki
+// gibi üç bölüm — Canlıya geçiş (adımlar sunucuda ölçülür), Uygulama
+// bilgileri (solda etiket), Yeni hunilerin görünümü.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
+import { uzunTarih } from "../bicim";
 import { SayfaBasi } from "../Duzen";
+import { alanSinifi, Satir } from "../ui/Alan";
 import { Dugme } from "../ui/Dugme";
-import { Kart, KartBasi } from "../ui/Kart";
+import { cn } from "../ui/cn";
+import { Kart } from "../ui/Kart";
 
 type UygulamaAyarlari = components["schemas"]["UygulamaAyarlari"];
+type CanliyaGecis = components["schemas"]["CanliyaGecis"];
 
 /** Alan, sınır (sözleşmedeki maxLength ile aynı), girdi türü, açıklama, örnek. */
 const ALANLAR: {
@@ -25,37 +32,108 @@ const ALANLAR: {
         etiket: "Görünen ad",
         azami: 60,
         tur: "text",
-        aciklama: "E-postalarda gönderen adı olarak görünür.",
+        aciklama: "E-postaların gönderen adı.",
         ornek: "KeepChat",
-    },
-    {
-        ad: "sema",
-        etiket: "URL şeması",
-        azami: 32,
-        tur: "text",
-        aciklama:
-            "Giriş bağlantısı uygulamayı bununla açar (şema://giris?jeton=…). iOS uygulamasının Info.plist'indekiyle aynı olmalı; değiştirirseniz daha önce gönderilen bağlantılar açılmaz.",
-        ornek: "keepchat",
-    },
-    {
-        ad: "magazaAdresi",
-        etiket: "App Store adresi",
-        azami: 300,
-        tur: "url",
-        aciklama:
-            'Aktivasyon e-postasında "uygulamayı kurun" bağlantısı. Boşsa yazılmaz.',
-        ornek: "https://apps.apple.com/app/id…",
     },
     {
         ad: "destekEpostasi",
         etiket: "Destek e-postası",
         azami: 254,
         tur: "email",
-        aciklama:
-            "E-postalara verilen yanıtlar buraya gider. Boşsa yanıt adresi yok.",
+        aciklama: "Müşteri bir e-postaya yanıt verince buraya gelir.",
         ornek: "destek@ornek.com",
     },
+    {
+        ad: "magazaAdresi",
+        etiket: "App Store adresi",
+        azami: 300,
+        tur: "url",
+        aciklama: '"Uygulamayı indir" bağlantısı. Boşsa e-postada çıkmaz.',
+        ornek: "https://apps.apple.com/app/id…",
+    },
+    {
+        ad: "sema",
+        etiket: "Uygulamayı açan bağlantı",
+        azami: 32,
+        tur: "text",
+        aciklama:
+            "iOS uygulamasının Info.plist'indekiyle aynı olmalı. Değiştirirseniz daha önce gönderilen bağlantılar açılmaz.",
+        ornek: "keepchat",
+    },
 ];
+
+/** Paywall belgelerinin adları (Taslaklar::BASLIKLAR, tr). */
+const BELGE_ADLARI: Record<string, string> = {
+    sartlar: "Kullanım şartları",
+    gizlilik: "Gizlilik politikası",
+};
+
+/** Adım: başlık, açıklama (durumdan), nasıl yapılır (yalnız eksikken). */
+const ADIMLAR: {
+    ad: keyof CanliyaGecis;
+    baslik: string;
+    aciklama: (d: CanliyaGecis) => string;
+    nasil?: string;
+    ac?: string;
+}[] = [
+    {
+        ad: "odeme",
+        baslik: "Ödeme: Stripe",
+        aciklama: ({ odeme }) =>
+            odeme.kip === "canli"
+                ? "Canlı modda; gerçek ödeme alınıyor."
+                : odeme.kip === "test"
+                  ? "Test modunda. Canlı anahtarlar sunucuya girilince gerçek ödeme alınır."
+                  : "Anahtar yok; ödeme sayfası açılmaz.",
+        nasil: "Sunucunun ortam dosyasına STRIPE_SECRET_KEY ve STRIPE_PUBLISHABLE_KEY yazılır (canlı için sk_live_ / pk_live_ ile başlayanlar).",
+    },
+    {
+        ad: "stripeBildirimleri",
+        baslik: "Stripe bildirimleri",
+        aciklama: ({ stripeBildirimleri: b }) =>
+            b.son
+                ? `Son bildirim ${uzunTarih(b.son)}. Fatura ve iadeler rapora bunlarla gelir.`
+                : "Fatura ve iadeler rapora bunlarla gelir.",
+        nasil: "Stripe panelinde Geliştiriciler → Webhook'lar'a https://<alan adı>/webhooks/stripe adresini ekleyin; verdiği imza gizlisini STRIPE_WEBHOOK_SECRET'a yazın. İlk olay gelince tamamlanır.",
+    },
+    {
+        ad: "eposta",
+        baslik: "E-posta gönderimi (Postmark)",
+        aciklama: () =>
+            "Giriş kodu ve bağlantıları bu olmadan müşteriye ulaşmaz.",
+        nasil: "MAILER_DSN=postmark+api://<sunucu anahtarı>@default yazılır; MAIL_GONDEREN adresi Postmark'ta doğrulanmış olmalı.",
+    },
+    {
+        ad: "yasal",
+        baslik: "Yasal metinleri yayınla",
+        aciklama: ({ yasal }) =>
+            yasal.eksikler.length
+                ? `Yayında değil: ${yasal.eksikler.map((b) => BELGE_ADLARI[b] ?? b).join(", ")}. Yayında değilse paywall'da bağlantı çıkmaz.`
+                : "Şartlar ve gizlilik paywall'da bağlantılı.",
+        ac: "/panel/yasal",
+    },
+    {
+        ad: "metaReklam",
+        baslik: "Meta reklam hesabı",
+        aciklama: () => "Kampanya harcaması ve getirisi (ROAS) için.",
+        nasil: "META_AD_ACCOUNT_ID (act_… biçiminde) ve ads_read izinli META_INSIGHTS_ACCESS_TOKEN yazılır.",
+    },
+    {
+        ad: "gorevler",
+        baslik: "Otomatik görevler",
+        aciklama: ({ gorevler }) =>
+            gorevler.eksikler.length
+                ? `Çalışmayan: ${gorevler.eksikler.join(", ")}.`
+                : "Hatırlatma e-postaları, webhook'lar ve harcama çekme düzenli çalışıyor.",
+        nasil: "Sunucuda her komut için bir cron satırı gerekir (deploy/sunucu-hazirla.sh). Komut başarıyla bitince burada görünür.",
+    },
+];
+
+/** "1'i", "2'si", "6'sı" — belirtme hâli eki (0–9). */
+function belirtme(n: number): string {
+    const ek = ["ı", "i", "si", "ü", "ü", "i", "sı", "si", "i", "u"][n % 10];
+    return `${n}'${ek}`;
+}
 
 export function Ayarlar(): ReactNode {
     const uygulamalar = useQuery({
@@ -67,17 +145,17 @@ export function Ayarlar(): ReactNode {
     const secili = app ?? uygulamalar.data?.[0] ?? null;
 
     return (
-        <>
+        <div className="max-w-[880px]">
             <SayfaBasi
                 baslik="Uygulama"
-                aciklama="Uygulamanın adı, destek adresi ve uygulamayı açan bağlantı."
+                aciklama="Uygulamanın adı, iletişim bilgileri ve canlıya çıkmadan önce yapılacaklar."
             >
                 {uygulamalar.data && uygulamalar.data.length > 1 ? (
                     <select
                         aria-label="Uygulama"
                         value={secili ?? ""}
                         onChange={(e) => setApp(e.currentTarget.value)}
-                        className="min-h-9 rounded-lg border border-kenar bg-yuzey px-2.5"
+                        className="min-h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5"
                     >
                         {uygulamalar.data.map((a) => (
                             <option key={a}>{a}</option>
@@ -86,14 +164,161 @@ export function Ayarlar(): ReactNode {
                 ) : null}
             </SayfaBasi>
             {secili ? (
-                <div className="grid gap-4">
+                <div className="flex flex-col gap-7">
+                    <CanliyaGecisBolumu key={`c-${secili}`} app={secili} />
                     <AyarFormu key={secili} app={secili} />
                     <VarsayilanKarti key={`v-${secili}`} app={secili} />
                 </div>
             ) : (
                 <p className="text-soluk">Yükleniyor…</p>
             )}
-        </>
+        </div>
+    );
+}
+
+function Bolum({
+    baslik,
+    sag,
+    children,
+}: {
+    baslik: string;
+    sag?: ReactNode;
+    children: ReactNode;
+}): ReactNode {
+    return (
+        <section aria-label={baslik} className="flex flex-col gap-2.5">
+            <div className="flex items-baseline justify-between gap-3">
+                <h2 className="text-[20px] font-semibold">{baslik}</h2>
+                {sag}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function CanliyaGecisBolumu({ app }: { app: string }): ReactNode {
+    const sorgu = useQuery({
+        queryKey: ["canliya-gecis", app],
+        queryFn: async () => {
+            const { data } = await api.GET(
+                "/panel/api/uygulamalar/{app}/canliya-gecis",
+                { params: { path: { app } } },
+            );
+            if (!data) throw new Error("durum alınamadı");
+            return data;
+        },
+    });
+    const d = sorgu.data;
+    const tamam = d ? ADIMLAR.filter((a) => d[a.ad].tamam).length : 0;
+
+    return (
+        <Bolum
+            baslik="Canlıya geçiş"
+            sag={
+                d ? (
+                    <span className="text-[13px] text-soluk">
+                        {ADIMLAR.length} adımdan {belirtme(tamam)} tamam
+                    </span>
+                ) : null
+            }
+        >
+            {sorgu.isError ? (
+                <p role="alert" className="text-tehlike">
+                    Durum yüklenemedi. Sayfayı yenileyin.
+                </p>
+            ) : !d ? (
+                <p role="status" className="text-soluk">
+                    Yükleniyor…
+                </p>
+            ) : (
+                <>
+                    <div
+                        role="progressbar"
+                        aria-label="Canlıya geçiş"
+                        aria-valuemin={0}
+                        aria-valuemax={ADIMLAR.length}
+                        aria-valuenow={tamam}
+                        className="h-1.5 rounded-full bg-dolgu"
+                    >
+                        <div
+                            className="h-1.5 rounded-full bg-iyi"
+                            style={{
+                                width: `${(tamam / ADIMLAR.length) * 100}%`,
+                            }}
+                        />
+                    </div>
+                    <Kart>
+                        <ul>
+                            {ADIMLAR.map((a) => (
+                                <Adim
+                                    key={a.ad}
+                                    adim={a}
+                                    durum={d}
+                                    tamam={d[a.ad].tamam}
+                                />
+                            ))}
+                        </ul>
+                    </Kart>
+                </>
+            )}
+        </Bolum>
+    );
+}
+
+function Adim({
+    adim,
+    durum,
+    tamam,
+}: {
+    adim: (typeof ADIMLAR)[number];
+    durum: CanliyaGecis;
+    tamam: boolean;
+}): ReactNode {
+    const [acik, setAcik] = useState(false);
+    return (
+        <li className="flex items-center gap-3.5 border-t border-kenar px-[18px] py-3.5 first:border-t-0">
+            <svg
+                role="img"
+                aria-label={tamam ? "Tamam" : "Yapılmadı"}
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                className={cn(
+                    "shrink-0 self-start",
+                    tamam ? "text-iyi" : "text-soluk opacity-60",
+                )}
+            >
+                <circle cx="12" cy="12" r="10" />
+                {tamam ? <path d="M7.5 12.5l3 3 6-6.5" /> : null}
+            </svg>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-[15px]">{adim.baslik}</span>
+                <span className="text-[13px] text-soluk">
+                    {adim.aciklama(durum)}
+                </span>
+                {acik ? (
+                    <p className="mt-1.5 text-[13px]">{adim.nasil}</p>
+                ) : null}
+            </div>
+            {tamam ? null : adim.ac ? (
+                <Link to={adim.ac} className="shrink-0 text-sm text-vurgu">
+                    Aç
+                </Link>
+            ) : (
+                <button
+                    type="button"
+                    aria-expanded={acik}
+                    className="shrink-0 text-sm text-vurgu"
+                    onClick={() => setAcik((x) => !x)}
+                >
+                    Nasıl yapılır
+                </button>
+            )}
+        </li>
     );
 }
 
@@ -155,10 +380,9 @@ function AyarGovdesi({
     const degisti = JSON.stringify(form) !== JSON.stringify(kayitli);
 
     return (
-        <Kart>
-            <KartBasi baslik={app} />
+        <Bolum baslik="Uygulama bilgileri">
             <form
-                className="grid gap-5 px-4.5 py-4"
+                className="flex flex-col gap-2.5"
                 // Doğrulama sunucuda (422 mesajı satırda); tarayıcının kendi
                 // url/email denetimi ayrı, farklı bir kural koymasın.
                 noValidate
@@ -167,43 +391,47 @@ function AyarGovdesi({
                     kayit.mutate(form);
                 }}
             >
-                {ALANLAR.map((a) => (
-                    <div key={a.ad} className="grid gap-1.5">
-                        <label
-                            htmlFor={`ayar-${a.ad}`}
-                            className="font-semibold"
-                        >
-                            {a.etiket}
-                        </label>
-                        <input
-                            id={`ayar-${a.ad}`}
-                            type={a.tur}
-                            value={form[a.ad]}
-                            maxLength={a.azami}
-                            placeholder={a.ornek}
-                            aria-describedby={`ayar-${a.ad}-aciklama`}
-                            className="w-full rounded-lg border border-kenar bg-zemin px-3 py-2 text-metin"
-                            onChange={(e) => {
-                                const deger = e.currentTarget.value;
-                                setForm((f) => ({ ...f, [a.ad]: deger }));
+                <Kart>
+                    {ALANLAR.map((a) => (
+                        <Satir key={a.ad} etiket={a.etiket} yardim={a.aciklama}>
+                            {(id) => {
+                                const girdi = (
+                                    <input
+                                        id={id}
+                                        type={a.tur}
+                                        value={form[a.ad]}
+                                        maxLength={a.azami}
+                                        placeholder={a.ornek}
+                                        className={
+                                            a.ad === "sema"
+                                                ? "min-w-15 flex-[0_1_140px] bg-transparent px-2.5 py-2 text-[15px] text-metin outline-none"
+                                                : alanSinifi
+                                        }
+                                        onChange={(e) => {
+                                            const deger = e.currentTarget.value;
+                                            setForm((f) => ({
+                                                ...f,
+                                                [a.ad]: deger,
+                                            }));
+                                        }}
+                                    />
+                                );
+                                // Şema giriş bağlantısının başı: şema://giris?jeton=…
+                                return a.ad === "sema" ? (
+                                    <div className="flex items-center overflow-hidden rounded-lg border border-kenar-2 bg-yuzey focus-within:outline-2 focus-within:-outline-offset-1 focus-within:outline-vurgu">
+                                        {girdi}
+                                        <span className="pr-2.5 text-[15px] text-soluk">
+                                            ://giris
+                                        </span>
+                                    </div>
+                                ) : (
+                                    girdi
+                                );
                             }}
-                        />
-                        <p
-                            id={`ayar-${a.ad}-aciklama`}
-                            className="text-[13px] text-soluk"
-                        >
-                            {a.aciklama}
-                        </p>
-                    </div>
-                ))}
-                <div className="flex flex-wrap items-center gap-3">
-                    <Dugme
-                        tur="ana"
-                        type="submit"
-                        disabled={!degisti || kayit.isPending}
-                    >
-                        {kayit.isPending ? "Kaydediliyor…" : "Kaydet"}
-                    </Dugme>
+                        </Satir>
+                    ))}
+                </Kart>
+                <div className="flex flex-wrap items-center justify-end gap-3">
                     {kayit.isSuccess && !degisti ? (
                         <span role="status" className="text-iyi">
                             Kaydedildi.
@@ -214,9 +442,17 @@ function AyarGovdesi({
                             {kayit.error.message}
                         </span>
                     ) : null}
+                    <Dugme
+                        tur="ana"
+                        type="submit"
+                        className="min-h-11 px-5.5 text-[15px]"
+                        disabled={!degisti || kayit.isPending}
+                    >
+                        {kayit.isPending ? "Kaydediliyor…" : "Kaydet"}
+                    </Dugme>
                 </div>
             </form>
-        </Kart>
+        </Bolum>
     );
 }
 
@@ -251,31 +487,40 @@ function VarsayilanKarti({ app }: { app: string }): ReactNode {
     const v = sorgu.data;
     const icerik = v
         ? [v.tema && "tema", v.logo && "logo", v.paywall && "paywall"].filter(
-              Boolean,
+              (x): x is string => Boolean(x),
           )
         : [];
+    const liste =
+        icerik.length > 1
+            ? `${icerik.slice(0, -1).join(", ")} ve ${icerik.at(-1)}`
+            : (icerik[0] ?? "");
 
     return (
-        <Kart>
-            <KartBasi
-                baslik="Yeni huni görünümü"
-                aciklama="Yeni açılan (boş ya da şablondan) huniye kopyalanır; var olan huniler değişmez."
-            />
-            <div className="grid gap-3 px-4.5 py-4">
+        <Bolum baslik="Yeni hunilerin görünümü">
+            <Kart className="flex flex-wrap items-center justify-between gap-3 px-[18px] py-4">
                 {!v ? (
                     <p role="status" className="text-soluk">
                         Yükleniyor…
                     </p>
                 ) : v.kaynak ? (
                     <>
-                        <p>
-                            <strong>{v.kaynak}</strong> hunisinden
-                            {v.alindi
-                                ? `, ${new Date(v.alindi).toLocaleDateString("tr-TR")}`
-                                : ""}
-                            : {icerik.join(", ")}.
-                        </p>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-[15px]">
+                                "{v.kaynak}" hunisinden
+                                {v.alindi ? ` · ${uzunTarih(v.alindi)}` : ""}
+                            </span>
+                            <span className="text-[13px] text-soluk">
+                                {liste.charAt(0).toLocaleUpperCase("tr")}
+                                {liste.slice(1)} yeni açılan hunilere
+                                kopyalanır. Var olan huniler değişmez.
+                            </span>
+                        </div>
                         <div className="flex flex-wrap items-center gap-3">
+                            {kaldir.isError ? (
+                                <span role="alert" className="text-tehlike">
+                                    {kaldir.error.message}
+                                </span>
+                            ) : null}
                             <Dugme
                                 tur="tehlike"
                                 disabled={kaldir.isPending}
@@ -283,20 +528,20 @@ function VarsayilanKarti({ app }: { app: string }): ReactNode {
                             >
                                 Kaldır
                             </Dugme>
-                            {kaldir.isError ? (
-                                <span role="alert" className="text-tehlike">
-                                    {kaldir.error.message}
-                                </span>
-                            ) : null}
                         </div>
                     </>
                 ) : (
-                    <p className="text-soluk">
-                        Yok — yeni huniler boş başlar. Huniler sayfasında bir
-                        huninin yanındaki "Yeni hunilere örnek yap" ile seçin.
-                    </p>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[15px]">
+                            Yok — yeni huniler boş başlar.
+                        </span>
+                        <span className="text-[13px] text-soluk">
+                            Huniler sayfasında bir huninin yanındaki "Yeni
+                            hunilere örnek yap" ile seçin.
+                        </span>
+                    </div>
                 )}
-            </div>
-        </Kart>
+            </Kart>
+        </Bolum>
     );
 }

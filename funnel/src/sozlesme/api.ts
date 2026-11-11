@@ -482,6 +482,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/canliya-gecis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** P7c: canlıya geçiş adımları — her biri çalışan sistemden ölçülür (anahtarların kendisi yok) */
+        get: operations["panelCanliyaGecis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/varsayilanlar": {
         parameters: {
             query?: never;
@@ -1060,6 +1079,42 @@ export interface components {
             magazaAdresi: string;
             /** @description E-postalarda yanıt adresi ya da boş */
             destekEpostasi: string;
+        };
+        CanliyaGecis: {
+            /** @description Stripe gizli anahtarı dolu mu; kip anahtarın önekinden (sk_live_ / rk_live_ = canlı) */
+            odeme: {
+                tamam: boolean;
+                /** @enum {string|null} */
+                kip: "test" | "canli" | null;
+            };
+            /** @description Webhook gizlisi dolu ve en az bir Stripe olayı işlenmiş */
+            stripeBildirimleri: {
+                tamam: boolean;
+                /**
+                 * Format: date-time
+                 * @description Son işlenen olay
+                 */
+                son: string | null;
+            };
+            /** @description MAILER_DSN Postmark */
+            eposta: {
+                tamam: boolean;
+            };
+            /** @description Paywall'daki belgeler (şartlar, gizlilik) Türkçe yayında */
+            yasal: {
+                tamam: boolean;
+                eksikler: ("sartlar" | "gizlilik")[];
+            };
+            /** @description Meta reklam hesabı ve Insights anahtarı dolu */
+            metaReklam: {
+                tamam: boolean;
+            };
+            /** @description Her zamanlı komut beklenen aralıkta başarıyla çalışmış */
+            gorevler: {
+                tamam: boolean;
+                /** @description Çalışmamış ya da gecikmiş komutlar */
+                eksikler: string[];
+            };
         };
         /** @description M9c: hangi huniden, ne zaman alındı ve neleri içeriyor; kaynak null = varsayılan yok */
         YeniHuniVarsayilani: {
@@ -3174,6 +3229,37 @@ export interface operations {
             };
             /** @description Alan geçersiz */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelCanliyaGecis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Adımların durumu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanliyaGecis"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

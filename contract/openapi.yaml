@@ -776,6 +776,15 @@ paths:
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Alan geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/canliya-gecis:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelCanliyaGecis
+      summary: "P7c: canlıya geçiş adımları — her biri çalışan sistemden ölçülür (anahtarların kendisi yok)"
+      responses:
+        "200": { description: Adımların durumu, content: { application/json: { schema: { $ref: "#/components/schemas/CanliyaGecis" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/varsayilanlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1558,6 +1567,57 @@ components:
         sema: { type: string, maxLength: 32, description: "Özel URL şeması (<şema>://giris?jeton=…), iOS Info.plist ile aynı" }
         magazaAdresi: { type: string, maxLength: 300, description: "App Store adresi (https://) ya da boş" }
         destekEpostasi: { type: string, maxLength: 254, description: E-postalarda yanıt adresi ya da boş }
+    CanliyaGecis:
+      type: object
+      additionalProperties: false
+      required: [odeme, stripeBildirimleri, eposta, yasal, metaReklam, gorevler]
+      properties:
+        odeme:
+          type: object
+          additionalProperties: false
+          required: [tamam, kip]
+          description: Stripe gizli anahtarı dolu mu; kip anahtarın önekinden (sk_live_ / rk_live_ = canlı)
+          properties:
+            tamam: { type: boolean }
+            kip: { type: [string, "null"], enum: [test, canli, null] }
+        stripeBildirimleri:
+          type: object
+          additionalProperties: false
+          required: [tamam, son]
+          description: Webhook gizlisi dolu ve en az bir Stripe olayı işlenmiş
+          properties:
+            tamam: { type: boolean }
+            son: { type: [string, "null"], format: date-time, description: Son işlenen olay }
+        eposta:
+          type: object
+          additionalProperties: false
+          required: [tamam]
+          description: MAILER_DSN Postmark
+          properties:
+            tamam: { type: boolean }
+        yasal:
+          type: object
+          additionalProperties: false
+          required: [tamam, eksikler]
+          description: Paywall'daki belgeler (şartlar, gizlilik) Türkçe yayında
+          properties:
+            tamam: { type: boolean }
+            eksikler: { type: array, items: { type: string, enum: [sartlar, gizlilik] } }
+        metaReklam:
+          type: object
+          additionalProperties: false
+          required: [tamam]
+          description: Meta reklam hesabı ve Insights anahtarı dolu
+          properties:
+            tamam: { type: boolean }
+        gorevler:
+          type: object
+          additionalProperties: false
+          required: [tamam, eksikler]
+          description: Her zamanlı komut beklenen aralıkta başarıyla çalışmış
+          properties:
+            tamam: { type: boolean }
+            eksikler: { type: array, items: { type: string }, description: Çalışmamış ya da gecikmiş komutlar }
     YeniHuniVarsayilani:
       description: "M9c: hangi huniden, ne zaman alındı ve neleri içeriyor; kaynak null = varsayılan yok"
       type: object

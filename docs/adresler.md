@@ -36,7 +36,7 @@ Sol menü sırasıyla:
 | `/panel/baglam` | **Ürün bağlamı (AI)** | Uygulama başına ürün, kategori, kitle, ton, yasaklar (AI bunu okur) | React |
 | `/panel/anahtarlar` | **API anahtarları** | MCP için kişisel anahtar oluştur / iptal et | React |
 | `/panel/yasal` | **Yasal metinler** | Yasal veriler + 4 belge × 2 dil; kaydet = yayınla | React (M9b1) |
-| `/panel/ayarlar` | **Uygulama** | Uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a) |
+| `/panel/ayarlar` | **Uygulama** | Canlıya geçiş adımları (`GET /panel/api/uygulamalar/{app}/canliya-gecis`), uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a, P7c) |
 | `/panel/cikis` | **Çıkış** | | |
 
 Örnek: http://localhost:8081/panel/huniler/keepchat/genel

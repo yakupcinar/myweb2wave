@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Ai\UrunBaglami;
 use App\Huni\Varsayilanlar;
 use App\Mcp\ApiAnahtarlari;
+use App\Uygulama\CanliyaGecis;
 use App\Uygulama\UygulamaAyarlari;
 use App\Yasal\Taslaklar;
 use App\Yasal\YasalMetinler;
@@ -36,6 +37,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly YasalMetinler $yasal,
         private readonly Varsayilanlar $varsayilanlar,
         private readonly ApiAnahtarlari $anahtarlar,
+        private readonly CanliyaGecis $canliyaGecis,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
         private readonly string $mcpAdresi,
@@ -99,6 +101,17 @@ final class PanelUygulamaController extends AbstractController
         return self::korumali([] === $hatalar
             ? new JsonResponse($this->ayarlar->oku($app))
             : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** P7c: canlıya geçiş adımları — her biri çalışan sistemden ölçülür. */
+    #[Route('/{app}/canliya-gecis', name: 'panel_api_canliya_gecis', methods: ['GET'])]
+    public function canliyaGecis(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->canliyaGecis->durum($app, new \DateTimeImmutable())));
     }
 
     /** M9c (A23): yeni hunilere kopyalanan görünüm — hangi huniden, ne zaman, neler. */
