@@ -18,7 +18,8 @@ export const satirIciAlanSinifi = `max-w-full ${temel}`;
 /** P7e: satır içi formda alanın üstündeki kısa etiket. */
 export const kisaEtiketSinifi = "text-[13px] text-soluk";
 
-export const kutuSinifi = "size-4 shrink-0 accent-vurgu";
+/** P7h: özel çizilmiş onay kutusu (stil.css .kutu). */
+export const kutuSinifi = "kutu";
 
 export function Satir({
     etiket,

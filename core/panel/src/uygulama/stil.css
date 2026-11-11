@@ -47,6 +47,9 @@
     --soluk: #6e6e73;
     --vurgu: #0066cc;
     --vurgu-yazi: #ffffff;
+    /* P7h: onay kutusunun işareti vurgu-yazi renginde (veri URI'sinde değişken olmaz). */
+    --kutu-tik: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+    --kutu-cizgi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
     --iyi: #1b7a3a;
     --iyi-zemin: #e3f4e8;
     --uyari: #9a5b00;
@@ -72,6 +75,8 @@
     --soluk: #a1a1a6;
     --vurgu: #4c9dff;
     --vurgu-yazi: #000000;
+    --kutu-tik: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+    --kutu-cizgi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
     --iyi: #34c759;
     --iyi-zemin: #34c75926;
     --uyari: #ff9f0a;
@@ -89,5 +94,54 @@
         /* P7-temel: satır yüksekliği taslaktaki gibi "normal" (≈1.2); Tailwind'in
            1.5'i her öğeyi gevşetiyordu (ölçüm: p7-taslak-farki.md). */
         @apply bg-zemin text-metin text-[14px] leading-[normal] antialiased;
+    }
+}
+
+/* P7h (kullanıcı: "özel çizilmiş kutu"): tarayıcının kendi kutusu her
+   tarayıcıda ve koyu temada farklı ve eski görünüyordu. Gerçek <input> yerinde
+   (klavye, form, ekran okuyucu aynı); yalnız görünüm baştan çizilir. Seçili ve
+   yarım (indeterminate, "Tümü") hâli vurgu dolu; Windows yüksek karşıtlıkta
+   tarayıcının kendi kutusuna dönülür (özel kutu orada görünmez olabilir). */
+@layer components {
+    .kutu {
+        appearance: none;
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        border: 1.5px solid var(--kenar-2);
+        border-radius: 5px;
+        background: var(--yuzey) center / 14px no-repeat;
+        cursor: pointer;
+        transition:
+            background-color 0.12s,
+            border-color 0.12s;
+    }
+    .kutu:hover {
+        border-color: var(--soluk);
+    }
+    .kutu:checked,
+    .kutu:indeterminate {
+        border-color: var(--vurgu);
+        background-color: var(--vurgu);
+    }
+    .kutu:checked {
+        background-image: var(--kutu-tik);
+    }
+    .kutu:indeterminate {
+        background-image: var(--kutu-cizgi);
+    }
+    .kutu:focus-visible {
+        outline: 2px solid var(--vurgu);
+        outline-offset: 2px;
+    }
+    .kutu:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+    }
+    @media (forced-colors: active) {
+        .kutu {
+            appearance: auto;
+        }
     }
 }

@@ -260,6 +260,14 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A27 · Rapor sekmeleri ve onay kutusu** (2026-11-11, kullanıcı: "Rapor çok uzuyor… tiklenen şeyler çok modern
+durmuyor").
+- Rapor web2wave gibi **sekmelere** bölünür: Genel bakış · Anket · Kaynaklar · Gelir · Ziyaretler; sekme adreste;
+  Anket'te tek huni seçilir. Reddedilen: tek sayfa + katlanır bölümler (yine uzun). Ölçüm: sayfa 6.604 px, Anket
+  1.710, Ziyaretler 1.268, Cevaplar 796.
+- Onay kutusu **özel çizim** (`.kutu`, gerçek input yerinde). Reddedilenler: olaylar için hap, anahtar (switch).
+  Ayrıntı: [p7h-onay-kutusu.md](decisions/p7h-onay-kutusu.md).
+
 **A26 · Panel ekran döngüsü** (2026-11-11, kullanıcı: "1'i onaylıyorum, ekran döngüsünü kur").
 - Ekran görüntüsü için ayrı, yerel bir panel kabı (`panel-ekran`) ve yalnız bu iş için üretilmiş test kullanıcısı.
   Gerçek panel şifresi kullanılmaz. Reddedilenler: Chrome eklentisine bağlı kalmak, geliştirme ortamında girişi

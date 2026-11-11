@@ -31,6 +31,8 @@ const SAYFALAR = [
 /** Açılır öğelerin görünümü (P7g): sayfa çizilince bu betik koşar, sonra çekilir. Ad açıkça verilince. */
 const DURUMLAR = [
     'huniler-menu' => ['/panel/huniler', "document.querySelector('[aria-haspopup=menu]').click()"],
+    // P7h: kutunun boş, seçili ve yarım hâli (Ödeme'den tek olay → Tümü yarım; Huni'nin Tümü'sü seçili).
+    'entegrasyonlar-kutu' => ['/panel/entegrasyonlar', "(() => { const g = (ad) => document.querySelector(`[role=group][aria-label=\"\${ad}\"]`); g('Ödeme').querySelectorAll('input')[1].click(); g('Huni').querySelector('input').click(); g('Huni').scrollIntoView({block: 'center'}); })()"],
 ];
 /** genişlik => [yükseklik, telefon mu] */
 const BOYUTLAR = [1440 => [900, false], 390 => [844, true]];
@@ -75,7 +77,13 @@ const OLCUM = <<<'JS'
             const r = m.getBoundingClientRect();
             return r.left < 0 || r.right > G;
         });
+        // Sayfanın ne kadarını hangi bölüm kaplıyor (uzun sayfayı bölmek için).
+        const bolumler = Object.fromEntries([...document.querySelectorAll('main section[aria-label]')]
+            .filter((b) => !b.parentElement.closest('section[aria-label]'))
+            .map((b) => [b.getAttribute('aria-label'), Math.round(b.getBoundingClientRect().height)]));
         return JSON.stringify({
+            bolumYukseklikleri: bolumler,
+            sayfaYuksekligi: document.documentElement.scrollHeight,
             kaydirilanKaplar: [...new Set(kaydirilan)].slice(0, 8),
             menuEkranDisi: menuDisari,
             sayfaGenisligi: document.documentElement.scrollWidth,
@@ -141,7 +149,7 @@ try {
                 if (isset(DURUMLAR[$ad])) {
                     // Tam sayfa çekim görünür alanı yeniden boyutlar; boyut değişince kapanan
                     // açılır öğe (EylemMenusu) kaybolurdu (ölçüldü) — yalnız görünür alan.
-                    echo $ad, ' açık öğe: ', json_encode($sayfa->evaluate("!!document.querySelector('[role=menu]')")->getReturnValue()), "\n";
+                    echo $ad, ' açık menü: ', json_encode($sayfa->evaluate("!!document.querySelector('[role=menu]')")->getReturnValue()), "\n";
                     $sayfa->screenshot(['format' => 'jpeg', 'quality' => 80])->saveToFile("{$cikti}/{$dosya}", SURE_MS);
                 } else {
                     $sayfa->screenshot(['format' => 'jpeg', 'quality' => 80, 'captureBeyondViewport' => true, 'clip' => $sayfa->getFullPageClip()])->saveToFile("{$cikti}/{$dosya}", SURE_MS);
