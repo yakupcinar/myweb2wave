@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Billing\PortalBaglantisi;
+use App\Yasal\Taslaklar;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,7 +45,9 @@ final class PortalBaglantisiController extends AbstractController
         if (!\is_string($email) || mb_strlen($email) > 254 || false === filter_var(trim($email), \FILTER_VALIDATE_EMAIL)) {
             return new JsonResponse(['error' => 'invalid_request'], 422);
         }
-        $this->baglanti->iste($app, $email, fn (string $jeton): string => $this->generateUrl('portal_jeton', ['jeton' => $jeton], UrlGeneratorInterface::ABSOLUTE_URL));
+        // E1a: e-posta sayfanın dilinde (M9d2b: huninin dili); bilinmeyen tr.
+        $dil = \in_array($govde['dil'] ?? null, Taslaklar::DILLER, true) ? $govde['dil'] : 'tr';
+        $this->baglanti->iste($app, $email, fn (string $jeton): string => $this->generateUrl('portal_jeton', ['jeton' => $jeton], UrlGeneratorInterface::ABSOLUTE_URL), $dil);
 
         // Abonelik olsun olmasın aynı yanıt (hesap sızdırmaz).
         return new JsonResponse(null, 202);

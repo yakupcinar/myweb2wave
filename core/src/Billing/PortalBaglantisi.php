@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Billing;
 
+use App\Posta\EpostaSablonlari;
 use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
@@ -30,11 +31,12 @@ final readonly class PortalBaglantisi
         private MusteriPortali $portal,
         private LoggerInterface $logger,
         private UygulamaAyarlari $ayarlar,
+        private EpostaSablonlari $sablonlar,
     ) {
     }
 
     /** @param \Closure(string): string $adres jeton → mutlak bağlantı adresi */
-    public function iste(string $app, string $email, \Closure $adres): void
+    public function iste(string $app, string $email, \Closure $adres, string $dil = 'tr'): void
     {
         $email = mb_strtolower(trim($email));
         if (null === $this->portal->musteri($app, $email)) {
@@ -53,10 +55,9 @@ final readonly class PortalBaglantisi
             [hash('sha256', $jeton), $app, $email],
         );
         try {
-            $this->mailer->send($this->ayarlar->eposta($app)
-                ->to($email)
-                ->subject('Aboneliğinizi yönetin')
-                ->text("Aboneliğinizi yönetmek (kart, iptal, faturalar) için bağlantı:\n{$adres($jeton)}\n\nBağlantı tek kullanımlıktır ve ".self::GECERLILIK_DK.' dakika geçerlidir. Bu isteği siz yapmadıysanız e-postayı yok sayın.'));
+            // E1a: şablon (panelden düzenlenir), istek hangi dildeyse o dilde.
+            $e = $this->sablonlar->doldur($app, 'portal_baglantisi', $dil, ['baglanti' => $adres($jeton), 'dakika' => self::GECERLILIK_DK]);
+            $this->mailer->send($this->ayarlar->eposta($app)->to($email)->subject($e['konu'])->text($e['metin']));
         } catch (\Throwable $e) {
             $this->logger->error('Portal bağlantısı e-postası gönderilemedi', ['exception' => $e]);
         }

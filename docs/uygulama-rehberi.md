@@ -62,7 +62,7 @@ sequenceDiagram
    bildirir; [`SubscriptionSync::apply`](../core/src/Billing/SubscriptionSync.php#L39) aboneliği, faturayı ve olayı **tek
    işlemde** yazar. Hemen ardından giriş e-postası, RevenueCat aktarımı ve (izin varsa) reklam dönüşümü gönderilir.
 5. **Uygulamaya bağlanma.** Kişi e-postadaki tek kullanımlık bağlantıya telefonda dokunur
-   ([`GirisBaglantisi::kullan`](../core/src/Kimlik/GirisBaglantisi.php#L84)) ya da uygulamada e-postasını yazıp 6 haneli
+   ([`GirisBaglantisi::kullan`](../core/src/Kimlik/GirisBaglantisi.php#L86)) ya da uygulamada e-postasını yazıp 6 haneli
    kodu girer ([`DogrulamaKodu`](../core/src/Kimlik/DogrulamaKodu.php)). İkisi de uygulama kullanıcısını kişiye bağlar
    ([`Baglama`](../core/src/Kimlik/Baglama.php)).
 6. **Hak sorgusu.** Uygulamanın **sunucusu** (uygulamanın kendisi değil) çekirdeğe sorar
@@ -468,8 +468,8 @@ metnine huniden doğrudan bağlantı yok ([Ç126](decisions/acik-uclar.md)).
 |---|---|---|---|
 | Huni sayfası | Anket ve paywall | Statik sayfa + Preact oynatıcı ([`Huni.tsx`](../funnel/src/oynatici/Huni.tsx)); yayındaki tanımı `GET /huni/{app}` ile çeker. Durum bellekte; tarayıcıda yalnız izin tercihi ([`izin.ts`](../funnel/src/lib/izin.ts)) ve sekmelik ziyaret kimliği tutulur | [huni-oynatici-h2](decisions/huni-oynatici-h2.md) |
 | İzin şeridi | Meta / TikTok ölçümü için izin; "Reddet" ve "Kabul et" eşit ağırlıkta | [`IzinSeridi.tsx`](../funnel/src/oynatici/IzinSeridi.tsx); pikseller yalnız kabulde yüklenir ([`reklam-pikselleri.ts`](../funnel/src/lib/reklam-pikselleri.ts)) | [huni-izin-h6a](decisions/huni-izin-h6a.md) |
-| Başarılı sayfası | Ödemeden sonra uygulamaya giriş bağlantısı | Bağlantı yalnız ödemeden sonraki 60 dakikada ve oturum başına en çok 3 kez alınır ([`GirisBaglantisi::sayfaIcin`](../core/src/Kimlik/GirisBaglantisi.php#L52)); reklam pikseli sunucu olayıyla aynı kimlikle gider (çift sayım olmaz) | [giris-baglantisi](decisions/giris-baglantisi.md) |
-| Abonelik sayfası | E-postayla portal bağlantısı ister | [`PortalBaglantisi::iste`](../core/src/Billing/PortalBaglantisi.php#L37): bağlantı 60 dakika, tek kullanımlık | [m6b2 portal web](decisions/m6b2-portal-web.md) |
+| Başarılı sayfası | Ödemeden sonra uygulamaya giriş bağlantısı | Bağlantı yalnız ödemeden sonraki 60 dakikada ve oturum başına en çok 3 kez alınır ([`GirisBaglantisi::sayfaIcin`](../core/src/Kimlik/GirisBaglantisi.php#L54)); reklam pikseli sunucu olayıyla aynı kimlikle gider (çift sayım olmaz) | [giris-baglantisi](decisions/giris-baglantisi.md) |
+| Abonelik sayfası | E-postayla portal bağlantısı ister | [`PortalBaglantisi::iste`](../core/src/Billing/PortalBaglantisi.php#L39): bağlantı 60 dakika, tek kullanımlık | [m6b2 portal web](decisions/m6b2-portal-web.md) |
 | Yasal sayfalar | Şartlar, gizlilik, KVKK, çerez | 2.10 | [m9b1](decisions/m9b1-yasal-metinler.md) |
 | Mobil uygulama | Bağlanma ve hak | Giriş bağlantısı ya da e-posta + 6 haneli kod (10 dakika); hak sorgusu uygulamanın sunucusundan | [uygulama-entegrasyonu](uygulama-entegrasyonu.md) |
 
@@ -502,7 +502,7 @@ kayıtlar ve e-postalar. Hepsi aynı ilkeyle çalışır: **önce veritabanına 
 | `app:ulke-verisi` | DB-IP ülke verisi | — | ayda bir |
 
 Giriş e-postası ayrı komut beklemez: Stripe webhook'undan hemen sonra gider; gidemeyen bir sonraki webhook'ta yeniden
-denenir ([`GirisBaglantisi::epostalariGonder`](../core/src/Kimlik/GirisBaglantisi.php#L112)).
+denenir ([`GirisBaglantisi::epostalariGonder`](../core/src/Kimlik/GirisBaglantisi.php#L114)).
 
 ### 4.3 E-posta
 
@@ -517,12 +517,16 @@ denenir ([`GirisBaglantisi::epostalariGonder`](../core/src/Kimlik/GirisBaglantis
   izin kutusu işaretliyse, Postmark `broadcast` akışından (abonelikten çıkma bağlantısını Postmark ekler). Ödeme oturumu
   1 saatte dolunca Stripe 30 gün geçerli bir kurtarma bağlantısı verir; 1. e-posta oturum dolunca, 2. e-posta 24 saat
   sonra. Durur: ödendi, aynı e-postayla abone, izin geri alındı, adres bastırıldı. Aynı kişiye 7 günde tek dizi.
+- **Şablonlar** ([`EpostaSablonlari`](../core/src/Posta/EpostaSablonlari.php)): yedi e-postanın konusu ve metni
+  uygulama × dil olarak kaydedilir; kayıt yoksa koddaki varsayılan gider. Dil: kod e-postasında uygulamanın isteği,
+  portal bağlantısında sayfanın dili, diğerlerinde ödeme oturumunun hunisi. Bilinmeyen ya da zorunlu olup eksik yer
+  tutucu (`{{baglanti}}`, `{{kod}}`) kaydedilmez.
 - **Bastırma** ([`Bastirma`](../core/src/Posta/Bastirma.php)): Postmark bastırılmış adrese göndermez **ve Symfony bunu hata
   olarak bildirmez** — e-posta gitmez ama gitti görünür (tuzak §57). Bu yüzden [`PostmarkTeslimDinleyicisi`](../core/src/Posta/PostmarkTeslimDinleyicisi.php)
   o olayı yakalar ve kuyruklar bastırılmış adresi atlar.
 
 **Kayıtlar:** [m8a1 Postmark](decisions/m8a1-postmark.md) · [m8a2 aktivasyon](decisions/m8a2-aktivasyon.md) ·
-[m8b kurtarma](decisions/m8b-kurtarma.md)
+[m8b kurtarma](decisions/m8b-kurtarma.md) · [e1a şablonlar](decisions/e1a-eposta-sablonlari.md)
 
 ### 4.4 Tek seferlik ve bakım komutları
 

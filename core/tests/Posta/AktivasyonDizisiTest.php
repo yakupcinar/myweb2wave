@@ -7,6 +7,7 @@ namespace App\Tests\Posta;
 use App\Kimlik\GirisBaglantisi;
 use App\Posta\AktivasyonDizisi;
 use App\Posta\Bastirma;
+use App\Posta\EpostaSablonlari;
 use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\NullLogger;
@@ -162,10 +163,12 @@ final class AktivasyonDizisiTest extends KernelTestCase
         }
         $giris = static::getContainer()->get(GirisBaglantisi::class);
         $ayarlar = static::getContainer()->get(UygulamaAyarlari::class);
+        $sablonlar = static::getContainer()->get(EpostaSablonlari::class);
         self::assertInstanceOf(GirisBaglantisi::class, $giris);
         self::assertInstanceOf(UygulamaAyarlari::class, $ayarlar);
+        self::assertInstanceOf(EpostaSablonlari::class, $sablonlar);
 
-        return new AktivasyonDizisi($this->db, $mailer, $giris, new NullLogger(), $ayarlar);
+        return new AktivasyonDizisi($this->db, $mailer, $giris, new NullLogger(), $ayarlar, $sablonlar);
     }
 
     private function abonelik(string $id, string $email, int $saatOnce, string $durum = 'active'): void

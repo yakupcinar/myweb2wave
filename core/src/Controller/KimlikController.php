@@ -10,6 +10,7 @@ use App\Kimlik\GirisBaglantisi;
 use App\Kimlik\Hak;
 use App\Kimlik\UygulamaYetkisi;
 use App\RevenueCat\Aktarim;
+use App\Yasal\Taslaklar;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,12 +39,15 @@ final readonly class KimlikController
         if (!$this->yetki->izinli($request, $app)) {
             return self::hata('unauthorized', 401);
         }
-        $email = $request->toArray()['email'] ?? null;
+        $govde = $request->toArray();
+        $email = $govde['email'] ?? null;
         if (!\is_string($email) || false === filter_var(DogrulamaKodu::normal($email), \FILTER_VALIDATE_EMAIL)) {
             return self::hata('invalid_request', 422);
         }
+        // E1a: uygulamanın dili (isteğe bağlı); bilinmeyen tr.
+        $dil = \in_array($govde['dil'] ?? null, Taslaklar::DILLER, true) ? $govde['dil'] : 'tr';
 
-        return 'cok_istek' === $this->kodlar->iste($app, $email)
+        return 'cok_istek' === $this->kodlar->iste($app, $email, $dil)
             ? self::hata('too_many_requests', 429)
             : new Response('', 202);
     }

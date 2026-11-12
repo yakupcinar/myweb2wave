@@ -67,6 +67,17 @@ final class PortalBaglantisiTest extends WebTestCase
         return array_values(array_filter(self::getMailerMessages(), static fn (object $m): bool => $m instanceof Email));
     }
 
+    /** E1a: e-posta sayfanın dilinde (abonelik sayfası dil gönderir); bilinmeyen dil tr. */
+    public function testEpostaIstegingDilinde(): void
+    {
+        $this->client->jsonRequest('POST', '/huni/portal-baglantisi', ['app' => 'keepchat', 'eposta' => 'ayse@example.com', 'dil' => 'en']);
+        self::assertResponseStatusCodeSame(202);
+        Sozlesme::yanitiDogrula('POST', '/huni/portal-baglantisi', $this->client->getResponse());
+        self::assertSame('Manage your subscription', $this->epostalar()[0]->getSubject());
+        $this->client->jsonRequest('POST', '/huni/portal-baglantisi', ['app' => 'keepchat', 'eposta' => 'ayse@example.com', 'dil' => 'de']);
+        self::assertSame('Aboneliğinizi yönetin', $this->epostalar()[0]->getSubject());
+    }
+
     public function testAboneyeTekKullanimlikBaglantiGider(): void
     {
         $this->iste('  AYSE@example.com ');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Kimlik;
 
 use App\Posta\Bastirma;
+use App\Posta\EpostaSablonlari;
 use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
@@ -37,6 +38,7 @@ final readonly class GirisBaglantisi
         private LoggerInterface $logger,
         /** Ç46: bağlantı uygulamayı ayarlardaki şemayla açar (M9a, A23). */
         private UygulamaAyarlari $ayarlar,
+        private EpostaSablonlari $sablonlar,
     ) {
     }
 
@@ -134,10 +136,9 @@ final readonly class GirisBaglantisi
                     }
                     $baglanti = $this->uret($db, $satir['app'], $satir['email'], $oturum);
                     $db->executeStatement('UPDATE subscriptions SET giris_epostasi_at = now() WHERE stripe_checkout_session_id = ?', [$oturum]);
-                    $this->mailer->send($this->ayarlar->eposta($satir['app'])
-                        ->to($satir['email'])
-                        ->subject('Uygulamaya giriş bağlantınız')
-                        ->text("Aboneliğiniz için teşekkürler.\n\nUygulamayı telefonunuza kurduktan sonra bu bağlantıya telefonunuzda dokunun:\n{$baglanti['uygulama_adresi']}\n\nBağlantı tek kullanımlıktır ve ".self::GECERLILIK_SA.' saat geçerlidir. Süresi dolarsa uygulamada "Aboneliğimi bağla" ile bu e-posta adresini girin.'));
+                    // E1a: şablon, müşterinin gördüğü huninin dilinde.
+                    $e = $this->sablonlar->doldur($satir['app'], 'giris_baglantisi', EpostaSablonlari::oturumDili($db, $oturum), ['baglanti' => $baglanti['uygulama_adresi'], 'saat' => self::GECERLILIK_SA]);
+                    $this->mailer->send($this->ayarlar->eposta($satir['app'])->to($satir['email'])->subject($e['konu'])->text($e['metin']));
                 });
             } catch (\Throwable $e) {
                 $this->logger->error('Giriş bağlantısı e-postası gönderilemedi', ['oturum' => $oturum, 'exception' => $e]);

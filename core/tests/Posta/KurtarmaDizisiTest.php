@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Posta;
 
+use App\Huni\Huniler;
 use App\Posta\Bastirma;
+use App\Posta\EpostaSablonlari;
 use App\Posta\KurtarmaDizisi;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -90,6 +92,32 @@ final class KurtarmaDizisiTest extends WebTestCase
         self::assertSame([['cs_1', 1]], $this->kayitlar());
 
         self::assertSame(0, $this->dizi()->gonder(), 'aynı adım ikinci kez gitmez');
+    }
+
+    /** E1a: e-posta müşterinin gördüğü huninin dilinde (M9d2) ve panelde kaydedilmiş şablondan. */
+    public function testIngilizceHuniyeIngilizceKayitliSablon(): void
+    {
+        $huniler = static::getContainer()->get(Huniler::class);
+        self::assertInstanceOf(Huniler::class, $huniler);
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, eposta_sablonlari CASCADE');
+        self::assertSame([], $huniler->yeniHuni('keepchat', 'en-huni', null, 'fitness'));
+        $tanim = $huniler->taslak('keepchat', 'en-huni');
+        self::assertIsArray($tanim);
+        self::assertSame([], $huniler->taslakKaydet('keepchat', 'en-huni', ['dil' => 'en'] + $tanim));
+        $surum = $huniler->yayinla('keepchat', 'en-huni');
+        self::assertIsInt($surum);
+        $z = $this->ziyaret('a@example.com');
+        $this->db->update('huni_ziyaretleri', ['huni' => 'en-huni', 'surum' => $surum], ['id' => $z]);
+        $this->oturum('cs_1', $z, 1, true);
+        $sablonlar = static::getContainer()->get(EpostaSablonlari::class);
+        self::assertInstanceOf(EpostaSablonlari::class, $sablonlar);
+        self::assertSame([], $sablonlar->kaydet('keepchat', 'kurtarma_1', 'en', ['konu' => 'Still thinking, {{uygulama}}?', 'metin' => 'Continue: {{baglanti}}']));
+
+        self::assertSame(1, $this->dizi()->gonder());
+        $mesaj = self::getMailerMessage();
+        self::assertInstanceOf(Email::class, $mesaj);
+        self::assertSame('Still thinking, KeepChat?', $mesaj->getSubject());
+        self::assertSame('Continue: '.self::URL, $mesaj->getTextBody());
     }
 
     public function testIkinciAdim24SaatteGecikmisseYalnizSonuncusu(): void

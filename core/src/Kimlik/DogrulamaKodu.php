@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Kimlik;
 
+use App\Posta\EpostaSablonlari;
 use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -27,11 +28,16 @@ final readonly class DogrulamaKodu
         #[Autowire('%kernel.secret%')]
         private string $sir,
         private UygulamaAyarlari $ayarlar,
+        private EpostaSablonlari $sablonlar,
     ) {
     }
 
-    /** @return 'gonderildi'|'cok_istek' */
-    public function iste(string $app, string $email): string
+    /**
+     * E1a: $dil e-postanın dili (istekte verildiyse; yoksa tr).
+     *
+     * @return 'gonderildi'|'cok_istek'
+     */
+    public function iste(string $app, string $email, string $dil = 'tr'): string
     {
         $email = self::normal($email);
         $son = $this->db->fetchOne(
@@ -54,10 +60,8 @@ final readonly class DogrulamaKodu
             );
         });
 
-        $this->mailer->send($this->ayarlar->eposta($app)
-            ->to($email)
-            ->subject('Doğrulama kodunuz')
-            ->text("Kodunuz: {$kod}\n\nKod ".self::GECERLILIK_DK.' dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı yok sayın.'));
+        $e = $this->sablonlar->doldur($app, 'dogrulama_kodu', $dil, ['kod' => $kod, 'dakika' => self::GECERLILIK_DK]);
+        $this->mailer->send($this->ayarlar->eposta($app)->to($email)->subject($e['konu'])->text($e['metin']));
 
         return 'gonderildi';
     }

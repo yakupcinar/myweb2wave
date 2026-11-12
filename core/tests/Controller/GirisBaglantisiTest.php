@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Atif\Ziyaretler;
+use App\Huni\Huniler;
 use App\Kimlik\GirisBaglantisi;
 use App\Posta\Bastirma;
 use App\Tests\Support\Sozlesme;
@@ -198,11 +200,36 @@ final class GirisBaglantisiTest extends WebTestCase
         self::assertInstanceOf(Email::class, $mesaj);
         self::assertSame('ayse@example.com', mb_strtolower($mesaj->getTo()[0]->getAddress()));
         self::assertSame('KeepChat', $mesaj->getFrom()[0]->getName(), 'M9a: gönderen adı ayarlardan');
+        self::assertSame('Uygulamaya giriş bağlantınız', $mesaj->getSubject(), 'E1a: hunisi bilinmeyen oturum tr');
         preg_match('#keepchat://giris\?jeton=([A-Za-z0-9_-]{43})#', (string) $mesaj->getTextBody(), $m);
         self::assertArrayHasKey(1, $m, 'e-postada giriş bağlantısı yok');
 
         $this->kullan($m[1], 'u1');
         self::assertResponseStatusCodeSame(200);
+    }
+
+    /** E1a: giriş e-postası müşterinin gördüğü huninin dilinde (M9d2). */
+    public function testIngilizceHunidenOdemeyeIngilizceGirisEpostasi(): void
+    {
+        $huniler = static::getContainer()->get(Huniler::class);
+        $ziyaretler = static::getContainer()->get(Ziyaretler::class);
+        self::assertInstanceOf(Huniler::class, $huniler);
+        self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, eposta_sablonlari CASCADE');
+        self::assertSame([], $huniler->yeniHuni('keepchat', 'en-huni', null, 'fitness'));
+        $tanim = $huniler->taslak('keepchat', 'en-huni');
+        self::assertIsArray($tanim);
+        self::assertSame([], $huniler->taslakKaydet('keepchat', 'en-huni', ['dil' => 'en'] + $tanim));
+        $surum = $huniler->yayinla('keepchat', 'en-huni');
+        self::assertIsInt($surum);
+        $z = $ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), 'en-huni', $surum);
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_en', 'ziyaret_id' => $z]);
+
+        $this->odemeTamamlandi('cs_en', 'a@example.com');
+        $mesaj = self::getMailerMessage();
+        self::assertInstanceOf(Email::class, $mesaj);
+        self::assertSame('Your sign-in link', $mesaj->getSubject());
+        self::assertStringContainsString('valid for 24 hours', (string) $mesaj->getTextBody());
     }
 
     public function testGirisEpostasiBirKezGider(): void

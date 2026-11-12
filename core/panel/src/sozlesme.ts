@@ -756,6 +756,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/epostalar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** E1a — e-posta şablonları (şablon × dil); kaydedilmemişse varsayılan metin */
+        get: operations["panelEpostalar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/epostalar/{sablon}/{dil}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+                sablon: components["schemas"]["EpostaSablonu"];
+                dil: "tr" | "en";
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Şablonu kaydeder; bilinmeyen yer tutucu ya da eksik zorunlu yer tutucu 422 */
+        put: operations["panelEpostaKaydet"];
+        post?: never;
+        /** Varsayılan metne döner */
+        delete: operations["panelEpostaSil"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/anahtarlar": {
         parameters: {
             query?: never;
@@ -1268,6 +1309,27 @@ export interface components {
             deneyler: {
                 deney: string;
                 varyantlar: string[];
+            }[];
+        };
+        /** @enum {string} */
+        EpostaSablonu: "dogrulama_kodu" | "giris_baglantisi" | "portal_baglantisi" | "aktivasyon_1" | "aktivasyon_2" | "kurtarma_1" | "kurtarma_2";
+        PanelEpostalar: {
+            sablonlar: {
+                sablon: components["schemas"]["EpostaSablonu"];
+                /** @enum {string} */
+                dil: "tr" | "en";
+                ad: string;
+                aciklama: string;
+                konu: string;
+                metin: string;
+                /** @description false = koddaki varsayılan gidiyor */
+                kayitli: boolean;
+                /** Format: date-time */
+                guncellendi: string | null;
+                /** @description Kullanılabilen yer tutucular ({{ad}}) */
+                yerTutucular: string[];
+                /** @description Metinde bulunmak zorunda olanlar */
+                zorunlu: string[];
             }[];
         };
         PanelRaporu: {
@@ -2340,6 +2402,11 @@ export interface operations {
                     app: "keepchat";
                     /** Format: email */
                     eposta: string;
+                    /**
+                     * @description E1a: e-postanın dili (sayfanın dili); yoksa tr
+                     * @enum {string}
+                     */
+                    dil?: "tr" | "en";
                 };
             };
         };
@@ -2496,6 +2563,11 @@ export interface operations {
                 "application/json": {
                     /** Format: email */
                     email: string;
+                    /**
+                     * @description E1a: kod e-postasının dili (uygulamanın dili); yoksa tr
+                     * @enum {string}
+                     */
+                    dil?: "tr" | "en";
                 };
             };
         };
@@ -4115,6 +4187,141 @@ export interface operations {
             };
             /** @description Geçersiz istek */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelEpostalar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Şablonlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelEpostalar"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelEpostaKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                sablon: components["schemas"]["EpostaSablonu"];
+                dil: "tr" | "en";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    konu: string;
+                    metin: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Güncel şablonlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelEpostalar"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen şablon */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz konu / metin / yer tutucu */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelEpostaSil: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+                sablon: components["schemas"]["EpostaSablonu"];
+                dil: "tr" | "en";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Güncel şablonlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelEpostalar"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Kayıtlı şablon yok */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

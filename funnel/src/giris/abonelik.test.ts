@@ -48,7 +48,7 @@ describe("M6b2 — portal bağlantısı formu", () => {
     expect(ag.istekler).toEqual([
       [
         "/huni/portal-baglantisi",
-        { app: "keepchat", eposta: "Ayse@Example.com" },
+        { app: "keepchat", eposta: "Ayse@Example.com", dil: "tr" },
       ],
     ]);
     expect(durum.textContent).toBe(
@@ -98,5 +98,10 @@ describe("M9d2b — İngilizce", () => {
     (document.getElementById("f") as HTMLFormElement).requestSubmit();
     await vi.waitFor(() => expect(durum.hidden).toBe(false));
     expect(durum.textContent).toBe(METINLER.en.portalGonderildi);
+    // E1a: e-posta da sayfanın dilinde istenir.
+    expect(ag.istekler.at(-1)).toEqual([
+      "/huni/portal-baglantisi",
+      { app: "keepchat", eposta: "a@b.co", dil: "en" },
+    ]);
   });
 });

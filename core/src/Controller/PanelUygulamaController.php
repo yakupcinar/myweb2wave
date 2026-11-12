@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Ai\UrunBaglami;
 use App\Huni\Varsayilanlar;
 use App\Mcp\ApiAnahtarlari;
+use App\Posta\EpostaSablonlari;
 use App\Uygulama\CanliyaGecis;
 use App\Uygulama\UygulamaAyarlari;
 use App\Yasal\Taslaklar;
@@ -38,6 +39,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly Varsayilanlar $varsayilanlar,
         private readonly ApiAnahtarlari $anahtarlar,
         private readonly CanliyaGecis $canliyaGecis,
+        private readonly EpostaSablonlari $epostalar,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
         private readonly string $mcpAdresi,
@@ -200,6 +202,46 @@ final class PanelUygulamaController extends AbstractController
                 'adres' => $this->generateUrl('yasal_sayfa', ['app' => $app, 'belge' => $b['belge'], 'dil' => $b['dil']], UrlGeneratorInterface::ABSOLUTE_URL),
             ], $this->yasal->belgeler($app)),
         ];
+    }
+
+    /** E1a: e-posta şablonları — şablon × dil; kaydedilmemişse varsayılan (o da gider). */
+    #[Route('/{app}/epostalar', name: 'panel_api_epostalar', methods: ['GET'])]
+    public function epostalar(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse(['sablonlar' => $this->epostalar->liste($app)]));
+    }
+
+    #[Route('/{app}/epostalar/{sablon}/{dil}', name: 'panel_api_eposta_kaydet', methods: ['PUT'])]
+    public function epostaKaydet(Request $request, string $app, string $sablon, string $dil): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app]) || !isset(EpostaSablonlari::SABLONLAR[$sablon]) || !\in_array($dil, Taslaklar::DILLER, true)) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen şablon: {$app}/{$sablon}/{$dil}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $hatalar = $this->epostalar->kaydet($app, $sablon, $dil, json_decode($request->getContent(), true));
+
+        return self::korumali([] === $hatalar
+            ? new JsonResponse(['sablonlar' => $this->epostalar->liste($app)])
+            : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** Varsayılan metne döner. */
+    #[Route('/{app}/epostalar/{sablon}/{dil}', name: 'panel_api_eposta_sil', methods: ['DELETE'])]
+    public function epostaSil(Request $request, string $app, string $sablon, string $dil): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+
+        return self::korumali($this->epostalar->sil($app, $sablon, $dil)
+            ? new JsonResponse(['sablonlar' => $this->epostalar->liste($app)])
+            : new JsonResponse(['hatalar' => ['Kayıtlı şablon yok — zaten varsayılan.']], 404));
     }
 
     /** A5a: kişisel API anahtarları (MCP) — liste; anahtarın kendisi yok, önek var. */

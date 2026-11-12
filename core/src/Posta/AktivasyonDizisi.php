@@ -39,6 +39,7 @@ final readonly class AktivasyonDizisi
         private GirisBaglantisi $giris,
         private LoggerInterface $logger,
         private UygulamaAyarlari $ayarlar,
+        private EpostaSablonlari $sablonlar,
     ) {
     }
 
@@ -95,14 +96,13 @@ final readonly class AktivasyonDizisi
             return 0;
         }
         $baglanti = $this->giris->uret($db, $s['app'], $s['email'], $s['stripe_checkout_session_id']);
-        $magaza = $this->ayarlar->magazaAdresi($s['app']);
-        $kur = null === $magaza
-            ? 'Uygulamayı telefonunuza kurun'
-            : "Uygulamayı telefonunuza kurun:\n{$magaza}";
-        $this->mailer->send($this->ayarlar->eposta($s['app'])
-            ->to($s['email'])
-            ->subject(1 === $adim ? 'Aboneliğiniz hazır — uygulamaya bağlanın' : 'Aboneliğinizi henüz kullanmadınız')
-            ->text("Aboneliğiniz etkin, ama uygulamaya henüz bağlanmadınız.\n\n1. {$kur}\n2. Bu bağlantıya telefonunuzda dokunun:\n{$baglanti['uygulama_adresi']}\n\nBağlantı tek kullanımlıktır ve ".GirisBaglantisi::GECERLILIK_SA." saat geçerlidir. Süresi dolarsa uygulamada \"Aboneliğimi bağla\" ile bu e-posta adresini girin.\n\nBu e-postayı aboneliğiniz nedeniyle alıyorsunuz; bağlandığınızda bir daha gönderilmez."));
+        // E1a: şablon (panelden), huninin dilinde; mağaza adresi yoksa "App Store".
+        $e = $this->sablonlar->doldur($s['app'], 'aktivasyon_'.$adim, EpostaSablonlari::oturumDili($db, $s['stripe_checkout_session_id']), [
+            'baglanti' => $baglanti['uygulama_adresi'],
+            'magaza' => $this->ayarlar->magazaAdresi($s['app']) ?? 'App Store',
+            'saat' => GirisBaglantisi::GECERLILIK_SA,
+        ]);
+        $this->mailer->send($this->ayarlar->eposta($s['app'])->to($s['email'])->subject($e['konu'])->text($e['metin']));
 
         return 1;
     }

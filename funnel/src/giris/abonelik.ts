@@ -20,7 +20,10 @@ export function portalFormu(
     const dugme = form.querySelector("button");
     if (dugme) dugme.disabled = true;
     void cekirdek
-      .POST("/huni/portal-baglantisi", { body: { app: "keepchat", eposta } })
+      .POST("/huni/portal-baglantisi", {
+        // E1a: e-posta sayfanın dilinde.
+        body: { app: "keepchat", eposta, dil: m === METINLER.en ? "en" : "tr" },
+      })
       .then(({ response }) => {
         durum.textContent =
           response.status === 202 ? m.portalGonderildi : m.portalEpostaKontrol;

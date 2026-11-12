@@ -44,6 +44,7 @@ final readonly class KurtarmaDizisi
         private MailerInterface $mailer,
         private LoggerInterface $logger,
         private UygulamaAyarlari $ayarlar,
+        private EpostaSablonlari $sablonlar,
     ) {
     }
 
@@ -113,10 +114,9 @@ final readonly class KurtarmaDizisi
         if (1 !== $yeni || false === $s || !\is_string($s['app']) || !\is_string($s['eposta']) || !\is_string($s['kurtarma_url'])) {
             return 0;
         }
-        $posta = $this->ayarlar->eposta($s['app'])
-            ->to($s['eposta'])
-            ->subject(1 === $adim ? 'Ödemeniz yarım kaldı' : 'Aboneliğiniz hâlâ sizi bekliyor')
-            ->text("Ödeme sayfasında kaldınız. Kaldığınız yerden devam etmek için:\n{$s['kurtarma_url']}\n\nBağlantı 30 gün geçerlidir; seçtiğiniz plan ve tutar aynı kalır.\n\nBu e-postayı, e-posta almayı kabul ettiğiniz için alıyorsunuz.");
+        // E1a: şablon (panelden), huninin dilinde.
+        $e = $this->sablonlar->doldur($s['app'], 'kurtarma_'.$adim, EpostaSablonlari::oturumDili($db, $oturum), ['baglanti' => $s['kurtarma_url']]);
+        $posta = $this->ayarlar->eposta($s['app'])->to($s['eposta'])->subject($e['konu'])->text($e['metin']);
         $posta->getHeaders()->add(new MessageStreamHeader(Bastirma::YAYIN));
         $this->mailer->send($posta);
 
