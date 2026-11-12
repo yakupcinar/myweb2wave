@@ -95,7 +95,7 @@ her sayfanın doğrudan adresle açılabilmesi için sunucu rotası da
 **Görünüm (P6):** Apple tarzı — açık gri zemin, çerçevesiz beyaz kartlar, sistem yazı tipi, tek mavi vurgu, hap
 düğmeler. Tema menünün altındaki seçiciden: Açık (varsayılan) / Koyu / Sistem; seçim tarayıcıda saklanır ve
 sayfa boyanmadan önce uygulanır ([`tema.html.twig`](../core/templates/panel/tema.html.twig), [`tema.ts`](../core/panel/src/uygulama/tema.ts); P7a). Menü dört grupta: **Analiz** (Rapor, Deneyler) · **Satış** (Huniler, Planlar
-ve fiyatlar) · **Müşteriler** (Aboneler) · **Ayarlar** (Uygulama, Yasal metinler, Entegrasyonlar).
+ve fiyatlar) · **Müşteriler** (Aboneler) · **Ayarlar** (Uygulama, Yasal metinler, E-postalar, Entegrasyonlar).
 Entegrasyonlar (P7d, A25) üç bölümlü tek sayfadır: Webhook'lar (2.6) · API anahtarları (2.8) · Ürün bağlamı (2.7);
 eski adresler `/panel/webhooklar`, `/anahtarlar`, `/baglam` ilgili bölüme 301 ile yönlenir. Renkler [`stil.css`](../core/panel/src/uygulama/stil.css)'te ve giriş sayfası için
 [`base.html.twig`](../core/templates/base.html.twig)'de; iki kopyanın aynı olduğunu ve her metin renginin 4.5:1'i
@@ -479,6 +479,20 @@ metnine huniden doğrudan bağlantı yok ([Ç126](decisions/acik-uclar.md)).
 
 **Ne anlatır.** Kimse bir düğmeye basmadan çalışan işler: dış sistemlerden gelen bildirimler, dışarıya gönderilen
 kayıtlar ve e-postalar. Hepsi aynı ilkeyle çalışır: **önce veritabanına yaz, sonra gönder; gidemeyen yeniden denenir.**
+
+### 2.10a E-postalar — `/panel/epostalar`
+
+**Ne işe yarar.** Müşteriye giden yedi e-postanın konusu ve metni, Türkçe ve İngilizce: doğrulama kodu, giriş
+bağlantısı, aboneliği yönet, aktivasyon 1–2, kurtarma 1–2.
+
+**Ekranda ne var** ([`Epostalar.tsx`](../core/panel/src/uygulama/sayfalar/Epostalar.tsx)) — her e-posta için bir kart,
+dil seçimiyle: durum ("Varsayılan metin" ya da "Düzenlendi"), konu, metin, kullanılabilir ve zorunlu yer tutucular.
+
+**Ne yapabilirsin.** Konuyu ve metni değiştir, **"Kaydet"**; düzenlenmiş e-postada **"Varsayılana dön"**. Düz metin
+gider, HTML yok. Bilinmeyen yer tutucu ya da metinde eksik zorunlu yer tutucu kaydedilmez, hata kartta görünür.
+
+**Arkada nasıl çalışır.** Şablonlar `eposta_sablonlari`'nda; kayıt yoksa koddaki varsayılan gider; dil ve gönderim
+§4.3'te ([e1a](decisions/e1a-eposta-sablonlari.md), [e1b](decisions/e1b-eposta-ekrani.md)).
 
 ### 4.1 Gelen webhook'lar
 

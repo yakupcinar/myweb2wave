@@ -10,6 +10,7 @@ import { Duzen } from "./Duzen";
 import { Ayarlar } from "./sayfalar/Ayarlar";
 import { Deneyler } from "./sayfalar/Deneyler";
 import { Entegrasyonlar } from "./sayfalar/Entegrasyonlar";
+import { Epostalar } from "./sayfalar/Epostalar";
 import { Yasal } from "./sayfalar/Yasal";
 import { Huniler } from "./sayfalar/Huniler";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
@@ -33,6 +34,7 @@ export const yollar = [
             { path: "deneyler", element: <Deneyler /> },
             { path: "ayarlar", element: <Ayarlar /> },
             { path: "yasal", element: <Yasal /> },
+            { path: "epostalar", element: <Epostalar /> },
             // P7d: eski /panel/webhooklar, /anahtarlar, /baglam sunucuda buraya yönlenir.
             { path: "entegrasyonlar", element: <Entegrasyonlar /> },
         ],

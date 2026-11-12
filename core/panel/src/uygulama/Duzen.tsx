@@ -3,11 +3,13 @@
 // grupta (Analiz · Satış · Müşteriler · Ayarlar); dar ekranda grup adları
 // gizlenir, bağlantılar tek satırda kayar. P7a: menünün altında tema seçici.
 // P7d (A25): Webhook'lar, API anahtarları, Ürün bağlamı → tek Entegrasyonlar.
+// E1b: Ayarlar'da E-postalar (Yasal metinlerin altında).
 import {
     ChartColumn,
     FlaskConical,
     Filter,
     LogOut,
+    Mail,
     Plug,
     Scale,
     Settings,
@@ -110,6 +112,10 @@ export function Duzen(): ReactNode {
                     <NavLink to="/panel/yasal" className={ogeSinifi}>
                         <Scale aria-hidden="true" className="size-4.5" />
                         Yasal metinler
+                    </NavLink>
+                    <NavLink to="/panel/epostalar" className={ogeSinifi}>
+                        <Mail aria-hidden="true" className="size-4.5" />
+                        E-postalar
                     </NavLink>
                     <NavLink to="/panel/entegrasyonlar" className={ogeSinifi}>
                         <Plug aria-hidden="true" className="size-4.5" />

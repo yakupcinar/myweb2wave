@@ -129,6 +129,17 @@ final class EpostaSablonlariTest extends WebTestCase
         self::assertSame('tr', EpostaSablonlari::oturumDili($this->db, 'cs_yok'));
     }
 
+    /** §51: panel sayfasının doğrudan adresi; girişsiz giriş sayfasına. */
+    public function testPanelSayfasiAdresiAcilir(): void
+    {
+        $this->client->request('GET', '/panel/epostalar');
+        self::assertResponseRedirects('/panel/giris');
+        $this->panel();
+        $this->client->request('GET', '/panel/epostalar');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $this->client->getCrawler()->filter('#panel-uygulama'));
+    }
+
     private function kodEpostasi(string $email, ?string $dil = null): Email
     {
         $this->client->request('POST', '/apps/keepchat/baglama/kod', server: ['HTTP_AUTHORIZATION' => 'Bearer '.self::ANAHTAR, 'CONTENT_TYPE' => 'application/json'],

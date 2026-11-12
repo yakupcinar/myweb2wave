@@ -455,3 +455,12 @@ koyar; `request()` çağrısında başlık verilmese de gider.
 **Doğrusu:** dile bakan testte `Accept-Language`'i her istekte açıkça ver (`server: ['HTTP_ACCEPT_LANGUAGE' => 'tr']`).
 "Başlık yok" durumu gerekiyorsa başlığı boş dizeyle ver.
 
+## §60 — Göç test DB'sinde koşulur, yerel geliştirme DB'sinde koşulmaz: testler yeşil, panel "yüklenemedi"
+**Belirti:** yeni tabloyu kullanan sayfa bileşen ve API testlerinde yeşil, `bin/kontrol` YEŞİL; ama ekran döngüsünde
+(`bin/panel-ekran`) ya da tarayıcıda uç 500 döner, sayfa "yüklenemedi" der.
+**Sebep:** `bin/kontrol` göçü yalnız test veritabanına uygular (`core-testdb`, `core-goc`). Ekran döngüsü ve yerel panel
+geliştirme veritabanını kullanır; oraya göç kimse koşmadıkça gitmez. Önceki bloğun göçü de birikmiş olabilir.
+**Ölçüm (2026-11-12, `e1b-eposta-ekrani.md`):** `doctrine:migrations:status` → New 2 (R1a `Version20261111140000`
+ve E1a `Version20261112090000`); `migrate` sonrası sayfa yedi kartla çizildi.
+**Doğrusu:** göçlü blokta gerçek doğrulamadan önce `docker compose run --rm -T core bin/console
+doctrine:migrations:migrate --no-interaction`; ekranda "yüklenemedi" görünce önce `migrations:status`.

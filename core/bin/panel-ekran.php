@@ -32,6 +32,7 @@ const SAYFALAR = [
     'deneyler' => '/panel/deneyler',
     'ayarlar' => '/panel/ayarlar',
     'yasal' => '/panel/yasal',
+    'epostalar' => '/panel/epostalar',
     'entegrasyonlar' => '/panel/entegrasyonlar',
 ];
 /** Açılır öğelerin görünümü (P7g): sayfa çizilince bu betik koşar, sonra çekilir. Ad açıkça verilince. */
