@@ -32,6 +32,8 @@ const satir = (abonelik: string, ek: object) => ({
     bagli: false,
     iptalDonemSonu: false,
     donemSonu: null,
+    duraklatildi: false,
+    duraklatmaBitis: null,
     sonFatura: null,
     ...ek,
 });
@@ -90,8 +92,10 @@ function kur(satirlar = SATIRLAR, adres = "/panel/kullanicilar") {
         "fetch",
         vi.fn(async (istek: Request) => {
             if (istek.method !== "GET") {
+                // M6c: gövde varsa (duraklatma süresi) sona eklenir.
+                const govde = await istek.text();
                 islemler.push(
-                    `${istek.method} ${new URL(istek.url, "http://x").pathname} ${istek.headers.has("X-CSRF-Token")}`,
+                    `${istek.method} ${new URL(istek.url, "http://x").pathname} ${istek.headers.has("X-CSRF-Token")}${govde ? ` ${govde}` : ""}`,
                 );
                 return islemYaniti ?? new Response(null, { status: 204 });
             }
@@ -163,6 +167,7 @@ describe("M6a — abonelik işlemleri", () => {
         // 9,99 − 3 = 6,99 kalan; tam iade edilmiş faturada iade düğmesi yok.
         expect(metin("sub_a")).toEqual([
             "Dönem sonunda iptal et",
+            "Duraklat",
             "€6,99 iade et",
         ]);
         expect(metin("sub_c")).toEqual(["İptali geri al"]);
@@ -409,5 +414,72 @@ describe("P5: Aboneler", () => {
         kur();
         await screen.findAllByRole("row");
         expect(ciplakAlanlar(document.body)).toEqual([]);
+    });
+});
+
+describe("M6c — duraklat / sürdür", () => {
+    it("duraklatılmış satır: durum bitişle, Sürdür DELETE ile; iptal planlıda Duraklat yok", async () => {
+        kur([
+            satir("sub_e", {
+                email: "e***@x.com",
+                duraklatildi: true,
+                duraklatmaBitis: "2027-01-10T10:00:00+00:00",
+            }),
+            ...SATIRLAR,
+        ]);
+        await screen.findAllByRole("row");
+        expect(
+            document.querySelector('tr[data-abonelik="sub_e"]')?.textContent,
+        ).toContain("Duraklatıldı · 10 Ocak 2027'ye kadar");
+        const dugmeler = (a: string) =>
+            [...islemHucresi(a).querySelectorAll("button")].map(
+                (b) => b.textContent,
+            );
+        expect(dugmeler("sub_e")).toEqual(["Dönem sonunda iptal et", "Sürdür"]);
+        expect(dugmeler("sub_c")).toEqual(["İptali geri al"]);
+
+        fireEvent.click(
+            within(islemHucresi("sub_e")).getByRole("button", {
+                name: "Sürdür",
+            }),
+        );
+        expect(altSatir("sub_e").textContent).toContain(
+            "Abonelik sürdürülsün mü? e***@x.com · erişim hemen açılır",
+        );
+        fireEvent.click(
+            within(altSatir("sub_e")).getByRole("button", { name: "Sürdür" }),
+        );
+        await waitFor(() =>
+            expect(islemler).toEqual([
+                "DELETE /panel/api/abonelikler/sub_e/duraklat true",
+            ]),
+        );
+    });
+
+    it("duraklat: onayda süre seçilir (varsayılan 1 ay), seçilen ay gövdede jetonla gider", async () => {
+        kur();
+        await screen.findAllByRole("row");
+        fireEvent.click(
+            within(islemHucresi("sub_a")).getByRole("button", {
+                name: "Duraklat",
+            }),
+        );
+        const onay = within(altSatir("sub_a"));
+        expect(altSatir("sub_a").textContent).toContain(
+            "Kaç ay duraklatılsın? a***@example.com · bu sürede ücret çekilmez ve uygulamaya erişemez",
+        );
+        const sure = within(onay.getByRole("group", { name: "Süre" }));
+        expect(
+            sure
+                .getByRole("button", { name: "1 ay" })
+                .getAttribute("aria-pressed"),
+        ).toBe("true");
+        fireEvent.click(sure.getByRole("button", { name: "3 ay" }));
+        fireEvent.click(onay.getByRole("button", { name: "Duraklat" }));
+        await waitFor(() =>
+            expect(islemler).toEqual([
+                'POST /panel/api/abonelikler/sub_a/duraklat true {"ay":3}',
+            ]),
+        );
     });
 });

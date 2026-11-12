@@ -67,7 +67,7 @@ final class Kullanicilar
      *
      * @return list<array{abonelik: string, app: ?string, durum: string, email: ?string, guncelleme: string, odeme: ?string,
      *                    reklam: bool, kaynak: ?string, ortam: ?string, kampanya: ?string, huni: ?string, kisi: bool, bagli: bool,
-     *                    iptalDonemSonu: bool, donemSonu: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float, odendi: string|null}|null}>
+     *                    iptalDonemSonu: bool, donemSonu: ?string, duraklatildi: bool, duraklatmaBitis: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float, odendi: string|null}|null}>
      */
     public function liste(string $ara, string $durum, ?string $app = null, int $sayfa = 1, int $boyut = self::AZAMI_SATIR, string $sirala = '', bool $artan = true): array
     {
@@ -93,6 +93,9 @@ final class Kullanicilar
             // M6a: iptal planı ve iade düğmesi için son tahsil edilen fatura.
             'iptalDonemSonu' => true === $s['iptal_donem_sonu'],
             'donemSonu' => self::dizgeYaDaNull($s['donem_sonu']),
+            // M6c: bitişi geçmiş duraklatma sürmüş sayılır (Stripe sürdürür; hak ile aynı kural).
+            'duraklatildi' => true === $s['durakli'],
+            'duraklatmaBitis' => true === $s['durakli'] ? self::dizgeYaDaNull($s['duraklatma_bitis']) : null,
             'sonFatura' => \is_string($s['f_para']) ? ['paraBirimi' => strtoupper($s['f_para']), 'tutar' => ParaBirimi::anaBirim(self::sayi($s['f_tutar']), $s['f_para']),
                 'iade' => ParaBirimi::anaBirim(self::sayi($s['f_iade']), $s['f_para']),
                 // P7a: panel "€6,99 · 3 Kas" ve iade onayında "3 Kasım faturası" diye yazar.
@@ -103,7 +106,9 @@ final class Kullanicilar
                     z.utm_source, z.utm_medium, z.utm_campaign, z.huni, COALESCE('.Rapor::REKLAM.', false) AS reklam,
                     k.id IS NOT NULL AS kisi,
                     EXISTS (SELECT 1 FROM baglantilar b WHERE b.kisi_id = k.id AND b.app = s.app) AS bagli,
-                    s.iptal_donem_sonu, '.$zaman('s.donem_sonu').' AS donem_sonu, f.para_birimi AS f_para, f.tutar_kucuk AS f_tutar, f.iade_kucuk AS f_iade, '.$zaman('f.odendi_at').' AS f_odendi
+                    s.iptal_donem_sonu, '.$zaman('s.donem_sonu').' AS donem_sonu,
+                    s.duraklatildi AND (s.duraklatma_bitis IS NULL OR s.duraklatma_bitis > now()) AS durakli, '.$zaman('s.duraklatma_bitis').' AS duraklatma_bitis,
+                    f.para_birimi AS f_para, f.tutar_kucuk AS f_tutar, f.iade_kucuk AS f_iade, '.$zaman('f.odendi_at').' AS f_odendi
              '.self::GOVDE.'
              ORDER BY '.$sira.'s.updated_at DESC, s.stripe_subscription_id
              LIMIT :boyut OFFSET :atla',

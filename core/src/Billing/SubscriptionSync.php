@@ -298,23 +298,28 @@ final readonly class SubscriptionSync
         $kalemler = $sub['items'] ?? null;
         $kalem = \is_array($kalemler) && \is_array($kalemler['data'] ?? null) ? ($kalemler['data'][0] ?? null) : null;
         $donemSonu = \is_array($kalem) && \is_int($kalem['current_period_end'] ?? null) ? $kalem['current_period_end'] : null;
+        // M6c: duraklatma abonelikte pause_collection; status active kalır (ölçüldü).
+        $durak = \is_array($sub['pause_collection'] ?? null) ? $sub['pause_collection'] : null;
+        $durakBitis = null !== $durak && \is_int($durak['resumes_at'] ?? null) ? $durak['resumes_at'] : null;
         // M5a: RETURNING yalnız yazılan satırda; eski olay reddedildiyse satır yok.
         $degisti = $db->fetchOne(
-            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created, app, iptal_donem_sonu, donem_sonu)
-             VALUES (:id, :cus, :status, :created, :app, :iptal, to_timestamp(CAST(:donem AS bigint)))
+            'INSERT INTO subscriptions (stripe_subscription_id, stripe_customer_id, status, status_event_created, app, iptal_donem_sonu, donem_sonu, duraklatildi, duraklatma_bitis)
+             VALUES (:id, :cus, :status, :created, :app, :iptal, to_timestamp(CAST(:donem AS bigint)), :durak, to_timestamp(CAST(:durakBitis AS bigint)))
              ON CONFLICT (stripe_subscription_id) DO UPDATE SET
                  stripe_customer_id = EXCLUDED.stripe_customer_id,
                  status = EXCLUDED.status,
                  status_event_created = EXCLUDED.status_event_created,
                  iptal_donem_sonu = EXCLUDED.iptal_donem_sonu,
                  donem_sonu = EXCLUDED.donem_sonu,
+                 duraklatildi = EXCLUDED.duraklatildi,
+                 duraklatma_bitis = EXCLUDED.duraklatma_bitis,
                  updated_at = now()
              WHERE subscriptions.status_event_created IS NULL
                 OR subscriptions.status_event_created <= EXCLUDED.status_event_created
              RETURNING old.status IS DISTINCT FROM new.status',
             ['id' => $id, 'cus' => $cus, 'status' => $status, 'created' => $eventCreated, 'app' => $app,
-                'iptal' => true === ($sub['cancel_at_period_end'] ?? null), 'donem' => $donemSonu],
-            ['iptal' => \Doctrine\DBAL\ParameterType::BOOLEAN],
+                'iptal' => true === ($sub['cancel_at_period_end'] ?? null), 'donem' => $donemSonu, 'durak' => null !== $durak, 'durakBitis' => $durakBitis],
+            ['iptal' => \Doctrine\DBAL\ParameterType::BOOLEAN, 'durak' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
         if (true === $degisti) {
             foreach ($db->fetchFirstColumn('SELECT DISTINCT ziyaret_id::text FROM odeme_oturumlari WHERE stripe_subscription_id = :id', ['id' => $id]) as $ziyaret) {

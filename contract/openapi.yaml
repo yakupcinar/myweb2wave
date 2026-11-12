@@ -455,7 +455,7 @@ paths:
                 required: [aktif, durum]
                 properties:
                   aktif: { type: boolean }
-                  durum: { type: [string, "null"], description: En iyi aboneliğin Stripe durumu; abonelik yoksa null }
+                  durum: { type: [string, "null"], description: "En iyi aboneliğin Stripe durumu; abonelik yoksa null. M6c — duraklatılmışsa paused (aktif false)" }
         "401": { $ref: "#/components/responses/Yetkisiz" }
         "404":
           description: Kullanıcı hiçbir kişiye bağlanmamış
@@ -688,6 +688,36 @@ paths:
         "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen abonelik, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: Stripe reddetti, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/abonelikler/{abonelik}/duraklat:
+    parameters:
+      - { name: abonelik, in: path, required: true, schema: { type: string, pattern: "^sub_[A-Za-z0-9]{1,250}$" } }
+      - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+    post:
+      operationId: panelAbonelikDuraklat
+      summary: "M6c (A28) — tahsilatı 1–3 ay duraklat (Stripe pause_collection void + resumes_at); bu sürede erişim yok"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ay]
+              properties:
+                ay: { type: integer, enum: [1, 2, 3] }
+      responses:
+        "204": { description: Duraklatıldı }
+        "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen abonelik, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz süre ya da Stripe reddetti, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    delete:
+      operationId: panelAbonelikSurdur
+      summary: "M6c — duraklatmayı hemen bitir"
+      responses:
+        "204": { description: Sürdürüldü }
+        "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen abonelik, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Stripe reddetti, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/abonelikler/{abonelik}/iade:
     parameters:
       - { name: abonelik, in: path, required: true, schema: { type: string, pattern: "^sub_[A-Za-z0-9]{1,250}$" } }
@@ -728,7 +758,7 @@ paths:
                     items:
                       type: object
                       additionalProperties: false
-                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli, iptalDonemSonu, donemSonu, sonFatura]
+                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli, iptalDonemSonu, donemSonu, duraklatildi, duraklatmaBitis, sonFatura]
                       properties:
                         abonelik: { type: string }
                         app: { type: [string, "null"] }
@@ -744,6 +774,8 @@ paths:
                         kisi: { type: boolean, description: Kişi kaydı var (e-posta doğrulandı) }
                         bagli: { type: boolean, description: Kişi bu uygulamaya bağlandı (A10) }
                         iptalDonemSonu: { type: boolean, description: "M6a — dönem sonunda iptal planlı (geri alınabilir)" }
+                        duraklatildi: { type: boolean, description: "M6c — tahsilat duraklı, erişim yok (bitişi geçmişse false)" }
+                        duraklatmaBitis: { type: [string, "null"], format: date-time, description: "M6c — Stripe'ın kendiliğinden sürdüreceği an" }
                         donemSonu: { type: [string, "null"], description: "M6a — geçerli dönemin sonu (UTC); iptal planlıysa erişimin bittiği an" }
                         sonFatura:
                           description: "M6a — son tahsil edilen fatura (ana birim); iade = iade edilen kısım"

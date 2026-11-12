@@ -276,6 +276,20 @@ final class OlaylarTest extends KernelTestCase
         )));
     }
 
+    /** M6c: duraklatma abonelik olayının pause_collection'ından; kalkınca temizlenir (status active kalır — ölçüldü). */
+    public function testDuraklatmaAbonelikOlayindan(): void
+    {
+        $sub = ['id' => 'sub_p', 'object' => 'subscription', 'customer' => 'cus_1', 'status' => 'active', 'metadata' => ['app' => 'keepchat']];
+        $this->stripe('customer.subscription.updated', $sub + ['pause_collection' => ['behavior' => 'void', 'resumes_at' => 1_800_000_000]]);
+        $oku = fn (): array => array_values((array) $this->db->fetchAssociative(
+            "SELECT status, duraklatildi, to_char(duraklatma_bitis AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS') FROM subscriptions WHERE stripe_subscription_id = 'sub_p'",
+        ));
+        self::assertSame(['active', true, '2027-01-15 08:00:00'], $oku());
+
+        $this->stripe('customer.subscription.updated', $sub + ['pause_collection' => null]);
+        self::assertSame(['active', false, null], $oku());
+    }
+
     /** Yalnız ekleme: geçmiş yeniden yazılamaz (DB kısıtı, uygulamadan bağımsız — tuzak §4). */
     public function testOlayGuncellenemez(): void
     {

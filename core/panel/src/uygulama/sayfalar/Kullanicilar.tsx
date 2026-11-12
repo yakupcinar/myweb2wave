@@ -3,6 +3,7 @@
 // (?ara=&durum=&sayfa=&sirala=&yon=); P7a2'den beri hepsi sunucuda, 25'er satır.
 // M6a (A19): satırda dönem sonunda iptal / geri al ve son faturanın iadesi —
 // onay satırın altında açılır (tarayıcı iletişim kutusu yok).
+// M6c (A28): duraklat (1–3 ay, onayda seçilir) / sürdür.
 // P7a: görünüm onaylı taslakla bire bir (p7a-aboneler.md) — durum Türkçe ve
 // tarihli, durum süzgeci bölmeli seçici, onay sonucu anlatır.
 import {
@@ -70,6 +71,13 @@ const SURER = ["active", "trialing", "past_due"];
 
 /** Durum noktası rengi + Türkçe, tarihli açıklama. */
 function durumBilgisi(s: Satir): [string, string] {
+    if (s.duraklatildi && SURER.includes(s.durum))
+        return [
+            "bg-uyari",
+            s.duraklatmaBitis
+                ? `Duraklatıldı · ${ekliTarih(s.duraklatmaBitis, "e")} kadar`
+                : "Duraklatıldı",
+        ];
     if (s.iptalDonemSonu && SURER.includes(s.durum))
         return [
             "bg-uyari",
@@ -217,7 +225,10 @@ export function Kullanicilar(): ReactNode {
     );
 }
 
-type Is = "iptal" | "geriAl" | "iade";
+type Is = "iptal" | "geriAl" | "iade" | "duraklat" | "surdur";
+
+const AYLAR = [1, 2, 3] as const;
+type Ay = (typeof AYLAR)[number];
 
 const hucre = "px-[18px] py-3.5";
 /**
@@ -250,7 +261,7 @@ function Liste({
         metin: string;
     } | null>(null);
     const [calisiyor, setCalisiyor] = useState(false);
-    const yap = async (abonelik: string, is: Is): Promise<void> => {
+    const yap = async (abonelik: string, is: Is, ay: Ay): Promise<void> => {
         setHata(null);
         setCalisiyor(true);
         const yol = {
@@ -260,17 +271,30 @@ function Liste({
             },
         };
         const { error, response } =
-            is === "iade"
-                ? await api.POST("/panel/api/abonelikler/{abonelik}/iade", yol)
-                : is === "iptal"
-                  ? await api.POST(
-                        "/panel/api/abonelikler/{abonelik}/iptal",
+            is === "duraklat"
+                ? await api.POST("/panel/api/abonelikler/{abonelik}/duraklat", {
+                      ...yol,
+                      body: { ay },
+                  })
+                : is === "surdur"
+                  ? await api.DELETE(
+                        "/panel/api/abonelikler/{abonelik}/duraklat",
                         yol,
                     )
-                  : await api.DELETE(
-                        "/panel/api/abonelikler/{abonelik}/iptal",
-                        yol,
-                    );
+                  : is === "iade"
+                    ? await api.POST(
+                          "/panel/api/abonelikler/{abonelik}/iade",
+                          yol,
+                      )
+                    : is === "iptal"
+                      ? await api.POST(
+                            "/panel/api/abonelikler/{abonelik}/iptal",
+                            yol,
+                        )
+                      : await api.DELETE(
+                            "/panel/api/abonelikler/{abonelik}/iptal",
+                            yol,
+                        );
         setCalisiyor(false);
         setOnay(null);
         if (response.status !== 204)
@@ -335,8 +359,8 @@ function Liste({
                                         is={onay.is}
                                         calisiyor={calisiyor}
                                         vazgec={() => setOnay(null)}
-                                        onayla={() =>
-                                            void yap(s.abonelik, onay.is)
+                                        onayla={(ay) =>
+                                            void yap(s.abonelik, onay.is, ay)
                                         }
                                     />
                                 ) : null}
@@ -416,6 +440,7 @@ function SatirGorunumu({
     const dugme = "min-h-8 px-3 font-normal";
     // Telefonda işlemsiz kartın altında boş satır kalmasın.
     const islemVar =
+        !!s.duraklatildi ||
         !!s.iptalDonemSonu ||
         SURER.includes(s.durum) ||
         (!!f && iadeEdilebilir > 0);
@@ -430,14 +455,21 @@ function SatirGorunumu({
                     </span>
                 </div>
             </Td>
-            <Td className={cn(hucre, kartHucre, "max-md:text-right")}>
+            {/* M6c: tarihli durum uzun ("Duraklatıldı · 12 Ocak 2027'ye kadar"); tek satırda tablo karttan taşıyordu. */}
+            <Td
+                className={cn(
+                    hucre,
+                    kartHucre,
+                    "whitespace-normal max-md:max-w-44 max-md:text-right",
+                )}
+            >
                 <span
                     className="inline-flex items-center gap-1.5 text-[13px]"
                     title={s.durum || undefined}
                 >
                     <span
                         aria-hidden="true"
-                        className={cn("size-2 rounded-full", nokta)}
+                        className={cn("size-2 shrink-0 rounded-full", nokta)}
                     />
                     {durumMetni}
                 </span>
@@ -500,6 +532,21 @@ function SatirGorunumu({
                                 : "Dönem sonunda iptal et"}
                         </Dugme>
                     ) : null}
+                    {s.duraklatildi ? (
+                        <Dugme
+                            className={cn(dugme, "text-vurgu")}
+                            onClick={() => sec("surdur")}
+                        >
+                            Sürdür
+                        </Dugme>
+                    ) : SURER.includes(s.durum) && !s.iptalDonemSonu ? (
+                        <Dugme
+                            className={dugme}
+                            onClick={() => sec("duraklat")}
+                        >
+                            Duraklat
+                        </Dugme>
+                    ) : null}
                     {f && iadeEdilebilir > 0 ? (
                         <Dugme
                             tur="tehlike"
@@ -527,30 +574,43 @@ function OnaySatiri({
     is: Is;
     calisiyor: boolean;
     vazgec: () => void;
-    onayla: () => void;
+    onayla: (ay: Ay) => void;
 }): ReactNode {
+    const [ay, setAy] = useState<Ay>(1);
     const kim = s.email ?? "Abone";
     const deneme = s.durum === "trialing";
     const [soru, aciklama, dugme]: [string, string, string] =
-        is === "iade"
+        is === "duraklat"
             ? [
-                  `${tutar(s.sonFatura?.paraBirimi ?? "EUR", kalan(s))} iade edilsin mi?`,
-                  `${kim} · ${s.sonFatura?.odendi ? `${uzunTarih(s.sonFatura.odendi)} faturası` : "son fatura"}. Geri alınamaz; abonelik sürer.`,
-                  "İade et",
+                  "Kaç ay duraklatılsın?",
+                  `${kim} · bu sürede ücret çekilmez ve uygulamaya erişemez; süre bitince kendiliğinden sürer.`,
+                  "Duraklat",
               ]
-            : is === "iptal"
+            : is === "surdur"
               ? [
-                    deneme
-                        ? "Deneme sonunda iptal edilsin mi?"
-                        : "Dönem sonunda iptal edilsin mi?",
-                    `${kim} · ${s.donemSonu ? `${ekliTarih(s.donemSonu, "e")} kadar` : "Dönem sonuna kadar"} açık kalır, sonra ${deneme ? "ücret çekilmez" : "yenilenmez"}. O güne dek geri alınabilir.`,
-                    "İptal et",
+                    "Abonelik sürdürülsün mü?",
+                    `${kim} · erişim hemen açılır; tahsilat sonraki yenilemede başlar.`,
+                    "Sürdür",
                 ]
-              : [
-                    "İptal geri alınsın mı?",
-                    `${kim} · abonelik dönem sonunda yenilenmeye devam eder.`,
-                    "Geri al",
-                ];
+              : is === "iade"
+                ? [
+                      `${tutar(s.sonFatura?.paraBirimi ?? "EUR", kalan(s))} iade edilsin mi?`,
+                      `${kim} · ${s.sonFatura?.odendi ? `${uzunTarih(s.sonFatura.odendi)} faturası` : "son fatura"}. Geri alınamaz; abonelik sürer.`,
+                      "İade et",
+                  ]
+                : is === "iptal"
+                  ? [
+                        deneme
+                            ? "Deneme sonunda iptal edilsin mi?"
+                            : "Dönem sonunda iptal edilsin mi?",
+                        `${kim} · ${s.donemSonu ? `${ekliTarih(s.donemSonu, "e")} kadar` : "Dönem sonuna kadar"} açık kalır, sonra ${deneme ? "ücret çekilmez" : "yenilenmez"}. O güne dek geri alınabilir.`,
+                        "İptal et",
+                    ]
+                  : [
+                        "İptal geri alınsın mı?",
+                        `${kim} · abonelik dönem sonunda yenilenmeye devam eder.`,
+                        "Geri al",
+                    ];
     return (
         <tr className="bg-zemin/50 max-md:block">
             <Td
@@ -562,7 +622,26 @@ function OnaySatiri({
                         <span className="font-semibold">{soru}</span>{" "}
                         <span className="text-soluk">{aciklama}</span>
                     </span>
-                    <span className="inline-flex gap-2">
+                    <span className="inline-flex flex-wrap gap-2">
+                        {is === "duraklat" ? (
+                            <span
+                                role="group"
+                                aria-label="Süre"
+                                className={bolmeliSinif}
+                            >
+                                {AYLAR.map((a) => (
+                                    <button
+                                        key={a}
+                                        type="button"
+                                        aria-pressed={a === ay}
+                                        onClick={() => setAy(a)}
+                                        className={bolmeSinifi}
+                                    >
+                                        {a} ay
+                                    </button>
+                                ))}
+                            </span>
+                        ) : null}
                         <Dugme
                             tur="sade"
                             className="min-h-8"
@@ -572,10 +651,14 @@ function OnaySatiri({
                             Vazgeç
                         </Dugme>
                         <Dugme
-                            tur={is === "geriAl" ? "ana" : "yikici"}
+                            tur={
+                                is === "geriAl" || is === "surdur"
+                                    ? "ana"
+                                    : "yikici"
+                            }
                             className="min-h-8"
                             disabled={calisiyor}
-                            onClick={onayla}
+                            onClick={() => onayla(ay)}
                         >
                             {dugme}
                         </Dugme>

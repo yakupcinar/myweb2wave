@@ -66,8 +66,9 @@ sequenceDiagram
    kodu girer ([`DogrulamaKodu`](../core/src/Kimlik/DogrulamaKodu.php)). İkisi de uygulama kullanıcısını kişiye bağlar
    ([`Baglama`](../core/src/Kimlik/Baglama.php)).
 6. **Hak sorgusu.** Uygulamanın **sunucusu** (uygulamanın kendisi değil) çekirdeğe sorar
-   ([`Hak::sorgula`](../core/src/Kimlik/Hak.php#L24)). Erişim veren durumlar `active`, `trialing`, `past_due`
-   ([`Hak::ERISIM_VEREN`](../core/src/Kimlik/Hak.php#L17)): kart reddedilince Stripe yeniden denerken kullanıcı kilitlenmez.
+   ([`Hak::sorgula`](../core/src/Kimlik/Hak.php#L28)). Erişim veren durumlar `active`, `trialing`, `past_due`
+   ([`Hak::ERISIM_VEREN`](../core/src/Kimlik/Hak.php#L21)): kart reddedilince Stripe yeniden denerken kullanıcı kilitlenmez. Duraklatılmış abonelik (M6c) erişim vermez, durumu
+   `paused`; bitiş geçince yeniden verir.
 
 **Temel kavramlar**
 - **Kişi** (`kisiler`): e-postasıyla tekil gerçek kişi. **Abonelik** (`subscriptions`): Stripe'taki aboneliğin kopyası.
@@ -244,20 +245,25 @@ isteğinde "bu kişinin aboneliğini dönem sonunda iptal et" ya da "son ödemes
 - **İşlem** sütunu:
   - Abonelik sürüyorsa "Dönem sonunda iptal et" (denemede "Deneme sonunda iptal et").
   - İptal planlıysa "İptali geri al".
+  - Abonelik sürüyorsa ve iptal planlı değilse "Duraklat"; onayda süre seçilir (1 / 2 / 3 ay). Duraklıysa durum
+    "Duraklatıldı · 12 Ocak 2027'ye kadar" ve "Sürdür" (M6c).
   - Son faturanın iade edilmemiş kalanı varsa "€6,99 iade et".
 
-**Ne yapabilirsin.** İptal planla, iptali geri al, son faturayı iade et. Onay satırın altında açılır ve sonucu
+**Ne yapabilirsin.** İptal planla, iptali geri al, duraklat / sürdür, son faturayı iade et. Onay satırın altında açılır ve sonucu
 söyler; örneğin "€6,99 iade edilsin mi? … 3 Kasım faturası. Geri alınamaz; abonelik sürer." Düğmeler Vazgeç ve
 kırmızı "İade et". Stripe'ın verdiği hata satırın altında görünür.
 
 **Arkada nasıl çalışır**
 1. Liste [`Kullanicilar::liste`](../core/src/Panel/Kullanicilar.php#L72)'den gelir.
-2. İptal: [`AbonelikYonetimi::donemSonundaIptal`](../core/src/Billing/AbonelikYonetimi.php#L29) Stripe'a
+2. İptal: [`AbonelikYonetimi::donemSonundaIptal`](../core/src/Billing/AbonelikYonetimi.php#L31) Stripe'a
    `cancel_at_period_end` gönderir ve **Stripe'ın döndürdüğü** durumu yazar — Stripe reddetse panel yalan söylemez.
-3. İade: [`AbonelikYonetimi::sonFaturayiIadeEt`](../core/src/Billing/AbonelikYonetimi.php#L51) son faturanın ödemesini
+3. İade: [`AbonelikYonetimi::sonFaturayiIadeEt`](../core/src/Billing/AbonelikYonetimi.php#L88) son faturanın ödemesini
    bulur ve kalan tutarı iade eder. Fatura ile ödeme arasındaki bağ Stripe'ın `invoice_payment.paid` olayından gelir
    (`fatura_odemeleri`); yeni Stripe API'de bu bağ faturanın üstünde değildir (tuzak §54).
-4. Stripe panelinden yapılan iade de `charge.refunded` ile gelir ve **birikimli** düşülür
+4. Duraklat: [`AbonelikYonetimi::duraklat`](../core/src/Billing/AbonelikYonetimi.php#L59) Stripe'a `pause_collection`
+   (`void`, `resumes_at`) gönderir; abonelik Stripe'ta `active` kalır, erişimi hak sorgusu kapatır. Süre bitince Stripe
+   kendisi sürdürür ([m6c](decisions/m6c-duraklat.md)).
+5. Stripe panelinden yapılan iade de `charge.refunded` ile gelir ve **birikimli** düşülür
    ([`SubscriptionSync::iadeYaz`](../core/src/Billing/SubscriptionSync.php#L240)); aynı olay iki kez gelse gelir iki kez
    düşmez.
 5. Aynı işlemler MCP'de yalnız **yönetim izinli** anahtara açıktır (2.8).

@@ -404,6 +404,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/abonelikler/{abonelik}/duraklat": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** M6c (A28) — tahsilatı 1–3 ay duraklat (Stripe pause_collection void + resumes_at); bu sürede erişim yok */
+        post: operations["panelAbonelikDuraklat"];
+        /** M6c — duraklatmayı hemen bitir */
+        delete: operations["panelAbonelikSurdur"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/abonelikler/{abonelik}/iade": {
         parameters: {
             query?: never;
@@ -2666,7 +2688,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         aktif: boolean;
-                        /** @description En iyi aboneliğin Stripe durumu; abonelik yoksa null */
+                        /** @description En iyi aboneliğin Stripe durumu; abonelik yoksa null. M6c — duraklatılmışsa paused (aktif false) */
                         durum: string | null;
                     };
                 };
@@ -3176,6 +3198,111 @@ export interface operations {
             };
         };
     };
+    panelAbonelikDuraklat: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {integer} */
+                    ay: 1 | 2 | 3;
+                };
+            };
+        };
+        responses: {
+            /** @description Duraklatıldı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Jeton geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen abonelik */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz süre ya da Stripe reddetti */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelAbonelikSurdur: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sürdürüldü */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Jeton geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen abonelik */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Stripe reddetti */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
     panelAbonelikIade: {
         parameters: {
             query?: never;
@@ -3272,6 +3399,13 @@ export interface operations {
                             bagli: boolean;
                             /** @description M6a — dönem sonunda iptal planlı (geri alınabilir) */
                             iptalDonemSonu: boolean;
+                            /** @description M6c — tahsilat duraklı, erişim yok (bitişi geçmişse false) */
+                            duraklatildi: boolean;
+                            /**
+                             * Format: date-time
+                             * @description M6c — Stripe'ın kendiliğinden sürdüreceği an
+                             */
+                            duraklatmaBitis: string | null;
                             /** @description M6a — geçerli dönemin sonu (UTC); iptal planlıysa erişimin bittiği an */
                             donemSonu: string | null;
                             /** @description M6a — son tahsil edilen fatura (ana birim); iade = iade edilen kısım */

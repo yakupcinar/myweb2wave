@@ -234,6 +234,30 @@ final class KimlikControllerTest extends WebTestCase
         self::assertSame(['aktif' => false, 'durum' => 'canceled'], $this->govde());
     }
 
+    /** M6c (A28): duraklatılmış abonelik erişim vermez; bitişi geçmişse verir; başka aktif abonelik verir. */
+    public function testDuraklatilmisAbonelikErisimVermez(): void
+    {
+        $this->bagla('a@example.com', 'u1');
+        $durakli = $this->abonelik('keepchat', 'a@example.com', 'active');
+        $this->db->executeStatement("UPDATE subscriptions SET duraklatildi = true, duraklatma_bitis = now() + interval '1 day' WHERE stripe_subscription_id = ?", [$durakli]);
+        $this->istek('GET', '/apps/keepchat/kullanicilar/u1/hak');
+        Sozlesme::yanitiDogrula('GET', '/apps/{app}/kullanicilar/{kullanici}/hak', $this->client->getResponse());
+        self::assertSame(['aktif' => false, 'durum' => 'paused'], $this->govde());
+
+        $this->db->executeStatement("UPDATE subscriptions SET duraklatma_bitis = now() - interval '1 minute' WHERE stripe_subscription_id = ?", [$durakli]);
+        $this->istek('GET', '/apps/keepchat/kullanicilar/u1/hak');
+        self::assertSame(['aktif' => true, 'durum' => 'active'], $this->govde(), 'bitiş geçti: Stripe sürdürür, olay gecikse de');
+
+        $this->db->executeStatement("UPDATE subscriptions SET duraklatma_bitis = NULL, status = 'canceled' WHERE stripe_subscription_id = ?", [$durakli]);
+        $this->istek('GET', '/apps/keepchat/kullanicilar/u1/hak');
+        self::assertSame(['aktif' => false, 'durum' => 'canceled'], $this->govde(), 'bitmiş abonelikte eski bayrak "paused" göstermez');
+
+        $this->abonelik('keepchat', 'a@example.com', 'trialing');
+        $this->db->executeStatement("UPDATE subscriptions SET status = 'active' WHERE stripe_subscription_id = ?", [$durakli]);
+        $this->istek('GET', '/apps/keepchat/kullanicilar/u1/hak');
+        self::assertSame(['aktif' => true, 'durum' => 'trialing'], $this->govde(), 'süresiz duraklı + başka abonelik');
+    }
+
     public function testBaskaUygulamaninAboneligiErisimVermez(): void
     {
         $this->bagla('a@example.com', 'u1');
@@ -305,12 +329,15 @@ final class KimlikControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
     }
 
-    private function abonelik(string $app, string $email, string $durum): void
+    private function abonelik(string $app, string $email, string $durum): string
     {
+        $id = 'sub_'.bin2hex(random_bytes(4));
         $this->db->insert('subscriptions', [
-            'stripe_subscription_id' => 'sub_'.bin2hex(random_bytes(4)), 'stripe_customer_id' => 'cus_x',
+            'stripe_subscription_id' => $id, 'stripe_customer_id' => 'cus_x',
             'status' => $durum, 'email' => $email, 'app' => $app,
         ]);
+
+        return $id;
     }
 
     /** @return array<mixed> */

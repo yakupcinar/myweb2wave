@@ -260,6 +260,14 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A28 · M6c duraklat / sürdür** (2026-11-12, kullanıcı: üç öneri de).
+- **Duraklatılan abonenin erişimi kapanır:** hak sorgusu `aktif: false, durum: paused`. Stripe'ta tahsilat durur
+  (`pause_collection.behavior = void`), abonelik `active` kalır. Reddedilen: erişim sürsün (bedava dönem olur).
+- **Süre seçilir: 1 / 2 / 3 ay**; Stripe `resumes_at`'te kendisi sürdürür; elle erken sürdürme var. Reddedilen:
+  süresiz (unutulan abonelik sonsuza dek duraklı kalır).
+- **Yalnız panelden** (Aboneler satırı, M6a gibi). Reddedilen: müşteri kendi duraklatsın (huni akışı, büyük iş; portal
+  Stripe'ın, orada duraklatma yok).
+
 **A27 · Rapor sekmeleri ve onay kutusu** (2026-11-11, kullanıcı: "Rapor çok uzuyor… tiklenen şeyler çok modern
 durmuyor").
 - Rapor web2wave gibi **sekmelere** bölünür: Genel bakış · Anket · Kaynaklar · Gelir · Ziyaretler; sekme adreste;

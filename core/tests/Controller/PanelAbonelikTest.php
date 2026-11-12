@@ -70,6 +70,70 @@ final class PanelAbonelikTest extends WebTestCase
         self::assertFalse($this->iptalPlanli());
     }
 
+    /**
+     * M6c (A28): duraklat void + seçilen ay sonra sürdür; Stripe'ın yanıtındaki
+     * bitiş yazılır (istenen değil). Sürdür boş pause_collection gönderir.
+     */
+    public function testDuraklatVeSurdur(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = ['post /v1/subscriptions/sub_x' => ['id' => 'sub_x', 'object' => 'subscription', 'pause_collection' => ['behavior' => 'void', 'resumes_at' => 1_900_000_000]]];
+        $once = (new \DateTimeImmutable('+2 months'))->getTimestamp();
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/duraklat', $jeton, ['ay' => 2]);
+        $sonra = (new \DateTimeImmutable('+2 months'))->getTimestamp();
+        self::assertResponseStatusCodeSame(204);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/abonelikler/{abonelik}/duraklat', $this->client->getResponse());
+        $giden = $this->stripeIstekleri('/v1/subscriptions/sub_x', 'pause_collection');
+        self::assertCount(1, $giden);
+        /** @var array{behavior: string, resumes_at: int} $durak */
+        $durak = $giden[0][2];
+        self::assertSame('void', $durak['behavior']);
+        self::assertGreaterThanOrEqual($once, $durak['resumes_at']);
+        self::assertLessThanOrEqual($sonra, $durak['resumes_at']);
+        self::assertSame([true, '2030-03-17 17:46:40'], $this->duraklatma());
+
+        $this->stripe->istekler = [];
+        $this->stripe->yanitlar = ['post /v1/subscriptions/sub_x' => ['id' => 'sub_x', 'object' => 'subscription', 'pause_collection' => null]];
+        $this->istek('DELETE', '/panel/api/abonelikler/sub_x/duraklat', $jeton);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame([['post', 'pause_collection', '']], $this->stripeIstekleri('/v1/subscriptions/sub_x', 'pause_collection'));
+        self::assertSame([false, null], $this->duraklatma());
+    }
+
+    /** Süre yalnız 1–3 ay; geçersizde Stripe'a istek gitmez. */
+    public function testDuraklatmaSuresiDenetlenir(): void
+    {
+        $jeton = $this->girisVeJeton();
+        foreach ([['ay' => 4], ['ay' => 0], ['ay' => '1'], []] as $govde) {
+            $this->istek('POST', '/panel/api/abonelikler/sub_x/duraklat', $jeton, $govde);
+            self::assertResponseStatusCodeSame(422, json_encode($govde) ?: '');
+        }
+        self::assertSame([], $this->stripe->istekler);
+        self::assertSame([false, null], $this->duraklatma());
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/duraklat', 'yanlis', ['ay' => 1]);
+        self::assertResponseStatusCodeSame(403);
+        $this->istek('POST', '/panel/api/abonelikler/sub_yok/duraklat', $jeton, ['ay' => 1]);
+        self::assertResponseStatusCodeSame(404);
+        self::assertSame([], $this->stripe->istekler);
+    }
+
+    /** Listede duraklatma; bitişi geçmiş duraklatma sürmüş sayılır. */
+    public function testListedeDuraklatma(): void
+    {
+        $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_eski', 'stripe_customer_id' => 'cus_y', 'status' => 'active', 'email' => 'b@example.com', 'app' => 'keepchat',
+            'duraklatildi' => 'true', 'duraklatma_bitis' => '2020-01-01 00:00Z', 'updated_at' => '2020-01-01 00:00Z']);
+        $this->db->executeStatement("UPDATE subscriptions SET duraklatildi = true, duraklatma_bitis = '2099-02-01 10:00Z' WHERE stripe_subscription_id = 'sub_x'");
+        $this->girisVeJeton();
+        $this->client->request('GET', '/panel/api/kullanicilar');
+        Sozlesme::yanitiDogrula('GET', '/panel/api/kullanicilar', $this->client->getResponse());
+        /** @var array{satirlar: list<array<string, mixed>>} $j */
+        $j = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $satirlar = array_column($j['satirlar'], null, 'abonelik');
+
+        self::assertSame([true, '2099-02-01T10:00:00+00:00'], [$satirlar['sub_x']['duraklatildi'] ?? null, $satirlar['sub_x']['duraklatmaBitis'] ?? null]);
+        self::assertSame([false, null], [$satirlar['sub_eski']['duraklatildi'] ?? null, $satirlar['sub_eski']['duraklatmaBitis'] ?? null]);
+    }
+
     public function testJetonsuzBilinmeyenVeGirissiz(): void
     {
         $this->istek('POST', '/panel/api/abonelikler/sub_x/iptal', 'x');
@@ -181,8 +245,19 @@ final class PanelAbonelikTest extends WebTestCase
         return (string) $this->client->getCrawler()->filter('#panel-uygulama')->attr('data-jeton');
     }
 
-    private function istek(string $yontem, string $adres, string $jeton): void
+    /** @param array<mixed>|null $govde */
+    private function istek(string $yontem, string $adres, string $jeton, ?array $govde = null): void
     {
-        $this->client->request($yontem, $adres, server: ['HTTP_X_CSRF_TOKEN' => $jeton]);
+        $this->client->request($yontem, $adres, server: ['HTTP_X_CSRF_TOKEN' => $jeton, 'CONTENT_TYPE' => 'application/json'],
+            content: null === $govde ? null : (string) json_encode($govde));
+    }
+
+    /** @return array{0: mixed, 1: mixed} */
+    private function duraklatma(): array
+    {
+        $r = $this->db->fetchAssociative("SELECT duraklatildi, to_char(duraklatma_bitis AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS') AS bitis FROM subscriptions WHERE stripe_subscription_id = 'sub_x'");
+        self::assertIsArray($r);
+
+        return [$r['duraklatildi'], $r['bitis']];
     }
 }

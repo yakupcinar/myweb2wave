@@ -37,7 +37,8 @@ Uygulama istemcisi ──(kendi oturumu)──► UYGULAMANIN SUNUCUSU ──(uy
    **200 `{kisi}`** ya da **422** `invalid_code` / `expired_code` / `too_many_attempts`.
 3. Sonra her gerekince: `GET /apps/{app}/kullanicilar/{kullanici}/hak` →
    **200 `{aktif, durum}`** · **404** `unknown_user` (bağlanmamış).
-   `aktif` = `active` · `trialing` · `past_due`.
+   `aktif` = `active` · `trialing` · `past_due`. Panelden duraklatılmış abonelik (M6c) `aktif: false`,
+   `durum: "paused"` döner; süre bitince kendiliğinden yeniden `aktif`.
 
 Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik → **401**.
 

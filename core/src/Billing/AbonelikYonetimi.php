@@ -13,10 +13,12 @@ use Stripe\StripeClient;
  * M6a (A19): panelden abonelik yönetimi. İptal dönem sonunda (geri
  * alınabilir); iade son tahsil edilen faturanın kalanının tamamı. Stripe'ın
  * döndürdüğü durum hemen yazılır — webhook gecikse de panel doğru göstersin;
- * webhook aynı değeri yazar.
+ * webhook aynı değeri yazar. M6c (A28): duraklat / sürdür.
  */
 final readonly class AbonelikYonetimi
 {
+    public const DURAKLATMA_AYLARI = [1, 2, 3];
+
     public function __construct(
         private Connection $db,
         private StripeClient $stripe,
@@ -42,6 +44,41 @@ final readonly class AbonelikYonetimi
             'UPDATE subscriptions SET iptal_donem_sonu = :iptal, updated_at = now() WHERE stripe_subscription_id = :s',
             ['iptal' => true === ($sub['cancel_at_period_end'] ?? null), 's' => $abonelik],
             ['iptal' => \Doctrine\DBAL\ParameterType::BOOLEAN],
+        );
+
+        return null;
+    }
+
+    /**
+     * M6c (A28): $ay (1–3) ay duraklat — tahsilat durur (void), Stripe o
+     * tarihte kendisi sürdürür; null hemen sürdürür (stripe-php boş alan
+     * gönderir). Stripe'ın yanıtı yazılır.
+     *
+     * @return string|null hata metni ya da null (tamam)
+     */
+    public function duraklat(string $abonelik, ?int $ay): ?string
+    {
+        if (false === $this->db->fetchOne('SELECT 1 FROM subscriptions WHERE stripe_subscription_id = :s', ['s' => $abonelik])) {
+            return 'bilinmeyen abonelik';
+        }
+        if (null !== $ay && !\in_array($ay, self::DURAKLATMA_AYLARI, true)) {
+            return 'süre 1, 2 ya da 3 ay olmalı';
+        }
+        try {
+            $sub = $this->stripe->subscriptions->update($abonelik, ['pause_collection' => null === $ay ? null : [
+                'behavior' => 'void',
+                'resumes_at' => (new \DateTimeImmutable("+{$ay} months"))->getTimestamp(),
+            ]])->toArray();
+        } catch (ApiErrorException $e) {
+            $this->logger->error('Stripe aboneliği duraklatılamadı', ['abonelik' => $abonelik, 'exception' => $e]);
+
+            return 'Stripe isteği reddetti: '.self::kisa($e);
+        }
+        $durak = \is_array($sub['pause_collection'] ?? null) ? $sub['pause_collection'] : null;
+        $this->db->executeStatement(
+            'UPDATE subscriptions SET duraklatildi = :durak, duraklatma_bitis = to_timestamp(CAST(:bitis AS bigint)), updated_at = now() WHERE stripe_subscription_id = :s',
+            ['durak' => null !== $durak, 'bitis' => null !== $durak && \is_int($durak['resumes_at'] ?? null) ? $durak['resumes_at'] : null, 's' => $abonelik],
+            ['durak' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
 
         return null;
