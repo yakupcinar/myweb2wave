@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Panel\Csv;
 use App\Panel\Kullanicilar;
 use App\Panel\Rapor;
 use App\Panel\RaporSuzgeci;
@@ -75,6 +76,39 @@ final class PanelController extends AbstractController
             'satirlar' => $kullanicilar->liste($ara, $durum, null, $sayfa, self::SAYFA_BOYUTU,
                 $request->query->getString('sirala'), 'azalan' !== $request->query->getString('yon')),
         ]));
+    }
+
+    /** R2 (A29): abonelikler CSV — listeyle aynı arama, durum ve sıra; sayfasız, e-posta maskeli. */
+    #[Route('/panel/api/kullanicilar.csv', name: 'panel_api_kullanicilar_csv', methods: ['GET'])]
+    public function kullanicilarCsv(Request $request, Kullanicilar $kullanicilar): Response
+    {
+        $ara = mb_substr($request->query->getString('ara'), 0, 100);
+        $durum = mb_substr($request->query->getString('durum'), 0, 40);
+        $satirlar = $kullanicilar->liste($ara, $durum, null, 1, max(1, $kullanicilar->say($ara, $durum)),
+            $request->query->getString('sirala'), 'azalan' !== $request->query->getString('yon'));
+
+        return self::korumali(Csv::yanit('aboneler', ['abonelik', 'uygulama', 'durum', 'e-posta', 'güncelleme', 'ödeme', 'kaynak', 'ortam', 'kampanya', 'huni', 'reklam',
+            'uygulamaya bağlı', 'iptal planlı', 'dönem sonu', 'duraklatıldı', 'duraklatma bitişi', 'son fatura para birimi', 'son fatura tutarı', 'son fatura iadesi'],
+            array_map(static fn (array $s): array => [$s['abonelik'], $s['app'], $s['durum'], $s['email'], $s['guncelleme'], $s['odeme'], $s['kaynak'], $s['ortam'],
+                $s['kampanya'], $s['huni'], $s['reklam'], $s['bagli'], $s['iptalDonemSonu'], $s['donemSonu'], $s['duraklatildi'], $s['duraklatmaBitis'],
+                $s['sonFatura']['paraBirimi'] ?? null, $s['sonFatura']['tutar'] ?? null, $s['sonFatura']['iade'] ?? null], $satirlar)));
+    }
+
+    /** R2 (A29): rapor ziyaretleri ve cevaplar CSV — raporla aynı dönem ve süzgeç; sayfasız. */
+    #[Route('/panel/api/rapor/{liste}.csv', name: 'panel_api_rapor_csv', requirements: ['liste' => 'ziyaretler|cevaplar'], methods: ['GET'])]
+    public function raporCsv(Request $request, Rapor $rapor, string $liste): Response
+    {
+        $gun = self::gun($request);
+        $s = RaporSuzgeci::istekten($request);
+        if (\is_array($s)) {
+            return self::korumali(new JsonResponse(['hatalar' => $s], 422));
+        }
+
+        return self::korumali('ziyaretler' === $liste
+            ? Csv::yanit('ziyaretler', ['ziyaret', 'zaman', 'uygulama', 'huni', 'kaynak', 'kampanya', 'reklam', 'aşama', 'durum', 'e-posta'],
+                array_map(static fn (array $z): array => array_values($z), $rapor->satirlar($gun, 1, max(1, $rapor->toplam('ziyaretler', $gun, $s)), $s)))
+            : Csv::yanit('cevaplar', ['ziyaret', 'zaman', 'uygulama', 'huni', 'soru', 'tür', 'cevap'],
+                array_map(static fn (array $c): array => array_values($c), $rapor->cevapSatirlari($gun, $s))));
     }
 
     /** Rapor verisi (sözleşme: PanelRaporu). */

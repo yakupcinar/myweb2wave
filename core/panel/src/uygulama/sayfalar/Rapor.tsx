@@ -96,6 +96,28 @@ function adres(
     return q ? `/panel?${q}` : "/panel";
 }
 
+/** R2 (A29): raporun dönemi ve süzgeciyle CSV (sayfasız). */
+function CsvIndir({
+    liste,
+    gun,
+    suzgec,
+}: {
+    liste: "ziyaretler" | "cevaplar";
+    gun: number;
+    suzgec: Suzgec;
+}): ReactNode {
+    const q = new URLSearchParams({ gun: String(gun), ...suzgec });
+    return (
+        <a
+            href={`/panel/api/rapor/${liste}.csv?${q.toString()}`}
+            download
+            className={dugmeSinifi()}
+        >
+            CSV indir
+        </a>
+    );
+}
+
 const sekmeSinifi =
     "-mb-px shrink-0 border-b-2 border-transparent px-3 pb-2.5 text-[15px] whitespace-nowrap text-soluk hover:text-metin aria-[current=page]:border-vurgu aria-[current=page]:font-medium aria-[current=page]:text-metin";
 
@@ -610,24 +632,31 @@ function Anket({
                 baslik="Anket"
                 aciklama="Ziyaretçilerin hangi ekranda ayrıldığı."
                 sag={
-                    huniler.size > 1 ? (
-                        <select
-                            aria-label="Anket hunisi"
-                            value={anahtar}
-                            onChange={(e) => {
-                                const yeni = new URLSearchParams(sorgu);
-                                yeni.set("anket", e.currentTarget.value);
-                                setSorgu(yeni);
-                            }}
-                            className="min-h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5 text-[14px]"
-                        >
-                            {sirali.map(([k, a]) => (
-                                <option key={k} value={k}>
-                                    {ad(k, a)}
-                                </option>
-                            ))}
-                        </select>
-                    ) : null
+                    <span className="flex flex-wrap items-center gap-2">
+                        <CsvIndir
+                            liste="cevaplar"
+                            gun={r.gun}
+                            suzgec={suzgecOku(sorgu)}
+                        />
+                        {huniler.size > 1 ? (
+                            <select
+                                aria-label="Anket hunisi"
+                                value={anahtar}
+                                onChange={(e) => {
+                                    const yeni = new URLSearchParams(sorgu);
+                                    yeni.set("anket", e.currentTarget.value);
+                                    setSorgu(yeni);
+                                }}
+                                className="min-h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5 text-[14px]"
+                            >
+                                {sirali.map(([k, a]) => (
+                                    <option key={k} value={k}>
+                                        {ad(k, a)}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : null}
+                    </span>
                 }
             >
                 {[[anahtar, adimlar] as const].map(([anahtar, adimlar]) => {
@@ -1037,6 +1066,7 @@ function Ziyaretler({ gun, suzgec }: { gun: Gun; suzgec: Suzgec }): ReactNode {
         <Bolum
             baslik="Ziyaretler"
             aciklama="En yeni önce. Zaman UTC; e-posta maskeli."
+            sag={<CsvIndir liste="ziyaretler" gun={gun} suzgec={suzgec} />}
         >
             <div>
                 <Kart className="overflow-hidden">

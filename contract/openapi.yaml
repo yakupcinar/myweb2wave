@@ -573,6 +573,44 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RaporZiyaretleri" }
+  /panel/api/rapor/ziyaretler.csv:
+    get:
+      operationId: panelRaporZiyaretlerCsv
+      summary: "R2 (A29) — ziyaretler CSV; raporla aynı dönem ve süzgeç, sayfasız, e-posta maskeli"
+      parameters:
+        - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
+        - { $ref: "#/components/parameters/SuzgecHuni" }
+        - { $ref: "#/components/parameters/SuzgecKaynak" }
+        - { $ref: "#/components/parameters/SuzgecKampanya" }
+        - { $ref: "#/components/parameters/SuzgecUlke" }
+        - { $ref: "#/components/parameters/SuzgecDeney" }
+        - { $ref: "#/components/parameters/SuzgecVaryant" }
+      responses:
+        "422": { description: "R1a — süzgeç değeri biçimsiz", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "200":
+          description: CSV dosyası (UTF-8 BOM, virgül; ek olarak indirilir)
+          content:
+            text/csv:
+              schema: { type: string }
+  /panel/api/rapor/cevaplar.csv:
+    get:
+      operationId: panelRaporCevaplarCsv
+      summary: "R2 (A29) — ziyaret başına cevaplar CSV (seçenek ve serbest metin); ziyaretler dosyasıyla ziyaret kimliğinden birleşir"
+      parameters:
+        - { name: gun, in: query, required: false, description: Zaman aralığı; tanınmayan değer 30 sayılır, schema: { type: integer, enum: [7, 30, 90], default: 30 } }
+        - { $ref: "#/components/parameters/SuzgecHuni" }
+        - { $ref: "#/components/parameters/SuzgecKaynak" }
+        - { $ref: "#/components/parameters/SuzgecKampanya" }
+        - { $ref: "#/components/parameters/SuzgecUlke" }
+        - { $ref: "#/components/parameters/SuzgecDeney" }
+        - { $ref: "#/components/parameters/SuzgecVaryant" }
+      responses:
+        "422": { description: "R1a — süzgeç değeri biçimsiz", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "200":
+          description: CSV dosyası (UTF-8 BOM, virgül; ek olarak indirilir)
+          content:
+            text/csv:
+              schema: { type: string }
   /panel/api/rapor/kaynaklar:
     get:
       operationId: panelRaporKaynaklari
@@ -729,6 +767,21 @@ paths:
         "204": { description: İade edildi }
         "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: "İade edilecek fatura yok, zaten iade edildi ya da Stripe reddetti", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/kullanicilar.csv:
+    get:
+      operationId: panelApiKullanicilarCsv
+      summary: "R2 (A29) — abonelikler CSV; listeyle aynı arama, durum ve sıra; sayfasız, e-posta maskeli"
+      parameters:
+        - { name: ara, in: query, required: false, schema: { type: string, maxLength: 100 } }
+        - { name: durum, in: query, required: false, schema: { type: string, maxLength: 40 } }
+        - { name: sirala, in: query, required: false, schema: { type: string, enum: [email, durum, kaynak, sonOdeme] } }
+        - { name: yon, in: query, required: false, schema: { type: string, enum: [artan, azalan], default: artan } }
+      responses:
+        "200":
+          description: CSV dosyası (UTF-8 BOM, virgül; ek olarak indirilir)
+          content:
+            text/csv:
+              schema: { type: string }
   /panel/api/kullanicilar:
     get:
       operationId: panelApiKullanicilar
@@ -2040,8 +2093,9 @@ components:
           items:
             type: object
             additionalProperties: false
-            required: [zaman, app, huni, kaynak, kampanya, reklam, asama, durum, email]
+            required: [ziyaret, zaman, app, huni, kaynak, kampanya, reklam, asama, durum, email]
             properties:
+              ziyaret: { type: string, description: "R2 — ziyaret kimliği (cevaplar dosyasıyla birleşir)" }
               zaman: { type: string }
               app: { type: string }
               huni: { type: [string, "null"] }

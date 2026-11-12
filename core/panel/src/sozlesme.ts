@@ -297,6 +297,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/rapor/ziyaretler.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** R2 (A29) — ziyaretler CSV; raporla aynı dönem ve süzgeç, sayfasız, e-posta maskeli */
+        get: operations["panelRaporZiyaretlerCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/rapor/cevaplar.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** R2 (A29) — ziyaret başına cevaplar CSV (seçenek ve serbest metin); ziyaretler dosyasıyla ziyaret kimliğinden birleşir */
+        get: operations["panelRaporCevaplarCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/rapor/kaynaklar": {
         parameters: {
             query?: never;
@@ -441,6 +475,23 @@ export interface paths {
         put?: never;
         /** M6a (A19) — son tahsil edilen faturanın kalanını tam iade et */
         post: operations["panelAbonelikIade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/kullanicilar.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** R2 (A29) — abonelikler CSV; listeyle aynı arama, durum ve sıra; sayfasız, e-posta maskeli */
+        get: operations["panelApiKullanicilarCsv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1432,6 +1483,8 @@ export interface components {
             boyut: number;
             toplam: number;
             satirlar: {
+                /** @description R2 — ziyaret kimliği (cevaplar dosyasıyla birleşir) */
+                ziyaret: string;
                 zaman: string;
                 app: string;
                 huni: string | null;
@@ -2888,6 +2941,94 @@ export interface operations {
             };
         };
     };
+    panelRaporZiyaretlerCsv: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+                /** @description R1a — yalnız bu huninin ziyaretleri */
+                huni?: components["parameters"]["SuzgecHuni"];
+                /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+                kaynak?: components["parameters"]["SuzgecKaynak"];
+                /** @description R1a — utm_campaign */
+                kampanya?: components["parameters"]["SuzgecKampanya"];
+                /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+                ulke?: components["parameters"]["SuzgecUlke"];
+                /** @description R1a — bu deneye atanmış ziyaretler */
+                deney?: components["parameters"]["SuzgecDeney"];
+                /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+                varyant?: components["parameters"]["SuzgecVaryant"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV dosyası (UTF-8 BOM, virgül; ek olarak indirilir) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description R1a — süzgeç değeri biçimsiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelRaporCevaplarCsv: {
+        parameters: {
+            query?: {
+                /** @description Zaman aralığı; tanınmayan değer 30 sayılır */
+                gun?: 7 | 30 | 90;
+                /** @description R1a — yalnız bu huninin ziyaretleri */
+                huni?: components["parameters"]["SuzgecHuni"];
+                /** @description R1a — kaynak (Kaynaklar sütunuyla aynı tanım: utm_source, yoksa "meta (fbclid)" / "doğrudan") */
+                kaynak?: components["parameters"]["SuzgecKaynak"];
+                /** @description R1a — utm_campaign */
+                kampanya?: components["parameters"]["SuzgecKampanya"];
+                /** @description R1a — ziyaretin ülkesi (IP'den, ISO 3166-1) */
+                ulke?: components["parameters"]["SuzgecUlke"];
+                /** @description R1a — bu deneye atanmış ziyaretler */
+                deney?: components["parameters"]["SuzgecDeney"];
+                /** @description R1a — deneyin bu varyantı (deney ile birlikte) */
+                varyant?: components["parameters"]["SuzgecVaryant"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV dosyası (UTF-8 BOM, virgül; ek olarak indirilir) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description R1a — süzgeç değeri biçimsiz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
     panelRaporKaynaklari: {
         parameters: {
             query?: {
@@ -3339,6 +3480,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelApiKullanicilarCsv: {
+        parameters: {
+            query?: {
+                ara?: string;
+                durum?: string;
+                sirala?: "email" | "durum" | "kaynak" | "sonOdeme";
+                yon?: "artan" | "azalan";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV dosyası (UTF-8 BOM, virgül; ek olarak indirilir) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
         };

@@ -113,7 +113,7 @@ değiştirmez.
 
 **Süzgeç (R1a, R1b):** sekmelerin altındaki haplar (Huni · Kaynak · Kampanya · Ülke · Deney/Varyant; seçenekler dönemin verisinden, adreste); her bölüm aynı süzgeçle — huni, kaynak, kampanya, ülke, deney (+ varyant), önceki dönem dahil ([`RaporSuzgeci`](../core/src/Panel/RaporSuzgeci.php)); ülke ziyarete IP'den yazılır ([r1a](decisions/r1a-rapor-suzgecleri.md)).
 
-**Düzen (P7i, sekmeler; adreste `?sekme=`):** **Genel bakış** — Özet (önceki aynı uzunluktaki döneme göre değişim; oran değişimi yüzde puanı), günlük grafikler, Ziyaretten aboneliğe (reklam / organik / toplam), Reklam harcaması · **Anket** — tek huni (seçici, varsayılan en çok ziyaretli; `huni=`), şeritler (düşüş bir önceki adıma göre), o huninin cevapları, serbest yanıtlar · **Kaynaklar** — kaynak tablosu, reklam ölçümü izni · **Gelir** — kohort · **Ziyaretler** — sayfalı liste. Liste uçları yalnız açık sekmede istenir. Gelir = penceredeki ziyaretlerin bugüne kadar tahsil edilmiş faturaları eksi iade; Kaynaklar'ın gelir sütunuyla aynı tanım.
+**Düzen (P7i, sekmeler; adreste `?sekme=`):** **Genel bakış** — Özet (önceki aynı uzunluktaki döneme göre değişim; oran değişimi yüzde puanı), günlük grafikler, Ziyaretten aboneliğe (reklam / organik / toplam), Reklam harcaması · **Anket** — tek huni (seçici, varsayılan en çok ziyaretli; `huni=`), şeritler (düşüş bir önceki adıma göre), o huninin cevapları, serbest yanıtlar · **Kaynaklar** — kaynak tablosu, reklam ölçümü izni · **Gelir** — kohort · **Ziyaretler** — sayfalı liste. Liste uçları yalnız açık sekmede istenir. Ziyaretler ve Anket'te **CSV indir**: aynı dönem ve süzgeçle, sayfasız; cevaplar dosyası ziyaret kimliğiyle ziyaretlere bağlanır (R2, [r2-csv](decisions/r2-csv.md)). Gelir = penceredeki ziyaretlerin bugüne kadar tahsil edilmiş faturaları eksi iade; Kaynaklar'ın gelir sütunuyla aynı tanım.
 
 | Kart | Ne gösterir | Nasıl hesaplanır |
 |---|---|---|
@@ -123,7 +123,7 @@ değiştirmez.
 | Cevaplar | Her şıkkı kaç kişinin seçtiği ve o şıkkı seçenlerin kaçının abone olduğu | `huni_cevaplari` + aynı ziyaretin aboneliği başlamış ödeme oturumu |
 | Kaynak kırılımı | `utm_source` / `utm_campaign`'e göre ziyaret, ödeyen ve gelir | Gelir = bu ziyaretlerin **bugüne kadar** tahsil edilen faturaları eksi iadeler |
 | Meta kampanyaları | Kampanya başına Meta harcaması, getirdiği gelir, ROAS (gelir ÷ harcama) | Harcama Meta'dan çekilir; aynı adlı `utm_campaign` ile **Meta'dan** gelen ziyaretlerin geliri eşleştirilir ([`Rapor::META`](../core/src/Panel/Rapor.php#L40)) |
-| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L354)) |
+| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L356)) |
 | Serbest yanıtlar | Metin sorularına yazılanlar | 90 gün saklanır, sonra silinir |
 
 Ziyaretler, Kaynak kırılımı ve Serbest yanıtlar 25'er satırlık sayfalarla gelir. Her biri kendi ucundan
@@ -248,6 +248,8 @@ isteğinde "bu kişinin aboneliğini dönem sonunda iptal et" ya da "son ödemes
   - Abonelik sürüyorsa ve iptal planlı değilse "Duraklat"; onayda süre seçilir (1 / 2 / 3 ay). Duraklıysa durum
     "Duraklatıldı · 12 Ocak 2027'ye kadar" ve "Sürdür" (M6c).
   - Son faturanın iade edilmemiş kalanı varsa "€6,99 iade et".
+
+- **CSV indir** (sayfa başı): o anki arama, durum ve sırayla bütün satırlar, e-posta maskeli (R2).
 
 **Ne yapabilirsin.** İptal planla, iptali geri al, duraklat / sürdür, son faturayı iade et. Onay satırın altında açılır ve sonucu
 söyler; örneğin "€6,99 iade edilsin mi? … 3 Kasım faturası. Geri alınamaz; abonelik sürer." Düğmeler Vazgeç ve

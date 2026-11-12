@@ -18,7 +18,7 @@ import { ekliTarih, kisaTarih, tutarlar, uzunTarih } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
 import { cn } from "../ui/cn";
-import { Dugme } from "../ui/Dugme";
+import { Dugme, dugmeSinifi } from "../ui/Dugme";
 import { Kart } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
 import { Sayfalama } from "../ui/Sayfalama";
@@ -153,7 +153,23 @@ export function Kullanicilar(): ReactNode {
             <SayfaBasi
                 baslik="Aboneler"
                 aciklama="Kimin aboneliği sürüyor, kim nereden geldi. Tam e-posta adresi yalnız Stripe'ta görünür."
-            />
+            >
+                {/* R2 (A29): o anki arama, durum ve sırayla; sayfasız, e-posta maskeli. */}
+                <a
+                    href={`/panel/api/kullanicilar.csv?${new URLSearchParams(
+                        Object.entries({
+                            ara,
+                            durum,
+                            sirala: sira?.sutun ?? "",
+                            yon: sira && !sira.artan ? "azalan" : "",
+                        }).filter(([, v]) => v),
+                    ).toString()}`}
+                    download
+                    className={dugmeSinifi()}
+                >
+                    CSV indir
+                </a>
+            </SayfaBasi>
             <div className="mb-6 flex flex-wrap items-center gap-3">
                 <form
                     role="search"

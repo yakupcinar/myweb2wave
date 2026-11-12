@@ -813,3 +813,26 @@ describe("Rapor", () => {
         expect(k.value).toBe("tiktok");
     });
 });
+
+describe("R2 — CSV indir", () => {
+    it("ziyaretler ve cevaplar dosyası raporun dönemi ve süzgeciyle", async () => {
+        kur("/panel?gun=90&sekme=ziyaretler&deney=baslik&kaynak=meta", {
+            ...RAPOR,
+            gun: 90,
+        });
+        const z = await screen.findByRole("region", { name: "Ziyaretler" });
+        const zBag = within(z).getByRole("link", { name: "CSV indir" });
+        expect(zBag.getAttribute("href")).toBe(
+            "/panel/api/rapor/ziyaretler.csv?gun=90&kaynak=meta&deney=baslik",
+        );
+        expect(zBag.hasAttribute("download")).toBe(true);
+        cleanup();
+        kur("/panel?sekme=anket&kampanya=ekim");
+        const a = await screen.findByRole("region", { name: "Anket" });
+        expect(
+            within(a)
+                .getByRole("link", { name: "CSV indir" })
+                .getAttribute("href"),
+        ).toBe("/panel/api/rapor/cevaplar.csv?gun=30&kampanya=ekim");
+    });
+});

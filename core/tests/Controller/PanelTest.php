@@ -380,7 +380,10 @@ final class PanelTest extends WebTestCase
         $r = $this->rapor();
 
         $odeyen = $this->liste('ziyaretler')[0];
-        unset($odeyen['zaman']);
+        // R2: ziyaret kimliği (cevaplar CSV'siyle birleşir).
+        self::assertIsString($odeyen['ziyaret'] ?? null);
+        self::assertMatchesRegularExpression('/^[0-9a-f-]{36}$/', $odeyen['ziyaret']);
+        unset($odeyen['zaman'], $odeyen['ziyaret']);
         self::assertSame(['app' => 'keepchat', 'huni' => null, 'kaynak' => 'meta', 'kampanya' => 'ekim-1', 'reklam' => true, 'asama' => 'ödedi', 'durum' => 'active', 'email' => 'a***@example.com'], $odeyen);
         self::assertStringNotContainsString('ayse@example.com', (string) $this->client->getResponse()->getContent());
     }

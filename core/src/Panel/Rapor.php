@@ -57,13 +57,13 @@ final readonly class Rapor
     }
 
     /**
-     * @return list<array{zaman: string, app: string, huni: string|null, kaynak: string, kampanya: string|null, reklam: bool,
+     * @return list<array{ziyaret: string, zaman: string, app: string, huni: string|null, kaynak: string, kampanya: string|null, reklam: bool,
      *                    asama: string, durum: string|null, email: string|null}>
      */
     public function satirlar(int $gun, int $sayfa = 1, int $boyut = self::AZAMI_SATIR, RaporSuzgeci $suzgec = new RaporSuzgeci()): array
     {
         $satirlar = $this->db->fetchAllAssociative(
-            'SELECT z.created_at, z.app, z.huni, '.self::KAYNAK.' AS kaynak, z.utm_campaign, '.self::REKLAM.' AS reklam,
+            'SELECT z.id, z.created_at, z.app, z.huni, '.self::KAYNAK.' AS kaynak, z.utm_campaign, '.self::REKLAM.' AS reklam,
                     EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = z.id) AS odemeye_gecti,
                     od.ziyaret_id IS NOT NULL AS abone, coalesce(od.odedi, false) AS odedi, od.status, od.email
              FROM huni_ziyaretleri z
@@ -80,6 +80,8 @@ final readonly class Rapor
         );
 
         return array_map(static fn (array $r): array => [
+            // R2: cevaplar dosyasıyla birleştirmek için (kişisel veri değil).
+            'ziyaret' => self::dizge($r['id']),
             'zaman' => self::dizge($r['created_at']),
             'app' => self::dizge($r['app']),
             'huni' => self::dizgeYaDaNull($r['huni']),
@@ -393,6 +395,34 @@ final readonly class Rapor
                 return ['gun' => $g, 'olgun' => $olgun, 'kisiBasi' => $olgun ? $kisiBasi : []];
             }, self::KOHORT_GUNLERI)];
         }, $haftalar);
+    }
+
+    /**
+     * R2 (A29): ziyaret başına her cevap — seçenek (çoklu seçimde her biri ayrı
+     * satır) ve serbest metin; CSV için, sayfasız. Ziyaretler dosyasıyla
+     * ziyaret kimliğinden birleşir.
+     *
+     * @return list<array{ziyaret: string, zaman: string, app: string, huni: string|null, soru: string, tur: string, cevap: string}>
+     */
+    public function cevapSatirlari(int $gun, RaporSuzgeci $suzgec = new RaporSuzgeci()): array
+    {
+        return array_map(static fn (array $s): array => [
+            'ziyaret' => self::dizge($s['id']),
+            'zaman' => self::dizge($s['created_at']),
+            'app' => self::dizge($s['app']),
+            'huni' => self::dizgeYaDaNull($s['huni']),
+            'soru' => self::dizge($s['soru']),
+            'tur' => self::dizge($s['tur']),
+            'cevap' => self::dizge($s['cevap']),
+        ], $this->db->fetchAllAssociative(
+            "SELECT z.id, z.created_at, z.app, z.huni, c.soru, c.tur, c.cevap
+             FROM (SELECT ziyaret_id, soru, 'seçenek' AS tur, secenek AS cevap FROM huni_cevaplari
+                   UNION ALL SELECT ziyaret_id, soru, 'metin', cevap FROM huni_metin_cevaplari) c
+             JOIN huni_ziyaretleri z ON z.id = c.ziyaret_id
+             WHERE z.created_at >= now() - make_interval(days => :gun)".$suzgec->kosul().'
+             ORDER BY z.created_at DESC, z.id, c.soru, c.cevap',
+            ['gun' => $gun] + $suzgec->parametreler(),
+        ));
     }
 
     /** @return list<array{zaman: string, app: string, soru: string, cevap: string}> */

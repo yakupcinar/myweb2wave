@@ -260,6 +260,12 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A29 · R2 CSV dışa aktarım** (2026-11-12, kullanıcı: "önerin uygun").
+- **E-posta panelle aynı maskeli** (`a***@example.com`); tam adres yalnız Stripe'ta. Reddedilen: tam adres (kişisel
+  veri panelden dışarı çıkar; panelde de gösterilmiyor).
+- Ayrı sayfa değil, ilgili tabloda "CSV indir": Aboneler, Rapor › Ziyaretler, Rapor › Anket (cevaplar). Dosya o
+  anki süzgeçle, sayfasız. UTF-8 BOM + virgül; formül gibi başlayan hücre `'` ile (CSV injection).
+
 **A28 · M6c duraklat / sürdür** (2026-11-12, kullanıcı: üç öneri de).
 - **Duraklatılan abonenin erişimi kapanır:** hak sorgusu `aktif: false, durum: paused`. Stripe'ta tahsilat durur
   (`pause_collection.behavior = void`), abonelik `active` kalır. Reddedilen: erişim sürsün (bedava dönem olur).

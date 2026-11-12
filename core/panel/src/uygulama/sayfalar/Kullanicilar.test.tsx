@@ -483,3 +483,18 @@ describe("M6c — duraklat / sürdür", () => {
         );
     });
 });
+
+describe("R2 — CSV indir", () => {
+    it("listenin arama, durum ve sırasıyla; sayfa yok", async () => {
+        kur(
+            SATIRLAR,
+            "/panel/kullanicilar?ara=meta&durum=active&sayfa=2&sirala=email&yon=azalan",
+        );
+        await screen.findAllByRole("row");
+        const bag = screen.getByRole("link", { name: "CSV indir" });
+        expect(bag.getAttribute("href")).toBe(
+            "/panel/api/kullanicilar.csv?ara=meta&durum=active&sirala=email&yon=azalan",
+        );
+        expect(bag.hasAttribute("download")).toBe(true);
+    });
+});
