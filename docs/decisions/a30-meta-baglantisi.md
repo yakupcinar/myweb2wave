@@ -63,3 +63,29 @@ bakmaz — hepsi 🔴.
 - **Gerçek sistem** (dev DB, `.env.local` anahtarı, gerçek Graph API v24.0, sahte anahtar): kaydet `[]`; DB'de düz
   anahtar yok; panel `kayitli · 6789`; dene iki parçada "Meta reddetti: Invalid OAuth access token - Cannot parse
   access token" (mesajda anahtar yok); kayıt silindi.
+
+## MB2 — Ne yapıldı (panel)
+
+- **Entegrasyonlar › Meta** (`#meta`, [`Meta.tsx`](../../core/panel/src/uygulama/sayfalar/Meta.tsx)), Webhook'ların altında, iki
+  kart: **Dönüşüm** (Pixel ID, Conversions API anahtarı, test olay kodu) ve **Harcama** (reklam hesabı, Insights
+  anahtarı). Her alanın altında Meta'da nereden alınacağı yazar.
+- **Anahtar alanları** `password`; kayıtlıysa yer tutucu "Kayıtlı (…6789) — değiştirmek için yenisini yapıştır". Boş
+  bırakılan alan gövdede `null` (değişmez); "Kaldır" `''` gönderir, alan kilitlenir, "Silinecek — geri al" ile döner.
+  Okunamayan anahtarda "Okunamadı — yeniden girin" rozeti.
+- **Bağlantıyı dene** yalnız kaydedilmemiş değişiklik yokken (sunucu kayıtlı değerleri dener); sonuç parça başına
+  rozet + Meta'nın mesajı. **Bağlantıyı kaldır** onay ister.
+- Sunucuda şifreleme anahtarı ya da Graph sürümü yoksa uyarı notu.
+- Canlıya geçiş Meta adımının bağlantısı (`/panel/entegrasyonlar#meta`) artık bu bölüme düşer.
+
+## MB2 — Kırma denemeleri — 8/8 kırmızı
+
+N1 boş anahtar alanı `''` gider (kayıtlı anahtarı sessizce silerdi) · N2 "Kaldır" yok sayılır · N3 son 4 hane yok ·
+N4 kaydedilmemişken dene açık · N5 onaysız kaldır · N6 anahtar düz metin alanı · N7 şifreleme uyarısı yok · N8 deneme
+mesajı yok — hepsi 🔴.
+
+## MB2 — Ölçüm
+
+- **Panel:** `Meta.test.tsx` 5 test; bütün sayfa testleri 96/96 (Entegrasyonlar'ın ortak sahtesine boş Meta yanıtı).
+- **Tam kontrol:** YEŞİL (780 çekirdek testi, `UYARI` yok), yerel, 2026-11-14.
+- **Ekran döngüsü** (`entegrasyonlar`, açık/koyu, 1440/390): bölüm çizildi, taşma ve yatay kayma yok; telefondaki
+  küçük hedefler menü ve tema seçicisi (Ç141, önceden de vardı).

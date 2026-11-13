@@ -373,6 +373,24 @@ sistem bilgisine eklenir.
 
 **Kayıtlar:** [ai-a4 ürün bağlamı](decisions/ai-a4-urun-baglami.md)
 
+### 2.7a Meta — `/panel/entegrasyonlar#meta`
+
+**Ne işe yarar.** Uygulamanın Meta reklam hesabını bağlar: satın almalar Meta'ya bildirilir (tarayıcı pikseli +
+Conversions API) ve kampanya harcaması ROAS için çekilir (A30).
+
+**Ekranda ne var** ([`Meta.tsx`](../core/panel/src/uygulama/sayfalar/Meta.tsx)) — **Dönüşüm** kartı: Pixel ID,
+Conversions API anahtarı, isteğe bağlı test olay kodu · **Harcama** kartı: reklam hesabı (`act_…`), Insights anahtarı.
+Kayıtlı anahtarın yalnız son 4 hanesi görünür.
+
+**Ne yapabilirsin.** Değerleri gir ve **"Bağlantıyı kaydet"**; anahtar alanını boş bırakırsan kayıtlı anahtar
+değişmez, **"Kaldır"** siler. **"Bağlantıyı dene"** kayıtlı değerlerle Meta'ya gerçek istek atar ve parça parça sonucu
+gösterir. **"Bağlantıyı kaldır"** (onaylı) dönüşüm gönderimini ve harcama çekişini durdurur.
+
+**Arkada nasıl çalışır.** Değerler `meta_baglantilari`'nda, anahtarlar `AYAR_SIFRELEME_ANAHTARI` ile şifreli
+([`MetaBaglantisi`](../core/src/Atif/MetaBaglantisi.php), [`Sifreleyici`](../core/src/Uygulama/Sifreleyici.php)). Dönüşüm
+kuyruğu gönderim anındaki bağlantıyı okur; harcama komutu bağlı her hesabı çeker; huni pikseli Pixel'i giriş
+bağlantısı yanıtından alır ([a30](decisions/a30-meta-baglantisi.md)).
+
 ### 2.8 API anahtarları — `/panel/entegrasyonlar#anahtarlar`
 
 **Ne işe yarar.** Claude Code ya da Claude Desktop'un MCP ile panele bağlanmasını sağlar: Claude raporları okuyabilir,
