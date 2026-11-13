@@ -2,8 +2,7 @@
 interface ImportMetaEnv {
   /** Çekirdek API kökü, derlemede gömülür (huni statik). */
   readonly PUBLIC_CORE_URL: string;
-  /** Tarayıcı piksel kimlikleri; boşsa ilgili piksel yüklenmez. */
-  readonly PUBLIC_META_PIXEL_ID: string;
+  /** TikTok tarayıcı pikseli; boşsa yüklenmez. Meta Pixel'i panelden (A30). */
   readonly PUBLIC_TIKTOK_PIXEL_ID: string;
 }
 

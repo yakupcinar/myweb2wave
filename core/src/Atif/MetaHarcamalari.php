@@ -6,14 +6,14 @@ namespace App\Atif;
 
 use App\Billing\ParaBirimi;
 use Doctrine\DBAL\Connection;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * M5d (A18): Meta kampanya harcamasını gün başına çeker (Ads Insights,
  * level=campaign, time_increment=1). Son N gün her çekişte yeniden yazılır —
- * Meta yakın günleri düzeltir. Hesap ya da anahtar yoksa kapalı.
+ * Meta yakın günleri düzeltir. A30: hesap ve anahtar uygulama başına
+ * panelden (MetaBaglantisi); bağlı her hesap çekilir, hiçbiri yoksa kapalı.
  */
 final readonly class MetaHarcamalari
 {
@@ -23,18 +23,13 @@ final readonly class MetaHarcamalari
     public function __construct(
         private Connection $db,
         private HttpClientInterface $http,
-        #[Autowire('%env(META_AD_ACCOUNT_ID)%')]
-        private string $hesap,
-        #[Autowire('%env(META_INSIGHTS_ACCESS_TOKEN)%')]
-        private string $anahtar,
-        #[Autowire('%env(META_GRAPH_API_VERSION)%')]
-        private string $surum,
+        private MetaBaglantisi $baglanti,
     ) {
     }
 
     public function acik(): bool
     {
-        return 1 === preg_match('/^act_\d+$/', $this->hesap) && '' !== $this->anahtar && 1 === preg_match('/^v\d+\.\d+$/', $this->surum);
+        return $this->baglanti->surumGecerli() && [] !== $this->baglanti->harcamaHesaplari();
     }
 
     /**
@@ -45,9 +40,42 @@ final readonly class MetaHarcamalari
     public function cek(int $gun, ?\DateTimeImmutable $bugun = null): array|string
     {
         if (!$this->acik()) {
-            return 'Meta harcaması kapalı (META_AD_ACCOUNT_ID, META_INSIGHTS_ACCESS_TOKEN, META_GRAPH_API_VERSION)';
+            return 'Meta harcaması kapalı: panelde Entegrasyonlar › Meta (reklam hesabı + Insights anahtarı) ya da META_GRAPH_API_VERSION yok';
         }
         $bugun ??= new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
+        $satirlar = [];
+        $atlanan = 0;
+        foreach ($this->baglanti->harcamaHesaplari() as $h) {
+            $sonuc = $this->hesaptan($h['hesap'], $h['insights'], $gun, $bugun);
+            if (\is_string($sonuc)) {
+                return "{$h['app']}: {$sonuc}";
+            }
+            [$hesapSatirlari, $hesapAtlanan] = $sonuc;
+            array_push($satirlar, ...$hesapSatirlari);
+            $atlanan += $hesapAtlanan;
+        }
+        $this->db->transactional(function (Connection $db) use ($satirlar): void {
+            foreach ($satirlar as $s) {
+                $db->executeStatement(
+                    "INSERT INTO reklam_harcamalari (saglayici, kampanya_id, kampanya_adi, gun, harcama_kucuk, para_birimi)
+                     VALUES ('meta', :id, :ad, :gun, :harcama, :para)
+                     ON CONFLICT (saglayici, kampanya_id, gun) DO UPDATE SET kampanya_adi = EXCLUDED.kampanya_adi,
+                         harcama_kucuk = EXCLUDED.harcama_kucuk, para_birimi = EXCLUDED.para_birimi, guncellendi_at = now()",
+                    $s,
+                );
+            }
+        });
+
+        return ['satir' => \count($satirlar), 'atlanan' => $atlanan];
+    }
+
+    /**
+     * Tek hesabın sayfaları.
+     *
+     * @return array{list<array{id: string, ad: string, gun: string, harcama: int, para: string}>, int}|string satırlar + atlanan ya da hata
+     */
+    private function hesaptan(string $hesap, string $anahtar, int $gun, \DateTimeImmutable $bugun): array|string
+    {
         $satirlar = [];
         $atlanan = 0;
         $sonraki = null;
@@ -57,9 +85,9 @@ final readonly class MetaHarcamalari
             }
             try {
                 // Sonraki sayfa paging.next adresinden değil imleçten: adres anahtarı taşır.
-                $yanit = $this->http->request('GET', 'https://graph.facebook.com/'.$this->surum.'/'.rawurlencode($this->hesap).'/insights', [
+                $yanit = $this->http->request('GET', 'https://graph.facebook.com/'.$this->baglanti->surum().'/'.rawurlencode($hesap).'/insights', [
                     'query' => [
-                        'access_token' => $this->anahtar,
+                        'access_token' => $anahtar,
                         'level' => 'campaign',
                         'time_increment' => 1,
                         'time_range' => json_encode(['since' => $bugun->modify('-'.($gun - 1).' days')->format('Y-m-d'), 'until' => $bugun->format('Y-m-d')], \JSON_THROW_ON_ERROR),
@@ -92,19 +120,8 @@ final readonly class MetaHarcamalari
                 break;
             }
         }
-        $this->db->transactional(function (Connection $db) use ($satirlar): void {
-            foreach ($satirlar as $s) {
-                $db->executeStatement(
-                    "INSERT INTO reklam_harcamalari (saglayici, kampanya_id, kampanya_adi, gun, harcama_kucuk, para_birimi)
-                     VALUES ('meta', :id, :ad, :gun, :harcama, :para)
-                     ON CONFLICT (saglayici, kampanya_id, gun) DO UPDATE SET kampanya_adi = EXCLUDED.kampanya_adi,
-                         harcama_kucuk = EXCLUDED.harcama_kucuk, para_birimi = EXCLUDED.para_birimi, guncellendi_at = now()",
-                    $s,
-                );
-            }
-        });
 
-        return ['satir' => \count($satirlar), 'atlanan' => $atlanan];
+        return [$satirlar, $atlanan];
     }
 
     /**

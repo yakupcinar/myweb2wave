@@ -260,6 +260,15 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A30 · Meta bağlantısı panelden** (2026-11-14, kullanıcı: üç öneri de).
+- **Elle girilir + "Bağlantıyı dene":** Pixel ID, CAPI erişim anahtarı, reklam hesabı (`act_…`), Insights anahtarı;
+  dene düğmesi Meta Graph API'ye gerçek istek atar. Reddedilen: "Facebook ile giriş" (OAuth) — Meta uygulaması,
+  uygulama incelemesi ve herkese açık HTTPS adresi ister; sunucu yok (dağıtım ertelendi).
+- **Kapsam dönüşüm + harcama, uygulama başına**; `META_*` ortam değişkenleri kalkar (tek kaynak panel).
+  Reddedilen: yalnız dönüşüm (harcama ortamda kalırdı — iki kaynak).
+- **Anahtarlar şifreli** (sodium, şifreleme anahtarı ortamda); panelde yalnız son 4 hane, yeniden yazılabilir.
+  Reddedilen: düz metin (webhook sırrı gibi) — Meta anahtarı reklam hesabını okur / olay yazar, DB yedeği sızarsa.
+
 **A29 · R2 CSV dışa aktarım** (2026-11-12, kullanıcı: "önerin uygun").
 - **E-posta panelle aynı maskeli** (`a***@example.com`); tam adres yalnız Stripe'ta. Reddedilen: tam adres (kişisel
   veri panelden dışarı çıkar; panelde de gösterilmiyor).

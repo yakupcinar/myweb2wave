@@ -870,6 +870,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** A30 — Meta bağlantısı (dönüşüm + harcama); anahtarların yalnız son 4 hanesi */
+        get: operations["panelMeta"];
+        /** Kaydeder; capiAnahtari / insightsAnahtari yoksa ya da null ise değişmez, boş dize kaldırır */
+        put: operations["panelMetaKaydet"];
+        post?: never;
+        /** Bağlantıyı kaldırır (dönüşüm ve harcama durur) */
+        delete: operations["panelMetaSil"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/meta/dene": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A30 — kayıtlı değerlerle Meta Graph API'ye gerçek istek: Pixel (CAPI anahtarıyla) ve reklam hesabı (Insights anahtarıyla) */
+        post: operations["panelMetaDene"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/anahtarlar": {
         parameters: {
             query?: never;
@@ -1383,6 +1423,32 @@ export interface components {
                 deney: string;
                 varyantlar: string[];
             }[];
+        };
+        MetaAnahtari: {
+            /**
+             * @description okunamadi — sunucunun şifreleme anahtarı değişmiş; yeniden girilmeli
+             * @enum {string}
+             */
+            durum: "yok" | "kayitli" | "okunamadi";
+            son4: string | null;
+        };
+        PanelMeta: {
+            pixelId: string;
+            capiAnahtari: components["schemas"]["MetaAnahtari"];
+            testKodu: string;
+            reklamHesabi: string;
+            insightsAnahtari: components["schemas"]["MetaAnahtari"];
+            /** @description Sunucuda AYAR_SIFRELEME_ANAHTARI var; yoksa anahtar kaydedilemez */
+            sifrelemeHazir: boolean;
+            /** @description Graph API sürümü (META_GRAPH_API_VERSION); yoksa null */
+            surum: string | null;
+            /** Format: date-time */
+            guncellendi: string | null;
+        };
+        MetaDenemeSonucu: {
+            /** @enum {string} */
+            durum: "tamam" | "hata" | "ayarsiz";
+            mesaj: string;
         };
         /** @enum {string} */
         EpostaSablonu: "dogrulama_kodu" | "giris_baglantisi" | "portal_baglantisi" | "aktivasyon_1" | "aktivasyon_2" | "kurtarma_1" | "kurtarma_2";
@@ -2538,6 +2604,8 @@ export interface operations {
                     "application/json": {
                         /** @description <şema>://giris?jeton=… — uygulamayı açar */
                         uygulama_adresi: string;
+                        /** @description A30 — uygulamanın Meta Pixel'i (panelden); yoksa null, piksel yüklenmez */
+                        metaPixelId: string | null;
                         /** Format: date-time */
                         son_kullanma: string;
                         /** @description Ç118 — oturum tutarı 0 (kartlı deneme); reklam pikseli Purchase yerine StartTrial gönderir */
@@ -4621,6 +4689,185 @@ export interface operations {
                 };
             };
             /** @description Kayıtlı şablon yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlantı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMeta"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelMetaKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pixelId?: string;
+                    capiAnahtari?: string | null;
+                    testKodu?: string;
+                    reklamHesabi?: string;
+                    insightsAnahtari?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedilen bağlantı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMeta"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz değer ya da şifreleme anahtarı yok */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelMetaSil: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Boş bağlantı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMeta"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Kayıtlı bağlantı yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelMetaDene: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Parça başına sonuç; mesaj anahtar içermez */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        donusum: components["schemas"]["MetaDenemeSonucu"];
+                        harcama: components["schemas"]["MetaDenemeSonucu"];
+                    };
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
             404: {
                 headers: {
                     [name: string]: unknown;

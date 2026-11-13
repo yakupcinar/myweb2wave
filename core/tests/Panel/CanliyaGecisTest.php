@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Panel;
 
+use App\Atif\MetaBaglantisi;
 use App\Panel\YoneticiSaglayici;
 use App\Tests\Support\Sozlesme;
 use App\Uygulama\CanliyaGecis;
@@ -47,7 +48,8 @@ final class CanliyaGecisTest extends WebTestCase
         $this->client->request('GET', '/panel/api/uygulamalar/yok/canliya-gecis');
         self::assertResponseStatusCodeSame(404);
 
-        // .env.test: sk_test_ anahtar, whsec dolu, null:// posta, Meta hesabı + anahtar dolu.
+        // .env.test: sk_test_ anahtar, whsec dolu, null:// posta; A30: Meta hesabı + anahtar panelden.
+        $this->metaKaydet('act_11111', 'test_insights_token_0123456789');
         self::assertSame([
             'odeme' => ['tamam' => true, 'kip' => 'test'],
             'stripeBildirimleri' => ['tamam' => false, 'son' => null],
@@ -59,7 +61,7 @@ final class CanliyaGecisTest extends WebTestCase
         $govde = (string) $this->client->getResponse()->getContent();
         self::assertStringNotContainsString('sk_test_stripemock', $govde);
         self::assertStringNotContainsString('whsec_test_gizli', $govde);
-        self::assertStringNotContainsString('test_insights_token', $govde);
+        self::assertStringNotContainsString('test_insights_token_0123456789', $govde);
 
         $this->db->insert('processed_webhook_events', ['event_id' => 'evt_1', 'type' => 'invoice.paid', 'processed_at' => '2026-11-10 09:00:00+00']);
         $yasal = static::getContainer()->get(YasalMetinler::class);
@@ -80,19 +82,22 @@ final class CanliyaGecisTest extends WebTestCase
         $this->db->insert('processed_webhook_events', ['event_id' => 'evt_1', 'type' => 'invoice.paid']);
         $simdi = new \DateTimeImmutable();
 
-        $canli = $this->servis('sk_live_x', 'whsec_x', 'postmark+api://anahtar@default', 'act_1', 'jeton')->durum('keepchat', $simdi);
+        $this->metaKaydet('act_11111', 'test_insights_token_0123456789');
+        $canli = $this->servis('sk_live_x', 'whsec_x', 'postmark+api://anahtar@default')->durum('keepchat', $simdi);
         self::assertSame(['tamam' => true, 'kip' => 'canli'], $canli['odeme']);
         self::assertTrue($canli['eposta']['tamam']);
         self::assertTrue($canli['metaReklam']['tamam']);
         self::assertSame(['tamam' => true, 'kip' => 'canli'], $this->servis('rk_live_x')->durum('keepchat', $simdi)['odeme']);
 
-        $bos = $this->servis('', '', 'smtp://mailpit:1025', '', 'jeton')->durum('keepchat', $simdi);
+        $this->db->executeStatement('TRUNCATE meta_baglantilari');
+        $bos = $this->servis('', '', 'smtp://mailpit:1025')->durum('keepchat', $simdi);
         self::assertSame(['tamam' => false, 'kip' => null], $bos['odeme']);
         // Olay işlenmiş olsa da gizli yoksa imza doğrulanamaz: eksik.
         self::assertSame(['tamam' => false, 'son' => null], $bos['stripeBildirimleri']);
         self::assertFalse($bos['eposta']['tamam']);
         self::assertFalse($bos['metaReklam']['tamam']);
-        self::assertFalse($this->servis(metaHesap: 'act_1', metaAnahtar: '')->durum('keepchat', $simdi)['metaReklam']['tamam']);
+        $this->metaKaydet('act_11111', null);
+        self::assertFalse($this->servis()->durum('keepchat', $simdi)['metaReklam']['tamam'], 'hesap var, anahtar yok');
     }
 
     public function testGorevBeklenenAraliktaCalismisOlmali(): void
@@ -123,12 +128,22 @@ final class CanliyaGecisTest extends WebTestCase
         self::assertSame(['app:webhook:gonder'], $this->db->fetchFirstColumn('SELECT komut FROM zamanli_gorevler'));
     }
 
-    private function servis(string $stripe = 'sk_test_x', string $webhook = 'whsec_x', string $dsn = 'null://null', string $metaHesap = 'act_1', string $metaAnahtar = 'jeton'): CanliyaGecis
+    private function servis(string $stripe = 'sk_test_x', string $webhook = 'whsec_x', string $dsn = 'null://null'): CanliyaGecis
     {
         $yasal = static::getContainer()->get(YasalMetinler::class);
+        $meta = static::getContainer()->get(MetaBaglantisi::class);
         self::assertInstanceOf(YasalMetinler::class, $yasal);
+        self::assertInstanceOf(MetaBaglantisi::class, $meta);
 
-        return new CanliyaGecis($this->db, $yasal, $stripe, $webhook, $dsn, $metaHesap, $metaAnahtar);
+        return new CanliyaGecis($this->db, $yasal, $stripe, $webhook, $dsn, $meta);
+    }
+
+    private function metaKaydet(string $hesap, ?string $anahtar): void
+    {
+        $this->db->executeStatement('TRUNCATE meta_baglantilari');
+        $meta = static::getContainer()->get(MetaBaglantisi::class);
+        self::assertInstanceOf(MetaBaglantisi::class, $meta);
+        self::assertSame([], $meta->kaydet('keepchat', ['reklamHesabi' => $hesap, 'insightsAnahtari' => $anahtar]));
     }
 
     /** @return array<string, mixed> */

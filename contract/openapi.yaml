@@ -324,9 +324,10 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [uygulama_adresi, son_kullanma, deneme]
+                required: [uygulama_adresi, son_kullanma, deneme, metaPixelId]
                 properties:
                   uygulama_adresi: { type: string, description: "<şema>://giris?jeton=… — uygulamayı açar" }
+                  metaPixelId: { type: [string, "null"], description: "A30 — uygulamanın Meta Pixel'i (panelden); yoksa null, piksel yüklenmez" }
                   son_kullanma: { type: string, format: date-time }
                   deneme: { type: boolean, description: "Ç118 — oturum tutarı 0 (kartlı deneme); reklam pikseli Purchase yerine StartTrial gönderir" }
         "400": { description: Gövde JSON değil }
@@ -1238,6 +1239,69 @@ paths:
         "200": { description: Güncel şablonlar, content: { application/json: { schema: { $ref: "#/components/schemas/PanelEpostalar" } } } }
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Kayıtlı şablon yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/meta:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelMeta
+      summary: "A30 — Meta bağlantısı (dönüşüm + harcama); anahtarların yalnız son 4 hanesi"
+      responses:
+        "200": { description: Bağlantı, content: { application/json: { schema: { $ref: "#/components/schemas/PanelMeta" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    put:
+      operationId: panelMetaKaydet
+      summary: "Kaydeder; capiAnahtari / insightsAnahtari yoksa ya da null ise değişmez, boş dize kaldırır"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                pixelId: { type: string, maxLength: 20 }
+                capiAnahtari: { type: [string, "null"], maxLength: 1000 }
+                testKodu: { type: string, maxLength: 40 }
+                reklamHesabi: { type: string, maxLength: 30 }
+                insightsAnahtari: { type: [string, "null"], maxLength: 1000 }
+      responses:
+        "200": { description: Kaydedilen bağlantı, content: { application/json: { schema: { $ref: "#/components/schemas/PanelMeta" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz değer ya da şifreleme anahtarı yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    delete:
+      operationId: panelMetaSil
+      summary: Bağlantıyı kaldırır (dönüşüm ve harcama durur)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Boş bağlantı, content: { application/json: { schema: { $ref: "#/components/schemas/PanelMeta" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Kayıtlı bağlantı yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/meta/dene:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: panelMetaDene
+      summary: "A30 — kayıtlı değerlerle Meta Graph API'ye gerçek istek: Pixel (CAPI anahtarıyla) ve reklam hesabı (Insights anahtarıyla)"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Parça başına sonuç; mesaj anahtar içermez
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [donusum, harcama]
+                properties:
+                  donusum: { $ref: "#/components/schemas/MetaDenemeSonucu" }
+                  harcama: { $ref: "#/components/schemas/MetaDenemeSonucu" }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/anahtarlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1940,6 +2004,33 @@ components:
             properties:
               deney: { type: string }
               varyantlar: { type: array, items: { type: string } }
+    MetaAnahtari:
+      type: object
+      additionalProperties: false
+      required: [durum, son4]
+      properties:
+        durum: { type: string, enum: [yok, kayitli, okunamadi], description: "okunamadi — sunucunun şifreleme anahtarı değişmiş; yeniden girilmeli" }
+        son4: { type: [string, "null"] }
+    PanelMeta:
+      type: object
+      additionalProperties: false
+      required: [pixelId, capiAnahtari, testKodu, reklamHesabi, insightsAnahtari, sifrelemeHazir, surum, guncellendi]
+      properties:
+        pixelId: { type: string }
+        capiAnahtari: { $ref: "#/components/schemas/MetaAnahtari" }
+        testKodu: { type: string }
+        reklamHesabi: { type: string }
+        insightsAnahtari: { $ref: "#/components/schemas/MetaAnahtari" }
+        sifrelemeHazir: { type: boolean, description: "Sunucuda AYAR_SIFRELEME_ANAHTARI var; yoksa anahtar kaydedilemez" }
+        surum: { type: [string, "null"], description: "Graph API sürümü (META_GRAPH_API_VERSION); yoksa null" }
+        guncellendi: { type: [string, "null"], format: date-time }
+    MetaDenemeSonucu:
+      type: object
+      additionalProperties: false
+      required: [durum, mesaj]
+      properties:
+        durum: { type: string, enum: [tamam, hata, ayarsiz] }
+        mesaj: { type: string }
     EpostaSablonu:
       type: string
       enum: [dogrulama_kodu, giris_baglantisi, portal_baglantisi, aktivasyon_1, aktivasyon_2, kurtarma_1, kurtarma_2]

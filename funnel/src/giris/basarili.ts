@@ -56,7 +56,8 @@ const goster = (id: string) => {
 const durum = document.getElementById("durum");
 
 async function iste(): Promise<
-  { uygulama_adresi: string; deneme: boolean } | undefined
+  | { uygulama_adresi: string; deneme: boolean; metaPixelId: string | null }
+  | undefined
 > {
   if (!oturum?.startsWith("cs_")) return undefined;
   for (let i = 0; i < DENEME; i++) {
@@ -84,7 +85,8 @@ void iste().then((baglanti) => {
       izin: izinOku() === "evet",
       oturum,
       deneme: baglanti?.deneme ?? false,
-      metaPixelId: import.meta.env.PUBLIC_META_PIXEL_ID,
+      // A30: uygulamanın Pixel'i panelden, yanıtta (derlemeye gömülü değil).
+      metaPixelId: baglanti?.metaPixelId ?? "",
       tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID,
     });
     a.setAttribute("href", adres);

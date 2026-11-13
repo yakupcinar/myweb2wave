@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Uygulama;
 
+use App\Atif\MetaBaglantisi;
 use App\Yasal\YasalMetinler;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -39,10 +40,8 @@ final readonly class CanliyaGecis
         private string $stripeWebhookGizli,
         #[Autowire('%env(MAILER_DSN)%')]
         private string $postaDsn,
-        #[Autowire('%env(META_AD_ACCOUNT_ID)%')]
-        private string $metaHesap,
-        #[Autowire('%env(META_INSIGHTS_ACCESS_TOKEN)%')]
-        private string $metaAnahtar,
+        /** A30: reklam hesabı panelden (Entegrasyonlar › Meta). */
+        private MetaBaglantisi $meta,
     ) {
     }
 
@@ -64,6 +63,7 @@ final readonly class CanliyaGecis
         $son = '' === $this->stripeWebhookGizli ? null : $this->db->fetchOne('SELECT max(processed_at) FROM processed_webhook_events');
         $yayinda = $this->yasal->yayindakiler($app, 'tr');
         $yasalEksik = array_values(array_diff(self::PAYWALL_BELGELERI, $yayinda));
+        $meta = $this->meta->oku($app);
         $calisanlar = $this->db->fetchAllKeyValue('SELECT komut, son_calisma FROM zamanli_gorevler');
         $gorevEksik = [];
         foreach (self::GOREVLER as $komut => $aralik) {
@@ -78,7 +78,7 @@ final readonly class CanliyaGecis
             'stripeBildirimleri' => ['tamam' => \is_string($son), 'son' => \is_string($son) ? (new \DateTimeImmutable($son))->format(\DATE_ATOM) : null],
             'eposta' => ['tamam' => str_starts_with($this->postaDsn, 'postmark+')],
             'yasal' => ['tamam' => [] === $yasalEksik, 'eksikler' => $yasalEksik],
-            'metaReklam' => ['tamam' => '' !== $this->metaHesap && '' !== $this->metaAnahtar],
+            'metaReklam' => ['tamam' => null !== $meta['hesap'] && null !== $meta['insights']],
             'gorevler' => ['tamam' => [] === $gorevEksik, 'eksikler' => $gorevEksik],
         ];
     }

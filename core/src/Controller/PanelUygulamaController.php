@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Ai\UrunBaglami;
+use App\Atif\MetaBaglantisi;
 use App\Huni\Varsayilanlar;
 use App\Mcp\ApiAnahtarlari;
 use App\Posta\EpostaSablonlari;
@@ -40,6 +41,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly ApiAnahtarlari $anahtarlar,
         private readonly CanliyaGecis $canliyaGecis,
         private readonly EpostaSablonlari $epostalar,
+        private readonly MetaBaglantisi $meta,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
         private readonly string $mcpAdresi,
@@ -242,6 +244,60 @@ final class PanelUygulamaController extends AbstractController
         return self::korumali($this->epostalar->sil($app, $sablon, $dil)
             ? new JsonResponse(['sablonlar' => $this->epostalar->liste($app)])
             : new JsonResponse(['hatalar' => ['Kayıtlı şablon yok — zaten varsayılan.']], 404));
+    }
+
+    /** A30: Meta bağlantısı — anahtarların yalnız son 4 hanesi. */
+    #[Route('/{app}/meta', name: 'panel_api_meta', methods: ['GET'])]
+    public function meta(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->meta->panel($app)));
+    }
+
+    #[Route('/{app}/meta', name: 'panel_api_meta_kaydet', methods: ['PUT'])]
+    public function metaKaydet(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $hatalar = $this->meta->kaydet($app, json_decode($request->getContent(), true));
+
+        return self::korumali([] === $hatalar
+            ? new JsonResponse($this->meta->panel($app))
+            : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** Bağlantıyı kaldır: dönüşüm ve harcama durur. */
+    #[Route('/{app}/meta', name: 'panel_api_meta_sil', methods: ['DELETE'])]
+    public function metaSil(Request $request, string $app): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+
+        return self::korumali($this->meta->sil($app)
+            ? new JsonResponse($this->meta->panel($app))
+            : new JsonResponse(['hatalar' => ['Kayıtlı Meta bağlantısı yok.']], 404));
+    }
+
+    /** Kayıtlı değerlerle Meta'ya gerçek istek (Pixel ve reklam hesabı okunur). */
+    #[Route('/{app}/meta/dene', name: 'panel_api_meta_dene', methods: ['POST'])]
+    public function metaDene(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+
+        return self::korumali(new JsonResponse($this->meta->dene($app)));
     }
 
     /** A5a: kişisel API anahtarları (MCP) — liste; anahtarın kendisi yok, önek var. */

@@ -44,15 +44,16 @@ Doldur; rastgele değerler `openssl rand -hex 32`. Panel şifresinin
 `https://<API_ALANI>/panel`. `UYGULAMA_ANAHTARI_KEEPCHAT`
 KeepChat sunucusundakiyle **aynı**. Sırlar sohbete, depoya yazılmaz.
 
-H6 reklam ölçümü isteğe bağlıdır. `META_PIXEL_ID` ve `TIKTOK_PIXEL_ID`, hem
-sunucu olayları hem tarayıcı pikseli için aynı herkese açık kimliklerdir;
-web imajı bu değerlerle derlenir. Kimlikler değişince `deploy/dagit.sh`
-`web` imajını yeniden kurar. Erişim anahtarları yalnız çekirdek sunucuda
-kullanılır; tarayıcıya aktarılmaz. Meta için `META_PIXEL_ID`,
-`META_ACCESS_TOKEN`, `META_GRAPH_API_VERSION` (ör. `vXX.0`) ve test modu
-doğrulaması için `META_TEST_EVENT_CODE`; TikTok için `TIKTOK_PIXEL_ID`,
-`TIKTOK_ACCESS_TOKEN` ve isteğe bağlı `TIKTOK_TEST_EVENT_CODE` girilir. Boş
-değer ilgili ağı kapalı tutar. Gerçek trafik öncesinde sağlayıcı panellerinde
+H6 reklam ölçümü isteğe bağlıdır. **Meta** (A30) panelden bağlanır:
+Entegrasyonlar › Meta — Pixel ID, CAPI erişim anahtarı, isteğe bağlı test olay
+kodu, reklam hesabı ve Insights anahtarı; "Bağlantıyı dene" Meta'ya gerçek
+istek atar. Anahtarlar `AYAR_SIFRELEME_ANAHTARI` ile şifreli saklanır — bir kez
+üret ve sakla; değişirse anahtarlar panelde yeniden girilir. Ortamda yalnız
+`META_GRAPH_API_VERSION` (ör. `vXX.0`). Tarayıcı pikseli Pixel'i sunucudan
+alır; imaj yeniden kurulmaz. **TikTok** için `TIKTOK_PIXEL_ID` (web imajı bununla
+derlenir; değişince `deploy/dagit.sh` `web` imajını yeniden kurar),
+`TIKTOK_ACCESS_TOKEN` ve isteğe bağlı `TIKTOK_TEST_EVENT_CODE`. Boş değer
+ilgili ağı kapalı tutar. Gerçek trafik öncesinde sağlayıcı panellerinde
 test olayını doğrula. Test olay kodları yalnız sunucu olaylarına eklenir.
 İzin metni, gizlilik bağlantısı ve geri alma akışı Ç56 kapanmadan ücretli
 reklam açılmamalıdır.

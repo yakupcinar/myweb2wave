@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Atif\MetaBaglantisi;
 use App\Kimlik\GirisBaglantisi;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +21,7 @@ final readonly class GirisBaglantisiController
 {
     public function __construct(
         private GirisBaglantisi $giris,
+        private MetaBaglantisi $meta,
         /** @var array<string, array<string, string>> */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
@@ -45,7 +47,8 @@ final readonly class GirisBaglantisiController
             'hazir_degil' => new JsonResponse(['error' => 'not_ready'], 404),
             'pencere_kapandi' => new JsonResponse(['error' => 'link_window_closed'], 410),
             'cok_istek' => new JsonResponse(['error' => 'too_many_requests'], 429),
-            default => new JsonResponse($sonuc, 201),
+            // A30: tarayıcı pikseli uygulamanın panelden girilen Pixel'iyle (derlemeye gömülü değil).
+            default => new JsonResponse($sonuc + ['metaPixelId' => $this->meta->oku($app)['pixel']], 201),
         };
     }
 }

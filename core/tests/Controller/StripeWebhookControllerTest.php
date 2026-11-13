@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Atif\DonusumAktarimi;
+use App\Atif\MetaBaglantisi;
 use App\Tests\Support\SahteRevenueCat;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
@@ -24,6 +25,11 @@ final class StripeWebhookControllerTest extends WebTestCase
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
         SahteRevenueCat::sifirla();
+        // A30: Meta bağlantısı panel kaydından (önceden .env.test).
+        $this->db->executeStatement('TRUNCATE meta_baglantilari');
+        $meta = static::getContainer()->get(MetaBaglantisi::class);
+        self::assertInstanceOf(MetaBaglantisi::class, $meta);
+        self::assertSame([], $meta->kaydet('keepchat', ['pixelId' => '123456789', 'capiAnahtari' => 'test_meta_token_0123456789', 'testKodu' => 'TEST_META']));
         $this->db->executeStatement('TRUNCATE reklam_donusumleri, revenuecat_gidenler, subscriptions, processed_webhook_events, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler');
     }
 
@@ -170,6 +176,8 @@ final class StripeWebhookControllerTest extends WebTestCase
         self::assertStringStartsWith('https://graph.facebook.com/v99.0/123456789/events', SahteRevenueCat::istek(0)['url']);
         self::assertSame('https://business-api.tiktok.com/open_api/v1.3/event/track/', SahteRevenueCat::istek(1)['url']);
         $meta = SahteRevenueCat::govde(0);
+        // A30: test olay kodu panel kaydından.
+        self::assertSame('TEST_META', $meta['test_event_code'] ?? null);
         $tiktok = SahteRevenueCat::govde(1);
         self::assertIsArray($meta['data'] ?? null);
         self::assertIsArray($tiktok['data'] ?? null);

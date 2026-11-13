@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Atif\MetaBaglantisi;
 use App\Atif\Ziyaretler;
 use App\Huni\Huniler;
 use App\Kimlik\GirisBaglantisi;
@@ -33,7 +34,7 @@ final class GirisBaglantisiTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE posta_bastirma, giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
+        $this->db->executeStatement('TRUNCATE meta_baglantilari, posta_bastirma, giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
     }
 
     // --- başarı sayfası ---
@@ -53,6 +54,23 @@ final class GirisBaglantisiTest extends WebTestCase
         // Jeton düz saklanmaz.
         self::assertSame(0, $this->say('SELECT count(*) FROM giris_jetonlari WHERE ozet = ?', [$this->jeton($adres)]));
         self::assertSame(1, $this->say("SELECT count(*) FROM giris_jetonlari WHERE ozet = ? AND email = 'ayse@example.com'", [hash('sha256', $this->jeton($adres))]));
+        // A30: Meta bağlı değil — alan var, değer null (piksel yüklenmez).
+        self::assertArrayHasKey('metaPixelId', $this->govde());
+        self::assertNull($this->govde()['metaPixelId']);
+    }
+
+    /** A30: tarayıcı pikseli uygulamanın panelden girilen Pixel'iyle (derlemeye gömülü değil). */
+    public function testYanittaUygulamaninPixeli(): void
+    {
+        $meta = static::getContainer()->get(MetaBaglantisi::class);
+        self::assertInstanceOf(MetaBaglantisi::class, $meta);
+        self::assertSame([], $meta->kaydet('keepchat', ['pixelId' => '987654321']));
+        $this->odemeTamamlandi('cs_1', 'a@example.com');
+        $this->sayfaIster('cs_1');
+
+        self::assertResponseStatusCodeSame(201);
+        Sozlesme::yanitiDogrula('POST', '/huni/giris-baglantisi', $this->client->getResponse());
+        self::assertSame('987654321', $this->govde()['metaPixelId'] ?? null);
     }
 
     /**

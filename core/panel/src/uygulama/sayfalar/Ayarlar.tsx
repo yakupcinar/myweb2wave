@@ -117,7 +117,9 @@ const ADIMLAR: {
         ad: "metaReklam",
         baslik: "Meta reklam hesabı",
         aciklama: () => "Kampanya harcaması ve getirisi (ROAS) için.",
-        nasil: "META_AD_ACCOUNT_ID (act_… biçiminde) ve ads_read izinli META_INSIGHTS_ACCESS_TOKEN yazılır.",
+        // A30: panelden — Entegrasyonlar › Meta.
+        nasil: "Entegrasyonlar › Meta'da reklam hesabı (act_…) ve ads_read izinli Insights anahtarı girilir.",
+        ac: "/panel/entegrasyonlar#meta",
     },
     {
         ad: "gorevler",

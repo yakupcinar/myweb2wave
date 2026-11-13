@@ -148,7 +148,7 @@ okunur (`/panel/api/rapor/ziyaretler|kaynaklar|serbestYanitlar`, P7a2).
    ödeme oturumları `odeme_oturumlari`, faturalar ve iadeler `odeme_faturalari`, Meta harcaması `reklam_harcamalari`.
 4. Faturalar ve iadeler Stripe webhook'uyla gelir ([`SubscriptionSync`](../core/src/Billing/SubscriptionSync.php)).
    Meta harcamasını ise [`MetaHarcamalari`](../core/src/Atif/MetaHarcamalari.php) her gün `app:reklam-harcamalari:cek`
-   komutuyla çeker (cron gerekir).
+   komutuyla, panelde bağlı her uygulamanın reklam hesabından çeker (cron gerekir; A30, Entegrasyonlar › Meta).
 5. Aynı sorgular Claude'a MCP araçları olarak da açıktır ([`RaporAraclari`](../core/src/Mcp/RaporAraclari.php)): "geçen
    haftanın Meta ROAS'ı ne?" diye sorulabilir.
 
@@ -517,7 +517,7 @@ gider, HTML yok. Bilinmeyen yer tutucu ya da metinde eksik zorunlu yer tutucu ka
 |---|---|---|---|
 | `app:webhook:gonder` | Olayları müşterinin hedeflerine imzalı gönderir (2.6) | `webhook_teslimleri` | dakikada bir |
 | `app:posta:dizi` | Aktivasyon ve kurtarma e-postaları (4.3) | `posta_dizisi` | 15 dakikada bir |
-| `app:reklam-donusumleri:gonder` | Gidemeyen Meta CAPI / TikTok olaylarını yeniden dener ([`DonusumAktarimi::gonder`](../core/src/Atif/DonusumAktarimi.php#L143)) | `reklam_donusumleri` | birkaç dakikada bir |
+| `app:reklam-donusumleri:gonder` | Gidemeyen Meta CAPI / TikTok olaylarını yeniden dener ([`DonusumAktarimi::gonder`](../core/src/Atif/DonusumAktarimi.php#L138)) | `reklam_donusumleri` | birkaç dakikada bir |
 | `app:revenuecat:gonder` | Bekleyen RevenueCat aktarımları | `revenuecat_gidenler` | birkaç dakikada bir |
 | `app:reklam-harcamalari:cek` | Meta harcaması, son 7 gün (Meta yakın günleri düzeltir) | `reklam_harcamalari` | günde bir |
 | `app:huni-metin-cevaplari-sil` | 90 günü geçen serbest yanıtlar ve izinsiz e-postalar | — | günde bir |

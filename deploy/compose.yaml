@@ -42,11 +42,9 @@ services:
       PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
       # A9: boş bırakılabilir (aktarım kapalı); ':-' — zorunlu değil.
       REVENUECAT_STRIPE_KEEPCHAT: ${REVENUECAT_STRIPE_KEEPCHAT:-}
-      # H6b: boş değer ilgili ağ aktarımını devre dışı bırakır.
-      META_PIXEL_ID: ${META_PIXEL_ID:-}
-      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      # H6b: boş değer ilgili ağ aktarımını devre dışı bırakır. A30: Meta hesabı panelden.
       META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-}
-      META_TEST_EVENT_CODE: ${META_TEST_EVENT_CODE:-}
+      AYAR_SIFRELEME_ANAHTARI: ${AYAR_SIFRELEME_ANAHTARI:-}
       TIKTOK_PIXEL_ID: ${TIKTOK_PIXEL_ID:-}
       TIKTOK_ACCESS_TOKEN: ${TIKTOK_ACCESS_TOKEN:-}
       # V3b: boş = stok fotoğraf kapalı.
@@ -68,7 +66,6 @@ services:
       dockerfile: deploy/web.Dockerfile
       args:
         PUBLIC_CORE_URL: https://${API_ALANI:?}
-        PUBLIC_META_PIXEL_ID: ${META_PIXEL_ID:-}
         PUBLIC_TIKTOK_PIXEL_ID: ${TIKTOK_PIXEL_ID:-}
     image: myweb2wave-web:uretim
     restart: unless-stopped

@@ -20,14 +20,8 @@ final readonly class DonusumAktarimi
         private Connection $db,
         private HttpClientInterface $http,
         private LoggerInterface $logger,
-        #[Autowire('%env(META_PIXEL_ID)%')]
-        private string $metaPixel,
-        #[Autowire('%env(META_ACCESS_TOKEN)%')]
-        private string $metaToken,
-        #[Autowire('%env(META_GRAPH_API_VERSION)%')]
-        private string $metaSurum,
-        #[Autowire('%env(META_TEST_EVENT_CODE)%')]
-        private string $metaTestKodu,
+        /** A30: Pixel, CAPI anahtarı ve test kodu uygulama başına, panelden. */
+        private MetaBaglantisi $metaBaglantisi,
         #[Autowire('%env(TIKTOK_PIXEL_ID)%')]
         private string $tiktokPixel,
         #[Autowire('%env(TIKTOK_ACCESS_TOKEN)%')]
@@ -106,8 +100,9 @@ final readonly class DonusumAktarimi
                 'custom_data' => ['value' => $anaBirimTutar, 'currency' => strtoupper($para)],
             ]],
         ];
-        if ('' !== $this->metaTestKodu) {
-            $meta['test_event_code'] = $this->metaTestKodu;
+        $metaTestKodu = $this->metaBaglantisi->oku($app)['testKodu'];
+        if (null !== $metaTestKodu) {
+            $meta['test_event_code'] = $metaTestKodu;
         }
         $tiktokUser = ['ip' => $ip, 'user_agent' => $ua];
         if (\is_string($ziyaret['ttclid'] ?? null) && '' !== $ziyaret['ttclid']) {
@@ -129,8 +124,8 @@ final readonly class DonusumAktarimi
             $tiktok['test_event_code'] = $this->tiktokTestKodu;
         }
 
-        $this->ekle($db, 'meta', $eventId, $meta, '' !== $this->metaPixel && '' !== $this->metaToken && 1 === preg_match('/^v\d+\.\d+$/', $this->metaSurum));
-        $this->ekle($db, 'tiktok', $eventId, $tiktok, '' !== $this->tiktokPixel && '' !== $this->tiktokToken);
+        $this->ekle($db, 'meta', $eventId, $meta, $app, $this->metaBaglantisi->donusumAcik($app));
+        $this->ekle($db, 'tiktok', $eventId, $tiktok, $app, '' !== $this->tiktokPixel && '' !== $this->tiktokToken);
         // Kişisel eşleme sinyalleri artık yalnız teslim bekleyen kuyrukta kalır.
         $this->baglamSil($db, $oturum);
     }
@@ -157,7 +152,7 @@ final readonly class DonusumAktarimi
                AND created_at < now() - interval '48 hours'",
         );
         $satirlar = $this->db->fetchAllAssociative(
-            'SELECT id, saglayici, event_id, payload::text AS payload FROM reklam_donusumleri
+            'SELECT id, saglayici, app, event_id, payload::text AS payload FROM reklam_donusumleri
              WHERE gonderildi_at IS NULL AND payload IS NOT NULL AND deneme < :azami
                AND (sonraki_deneme_at IS NULL OR sonraki_deneme_at <= now())
                AND created_at >= now() - interval \'7 days\'
@@ -173,7 +168,7 @@ final readonly class DonusumAktarimi
                 continue;
             }
             /** @var array<string, mixed> $yuk */
-            $hata = $this->tekGonder($saglayici, $yuk);
+            $hata = $this->tekGonder($saglayici, \is_string($s['app']) ? $s['app'] : '', $yuk);
             if (null === $hata) {
                 $this->db->executeStatement('UPDATE reklam_donusumleri SET gonderildi_at = now(), payload = NULL, son_hata = NULL WHERE id = :id', ['id' => $s['id']]);
                 ++$sonuc['gonderilen'];
@@ -193,16 +188,16 @@ final readonly class DonusumAktarimi
     }
 
     /** @param array<string, mixed> $payload */
-    private function ekle(Connection $db, string $saglayici, string $eventId, array $payload, bool $etkin): void
+    private function ekle(Connection $db, string $saglayici, string $eventId, array $payload, string $app, bool $etkin): void
     {
         if (!$etkin) {
             return;
         }
         $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         $db->executeStatement(
-            'INSERT INTO reklam_donusumleri (saglayici, event_id, payload)
-             VALUES (:saglayici, :event_id, CAST(:payload AS jsonb)) ON CONFLICT (saglayici, event_id) DO NOTHING',
-            ['saglayici' => $saglayici, 'event_id' => $eventId, 'payload' => $json],
+            'INSERT INTO reklam_donusumleri (saglayici, app, event_id, payload)
+             VALUES (:saglayici, :app, :event_id, CAST(:payload AS jsonb)) ON CONFLICT (saglayici, event_id) DO NOTHING',
+            ['saglayici' => $saglayici, 'app' => $app, 'event_id' => $eventId, 'payload' => $json],
         );
     }
 
@@ -212,12 +207,17 @@ final readonly class DonusumAktarimi
     }
 
     /** @param array<string, mixed> $payload */
-    private function tekGonder(string $saglayici, array $payload): ?string
+    private function tekGonder(string $saglayici, string $app, array $payload): ?string
     {
         try {
             if ('meta' === $saglayici) {
-                $yanit = $this->http->request('POST', 'https://graph.facebook.com/'.$this->metaSurum.'/'.rawurlencode($this->metaPixel).'/events', [
-                    'query' => ['access_token' => $this->metaToken],
+                // A30: gönderim anındaki bağlantı — panelde kaldırıldıysa ya da anahtar okunamıyorsa gitmez.
+                $m = $this->metaBaglantisi->oku($app);
+                if (null === $m['pixel'] || null === $m['capi'] || !$this->metaBaglantisi->surumGecerli()) {
+                    return 'uygulamanın Meta bağlantısı yok';
+                }
+                $yanit = $this->http->request('POST', 'https://graph.facebook.com/'.$this->metaBaglantisi->surum().'/'.rawurlencode($m['pixel']).'/events', [
+                    'query' => ['access_token' => $m['capi']],
                     'json' => $payload,
                     'timeout' => 10,
                 ]);
