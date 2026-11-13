@@ -6,8 +6,9 @@ namespace App\Huni;
 
 /**
  * Huni başına görünüm (A8 / E2.2): üç renk, yazı tipi, köşe. Yazı tipleri
- * yalnız CİHAZIN kendi yazı tipleri — dışarıdan font yüklemek ziyaretçinin
- * IP'sini üçüncü tarafa yollar (KVKK/çerez onayı, Ç12). Okunurluk
+ * cihazın kendisi ya da huniyle birlikte sunulan dosyalar (G2,
+ * huni-bilesenleri/fontlar) — dış font servisi (Google Fonts) ziyaretçinin
+ * IP'sini üçüncü tarafa yollardı (KVKK/çerez onayı, Ç12). Okunurluk
  * yayından önce ölçülür: metin/arka plan kontrastı WCAG AA (4,5:1).
  * Düğme yazısı huni sayfasında siyah/beyazdan kontrastı yüksek olanı seçilir.
  */
@@ -19,12 +20,85 @@ final class Tema
     ];
 
     /** Seçilebilir yazı tipleri — huni sayfası bunları cihaz yazı tipi yığınına çevirir. */
-    public const YAZI_TIPLERI = ['sistem', 'serif', 'yuvarlak', 'mono'];
+    public const YAZI_TIPLERI = ['sistem', 'serif', 'yuvarlak', 'mono', 'modern', 'geometrik'];
 
     public const AZAMI_KOSE = 32;
 
     /** WCAG AA, normal metin. */
     public const ASGARI_KONTRAST = 4.5;
+
+    /** G7 yerleşim, G4 düğme ön ayarları (serbest piksel değil); yoksa normal / sol / dolu. */
+    public const ON_AYARLAR = [
+        'baslikBoyu' => ['kucuk', 'normal', 'buyuk'],
+        'yogunluk' => ['sik', 'normal', 'ferah'],
+        'hizalama' => ['sol', 'orta'],
+        'dugmeBicimi' => ['dolu', 'cerceve', 'hap'],
+        // V3a: emoji simgeleri cihazın yazı tipiyle mi, Fluent görseliyle mi.
+        'simgeler' => ['cihaz', 'renkli', 'tekrenk'],
+        // V4: hareket düzeyi — sakin bugünkü davranış (varsayılan).
+        'hareket' => ['yok', 'sakin', 'canli'],
+    ];
+
+    /** G3: görsel zeminde karartma katmanının üst sınırı (%100 görseli tamamen örterdi). */
+    public const AZAMI_KARARTMA = 95;
+
+    /**
+     * V2: hazır temalar — tek kaynak: AI istemi adlarıyla görür, panel
+     * düzenleyici API'den alır (tek tıkla doldurur). Ç71'in AI örneklerinin
+     * yerine; her biri yayından geçer (TemaTest).
+     */
+    public const HAZIR_TEMALAR = [
+        'gece' => ['ad' => 'Gece', 'uygun' => 'uyku, rahatlama, meditasyon', 'tema' => ['anaRenk' => '#b7a6ff', 'arkaPlan' => '#0e1330', 'metinRengi' => '#eef0ff', 'yaziTipi' => 'modern', 'kose' => 20, 'kartRengi' => '#1a2148', 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#251a4a'], 'baslikBoyu' => 'buyuk', 'yogunluk' => 'ferah', 'hizalama' => 'orta', 'dugmeBicimi' => 'hap', 'simgeler' => 'renkli']],
+        'nane' => ['ad' => 'Nane', 'uygun' => 'sağlık, sakinlik, beslenme', 'tema' => ['anaRenk' => '#0f766e', 'arkaPlan' => '#f0fdf4', 'metinRengi' => '#14532d', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'yogunluk' => 'ferah', 'dugmeBicimi' => 'hap']],
+        'kod' => ['ad' => 'Kod', 'uygun' => 'teknoloji, üretkenlik, yapay zekâ', 'tema' => ['anaRenk' => '#22d3ee', 'arkaPlan' => '#0b1120', 'metinRengi' => '#e2e8f0', 'yaziTipi' => 'mono', 'kose' => 6, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1e293b'], 'simgeler' => 'tekrenk']],
+        'lacivert' => ['ad' => 'Lacivert', 'uygun' => 'finans, hukuk, ciddi ürünler', 'tema' => ['anaRenk' => '#1d4ed8', 'arkaPlan' => '#1e3a8a', 'metinRengi' => '#0f172a', 'yaziTipi' => 'serif', 'kose' => 4, 'kartRengi' => '#ffffff', 'simgeler' => 'tekrenk', 'hareket' => 'yok']],
+        'seker' => ['ad' => 'Şeker', 'uygun' => 'eğlence, çocuk, oyun', 'tema' => ['anaRenk' => '#db2777', 'arkaPlan' => '#fff7ed', 'metinRengi' => '#431407', 'yaziTipi' => 'yuvarlak', 'kose' => 24, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#fce7f3'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta', 'simgeler' => 'renkli', 'hareket' => 'canli']],
+        'lavanta' => ['ad' => 'Lavanta', 'uygun' => 'iletişim, sosyal, ilişki', 'tema' => ['anaRenk' => '#7c3aed', 'arkaPlan' => '#faf5ff', 'metinRengi' => '#2e1065', 'yaziTipi' => 'modern', 'kose' => 16]],
+        'enerji' => ['ad' => 'Enerji', 'uygun' => 'fitness, spor, kilo verme', 'tema' => ['anaRenk' => '#f97316', 'arkaPlan' => '#111111', 'metinRengi' => '#f5f5f5', 'yaziTipi' => 'geometrik', 'kose' => 12, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#1c1917'], 'baslikBoyu' => 'buyuk', 'hizalama' => 'orta', 'simgeler' => 'renkli', 'hareket' => 'canli']],
+        'kum' => ['ad' => 'Kum', 'uygun' => 'yaşam tarzı, yemek, kişisel gelişim', 'tema' => ['anaRenk' => '#b45309', 'arkaPlan' => '#f5ede1', 'metinRengi' => '#292524', 'yaziTipi' => 'serif', 'kose' => 14, 'kartRengi' => '#fffdf9', 'yogunluk' => 'ferah']],
+        'okyanus' => ['ad' => 'Okyanus', 'uygun' => 'dil öğrenme, eğitim, seyahat', 'tema' => ['anaRenk' => '#0284c7', 'arkaPlan' => '#f0f9ff', 'metinRengi' => '#0c4a6e', 'yaziTipi' => 'yuvarlak', 'kose' => 18, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#e0f2fe'], 'dugmeBicimi' => 'hap', 'simgeler' => 'renkli', 'hareket' => 'canli']],
+        'gul' => ['ad' => 'Gül', 'uygun' => 'güzellik, cilt bakımı, kadın sağlığı', 'tema' => ['anaRenk' => '#be185d', 'arkaPlan' => '#fff1f2', 'metinRengi' => '#4c0519', 'yaziTipi' => 'modern', 'kose' => 22, 'kartRengi' => '#ffffff', 'baslikBoyu' => 'buyuk', 'dugmeBicimi' => 'hap']],
+        'orman' => ['ad' => 'Orman', 'uygun' => 'zihin sağlığı, doğa, alışkanlık', 'tema' => ['anaRenk' => '#86efac', 'arkaPlan' => '#052e16', 'metinRengi' => '#ecfdf5', 'yaziTipi' => 'yuvarlak', 'kose' => 20, 'zemin' => ['tur' => 'gecis', 'ikinciRenk' => '#14532d'], 'yogunluk' => 'ferah', 'hizalama' => 'orta']],
+        'sade' => ['ad' => 'Sade', 'uygun' => 'her ürün; markasız, tarafsız', 'tema' => ['anaRenk' => '#111827', 'arkaPlan' => '#ffffff', 'metinRengi' => '#111827', 'yaziTipi' => 'sistem', 'kose' => 8, 'yogunluk' => 'normal', 'simgeler' => 'tekrenk', 'hareket' => 'yok']],
+    ];
+
+    /**
+     * Ç71: panel asistanı ve MCP talimatına giren ortak görünüm kuralı —
+     * yoksa AI tema koymuyor, her huni varsayılan görünümde çıkıyordu.
+     */
+    public static function aiYonergesi(): string
+    {
+        $v = self::VARSAYILAN;
+        $ornekler = '';
+        foreach (self::HAZIR_TEMALAR as $anahtar => $h) {
+            $ornekler .= "\n- {$anahtar} ({$h['ad']}; {$h['uygun']}): ".json_encode($h['tema'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
+        }
+
+        return 'Görünüm (tema): taslakta tema yoksa ya da varsayılan görünümse '
+            ."(ana renk {$v['anaRenk']}, zemin {$v['arkaPlan']}, yazı tipi {$v['yaziTipi']}), ürün bağlamına (kategori, kitle, ton) uyan bir tema seç ve tanıma ekle — her huni aynı görünümde kalmasın. "
+            .'Yöneticinin seçtiği bir tema varsa istenmedikçe dokunma. '
+            .'Alanların hepsi zorunlu: anaRenk, arkaPlan, metinRengi (#rrggbb, küçük harf), yaziTipi ('.implode(', ', self::YAZI_TIPLERI).'), kose (0–'.self::AZAMI_KOSE.' tam sayı). '
+            .'metinRengi ile arkaPlan arasındaki kontrast en az '.self::ASGARI_KONTRAST.':1 olmalı — düşükse kayıt reddedilir. Düğme yazısının rengini sayfa kendisi seçer. '
+            // G3 + G1 ölçümü: ekranın çoğu zemin; yalnız ana renk değişirse huniler aynı görünür.
+            .'Görünümü en çok zemin değiştirir: arkaPlan\'ı ürüne göre seç; isteğe bağlı zemin alanı düz rengin yerine geçiş {"tur":"gecis","ikinciRenk":"#rrggbb"} (metin alt renkte de okunmalı) ya da görsel {"tur":"gorsel","gorsel":"<görsel kimliği>","karartma":0–'.self::AZAMI_KARARTMA.'} (yalnız bu uygulamaya yüklenmiş görsel; karartma yetersizse hata en az değeri söyler). '
+            // G7
+            .'İsteğe bağlı yerleşim ön ayarları (yoksa normal/sol): baslikBoyu '.implode('|', self::ON_AYARLAR['baslikBoyu']).', yogunluk '.implode('|', self::ON_AYARLAR['yogunluk']).', hizalama '.implode('|', self::ON_AYARLAR['hizalama']).' — büyük başlık, ferah boşluk ve ortalı metin renk değiştirmeden huninin karakterini belirgin değiştirir; ürüne göre seç (ör. sakin ürün ferah, enerjik ürün büyük + orta, yoğun içerik sik). '
+            // G4
+            .'İsteğe bağlı dugmeBicimi '.implode('|', self::ON_AYARLAR['dugmeBicimi']).' (cerceve: ana renk düğmenin altındaki yüzeyde okunmalı); kısa ya da görselli seçenekli soru bloğunda duzen: izgara (iki sütun). '
+            // Mobil görünüm 3 (seçenek alanı)
+            .'Seçeneğe simge alanıyla tek emoji koyabilirsin (metne değil; görselli seçenekte değil) — anlam yine metinde olmalı, ekran okuyucu simgeyi okumaz. '
+            // V4
+            .'İsteğe bağlı hareket '.implode('|', self::ON_AYARLAR['hareket']).' (yoksa sakin): yok = adım geçişi ve düğme hareketi yok (ciddi, sade ürün); sakin = kısa kayma; canli = başlık, bloklar ve düğme sırayla girer, seçilen seçenek belirginleşir, istatistikteki sayı sayarak gelir (enerjik, oyunsu ürün). Hareketi azaltmayı seçen ziyaretçiye hiç uygulanmaz. '
+            // V3a
+            .'İsteğe bağlı simgeler '.implode('|', self::ON_AYARLAR['simgeler']).' (yoksa cihaz): cihaz = telefonun kendi emojisi (her cihazda farklı); renkli = her cihazda aynı 3B görsel (sıcak, oyunsu ürün); tekrenk = ana renkte tek renk çizim (ciddi, markalı ürün). Bayrak gibi bazı emojilerin görseli yok — cihazınki görünür. '
+            // G5 (adım alanı, tema değil)
+            .'Ekranın kapak görseli (gorsel) varsa duzen: kahraman (görsel ekranın üst yarısı) ya da tamEkran (görsel bütün ekran, metin altta beyaz; yalnız baslik, metin, maddeler, istatistik blokları) boş ekranı doldurur; görselsiz yalnız ust. '
+            // G6
+            .'İsteğe bağlı kartRengi ("#rrggbb"): içerik zeminin üstünde bu renkte kartta durur; o zaman metin kartın üstündedir — okunurluk metinRengi ↔ kartRengi ölçülür, zemin (arkaPlan/geçiş/görsel) yalnız çevrede kalır ve koyu olabilir. '
+            .'Hazır temalar (yönetici panelde de seçebilir; ürüne en uyanı başlangıç al, ana rengi ve gerekirse zemini ürüne uyarla — yazı tipi ve ön ayarlar temanın karakteri):'.$ornekler
+            // Ç72: üretilen görünümü görmeden düzeltemez.
+            ."\nKaydettikten sonra ekran_goruntusu ile en az ilk adımı ve ödeme ekranını gör; okunmayan, taşan ya da sıkışık bir şey varsa düzeltip yeniden kaydet.";
+    }
 
     /** @return list<string> */
     public static function hatalar(mixed $tema): array
@@ -33,7 +107,8 @@ final class Tema
             return ['tema bir nesne olmalı'];
         }
         $beklenen = array_keys(self::VARSAYILAN);
-        $var = array_map(strval(...), array_keys($tema));
+        // G3 zemin, G6 kartRengi, G7 ön ayarlar isteğe bağlı; ayrı denetlenir.
+        $var = array_values(array_diff(array_map(strval(...), array_keys($tema)), ['zemin', 'kartRengi', ...array_keys(self::ON_AYARLAR)]));
         sort($var);
         sort($beklenen);
         if ($var !== $beklenen) {
@@ -51,14 +126,123 @@ final class Tema
         if (!\is_int($tema['kose']) || $tema['kose'] < 0 || $tema['kose'] > self::AZAMI_KOSE) {
             $h[] = 'tema kose: 0–'.self::AZAMI_KOSE.' tam sayı olmalı';
         }
+        foreach (self::ON_AYARLAR as $alan => $degerler) {
+            if (\array_key_exists($alan, $tema) && !\in_array($tema[$alan], $degerler, true)) {
+                $h[] = "tema {$alan}: ".implode(', ', $degerler).' olmalı';
+            }
+        }
+        $kart = $tema['kartRengi'] ?? null;
+        if (\array_key_exists('kartRengi', $tema) && (!\is_string($kart) || 1 !== preg_match('/^#[0-9a-f]{6}$/', $kart))) {
+            $h[] = 'tema kartRengi: #rrggbb biçiminde (küçük harf) renk olmalı';
+        }
         if ([] === $h && \is_string($tema['metinRengi']) && \is_string($tema['arkaPlan'])) {
-            $oran = self::kontrast($tema['metinRengi'], $tema['arkaPlan']);
+            // G6: kart varsa metin kartın üstünde; zemin yalnız çevrede.
+            $oran = self::kontrast($tema['metinRengi'], \is_string($kart) ? $kart : $tema['arkaPlan']);
             if ($oran < self::ASGARI_KONTRAST) {
-                $h[] = \sprintf('tema: metin arka planda okunmuyor (kontrast %.2f:1, en az %.1f:1)', $oran, self::ASGARI_KONTRAST);
+                $h[] = \sprintf('tema: metin '.(\is_string($kart) ? 'kartta' : 'arka planda').' okunmuyor (kontrast %.2f:1, en az %.1f:1)', $oran, self::ASGARI_KONTRAST);
+            }
+            if ([] === $h && \array_key_exists('zemin', $tema)) {
+                $h = self::zeminHatalari($tema['zemin'], $tema['metinRengi'], $tema['arkaPlan'], !\is_string($kart));
+            }
+            if ([] === $h && 'cerceve' === ($tema['dugmeBicimi'] ?? null) && \is_string($tema['anaRenk'])) {
+                $h = self::cerceveHatalari($tema['anaRenk'], $tema['arkaPlan'], \is_string($kart) ? $kart : null, $tema['zemin'] ?? null);
             }
         }
 
         return $h;
+    }
+
+    /**
+     * G4: çerçeveli düğmede yazı ve çizgi ana renk, düğme saydam — ana renk
+     * düğmenin altındaki yüzeyde okunmalı: kart, yoksa zeminin altı (geçişte
+     * ikinci renk, görselde en kötü siyah/beyaz karışım), yoksa arka plan.
+     *
+     * @return list<string>
+     */
+    private static function cerceveHatalari(string $ana, string $arka, ?string $kart, mixed $zemin): array
+    {
+        $tur = \is_array($zemin) ? ($zemin['tur'] ?? null) : null;
+        $yuzeyler = match (true) {
+            null !== $kart => [$kart],
+            'gecis' === $tur && \is_string($zemin['ikinciRenk'] ?? null) => [$zemin['ikinciRenk']],
+            'gorsel' === $tur && \is_int($zemin['karartma'] ?? null) => [self::karistir($arka, '#000000', $zemin['karartma']), self::karistir($arka, '#ffffff', $zemin['karartma'])],
+            default => [$arka],
+        };
+        $oran = min(array_map(static fn (string $y): float => self::kontrast($ana, $y), $yuzeyler));
+
+        return $oran < self::ASGARI_KONTRAST
+            ? [\sprintf('tema: çerçeveli düğmede ana renk okunmuyor (kontrast %.2f:1, en az %.1f:1) — dolu ya da hap seç veya ana rengi koyulaştır', $oran, self::ASGARI_KONTRAST)]
+            : [];
+    }
+
+    /**
+     * G3: geçişte metin alt renkte de okunmalı. Görselde içerik bilinmez:
+     * karartma katmanı (arkaPlan rengi, %k) görsel en kötü durumda tam siyah
+     * ya da tam beyaz olsa da metni okutmalı — sRGB'de karışım (CSS
+     * color-mix in srgb ile aynı). G6: kart varsa metin zeminde değil —
+     * yalnız biçim denetlenir.
+     *
+     * @return list<string>
+     */
+    private static function zeminHatalari(mixed $zemin, string $metin, string $arka, bool $metinZeminde): array
+    {
+        $tur = \is_array($zemin) ? ($zemin['tur'] ?? null) : null;
+        $alanlar = match ($tur) {
+            'gecis' => ['tur', 'ikinciRenk'],
+            'gorsel' => ['tur', 'gorsel', 'karartma'],
+            default => null,
+        };
+        if (null === $alanlar) {
+            return ['tema zemin: tur gecis ya da gorsel olmalı'];
+        }
+        $var = array_map(strval(...), array_keys($zemin));
+        sort($var);
+        $istenen = $alanlar;
+        sort($istenen);
+        if ($var !== $istenen) {
+            return ["tema zemin ({$tur}): alanlar tam olarak ".implode(', ', $alanlar).' olmalı'];
+        }
+        if ('gecis' === $tur) {
+            $ikinci = $zemin['ikinciRenk'];
+            if (!\is_string($ikinci) || 1 !== preg_match('/^#[0-9a-f]{6}$/', $ikinci)) {
+                return ['tema zemin ikinciRenk: #rrggbb biçiminde (küçük harf) renk olmalı'];
+            }
+            $oran = self::kontrast($metin, $ikinci);
+
+            return $metinZeminde && $oran < self::ASGARI_KONTRAST
+                ? [\sprintf('tema zemin: metin geçişin alt renginde okunmuyor (kontrast %.2f:1, en az %.1f:1)', $oran, self::ASGARI_KONTRAST)]
+                : [];
+        }
+        if (!\is_string($zemin['gorsel']) || 1 !== preg_match('/^[0-9a-f]{64}$/', $zemin['gorsel'])) {
+            return ['tema zemin gorsel: görsel kimliği geçersiz'];
+        }
+        $k = $zemin['karartma'];
+        if (!\is_int($k) || $k < 0 || $k > self::AZAMI_KARARTMA) {
+            return ['tema zemin karartma: 0–'.self::AZAMI_KARARTMA.' tam sayı olmalı'];
+        }
+        $okunur = static fn (int $y): bool => min(
+            self::kontrast($metin, self::karistir($arka, '#000000', $y)),
+            self::kontrast($metin, self::karistir($arka, '#ffffff', $y)),
+        ) >= self::ASGARI_KONTRAST;
+        if (!$metinZeminde || $okunur($k)) {
+            return [];
+        }
+        $enAz = null;
+        for ($y = $k + 1; $y <= self::AZAMI_KARARTMA && null === $enAz; ++$y) {
+            $enAz = $okunur($y) ? $y : null;
+        }
+
+        return [null === $enAz
+            ? 'tema zemin: bu renklerle görsel üstünde metin %'.self::AZAMI_KARARTMA.' karartmada bile okunmuyor — arkaPlan/metinRengi farkını artır'
+            : "tema zemin: görsel üstünde metin okunmayabilir — karartma en az %{$enAz} olmalı (şu an %{$k})"];
+    }
+
+    /** sRGB'de %$yuzde $a + kalan $b (CSS color-mix(in srgb, a y%, b)); #rrggbb. */
+    private static function karistir(string $a, string $b, int $yuzde): string
+    {
+        $kanal = static fn (int $i): int => (int) round($yuzde / 100 * hexdec(substr($a, $i, 2)) + (1 - $yuzde / 100) * hexdec(substr($b, $i, 2)));
+
+        return \sprintf('#%02x%02x%02x', $kanal(1), $kanal(3), $kanal(5));
     }
 
     /** WCAG kontrast oranı (1–21). */

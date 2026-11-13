@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Kimlik;
 
+use App\Posta\Bastirma;
+use App\Posta\EpostaSablonlari;
+use App\Uygulama\UygulamaAyarlari;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 /**
  * Ödeme sonrası giriş bağlantısı (Ç46; RevenueCat Redemption Links'in
@@ -35,26 +36,29 @@ final readonly class GirisBaglantisi
         private MailerInterface $mailer,
         private Baglama $baglama,
         private LoggerInterface $logger,
-        /** @var array<string, string> uygulama → özel URL şeması */
-        #[Autowire('%uygulama_semalari%')]
-        private array $semalar,
-        #[Autowire('%env(MAIL_GONDEREN)%')]
-        private string $gonderen,
+        /** Ç46: bağlantı uygulamayı ayarlardaki şemayla açar (M9a, A23). */
+        private UygulamaAyarlari $ayarlar,
+        private EpostaSablonlari $sablonlar,
     ) {
     }
 
     /**
      * Başarı sayfası için.
      *
-     * @return array{uygulama_adresi: string, son_kullanma: string}|'hazir_degil'|'pencere_kapandi'|'cok_istek'
+     * Ç118: deneme = oturum tutarı 0 (kartlı deneme) — sayfanın reklam pikseli
+     * sunucu olayıyla aynı adı (StartTrial / Purchase) seçsin; tutar aynı
+     * webhook işleminde yazılır.
+     *
+     * @return array{uygulama_adresi: string, son_kullanma: string, deneme: bool}|'hazir_degil'|'pencere_kapandi'|'cok_istek'
      */
     public function sayfaIcin(string $app, string $oturum): array|string
     {
-        /* @var array{uygulama_adresi: string, son_kullanma: string}|'hazir_degil'|'pencere_kapandi'|'cok_istek' */
+        /* @var array{uygulama_adresi: string, son_kullanma: string, deneme: bool}|'hazir_degil'|'pencere_kapandi'|'cok_istek' */
         return $this->db->transactional(function (Connection $db) use ($app, $oturum): array|string {
             $satir = $db->fetchAssociative(
-                "SELECT email, odeme_tamamlandi_at > now() - interval '".self::PENCERE_DK." minutes' AS acik
-                 FROM subscriptions
+                "SELECT email, odeme_tamamlandi_at > now() - interval '".self::PENCERE_DK." minutes' AS acik,
+                        EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.stripe_checkout_session_id = s.stripe_checkout_session_id AND o.tutar_kucuk = 0) AS deneme
+                 FROM subscriptions s
                  WHERE stripe_checkout_session_id = ? AND app = ? AND odeme_tamamlandi_at IS NOT NULL AND email IS NOT NULL
                  FOR UPDATE",
                 [$oturum, $app],
@@ -70,7 +74,7 @@ final readonly class GirisBaglantisi
                 return 'cok_istek';
             }
 
-            return $this->uret($db, $app, $satir['email'], $oturum);
+            return $this->uret($db, $app, $satir['email'], $oturum) + ['deneme' => true === $satir['deneme']];
         });
     }
 
@@ -110,9 +114,13 @@ final readonly class GirisBaglantisi
     public function epostalariGonder(int $azami = 20): void
     {
         $oturumlar = $this->db->fetchFirstColumn(
-            'SELECT stripe_checkout_session_id FROM subscriptions
-             WHERE odeme_tamamlandi_at IS NOT NULL AND giris_epostasi_at IS NULL AND email IS NOT NULL
-             ORDER BY odeme_tamamlandi_at LIMIT ?',
+            // A22: bastırılmış adres atlanır — Postmark göndermez, köprü
+            // hata atmaz; atlanmasa "gitti" yazılırdı. Yeniden etkinleşince gider.
+            "SELECT s.stripe_checkout_session_id FROM subscriptions s
+             WHERE s.odeme_tamamlandi_at IS NOT NULL AND s.giris_epostasi_at IS NULL AND s.email IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM posta_bastirma p
+                               WHERE p.email = lower(s.email) AND p.akis = '".Bastirma::ISLEM."' AND p.bastirildi)
+             ORDER BY s.odeme_tamamlandi_at LIMIT ?",
             [$azami],
         );
         foreach ($oturumlar as $oturum) {
@@ -128,11 +136,9 @@ final readonly class GirisBaglantisi
                     }
                     $baglanti = $this->uret($db, $satir['app'], $satir['email'], $oturum);
                     $db->executeStatement('UPDATE subscriptions SET giris_epostasi_at = now() WHERE stripe_checkout_session_id = ?', [$oturum]);
-                    $this->mailer->send((new Email())
-                        ->from($this->gonderen)
-                        ->to($satir['email'])
-                        ->subject('Uygulamaya giriş bağlantınız')
-                        ->text("Aboneliğiniz için teşekkürler.\n\nUygulamayı telefonunuza kurduktan sonra bu bağlantıya telefonunuzda dokunun:\n{$baglanti['uygulama_adresi']}\n\nBağlantı tek kullanımlıktır ve ".self::GECERLILIK_SA.' saat geçerlidir. Süresi dolarsa uygulamada "Aboneliğimi bağla" ile bu e-posta adresini girin.'));
+                    // E1a: şablon, müşterinin gördüğü huninin dilinde.
+                    $e = $this->sablonlar->doldur($satir['app'], 'giris_baglantisi', EpostaSablonlari::oturumDili($db, $oturum), ['baglanti' => $baglanti['uygulama_adresi'], 'saat' => self::GECERLILIK_SA]);
+                    $this->mailer->send($this->ayarlar->eposta($satir['app'])->to($satir['email'])->subject($e['konu'])->text($e['metin']));
                 });
             } catch (\Throwable $e) {
                 $this->logger->error('Giriş bağlantısı e-postası gönderilemedi', ['oturum' => $oturum, 'exception' => $e]);
@@ -140,10 +146,15 @@ final readonly class GirisBaglantisi
         }
     }
 
-    /** @return array{uygulama_adresi: string, son_kullanma: string} */
-    private function uret(Connection $db, string $app, string $email, string $oturum): array
+    /**
+     * Yeni tek kullanımlık bağlantı. M8a2 aktivasyon dizisi de her adımda
+     * bununla yeni bağlantı üretir.
+     *
+     * @return array{uygulama_adresi: string, son_kullanma: string}
+     */
+    public function uret(Connection $db, string $app, string $email, string $oturum): array
     {
-        $sema = $this->semalar[$app] ?? throw new \LogicException("'{$app}' için URL şeması yapılandırılmamış");
+        $sema = $this->ayarlar->sema($app);
         $jeton = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $son = $db->fetchOne(
             "INSERT INTO giris_jetonlari (app, email, stripe_checkout_session_id, ozet, son_kullanma)

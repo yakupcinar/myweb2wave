@@ -70,3 +70,21 @@ Düzenleyici JS'inin otomatik testi yok (Ç39); davranışı tarayıcıda ölç�
 ## Açık
 Ç39 (eşzamanlı düzenleme koruması yok, JS testi yok) · Ç38 · Ç36 (metin
 artık panelden düzeltilebilir) · E2.
+
+
+**2026-10-26 (L11, b2):** klasik form düzenleyicisi ve form uçları silindi; `/panel/huniler/{app}/{ad}` Puck'ı açar — `puck-tek-duzenleyici-b2.md`.
+
+## Ek 2026-10-27 — listede "Aç"
+
+Kullanıcı: "varsayılan yapabiliyoruz ama aç yok; hunileri kontrol için aç lazım". Listede her huninin yanına **Aç** (yeni sekme): yayınlanmışsa canlı adres `/<app>/?huni=<ad>` (müşterinin gördüğü sürüm), yayınlanmamışsa taslağın süreli önizlemesi (`&onizleme=`, 1 saat, ölçümsüz, ödeme kapalı). Liste zaten `no-store` (önizleme anahtarı taşır).
+- Test: `PanelHuniTest::testListedeAcYayindaysaCanliAdresYoksaOnizleme`. Kırma 2/2 kırmızı: K1 önizleme dalı yok → yayınlanmamış huni canlı adres alır; K2 hep önizleme → yayındaki huni taslağı açar.
+- `bin/kontrol` yeşil (266 test). Tarayıcıda denenmedi.
+- Açık uç Ç70: canlı adresi açmak gerçek ziyaret sayar → aynı gün kapandı (aşağıda).
+
+### Ç70 — yayındakine ölçümsüz bakış (2026-10-27)
+
+Kullanıcı: "Ç70'i de yap, ziyaret sayılmasın". Yeni uç açılmadı; var olan imzalı önizleme ucu `GET /huni/{app}/taslak` isteğe bağlı `yayin=1` alır → taslak yerine yayındaki son sürüm (`surum` dolu); huni yayınlanmamışsa 403. Panel "Aç" artık her zaman önizleme adresi verir: yayınlanmışsa `?huni=<ad>&yayin=1&onizleme=<anahtar>`. Oynatıcı `onizleme` görünce zaten ziyaret/adım/cevap göndermiyor ve ödemeyi kapatıyor (D3); şerit "yayındaki sürüm" der. Sözleşme + üretilen tipler güncellendi.
+- Reddedilen: imzasız `?kontrol=1` (reklam adresine yanlışlıkla eklenirse ölçüm sessizce kaybolurdu); panelden açılan ziyareti işaretlemek (rapora satır yine yazılır, huni "ziyaretli" olurdu).
+- Testler: `HuniTest::testOnizlemeAnahtariYayinIleYayindakiSurumuGosterir`, `PanelHuniTest::testListedeAcYayindakiniYaDaTaslagiOlcumsuzAcar`, `erken-istek.test.ts` (yayin taşınır), `Huni.test.tsx` Ç70 (şerit, POST yok, ödeme kapalı).
+- Kırma 4/4 kırmızı: K1 uç `yayin`'ı yok sayar → taslak döner · K2 panel `&yayin=1` koymaz · K3 erken istek `yayin`'ı taşımaz · K4 şerit hep "taslak".
+- Gerçek istek (yerel çekirdek, 8081): aynı anahtarla taslak `surum=None`, `&yayin=1` → `surum=6`, ikisi HTTP 200. `bin/kontrol` yeşil (267 çekirdek testi). Tarayıcıda denenmedi.

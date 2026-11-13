@@ -1,0 +1,365 @@
+// Önizleme = huni (B4/H3): aynı tanımdan Puck'ın çizdiği adım ile huni
+// oynatıcısının çizdiği adım aynı DOM. İki ayrı yol karşılaştırılır — Puck
+// alanları → bileşen (yapilandirma.tsx) ve tanım → bileşen (Adim) — biri
+// diğerinden hesaplanmaz (tuzak §3).
+import { Render } from "@puckeditor/core";
+import type { ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { Adim } from "../../../huni-bilesenleri/bilesenler";
+import { temaDegiskenleri } from "../../../huni-bilesenleri/tema";
+import { tanimdanPuck, type Tanim, type Tema } from "./donustur";
+import { yapilandirma } from "./yapilandirma";
+
+const VARSAYILAN: Tema = {
+    anaRenk: "#2563eb",
+    arkaPlan: "#ffffff",
+    metinRengi: "#111827",
+    yaziTipi: "sistem",
+    kose: 10,
+};
+const G1 = "a".repeat(64);
+const G2 = "b".repeat(64);
+
+const tanim: Tanim = {
+    sayfaBasligi: "KeepChat Pro",
+    tema: {
+        anaRenk: "#16a34a",
+        arkaPlan: "#0b1220",
+        metinRengi: "#f8fafc",
+        yaziTipi: "yuvarlak",
+        kose: 20,
+    },
+    adimlar: [
+        // T1c: içerik adımları ekran (eski tanıtım / soru / yorum karşılıkları).
+        {
+            id: "karsilama",
+            tur: "ekran",
+            baslik: "Merhaba <b>",
+            gorsel: G1,
+            gorselMetni: "Sohbet ekranı", // Ç44: iki yoldan aynı alt
+            bloklar: [{ tur: "metin", metin: "Kısa" }],
+            dugme: "Başla",
+        },
+        {
+            id: "yalin",
+            tur: "ekran",
+            baslik: "Görselsiz",
+            bloklar: [],
+            dugme: "Devam",
+        },
+        {
+            id: "kiminle",
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+                { tur: "metin", metin: "Birden fazla seçenek seçebilirsin." },
+                {
+                    tur: "soru",
+                    secenekler: [
+                        {
+                            id: "aile",
+                            metin: "Ailemle",
+                            gorsel: G2,
+                            gorselMetni: "Aile",
+                        },
+                        { id: "is", metin: "İş" },
+                    ],
+                },
+            ],
+        },
+        {
+            id: "yorum",
+            tur: "ekran",
+            baslik: "Deneyim",
+            bloklar: [
+                {
+                    tur: "yorum",
+                    metin: "Çok faydalı",
+                    yazar: "Ayşe",
+                    unvan: "Kullanıcı",
+                },
+            ],
+            dugme: "Devam",
+        },
+        {
+            id: "paywall",
+            tur: "paywall",
+            baslik: "Pro",
+            metin: "9,99 €",
+            dugme: "Abone ol",
+            plan: "monthly",
+            // Ç61 (3): fayda + yasal bağlantı da iki yoldan aynı DOM.
+            faydalar: ["Sınırsız sohbet", "Reklamsız"],
+            sartlar: "https://ornek.com/sartlar",
+            iptal: "https://ornek.com/iptal",
+        },
+    ],
+};
+
+const yap = yapilandirma({
+    planlar: ["monthly"],
+    yaziTipleri: ["sistem", "serif", "yuvarlak", "mono"],
+    hazirTemalar: [],
+    medyaAdresi: "",
+    jeton: "",
+    ozellikler: [],
+});
+const veri = tanimdanPuck(tanim, VARSAYILAN);
+// React 19'un sunucu çizimi görseller için başa <link rel="preload"> koyuyor
+// (tarayıcıdaki createRoot koymaz) — iki tarafta da ayıklanır.
+const html = (n: ReactNode): string =>
+    renderToStaticMarkup(n).replace(/<link rel="preload"[^>]*\/>/g, "");
+
+/**
+ * Puck'ın kendi Render'ı (T1c: ekranın blokları yuvada — bileşen render'ını
+ * elle çağırmak yuvayı açamaz). Kök yapılandırmasız: dış kutu yalın <div>.
+ */
+function puckCiz(i: number): string {
+    const oge = veri.content[i];
+    if (!oge) throw new Error(`adım ${i} yok`);
+    return html(
+        <Render
+            config={{ ...yap, root: {} }}
+            data={{ root: { props: {} }, content: [oge] }}
+        />,
+    );
+}
+
+/** Render'ın dış kutusu + düzenleyiciye özgü ayırıcı (adımlar alt alta görünsün diye). */
+const ayiriciyiAt = (s: string): string =>
+    s.replace(/^<div><div style="[^"]*">([\s\S]*)<\/div><\/div>$/, "$1");
+
+describe("önizleme = huni: adım DOM'u", () => {
+    it.each(tanim.adimlar.map((a, i) => [a.id, i] as const))("%s", (_id, i) => {
+        const puck = puckCiz(i);
+        expect(puck).toMatch(/^<div><div style="/); // ayırıcı gerçekten orada
+        expect(ayiriciyiAt(puck)).toBe(
+            html(<Adim adim={tanim.adimlar[i]!} medyaKoku="" />),
+        );
+    });
+});
+
+// T1: ekranın blokları Puck yuvasında — yuvayı Puck'ın kendi Render'ı açar
+// (bileşen render'ını elle çağırmak yuvayı taklit etmek olurdu).
+describe("önizleme = huni: ekran ve blokları", () => {
+    const ekran: Tanim["adimlar"][number] = {
+        id: "neden",
+        tur: "ekran",
+        baslik: "Neden <b>?",
+        // T1c: kapak da iki yoldan aynı.
+        gorsel: G2,
+        gorselMetni: "Kapak",
+        duzen: "kahraman",
+        bloklar: [
+            { tur: "gorsel", gorsel: G1, gorselMetni: "Ekran" },
+            { tur: "baslik", metin: "Ara" },
+            { tur: "metin", metin: "Paragraf" },
+            { tur: "maddeler", maddeler: ["Bir", "İki"] },
+            { tur: "yorum", metin: "İyi", yazar: "Ayşe", unvan: "Ö", puan: 3 },
+            { tur: "yorum", metin: "Güzel", yazar: "Can" },
+            { tur: "istatistik", deger: "%87", metin: "düzenli" },
+            { tur: "kutu", metin: "Güvence", simge: "🔒" },
+            { tur: "kutu", metin: "Not" },
+        ],
+        dugme: "İleri",
+    };
+    it("aynı DOM (yuva div.bloklar dahil)", () => {
+        const v = tanimdanPuck(
+            { ...tanim, adimlar: [ekran, tanim.adimlar.at(-1)!] },
+            VARSAYILAN,
+        );
+        const puck = html(
+            <Render
+                config={{ ...yap, root: {} }}
+                data={{ root: { props: {} }, content: [v.content[0]!] }}
+            />,
+        );
+        // Render'ın dış kutusu ve düzenleyici ayırıcısı.
+        const ic = puck.replace(
+            /^<div><div style="[^"]*">([\s\S]*)<\/div><\/div>$/,
+            "$1",
+        );
+        expect(ic).not.toBe(puck); // iki kutu gerçekten oradaydı
+        expect(ic).toBe(html(<Adim adim={ekran} medyaKoku="" />));
+    });
+});
+
+// T1b: soru bloklu ekran. Tek seçimde düğme yok → DOM aynı. Çoklu seçimde
+// huni ilk açılışta düğmeyi kapalı çizer (seçim yok); Puck'ın Render'ı yuvadaki
+// soruyu göremez, açık çizer — fark yalnız bu öznitelik. Düzenleyicide bekçi
+// (akis.ts ekranDugmeleri) önizlemeyi kapalı yapar (Ç84; tarayıcıda ölçüldü).
+describe("önizleme = huni: soru bloklu ekran", () => {
+    const ciz = (adim: Tanim["adimlar"][number]): [string, string] => {
+        const v = tanimdanPuck(
+            { ...tanim, adimlar: [adim, tanim.adimlar.at(-1)!] },
+            VARSAYILAN,
+        );
+        const puck = html(
+            <Render
+                config={{ ...yap, root: {} }}
+                data={{ root: { props: {} }, content: [v.content[0]!] }}
+            />,
+        ).replace(/^<div><div style="[^"]*">([\s\S]*)<\/div><\/div>$/, "$1");
+        return [puck, html(<Adim adim={adim} medyaKoku="" />)];
+    };
+    const secenekler = [
+        { id: "aile", metin: "Ailemle", simge: "👪" },
+        { id: "is", metin: "İş", gorsel: G2, gorselMetni: "İş" },
+    ];
+    it("tek seçim: aynı DOM, düğme yok", () => {
+        const [puck, huni] = ciz({
+            id: "tek",
+            tur: "ekran",
+            baslik: "Kiminle?",
+            bloklar: [
+                { tur: "metin", metin: "Seç" },
+                { tur: "soru", duzen: "izgara", secenekler },
+            ],
+        });
+        expect(puck).toBe(huni);
+        expect(huni).not.toContain('class="eylem"');
+    });
+    it("çoklu seçim: fark yalnız düğmenin ilk kapalı hâli", () => {
+        const [puck, huni] = ciz({
+            id: "cok",
+            tur: "ekran",
+            baslik: "Neler?",
+            bloklar: [{ tur: "soru", secimTuru: "coklu", secenekler }],
+            dugme: "Gönder",
+        });
+        expect(huni).toContain(' disabled="">Gönder');
+        expect(puck).toBe(huni.replace(' disabled=""', ""));
+    });
+    it("V5 ölçek, grafik ve önce/sonra: aynı DOM", () => {
+        const [puck, huni] = ciz({
+            id: "olcek",
+            tur: "ekran",
+            baslik: "Seni anlatıyor mu?",
+            bloklar: [
+                {
+                    tur: "grafik",
+                    baslangic: "Bugün",
+                    hedef: "Hedef",
+                    egri: "azalan",
+                },
+                {
+                    tur: "onceSonra",
+                    once: G1,
+                    sonra: G2,
+                    onceEtiketi: "Önce",
+                    sonraEtiketi: "Sonra",
+                },
+                {
+                    tur: "soru",
+                    secimTuru: "olcek",
+                    olcekSol: "Hiç",
+                    olcekSag: "Tamamen",
+                },
+            ],
+        });
+        expect(puck).toBe(huni);
+        expect(huni).toContain('class="grafik"');
+        expect(huni).toContain('class="once-sonra"');
+        expect(huni).toContain('class="olcek"');
+    });
+    it("E1 e-posta: aynı DOM (isteğe bağlı, kapalı değil); izin kutusu iki yolda da", () => {
+        const [puck, huni] = ciz({
+            id: "eposta",
+            tur: "ekran",
+            baslik: "Planını nereye gönderelim?",
+            bloklar: [
+                { tur: "soru", secimTuru: "eposta", izinMetni: "İpuçları." },
+            ],
+            dugme: "Gönder",
+        });
+        expect(puck).toBe(huni);
+        expect(huni).toContain('type="email"');
+        expect(huni).toContain('type="checkbox"');
+    });
+});
+
+describe("önizleme = huni: tema", () => {
+    // Huni sayfası tema varken temaDegiskenleri'ni köke yazar (Huni.tsx);
+    // Puck kökü aynı değişkenleri dış kutuya yazmalı.
+    it("özel tema → aynı CSS değişkenleri, sütun .huni", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        // Yazı tipi yığınındaki tek tırnak öznitelikte kaçışlanır.
+        const cikti = html(
+            kok({ ...veri.root.props, children: "ICERIK", puck: {} }),
+        ).replaceAll("&#x27;", "'");
+        for (const [ad, deger] of Object.entries(
+            temaDegiskenleri(tanim.tema!),
+        )) {
+            expect(cikti).toContain(`${ad}:${deger}`);
+        }
+        // V4: hareket düzeyi .huni'nin özniteliği (huni sayfasında body.huni).
+        expect(cikti).toContain(
+            '<div class="huni" data-hareket="sakin">ICERIK</div>',
+        );
+    });
+    // G3: zemin de aynı değişkenle; dış kutu onu çizer (huni sayfasında body.huni).
+    it("zemin geçişi → --zemin değişkeni ve dış kutu onu çizer", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        const zeminli = tanimdanPuck(
+            {
+                ...tanim,
+                tema: {
+                    ...tanim.tema!,
+                    zemin: { tur: "gecis", ikinciRenk: "#1e3a8a" },
+                },
+            },
+            VARSAYILAN,
+        );
+        const cikti = html(
+            kok({ ...zeminli.root.props, children: "ICERIK", puck: {} }),
+        );
+        expect(cikti).toContain(
+            "--zemin:linear-gradient(180deg, #0b1220, #1e3a8a)",
+        );
+        expect(cikti).toContain("background:var(--zemin, var(--arka))");
+    });
+    it("G7 ön ayarları dış kutuda değişken olarak", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        const cikti = html(
+            kok({
+                ...tanimdanPuck(
+                    {
+                        ...tanim,
+                        tema: {
+                            ...tanim.tema!,
+                            baslikBoyu: "buyuk",
+                            hizalama: "orta",
+                        },
+                    },
+                    VARSAYILAN,
+                ).root.props,
+                children: "ICERIK",
+                puck: {},
+            }),
+        );
+        expect(cikti).toContain("--baslik-boyu:36px");
+        expect(cikti).toContain("--hiza:center");
+    });
+    it("G6 kart → --kart değişkeni dış kutuda (.huni kartı çizer)", () => {
+        const kok = yap.root?.render as (p: unknown) => ReactNode;
+        const ciz = (kartRengi: string): string =>
+            html(
+                kok({
+                    ...tanimdanPuck(
+                        { ...tanim, tema: { ...tanim.tema!, kartRengi } },
+                        VARSAYILAN,
+                    ).root.props,
+                    children: "ICERIK",
+                    puck: {},
+                }),
+            );
+        const cikti = ciz("#1e293b");
+        expect(cikti).toContain("--kart:#1e293b");
+        expect(cikti).toContain("--arka:#1e293b");
+        expect(cikti).toContain("--zemin:#0b1220");
+        // Okunurluk uyarısı çekirdekle aynı kural: kart varsa metin ↔ kart.
+        expect(cikti).not.toContain("okunurluğu");
+        expect(ciz("#f8fafc")).toContain("okunurluğu");
+    });
+});

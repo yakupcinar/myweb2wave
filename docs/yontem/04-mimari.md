@@ -5,7 +5,7 @@ Ayrıntı ve reddedilenler: `docs/pre-setup.md` §A, §B2, §B3.
 ## İki parça: statik huni + çekirdek API
 
 ```
-reklam ──► Huni (Astro, statik, CDN)          ── sunucusu yok
+reklam ──► Huni (Vite + Preact, statik, CDN)  ── sunucusu yok
               │  POST /checkout/sessions {app, plan}
               ▼
            Çekirdek API (Symfony 7.4, PHP 8.4, FrankenPHP) ◄── Stripe webhook
@@ -39,7 +39,8 @@ reklam ──► Huni (Astro, statik, CDN)          ── sunucusu yok
 ## Uygulama boyutu (A4): birden çok kendi uygulamamız
 
 - Tek kiracı (SaaS değil), ama abonelik, fiyat ve huni **hangi uygulamaya**
-  ait olduğunu taşır. Uygulamalar `config/packages/uygulamalar.yaml`'da.
+  ait olduğunu taşır. Uygulamalar `config/packages/uygulamalar.yaml`'da; planları
+  veritabanında (`planlar`, M1a — tutar yine Stripe'tan).
 - Kimlik çekirdekte, bir kişi tüm uygulamalarda aynı; **hak uygulama
   başına**.
 - Abonelik hangi uygulamaya ait: çekirdek Stripe oturumuna `metadata.app`

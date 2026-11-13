@@ -1,0 +1,11 @@
+{# P7a: tema boyamadan ÖNCE (§40) — yoksa koyu seçen ilk görünümü açık çizer.
+   Seçim tarayıcıda (panel-tema: acik | koyu | sistem), varsayılan açık;
+   aynı çözüm panel/src/uygulama/tema.ts'de (kural 7). #}
+<script>
+    (function () {
+        var t = null;
+        try { t = localStorage.getItem('panel-tema'); } catch (e) {}
+        if (t === 'sistem') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'koyu' : 'acik';
+        document.documentElement.dataset.tema = t === 'koyu' ? 'koyu' : 'acik';
+    })();
+</script>

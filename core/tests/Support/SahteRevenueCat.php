@@ -49,6 +49,22 @@ final class SahteRevenueCat
     /** @param array<string, mixed> $secenekler */
     public function __invoke(string $method, string $url, array $secenekler = []): ResponseInterface
     {
+        // Tek sahte fabrika (mock_response_factory); Claude istekleri ayrı kayıtta (A2).
+        if (str_starts_with($url, 'https://api.anthropic.com/')) {
+            return (new SahteClaude())($method, $url, $secenekler);
+        }
+        if (str_starts_with($url, 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/')) {
+            return (new SahteSimge())($url);
+        }
+        if (str_starts_with($url, 'https://graph.facebook.com/') && str_contains((string) parse_url($url, \PHP_URL_PATH), '/insights')) {
+            return (new SahteMetaInsights())($url, $secenekler);
+        }
+        if ('GET' === $method && str_starts_with($url, 'https://graph.facebook.com/')) {
+            return (new SahteMetaGraph())($url);
+        }
+        if (str_starts_with($url, 'https://api.pexels.com/') || str_starts_with($url, 'https://images.pexels.com/')) {
+            return (new SahtePexels())($url, $secenekler);
+        }
         $basliklar = $secenekler['headers'] ?? [];
         $govde = $secenekler['body'] ?? '';
         self::$istekler[] = [
@@ -60,6 +76,6 @@ final class SahteRevenueCat
 
         return null !== self::$agHatasi
             ? new MockResponse('', ['error' => self::$agHatasi])
-            : new MockResponse('{}', ['http_code' => self::$durum]);
+            : new MockResponse('{"code":0}', ['http_code' => self::$durum]);
     }
 }

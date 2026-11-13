@@ -1,0 +1,1107 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$comment": "ÜRETİLDİ: contract/openapi.yaml → bin/console app:huni-semasi. Elle düzenleme.",
+    "$defs": {
+        "AdimHedefi": {
+            "description": "H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım.",
+            "allOf": [
+                {
+                    "$ref": "#/$defs/HuniKimligi"
+                }
+            ]
+        },
+        "BaslikBlogu": {
+            "description": "Ara başlık",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "baslik"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                }
+            }
+        },
+        "EkranAdimi": {
+            "description": "T1: üstte başlık (sayfanın başlığı), altında katalogdaki bloklar yukarıdan aşağı (baslik bloğu ara başlıktır), altta tek ana düğme.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik",
+                "bloklar"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "ekran"
+                    ]
+                },
+                "baslik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                },
+                "gorsel": {
+                    "description": "T1c: kapak — başlığın üstünde (isteğe bağlı)",
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/GorselKimligi"
+                        }
+                    ]
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                },
+                "duzen": {
+                    "description": "Kapağın yeri (yoksa ust): kahraman ekranın üst yarısı · tamEkran bütün ekran, metin beyaz — tam ekranda yalnız baslik, metin, maddeler, istatistik blokları. kahraman ve tamEkran görsel ister",
+                    "type": "string",
+                    "enum": [
+                        "ust",
+                        "kahraman",
+                        "tamEkran"
+                    ]
+                },
+                "bloklar": {
+                    "type": "array",
+                    "maxItems": 12,
+                    "items": {
+                        "$ref": "#/$defs/EkranBlogu"
+                    }
+                },
+                "dugme": {
+                    "description": "Zorunlu — yalnız tek seçimli soru bloğu olan ekranda yok (seçenek seçilince geçer; hedef de seçenekte)",
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
+                },
+                "yonlendirme": {
+                    "description": "T3a: koşullu yönlendirme — ekrandan çıkarken ilk tutan kuralın hedefine gidilir; hiçbiri tutmazsa seçeneğin hedefi, sonra ekranın hedefi, sonra sıradaki adım.",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                        "$ref": "#/$defs/Yonlendirme"
+                    }
+                },
+                "goster": {
+                    "description": "T3b: koşullu gösterim — koşul tutmazsa ekran atlanır, sıradaki adıma geçilir. Cevap yalnız önceki adımlardan; ilk adımda olmaz.",
+                    "$ref": "#/$defs/KosulGrubu"
+                },
+                "degerler": {
+                    "description": "T3c: koşullu değer — ekranın baslik, dugme, gorsel, gorselMetni alanı kurala bağlanır (öğede var olmalı).",
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "EkranBlogu": {
+            "description": "T1 blok kataloğu; metinler düz metin",
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/BaslikBlogu"
+                },
+                {
+                    "$ref": "#/$defs/MetinBlogu"
+                },
+                {
+                    "$ref": "#/$defs/GorselBlogu"
+                },
+                {
+                    "$ref": "#/$defs/MaddelerBlogu"
+                },
+                {
+                    "$ref": "#/$defs/YorumBlogu"
+                },
+                {
+                    "$ref": "#/$defs/IstatistikBlogu"
+                },
+                {
+                    "$ref": "#/$defs/KutuBlogu"
+                },
+                {
+                    "$ref": "#/$defs/GrafikBlogu"
+                },
+                {
+                    "$ref": "#/$defs/OnceSonraBlogu"
+                },
+                {
+                    "$ref": "#/$defs/SoruBlogu"
+                }
+            ]
+        },
+        "GorselBlogu": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "gorsel"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gorsel"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                }
+            }
+        },
+        "GorselKimligi": {
+            "description": "Görsel kimliği (WebP'nin SHA-256'sı); dosya GET /medya/{id}.webp (E2.3)",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+        },
+        "GorselMetni": {
+            "description": "Ç44: görselin alt metni (yalnız görselle); yoksa görsel dekoratif sayılır (alt boş)",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+        },
+        "GrafikBlogu": {
+            "description": "V5: projeksiyon eğrisi (ana renkte) — sayı yok, yalnız uç etiketleri; sonuç vaadi değil, yolun resmi",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "baslangic",
+                "hedef"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "grafik"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "baslangic": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "hedef": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "egri": {
+                    "type": "string",
+                    "enum": [
+                        "artan",
+                        "azalan"
+                    ],
+                    "description": "Yoksa artan"
+                }
+            }
+        },
+        "HuniKimligi": {
+            "description": "Huni tanımındaki adım / soru / seçenek kimliği (funnel/src/huniler/)",
+            "type": "string",
+            "pattern": "^[a-z0-9_-]{1,64}$"
+        },
+        "HuniTanimi": {
+            "description": "Çekirdekte core/src/Huni/Tanim.php doğrular; metinler düz metin (HTML yok)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "sayfaBasligi",
+                "adimlar"
+            ],
+            "properties": {
+                "sayfaBasligi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                },
+                "dil": {
+                    "description": "M9d2: huninin dili (yoksa tr) — oynatıcının sabit metinleri, sayfa dili, yasal bağlantılar; huninin kendi metinleri yazarın",
+                    "type": "string",
+                    "enum": [
+                        "tr",
+                        "en"
+                    ]
+                },
+                "tema": {
+                    "$ref": "#/$defs/HuniTemasi"
+                },
+                "logo": {
+                    "description": "Ç61: sayfanın başındaki logo (isteğe bağlı, temadan bağımsız)",
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/GorselKimligi"
+                        }
+                    ]
+                },
+                "sonrasi": {
+                    "description": "M3b: ödeme sonrası ekran (adım değil) — başlık + bloklar (soru ve koşullu değer yok); giriş bağlantısı alanı sayfanın sabit parçası, dugme onun metni",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "baslik",
+                        "bloklar"
+                    ],
+                    "properties": {
+                        "baslik": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                        },
+                        "bloklar": {
+                            "type": "array",
+                            "maxItems": 12,
+                            "items": {
+                                "$ref": "#/$defs/EkranBlogu"
+                            }
+                        },
+                        "dugme": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                        },
+                        "upsell": {
+                            "description": "M3c: ödeme sonrası tek tık ek ürün (kayıtlı kartla); fiyatı sayfa yazar",
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "urun",
+                                "baslik",
+                                "dugme"
+                            ],
+                            "properties": {
+                                "urun": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9_]{0,31}$"
+                                },
+                                "baslik": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                },
+                                "metin": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 1000
+                                },
+                                "dugme": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 60
+                                }
+                            }
+                        }
+                    }
+                },
+                "adimlar": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 50,
+                    "items": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/$defs/YuklemeAdimi"
+                            },
+                            {
+                                "$ref": "#/$defs/EkranAdimi"
+                            },
+                            {
+                                "$ref": "#/$defs/PaywallAdimi"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "HuniTemasi": {
+            "description": "Huni başına görünüm (E2.2); çekirdekte core/src/Huni/Tema.php doğrular (kontrast dahil)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "anaRenk",
+                "arkaPlan",
+                "metinRengi",
+                "yaziTipi",
+                "kose"
+            ],
+            "properties": {
+                "anaRenk": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "arkaPlan": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "metinRengi": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "yaziTipi": {
+                    "description": "sistem/mono cihaz yazı tipi; serif (Lora), yuvarlak (Nunito), modern (Manrope), geometrik (Outfit) huniyle birlikte sunulur (G2)",
+                    "type": "string",
+                    "enum": [
+                        "sistem",
+                        "serif",
+                        "yuvarlak",
+                        "mono",
+                        "modern",
+                        "geometrik"
+                    ]
+                },
+                "kose": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 32
+                },
+                "baslikBoyu": {
+                    "description": "G7: başlık ölçeği (yoksa normal): kucuk 24px · normal 28px · buyuk 36px",
+                    "type": "string",
+                    "enum": [
+                        "kucuk",
+                        "normal",
+                        "buyuk"
+                    ]
+                },
+                "yogunluk": {
+                    "description": "G7: boşluk yoğunluğu (yoksa normal): sik · normal · ferah",
+                    "type": "string",
+                    "enum": [
+                        "sik",
+                        "normal",
+                        "ferah"
+                    ]
+                },
+                "dugmeBicimi": {
+                    "description": "G4: ana düğme (yoksa dolu): dolu · cerceve (saydam, ana renk çizgi ve yazı — ana renk düğmenin altındaki yüzeyde 4,5:1 okunmalı) · hap (tam yuvarlak)",
+                    "type": "string",
+                    "enum": [
+                        "dolu",
+                        "cerceve",
+                        "hap"
+                    ]
+                },
+                "hizalama": {
+                    "description": "G7: başlık ve açıklama hizası (yoksa sol)",
+                    "type": "string",
+                    "enum": [
+                        "sol",
+                        "orta"
+                    ]
+                },
+                "hareket": {
+                    "description": "V4: hareket düzeyi (yoksa sakin): yok (geçiş ve düğme hareketi yok) · sakin (kısa kayma) · canli (sırayla giriş, seçim efekti, sayan istatistik); hareketi azaltmayı seçen ziyaretçiye hiç uygulanmaz",
+                    "type": "string",
+                    "enum": [
+                        "yok",
+                        "sakin",
+                        "canli"
+                    ]
+                },
+                "simgeler": {
+                    "description": "V3a: emoji simgeleri (yoksa cihaz): cihaz (telefonun emojisi) · renkli (Fluent 3B, her cihazda aynı) · tekrenk (Fluent tek renk, ana renkte)",
+                    "type": "string",
+                    "enum": [
+                        "cihaz",
+                        "renkli",
+                        "tekrenk"
+                    ]
+                },
+                "kartRengi": {
+                    "description": "G6: içerik zeminin üstünde bu renkte kartta durur (isteğe bağlı). Varsa metin kartın üstündedir: okunurluk metinRengi ↔ kartRengi ölçülür, zemin yalnız çevrede kalır",
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                },
+                "zemin": {
+                    "description": "G3: düz arka plan yerine geçiş ya da görsel (isteğe bağlı). Metin her durumda okunmalı — çekirdek ölçer",
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/ZeminGecisi"
+                        },
+                        {
+                            "$ref": "#/$defs/ZeminGorseli"
+                        }
+                    ]
+                }
+            }
+        },
+        "IstatistikBlogu": {
+            "description": "Büyük değer + açıklama (\"%87\" · \"kullanıcı ilk hafta düzenli kullanıyor\"). Değer gerçek olmalı — uydurma sayı yanıltıcı reklamdır",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "deger",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "istatistik"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "deger": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 12
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                }
+            }
+        },
+        "Kosul": {
+            "description": "T2 özellik sözlüğünden bir ad (huni, huni.surum, utm.*, izin.reklam, cevap.<adım>, adim.son; ödeme/abonelik hunide bilinmez). Seçmeli cevap listedir: icerir / icermez (değer seçenek kimliği). Tek değerler: esit / esit_degil. Her özellik: var / yok (değersiz).",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "ozellik",
+                "islem"
+            ],
+            "properties": {
+                "ozellik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                },
+                "islem": {
+                    "type": "string",
+                    "enum": [
+                        "esit",
+                        "esit_degil",
+                        "icerir",
+                        "icermez",
+                        "var",
+                        "yok"
+                    ]
+                },
+                "deger": {
+                    "oneOf": [
+                        {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ]
+                }
+            }
+        },
+        "KosulGrubu": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "kosullar"
+            ],
+            "properties": {
+                "baglac": {
+                    "description": "hepsi (VE, varsayılan) · herhangi (VEYA)",
+                    "type": "string",
+                    "enum": [
+                        "hepsi",
+                        "herhangi"
+                    ]
+                },
+                "kosullar": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "items": {
+                        "$ref": "#/$defs/Kosul"
+                    }
+                }
+            }
+        },
+        "KosulluDegerler": {
+            "description": "T3c: kural = koşullar + bir alanın yeni değeri; aynı alanda ilk tutan kural kazanır, hiçbiri tutmazsa alanın kendi değeri. Gösterimde hesaplanır: cevap yalnız önceki adımlardan. Soru ve maddeler bloğunda yok.",
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "kosullar",
+                    "alan",
+                    "deger"
+                ],
+                "properties": {
+                    "baglac": {
+                        "type": "string",
+                        "enum": [
+                            "hepsi",
+                            "herhangi"
+                        ]
+                    },
+                    "kosullar": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "items": {
+                            "$ref": "#/$defs/Kosul"
+                        }
+                    },
+                    "alan": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                    },
+                    "deger": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                    }
+                }
+            }
+        },
+        "KutuBlogu": {
+            "description": "Vurgulu not kutusu (güvence, ipucu); simge tek emoji, ekran okuyucuya okunmaz",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "kutu"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                },
+                "simge": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "MaddelerBlogu": {
+            "description": "İşaretli madde listesi (fayda, özellik)",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "maddeler"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "maddeler"
+                    ]
+                },
+                "maddeler": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                    }
+                }
+            }
+        },
+        "MetinBlogu": {
+            "description": "Paragraf",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "metin"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                }
+            }
+        },
+        "OnceSonraBlogu": {
+            "description": "V5: önce/sonra — iki yüklenmiş görsel yan yana; etiketler alt metin de olur",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "once",
+                "sonra",
+                "onceEtiketi",
+                "sonraEtiketi"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "onceSonra"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "once": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "sonra": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "onceEtiketi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "sonraEtiketi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                }
+            }
+        },
+        "PaywallAdimi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik",
+                "metin",
+                "dugme",
+                "plan"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "paywall"
+                    ]
+                },
+                "baslik": {
+                    "type": "string"
+                },
+                "metin": {
+                    "type": "string"
+                },
+                "dugme": {
+                    "type": "string"
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                },
+                "plan": {
+                    "$ref": "#/$defs/PlanAnahtari"
+                },
+                "planlar": {
+                    "description": "M2a: plan seçici — 2–3 farklı plan; plan (varsayılan seçili) bunların içinde. Yoksa tek plan",
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 3,
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/$defs/PlanAnahtari"
+                    }
+                },
+                "onerilen": {
+                    "description": "M2a: seçicide 'Önerilen' etiketli plan (planlardan biri)",
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/PlanAnahtari"
+                        }
+                    ]
+                },
+                "guvenceler": {
+                    "description": "M2b: güven rozetleri — yalnız kurgusu gereği doğru olanlar",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "guvenli-odeme",
+                            "kart-saklanmaz"
+                        ]
+                    }
+                },
+                "downsell": {
+                    "description": "M3a: paywall'dan geri dönmeye çalışınca ya da ödeme panelini kapatınca ziyaretçiye bir kez sunulan plan; fiyat ve koşulu pencere yazar",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "plan",
+                        "baslik",
+                        "dugme"
+                    ],
+                    "properties": {
+                        "plan": {
+                            "$ref": "#/$defs/PlanAnahtari"
+                        },
+                        "baslik": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                        },
+                        "metin": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                        },
+                        "dugme": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                        }
+                    }
+                },
+                "sartOnayi": {
+                    "description": "M2b: ödeme düğmesi şart onay kutusu işaretlenince açılır (sartlar adresi şart)",
+                    "type": "boolean",
+                    "enum": [
+                        true
+                    ]
+                },
+                "faydalar": {
+                    "description": "Ç61: paywall'da madde madde fayda listesi (isteğe bağlı)",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                    }
+                },
+                "sartlar": {
+                    "$ref": "#/$defs/YasalAdres"
+                },
+                "gizlilik": {
+                    "$ref": "#/$defs/YasalAdres"
+                },
+                "iptal": {
+                    "$ref": "#/$defs/YasalAdres"
+                }
+            }
+        },
+        "PlanAnahtari": {
+            "description": "M1a: fiyat kataloğundaki planın anahtarı (panel → Planlar); çekirdek uygulamanın planlarına karşı doğrular",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,31}$"
+        },
+        "SoruBlogu": {
+            "description": "T1b: ekranda en çok bir tane; cevap ekranın kimliğiyle kaydedilir. Soru metni ekranın başlığı / blokları. tekli: seçenek seçilince geçer (ekranda dugme olmaz). coklu / metin: ekranın düğmesi gönderir.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "soru"
+                    ]
+                },
+                "secimTuru": {
+                    "type": "string",
+                    "enum": [
+                        "tekli",
+                        "coklu",
+                        "metin",
+                        "eposta",
+                        "olcek"
+                    ]
+                },
+                "duzen": {
+                    "type": "string",
+                    "enum": [
+                        "liste",
+                        "izgara"
+                    ]
+                },
+                "yanitZorunlu": {
+                    "type": "boolean",
+                    "description": "Yalnız metin ve eposta"
+                },
+                "olcekSol": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "Yalnız olcek: 1'in etiketi (ör. Hiç katılmıyorum)"
+                },
+                "olcekSag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "Yalnız olcek: 5'in etiketi (ör. Tamamen katılıyorum)"
+                },
+                "izinMetni": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "Yalnız eposta: pazarlama izni kutusunun metni (yoksa kutu yok, izin alınmaz)"
+                },
+                "secenekler": {
+                    "description": "Seçmelide zorunlu (2–8), serbest yanıtta yok",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/SoruSecenegi"
+                    }
+                }
+            }
+        },
+        "SoruSecenegi": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "metin"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "metin": {
+                    "type": "string"
+                },
+                "simge": {
+                    "description": "Seçenekte metnin önünde tek emoji (isteğe bağlı; görselle birlikte olmaz). Ekran okuyucuya okunmaz — anlam metinde olmalı",
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "gorselMetni": {
+                    "$ref": "#/$defs/GorselMetni"
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
+                }
+            }
+        },
+        "YasalAdres": {
+            "description": "Ç61: kullanım şartları / gizlilik / iptal sayfası. Yalnız https — javascript: gibi şemalar huni sayfasında betik çalıştırırdı.",
+            "type": "string",
+            "pattern": "^https://[^\\s]{1,490}$"
+        },
+        "Yonlendirme": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "kosullar",
+                "hedef"
+            ],
+            "properties": {
+                "baglac": {
+                    "description": "hepsi (VE, varsayılan) · herhangi (VEYA)",
+                    "type": "string",
+                    "enum": [
+                        "hepsi",
+                        "herhangi"
+                    ]
+                },
+                "kosullar": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "items": {
+                        "$ref": "#/$defs/Kosul"
+                    }
+                },
+                "hedef": {
+                    "$ref": "#/$defs/AdimHedefi"
+                }
+            }
+        },
+        "YorumBlogu": {
+            "description": "Kısa müşteri yorumu; puan varsa yıldızla gösterilir",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "metin",
+                "yazar"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "yorum"
+                    ]
+                },
+                "degerler": {
+                    "$ref": "#/$defs/KosulluDegerler"
+                },
+                "metin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                },
+                "yazar": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                },
+                "unvan": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "puan": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                }
+            }
+        },
+        "YuklemeAdimi": {
+            "description": "Mobil görünüm 4: \"planın hazırlanıyor\" — düğmesiz; maddeler sırayla işaretlenir, süre dolunca sonraki adıma kendiliğinden geçer",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "tur",
+                "baslik"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/HuniKimligi"
+                },
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "yukleme"
+                    ]
+                },
+                "baslik": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                },
+                "maddeler": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                    }
+                },
+                "sure": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 10,
+                    "description": "saniye (yoksa 4)"
+                },
+                "ilerlemeGoster": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ZeminGecisi": {
+            "description": "Yukarıdan aşağı arkaPlan → ikinciRenk; metin ikinciRenk üstünde de 4,5:1",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "ikinciRenk"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gecis"
+                    ]
+                },
+                "ikinciRenk": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-f]{6}$"
+                }
+            }
+        },
+        "ZeminGorseli": {
+            "description": "Görsel kaplar, üstünde arkaPlan renginde yarı saydam katman (karartma %). Karartma, görsel en kötü durumda (tam siyah ya da tam beyaz) olsa da metni 4,5:1 okutacak kadar olmalı",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "tur",
+                "gorsel",
+                "karartma"
+            ],
+            "properties": {
+                "tur": {
+                    "type": "string",
+                    "enum": [
+                        "gorsel"
+                    ]
+                },
+                "gorsel": {
+                    "$ref": "#/$defs/GorselKimligi"
+                },
+                "karartma": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 95
+                }
+            }
+        }
+    }
+}

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Atif\MetaBaglantisi;
+use App\Atif\Ziyaretler;
+use App\Huni\Huniler;
+use App\Kimlik\GirisBaglantisi;
+use App\Posta\Bastirma;
 use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -29,7 +34,7 @@ final class GirisBaglantisiTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
+        $this->db->executeStatement('TRUNCATE meta_baglantilari, posta_bastirma, giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
     }
 
     // --- başarı sayfası ---
@@ -49,6 +54,45 @@ final class GirisBaglantisiTest extends WebTestCase
         // Jeton düz saklanmaz.
         self::assertSame(0, $this->say('SELECT count(*) FROM giris_jetonlari WHERE ozet = ?', [$this->jeton($adres)]));
         self::assertSame(1, $this->say("SELECT count(*) FROM giris_jetonlari WHERE ozet = ? AND email = 'ayse@example.com'", [hash('sha256', $this->jeton($adres))]));
+        // A30: Meta bağlı değil — alan var, değer null (piksel yüklenmez).
+        self::assertArrayHasKey('metaPixelId', $this->govde());
+        self::assertNull($this->govde()['metaPixelId']);
+    }
+
+    /** A30: tarayıcı pikseli uygulamanın panelden girilen Pixel'iyle (derlemeye gömülü değil). */
+    public function testYanittaUygulamaninPixeli(): void
+    {
+        $meta = static::getContainer()->get(MetaBaglantisi::class);
+        self::assertInstanceOf(MetaBaglantisi::class, $meta);
+        self::assertSame([], $meta->kaydet('keepchat', ['pixelId' => '987654321']));
+        $this->odemeTamamlandi('cs_1', 'a@example.com');
+        $this->sayfaIster('cs_1');
+
+        self::assertResponseStatusCodeSame(201);
+        Sozlesme::yanitiDogrula('POST', '/huni/giris-baglantisi', $this->client->getResponse());
+        self::assertSame('987654321', $this->govde()['metaPixelId'] ?? null);
+    }
+
+    /**
+     * Ç118: sayfa pikseli sunucu olayıyla aynı adı seçsin — kartlı deneme
+     * (Stripe "paid", tutar 0) deneme: true; ücretli ödeme ve huni oturumu
+     * olmayan ödeme false.
+     */
+    public function testDenemeAlaniOturumTutarindan(): void
+    {
+        foreach (['cs_deneme' => 0, 'cs_odedi' => 999] as $oturum => $tutar) {
+            $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app) VALUES ('keepchat') RETURNING id");
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => $oturum, 'ziyaret_id' => $ziyaret]);
+            $this->odemeTamamlandi($oturum, 'ayse@example.com', ['payment_status' => 'paid', 'amount_total' => $tutar, 'currency' => 'eur']);
+        }
+        $this->odemeTamamlandi('cs_hunisiz', 'ayse@example.com', ['payment_status' => 'paid', 'amount_total' => 0, 'currency' => 'eur']);
+
+        foreach (['cs_deneme' => true, 'cs_odedi' => false, 'cs_hunisiz' => false] as $oturum => $beklenen) {
+            $this->sayfaIster($oturum);
+            self::assertResponseStatusCodeSame(201);
+            Sozlesme::yanitiDogrula('POST', '/huni/giris-baglantisi', $this->client->getResponse());
+            self::assertSame($beklenen, $this->govde()['deneme'] ?? null, $oturum);
+        }
     }
 
     public function testWebhookGelmedenSayfaBeklemedeKalir(): void
@@ -173,11 +217,37 @@ final class GirisBaglantisiTest extends WebTestCase
         $mesaj = self::getMailerMessage();
         self::assertInstanceOf(Email::class, $mesaj);
         self::assertSame('ayse@example.com', mb_strtolower($mesaj->getTo()[0]->getAddress()));
+        self::assertSame('KeepChat', $mesaj->getFrom()[0]->getName(), 'M9a: gönderen adı ayarlardan');
+        self::assertSame('Uygulamaya giriş bağlantınız', $mesaj->getSubject(), 'E1a: hunisi bilinmeyen oturum tr');
         preg_match('#keepchat://giris\?jeton=([A-Za-z0-9_-]{43})#', (string) $mesaj->getTextBody(), $m);
         self::assertArrayHasKey(1, $m, 'e-postada giriş bağlantısı yok');
 
         $this->kullan($m[1], 'u1');
         self::assertResponseStatusCodeSame(200);
+    }
+
+    /** E1a: giriş e-postası müşterinin gördüğü huninin dilinde (M9d2). */
+    public function testIngilizceHunidenOdemeyeIngilizceGirisEpostasi(): void
+    {
+        $huniler = static::getContainer()->get(Huniler::class);
+        $ziyaretler = static::getContainer()->get(Ziyaretler::class);
+        self::assertInstanceOf(Huniler::class, $huniler);
+        self::assertInstanceOf(Ziyaretler::class, $ziyaretler);
+        $this->db->executeStatement('TRUNCATE huniler, huni_surumleri, huni_kurallari, huni_ziyaretleri, eposta_sablonlari CASCADE');
+        self::assertSame([], $huniler->yeniHuni('keepchat', 'en-huni', null, 'fitness'));
+        $tanim = $huniler->taslak('keepchat', 'en-huni');
+        self::assertIsArray($tanim);
+        self::assertSame([], $huniler->taslakKaydet('keepchat', 'en-huni', ['dil' => 'en'] + $tanim));
+        $surum = $huniler->yayinla('keepchat', 'en-huni');
+        self::assertIsInt($surum);
+        $z = $ziyaretler->kaydet('keepchat', array_fill_keys(Ziyaretler::ALANLAR, null), 'en-huni', $surum);
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_en', 'ziyaret_id' => $z]);
+
+        $this->odemeTamamlandi('cs_en', 'a@example.com');
+        $mesaj = self::getMailerMessage();
+        self::assertInstanceOf(Email::class, $mesaj);
+        self::assertSame('Your sign-in link', $mesaj->getSubject());
+        self::assertStringContainsString('valid for 24 hours', (string) $mesaj->getTextBody());
     }
 
     public function testGirisEpostasiBirKezGider(): void
@@ -195,16 +265,38 @@ final class GirisBaglantisiTest extends WebTestCase
         self::assertSame(1, $this->say('SELECT count(*) FROM giris_jetonlari'));
     }
 
+    public function testBastirilmisAdreseOdemeEpostasiGitmezEtkinlesinceGider(): void
+    {
+        // A22: Postmark bastırılmış adrese göndermez, köprü hata atmaz —
+        // atlanmasa e-posta "gitti" yazılırdı (§57).
+        $this->bastirma()->yaz('a@example.com', Bastirma::ISLEM, true, 'HardBounce', new \DateTimeImmutable('-1 hour'));
+        $this->bastirma()->yaz('b@example.com', 'broadcast', true, 'ManualSuppression', new \DateTimeImmutable('-1 hour'));
+        $this->odemeTamamlandi('cs_1', 'A@Example.com');
+        self::assertEmailCount(0);
+        self::assertSame(0, $this->say('SELECT count(*) FROM subscriptions WHERE giris_epostasi_at IS NOT NULL'));
+
+        // Yalnız işlem akışındaki bastırma sayılır.
+        $this->odemeTamamlandi('cs_2', 'b@example.com');
+        self::assertEmailCount(1);
+
+        $this->bastirma()->yaz('a@example.com', Bastirma::ISLEM, false, null, new \DateTimeImmutable());
+        $giris = static::getContainer()->get(GirisBaglantisi::class);
+        self::assertInstanceOf(GirisBaglantisi::class, $giris);
+        $giris->epostalariGonder();
+        self::assertSame(2, $this->say('SELECT count(*) FROM subscriptions WHERE giris_epostasi_at IS NOT NULL'));
+    }
+
     // --- yardımcılar ---
 
-    private function odemeTamamlandi(string $oturum, string $email): void
+    /** @param array<string, mixed> $ek */
+    private function odemeTamamlandi(string $oturum, string $email, array $ek = []): void
     {
         $this->webhook('evt_'.$oturum, 'checkout.session.completed', [
             'id' => $oturum, 'object' => 'checkout.session', 'mode' => 'subscription',
             'subscription' => 'sub_'.$oturum, 'customer' => 'cus_1',
             'customer_details' => ['email' => $email],
             'metadata' => ['app' => 'keepchat'],
-        ]);
+        ] + $ek);
         self::assertResponseStatusCodeSame(200);
     }
 
@@ -256,6 +348,14 @@ final class GirisBaglantisiTest extends WebTestCase
         $g = json_decode((string) $this->client->getResponse()->getContent(), true);
 
         return \is_array($g) ? $g : [];
+    }
+
+    private function bastirma(): Bastirma
+    {
+        $b = static::getContainer()->get(Bastirma::class);
+        self::assertInstanceOf(Bastirma::class, $b);
+
+        return $b;
     }
 
     /** @param list<mixed> $p */

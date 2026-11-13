@@ -1,0 +1,21 @@
+{
+ "V0": "",
+ "V0b": "",
+ "E1-ana-renk": ":root{--ana:#db2777}",
+ "E2-koyu": ":root{--arka:#0b1120;--metin:#e2e8f0}html,body{background:#0b1120}",
+ "E3-acik-renkli-zemin": ":root{--arka:#fff7ed}html,body{background:#fff7ed}",
+ "E4-serif": ":root{--yazi-tipi:Georgia,serif}",
+ "E5-kose-24": ":root{--kose:24px}",
+ "E5b-kose-0": ":root{--kose:0px}",
+ "C1-gecis-zemin": ".huni,html,body{background:linear-gradient(180deg,#fde68a,#f9a8d4) fixed}",
+ "C3-baslik-buyuk": ".huni h1{font-size:36px;font-weight:900}",
+ "C4-ortali": ".huni main,.huni h1,.huni section>p{text-align:center}",
+ "C5-hap-dugme": ".huni button.ana{border-radius:999px}",
+ "C6-cerceve-dugme": ".huni button.ana{background:transparent;color:var(--ana);border:2px solid var(--ana);box-shadow:none}",
+ "C7-renkli-secenek": ".huni .secenekler button{background:color-mix(in srgb,var(--ana) 12%,var(--arka));border-color:var(--ana)}",
+ "C8-izgara-secenek": ".huni .secenekler{display:grid;grid-template-columns:1fr 1fr;gap:12px}.huni .secenekler button{min-height:110px}",
+ "C9-icerik-karti": "html,body,.huni{background:#e0e7ff}.huni main{background:#fff;border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)}",
+ "C10-genis-bosluk": ".huni .secenekler button{padding:22px 18px}.huni h1{margin:36px 0 14px}",
+ "C11-kalin-ilerleme": ".huni progress{height:12px}",
+ "P1-hazir-tema": ":root{--ana:#22d3ee;--arka:#0b1120;--metin:#e2e8f0;--kose:24px}html,body{background:#0b1120}.huni button.ana{border-radius:999px}.huni h1{font-size:34px;font-weight:900}"
+}

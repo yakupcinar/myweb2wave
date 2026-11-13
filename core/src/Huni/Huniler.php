@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Huni;
 
+use App\Billing\Planlar;
 use App\Medya\Medyalar;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -21,11 +22,21 @@ final readonly class Huniler
 
     /** Kuralların bakabildiği adres parametreleri — huni sayfası YALNIZ bunları gönderir. */
     public const SECIM_PARAMETRELERI = ['k', 'utm_source', 'utm_campaign', 'utm_content'];
+    /**
+     * M9d1: kuralda kullanılabilenler — adres parametreleri + çekirdeğin
+     * ziyaretçiden çıkardığı ülke (IP) ve dil (Accept-Language / ?dil=).
+     * Bu ikisi adreste huni sayfasından gelmez; HuniController ekler.
+     */
+    public const KURAL_PARAMETRELERI = [...self::SECIM_PARAMETRELERI, 'ulke', 'dil'];
 
     public function __construct(
         private Connection $db,
         private Medyalar $medyalar,
-        /** @var array<string, array<string, string>> uygulama → plan → Stripe fiyatı */
+        private Planlar $planlar,
+        private \App\Billing\EkUrunler $ekUrunler,
+        private Sablonlar $sablonlar,
+        private Varsayilanlar $varsayilanlar,
+        /** @var array<string, array<string, string>> uygulama kaydı (A4); planlar veritabanında (M1a) */
         #[Autowire('%uygulamalar%')]
         private array $uygulamalar,
         #[Autowire('%kernel.secret%')]
@@ -68,10 +79,16 @@ final readonly class Huniler
         return false === $s ? null : ['surum' => self::sayi($s['surum']), 'tanim' => self::json($s['tanim'])];
     }
 
+    public const CAKISMA = 'Bu taslak başka bir sekmede ya da başka biri tarafından değiştirildi — sayfayı yenileyip yeniden düzenleyin.';
+
+    /** Veritabanındaki taslak metninin SHA-256'sı (JSONB metni kararlı). */
+    private const IMZA = "encode(sha256(convert_to(taslak::text, 'UTF8')), 'hex')";
+
     /** @return array<mixed>|null */
     public function taslak(string $app, string $ad): ?array
     {
-        $t = $this->db->fetchOne('SELECT taslak FROM huniler WHERE app = :app AND ad = :ad', ['app' => $app, 'ad' => $ad]);
+        // Ç41: arşivdeki huni düzenlenmez, kural almaz, kopya kaynağı olmaz.
+        $t = $this->db->fetchOne('SELECT taslak FROM huniler WHERE app = :app AND ad = :ad AND arsiv_at IS NULL', ['app' => $app, 'ad' => $ad]);
 
         return false === $t ? null : self::json($t);
     }
@@ -79,7 +96,7 @@ final readonly class Huniler
     /**
      * Uygulamanın hunileri: varsayılan önce, sonra ada göre.
      *
-     * @return list<array{ad: string, varsayilan: bool, yayinda: int|null, farkli: bool}>
+     * @return list<array{ad: string, varsayilan: bool, yayinda: int|null, farkli: bool, ziyaretli: bool}>
      */
     public function huniler(string $app): array
     {
@@ -88,22 +105,26 @@ final readonly class Huniler
             'varsayilan' => true === $s['varsayilan'],
             'yayinda' => null === $s['yayinda'] ? null : self::sayi($s['yayinda']),
             'farkli' => true === $s['farkli'],
+            // Ç41: ziyaret varsa panel "Arşivle", yoksa "Sil" der.
+            'ziyaretli' => true === $s['ziyaretli'],
         ], $this->db->fetchAllAssociative(
             'SELECT h.ad, h.varsayilan,
+                    EXISTS (SELECT 1 FROM huni_ziyaretleri z WHERE z.app = h.app AND z.huni = h.ad) AS ziyaretli,
                     (SELECT max(surum) FROM huni_surumleri s WHERE s.app = h.app AND s.ad = h.ad) AS yayinda,
                     h.taslak IS DISTINCT FROM (SELECT tanim FROM huni_surumleri s WHERE s.app = h.app AND s.ad = h.ad ORDER BY surum DESC LIMIT 1) AS farkli
-             FROM huniler h WHERE h.app = :app ORDER BY h.varsayilan DESC, h.ad',
+             FROM huniler h WHERE h.app = :app AND h.arsiv_at IS NULL ORDER BY h.varsayilan DESC, h.ad',
             ['app' => $app],
         ));
     }
 
     /**
-     * Yeni huni: taslak, varsa `kaynak` hunisinin taslağından kopya, yoksa boş
-     * şablon. Uygulamanın ilk hunisi varsayılan olur.
+     * Yeni huni: taslak, varsa `kaynak` hunisinin taslağından kopya, `sablon`
+     * verildiyse niş şablonundan (V6), yoksa boş şablon. Uygulamanın ilk
+     * hunisi varsayılan olur.
      *
      * @return list<string> hatalar
      */
-    public function yeniHuni(string $app, string $ad, ?string $kaynak): array
+    public function yeniHuni(string $app, string $ad, ?string $kaynak, ?string $sablon = null): array
     {
         if (!isset($this->uygulamalar[$app])) {
             return ['bilinmeyen uygulama'];
@@ -111,9 +132,34 @@ final readonly class Huniler
         if (1 !== preg_match(Tanim::KIMLIK, $ad)) {
             return ['huni adı küçük harf, rakam, - ve _ (1–64)'];
         }
-        $taslak = null === $kaynak ? $this->bosTaslak($app) : $this->taslak($app, $kaynak);
-        if (null === $taslak) {
-            return ["kaynak huni '{$kaynak}' yok"];
+        if (null !== $kaynak && null !== $sablon) {
+            return ['kaynak huni ya da şablon — ikisi birden olmaz'];
+        }
+        if (null !== $sablon) {
+            $taslak = $this->sablonlar->tanim($sablon, $this->ilkPlan($app));
+            if (null === $taslak) {
+                return ["şablon '{$sablon}' yok"];
+            }
+        } else {
+            $taslak = null === $kaynak ? $this->bosTaslak($app) : $this->taslak($app, $kaynak);
+            if (null === $taslak) {
+                return ["kaynak huni '{$kaynak}' yok"];
+            }
+        }
+        // M9c: boş ve şablondan açılan huni varsayılan görünümü alır; kopya almaz
+        // (zaten bir hunin kopyası). Varsayılan artık geçersizse (ör. plan
+        // yok) sessizce atlanmaz — huni açılmaz, gerekçe söylenir (§12). Boş
+        // taslak zaten eksik (başlıklar sonra yazılır): yalnız varsayılanın
+        // GETİRDİĞİ yeni hatalar sayılır.
+        if (null === $kaynak) {
+            $varsayilanli = $this->varsayilanlar->uygula($app, $taslak, null !== $sablon);
+            if ($varsayilanli !== $taslak) {
+                $hatalar = array_values(array_diff($this->hatalar($app, $varsayilanli), $this->hatalar($app, $taslak)));
+                if ([] !== $hatalar) {
+                    return array_map(static fn (string $h): string => "varsayılan görünüm geçersiz (Ayarlar): {$h}", $hatalar);
+                }
+                $taslak = $varsayilanli;
+            }
         }
         try {
             $this->db->executeStatement(
@@ -128,10 +174,43 @@ final readonly class Huniler
         return [];
     }
 
+    /**
+     * Ç41: huniyi panelden kaldırır. Ziyareti yoksa iz bırakmadan siler
+     * (sürümleri, kuralları); varsa arşivler — rapor ziyaretin sürümüne
+     * bağlı, silinemez. Her iki durumda kuralları kalkar. Varsayılan
+     * kaldırılamaz (hiçbir kural tutmayınca açılacak huni kalmazdı).
+     *
+     * @return 'silindi'|'arsivlendi'|string sonuç ya da hata
+     */
+    public function kaldir(string $app, string $ad): string
+    {
+        return $this->db->transactional(function (Connection $db) use ($app, $ad): string {
+            // fetchOne olmaz: varsayilan=false ile "satır yok" ikisi de false döner.
+            $huni = $db->fetchAssociative('SELECT varsayilan FROM huniler WHERE app = :app AND ad = :ad AND arsiv_at IS NULL FOR UPDATE', ['app' => $app, 'ad' => $ad]);
+            if (false === $huni) {
+                return "'{$ad}' yok ya da arşivde";
+            }
+            if (true === $huni['varsayilan']) {
+                return 'varsayılan huni kaldırılamaz — önce başka bir huniyi varsayılan yap';
+            }
+            $p = ['app' => $app, 'ad' => $ad];
+            $db->executeStatement('DELETE FROM huni_kurallari WHERE app = :app AND huni = :ad', $p);
+            if (false !== $db->fetchOne('SELECT 1 FROM huni_ziyaretleri WHERE app = :app AND huni = :ad LIMIT 1', $p)) {
+                $db->executeStatement('UPDATE huniler SET arsiv_at = now() WHERE app = :app AND ad = :ad', $p);
+
+                return 'arsivlendi';
+            }
+            $db->executeStatement('DELETE FROM huni_surumleri WHERE app = :app AND ad = :ad', $p);
+            $db->executeStatement('DELETE FROM huniler WHERE app = :app AND ad = :ad', $p);
+
+            return 'silindi';
+        });
+    }
+
     public function varsayilanYap(string $app, string $ad): bool
     {
         return $this->db->transactional(function (Connection $db) use ($app, $ad): bool {
-            if (false === $db->fetchOne('SELECT 1 FROM huniler WHERE app = :app AND ad = :ad', ['app' => $app, 'ad' => $ad])) {
+            if (false === $db->fetchOne('SELECT 1 FROM huniler WHERE app = :app AND ad = :ad AND arsiv_at IS NULL', ['app' => $app, 'ad' => $ad])) {
                 return false;
             }
             // Önce hepsini kaldır: kısmi tekil dizin aynı anda iki varsayılanı reddeder.
@@ -143,18 +222,32 @@ final readonly class Huniler
     }
 
     /** @return list<string> hatalar; boşsa kaydedildi */
-    public function taslakKaydet(string $app, string $ad, mixed $tanim): array
+    public function taslakKaydet(string $app, string $ad, mixed $tanim, ?string $beklenenImza = null): array
     {
         $hatalar = $this->hatalar($app, $tanim);
         if ([] !== $hatalar) {
             return $hatalar;
         }
+        // Ç39: imza verildiyse karşılaştırma AYNI UPDATE'te — okuyup sonra
+        // yazmak iki kaydı arasına üçüncüsünü sokardı.
         $n = $this->db->executeStatement(
-            'UPDATE huniler SET taslak = CAST(:t AS jsonb), updated_at = now() WHERE app = :app AND ad = :ad',
-            ['app' => $app, 'ad' => $ad, 't' => self::kodla($tanim)],
+            'UPDATE huniler SET taslak = CAST(:t AS jsonb), updated_at = now()
+             WHERE app = :app AND ad = :ad AND (CAST(:imza AS text) IS NULL OR '.self::IMZA.' = :imza)',
+            ['app' => $app, 'ad' => $ad, 't' => self::kodla($tanim), 'imza' => $beklenenImza],
         );
+        if (1 === $n) {
+            return [];
+        }
 
-        return 1 === $n ? [] : ["'{$ad}' adında huni yok"];
+        return null === $this->taslakImzasi($app, $ad) ? ["'{$ad}' adında huni yok"] : [self::CAKISMA];
+    }
+
+    /** Ç39: taslağın imzası — düzenleyici açılışta alır, kayıtta geri yollar. */
+    public function taslakImzasi(string $app, string $ad): ?string
+    {
+        $imza = $this->db->fetchOne('SELECT '.self::IMZA.' FROM huniler WHERE app = :app AND ad = :ad', ['app' => $app, 'ad' => $ad]);
+
+        return \is_string($imza) ? $imza : null;
     }
 
     /**
@@ -253,11 +346,14 @@ final readonly class Huniler
     public function kuralEkle(string $app, string $parametre, string $deger, string $huni): array
     {
         $deger = mb_strtolower(trim($deger));
-        if (!\in_array($parametre, self::SECIM_PARAMETRELERI, true)) {
-            return ['parametre '.implode(', ', self::SECIM_PARAMETRELERI).' olmalı'];
+        if (!\in_array($parametre, self::KURAL_PARAMETRELERI, true)) {
+            return ['parametre '.implode(', ', self::KURAL_PARAMETRELERI).' olmalı'];
         }
         if ('' === $deger || mb_strlen($deger) > 200) {
             return ['değer 1–200 karakter olmalı'];
+        }
+        if (\in_array($parametre, ['ulke', 'dil'], true) && 1 !== preg_match('/^[a-z]{2}$/', $deger)) {
+            return ['ulke' === $parametre ? 'ülke iki harfli kod olmalı (ör. TR, DE)' : 'dil iki harfli kod olmalı (ör. tr, en)'];
         }
         if (null === $this->taslak($app, $huni)) {
             return ["'{$huni}' adında huni yok"];
@@ -328,30 +424,41 @@ final readonly class Huniler
      */
     public function bosTaslak(string $app): array
     {
-        $plan = (string) (array_key_first($this->uygulamalar[$app] ?? []) ?? 'monthly');
+        $plan = $this->ilkPlan($app);
 
         return ['sayfaBasligi' => '', 'adimlar' => [
-            ['id' => 'karsilama', 'tur' => 'tanitim', 'baslik' => '', 'metin' => '', 'dugme' => 'Başla'],
+            ['id' => 'karsilama', 'tur' => 'ekran', 'baslik' => '', 'bloklar' => [], 'dugme' => 'Başla'],
             ['id' => 'paywall', 'tur' => 'paywall', 'baslik' => '', 'metin' => '', 'dugme' => 'Abone ol', 'plan' => $plan],
         ]];
+    }
+
+    private function ilkPlan(string $app): string
+    {
+        return (string) (array_key_first($this->planlar->fiyatKimlikleri($app)) ?? '');
     }
 
     private function yayinlanmis(string $app, string $ad): bool
     {
         return false !== $this->db->fetchOne(
-            'SELECT 1 FROM huni_surumleri WHERE app = :app AND ad = :ad LIMIT 1',
+            'SELECT 1 FROM huni_surumleri s JOIN huniler h ON h.app = s.app AND h.ad = s.ad
+             WHERE s.app = :app AND s.ad = :ad AND h.arsiv_at IS NULL LIMIT 1',
             ['app' => $app, 'ad' => $ad],
         );
     }
 
-    /** @return list<string> */
-    private function hatalar(string $app, mixed $tanim): array
+    /**
+     * Tanımın bu uygulamadaki tam doğrulaması: biçim + plan + görsel sahipliği.
+     * Kaydetmeden önce ölçmek isteyen (AI aracı) de bunu kullanır.
+     *
+     * @return list<string>
+     */
+    public function hatalar(string $app, mixed $tanim): array
     {
         if (!isset($this->uygulamalar[$app])) {
             return ['bilinmeyen uygulama'];
         }
 
-        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->uygulamalar[$app])));
+        $hatalar = Tanim::hatalar($tanim, array_map(strval(...), array_keys($this->planlar->fiyatKimlikleri($app))), $this->ekUrunler->anahtarlar($app));
         // E2.3: görsel bu uygulamaya yüklenmiş olmalı (başka uygulamanınki ya da silinmiş değil).
         foreach ($this->medyalar->eksikler($app, Tanim::gorseller($tanim)) as $id) {
             $hatalar[] = 'görsel '.substr($id, 0, 8).'… bu uygulamada yok';

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Medya\Medyalar;
+use App\Medya\StokGorseller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -22,6 +23,7 @@ final class MedyaController extends AbstractController
 {
     public function __construct(
         private readonly Medyalar $medyalar,
+        private readonly StokGorseller $stok,
     ) {
     }
 
@@ -65,6 +67,33 @@ final class MedyaController extends AbstractController
         return isset($sonuc['id'])
             ? new JsonResponse(['id' => $sonuc['id']], 201)
             : new JsonResponse(['hatalar' => $sonuc], 422);
+    }
+
+    /** V3b: Pexels'te arama — küçük önizleme adresleri Pexels'in sunucusundan (yalnız panelde). */
+    #[Route('/panel/medya/{app}/stok', name: 'panel_medya_stok_ara', methods: ['GET'])]
+    public function stokAra(Request $request, string $app): JsonResponse
+    {
+        $this->uygulama($app);
+        $sonuc = $this->stok->ara($request->query->get('q'), $request->query->get('yon') ?: null);
+
+        return isset($sonuc['sonuclar'])
+            ? new JsonResponse($sonuc + ['kaynak' => ['ad' => 'Pexels', 'adres' => 'https://www.pexels.com']])
+            : new JsonResponse(['hatalar' => $sonuc], $this->stok->acik() ? 422 : 503);
+    }
+
+    /** V3b: Pexels görselini bu uygulamanın medyasına alır (kaynak + lisansla). */
+    #[Route('/panel/medya/{app}/stok/{kimlik}', name: 'panel_medya_stok_al', methods: ['POST'], requirements: ['kimlik' => '\d{1,12}'])]
+    public function stokAl(Request $request, string $app, int $kimlik): JsonResponse
+    {
+        $this->uygulama($app);
+        if (!$this->isCsrfTokenValid('huni-'.$app, $request->headers->get('X-CSRF-Token', ''))) {
+            return new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403);
+        }
+        $sonuc = $this->stok->al($app, $kimlik);
+
+        return isset($sonuc['id'])
+            ? new JsonResponse(['id' => $sonuc['id']], 201)
+            : new JsonResponse(['hatalar' => $sonuc], $this->stok->acik() ? 422 : 503);
     }
 
     private function uygulama(string $app): void

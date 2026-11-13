@@ -1,0 +1,454 @@
+{
+  "ad": "Dil öğrenme",
+  "aciklama": "Dil, seviye ve amaç sorusu → kişisel ders planı; zorluğa göre bilgi ekranı, ölçek, e-posta ve özet grafiği.",
+  "hazirTema": "okyanus",
+  "tanim": {
+    "sayfaBasligi": "Sana özel dil planı",
+    "adimlar": [
+      {
+        "id": "giris",
+        "tur": "ekran",
+        "baslik": "Yeni bir dili kendi hızında öğren",
+        "dugme": "Teste başla",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birkaç kısa soruyla seviyeni ve amacını öğrenelim, günlük ders planını çıkaralım."
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Seviyene göre günlük dersler",
+              "Konuşma ve kelime pratiği",
+              "İlerleme takibi"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Cevapların yalnız ders planını hazırlamak için kullanılır.",
+            "simge": "🔒"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "dil",
+        "tur": "ekran",
+        "baslik": "Hangi dili öğrenmek istiyorsun?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "ingilizce",
+                "metin": "İngilizce"
+              },
+              {
+                "id": "almanca",
+                "metin": "Almanca"
+              },
+              {
+                "id": "ispanyolca",
+                "metin": "İspanyolca"
+              },
+              {
+                "id": "fransizca",
+                "metin": "Fransızca"
+              },
+              {
+                "id": "italyanca",
+                "metin": "İtalyanca"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Seçtiğin dil sonra değiştirilebilir; başka bir dil de ekleyebilirsin.",
+            "simge": "🌍"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "seviye",
+        "tur": "ekran",
+        "baslik": "Şu an seviyen ne?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "sifir",
+                "metin": "Hiç bilmiyorum",
+                "simge": "🌱"
+              },
+              {
+                "id": "temel",
+                "metin": "Temel kelimeleri biliyorum",
+                "simge": "📘"
+              },
+              {
+                "id": "orta",
+                "metin": "Basit konuşabiliyorum",
+                "simge": "💬"
+              },
+              {
+                "id": "ileri",
+                "metin": "Akıcıya yakınım",
+                "simge": "🎯"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Emin değilsen bir alttakini seç; ilk dersler seviyeni zaten yoklar.",
+            "simge": "🧭"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "neden",
+        "tur": "ekran",
+        "baslik": "Neden öğrenmek istiyorsun?",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birden fazla seçebilirsin."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "coklu",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "is",
+                "metin": "İş ve kariyer",
+                "simge": "💼"
+              },
+              {
+                "id": "seyahat",
+                "metin": "Seyahat",
+                "simge": "✈️"
+              },
+              {
+                "id": "egitim",
+                "metin": "Eğitim",
+                "simge": "🎓"
+              },
+              {
+                "id": "tasinma",
+                "metin": "Yurt dışına taşınma",
+                "simge": "🏡"
+              },
+              {
+                "id": "hobi",
+                "metin": "Dizi, film, müzik",
+                "simge": "🎬"
+              }
+            ]
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "bilgi",
+        "tur": "ekran",
+        "baslik": "Amacına uygun içerik",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Ders içeriği amacına göre seçilir: önce en çok ihtiyaç duyacağın kelimeler ve kalıplar.",
+            "degerler": [
+              {
+                "alan": "metin",
+                "deger": "İş için: e-posta, toplantı ve sunum kalıplarıyla başlarız.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.neden",
+                    "islem": "icerir",
+                    "deger": "is"
+                  }
+                ]
+              },
+              {
+                "alan": "metin",
+                "deger": "Seyahat için: yol sorma, sipariş verme ve otel konuşmalarıyla başlarız.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.neden",
+                    "islem": "icerir",
+                    "deger": "seyahat"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Kısa ama her gün yapılan pratik, uzun ama seyrek derslerden daha kalıcıdır.",
+            "simge": "💡"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Her gün kısa bir ders",
+              "Gerçek hayattan kalıplar",
+              "Unutmadan önce tekrar"
+            ]
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "zorluk",
+        "tur": "ekran",
+        "baslik": "En çok neyde zorlanıyorsun?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "konusma",
+                "metin": "Konuşmaya cesaret edemiyorum",
+                "simge": "🗣️"
+              },
+              {
+                "id": "kelime",
+                "metin": "Kelimeleri unutuyorum",
+                "simge": "🧠"
+              },
+              {
+                "id": "dinleme",
+                "metin": "Duyduğumu anlamakta zorlanıyorum",
+                "simge": "👂"
+              },
+              {
+                "id": "zaman",
+                "metin": "Düzenli çalışamıyorum",
+                "simge": "⏰"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Planın en çok bu alana zaman ayırır.",
+            "simge": "🎯"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "konusma",
+        "tur": "ekran",
+        "baslik": "Konuşmak bir alışkanlık",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Hata yapmaktan çekinmek çok yaygın. Kimsenin dinlemediği kısa sesli alıştırmalar ilk adım için en kolayı."
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Her gün bir cümleyi sesli tekrar et",
+              "Kendi sesini kaydedip dinle",
+              "Hazır kalıplarla başla"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Planına her gün bir dakikalık sesli alıştırma ekliyoruz.",
+            "simge": "🎙️"
+          }
+        ],
+        "ilerlemeGoster": true,
+        "goster": {
+          "kosullar": [
+            {
+              "ozellik": "cevap.zorluk",
+              "islem": "icerir",
+              "deger": "konusma"
+            }
+          ]
+        }
+      },
+      {
+        "id": "tekrar",
+        "tur": "ekran",
+        "baslik": "Kelimeler neden uçup gidiyor?",
+        "bloklar": [
+          {
+            "tur": "kutu",
+            "metin": "“Yeni kelimeleri tekrar etmezsem birkaç günde unutuyorum.”",
+            "simge": "🧠"
+          },
+          {
+            "tur": "metin",
+            "metin": "Bu cümle seni ne kadar anlatıyor?"
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "olcek",
+            "olcekSol": "Hiç katılmıyorum",
+            "olcekSag": "Tamamen katılıyorum"
+          },
+          {
+            "tur": "metin",
+            "metin": "Cevabın, planındaki tekrar sıklığını belirler."
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "sure",
+        "tur": "ekran",
+        "baslik": "Günde ne kadar ayırabilirsin?",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Kısa ama her gün yapılan pratik en kalıcısıdır."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "5",
+                "metin": "5 dk",
+                "simge": "⚡"
+              },
+              {
+                "id": "10",
+                "metin": "10 dk",
+                "simge": "☕"
+              },
+              {
+                "id": "15",
+                "metin": "15 dk",
+                "simge": "📚"
+              },
+              {
+                "id": "20",
+                "metin": "20 dk+",
+                "simge": "🚀"
+              }
+            ]
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "hazirlaniyor",
+        "tur": "yukleme",
+        "sure": 6,
+        "baslik": "Ders planın hazırlanıyor",
+        "maddeler": [
+          "Seviyen inceleniyor",
+          "Amacına uygun konular seçiliyor",
+          "Günlük derslerin sıraya diziliyor"
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "eposta",
+        "tur": "ekran",
+        "baslik": "Planını nereye gönderelim?",
+        "dugme": "Planımı göster",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Kişisel ders planın hazır. E-postanı yaz, planını kaybetme."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "eposta",
+            "yanitZorunlu": true,
+            "izinMetni": "Dil ipuçları ve teklifler e-postayla gönderilebilir. İstediğin an ayrılabilirsin."
+          },
+          {
+            "tur": "kutu",
+            "metin": "Adresin yalnız planın ve ödeme sayfası için kullanılır.",
+            "simge": "🔒"
+          }
+        ]
+      },
+      {
+        "id": "ozet",
+        "tur": "ekran",
+        "baslik": "Ders planın hazır",
+        "dugme": "Planımı aç",
+        "bloklar": [
+          {
+            "tur": "grafik",
+            "baslangic": "Bugün",
+            "hedef": "3. ay",
+            "egri": "artan"
+          },
+          {
+            "tur": "baslik",
+            "metin": "Planında neler var"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Seviyene göre günlük dersler",
+              "Amacına göre seçilmiş konular",
+              "Aralıklı kelime tekrarı"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Dersler her gün seçtiğin süreye sığacak şekilde hazırlandı.",
+            "simge": "✅"
+          }
+        ],
+        "ilerlemeGoster": true,
+        "degerler": [
+          {
+            "alan": "baslik",
+            "deger": "İngilizce planın hazır",
+            "kosullar": [
+              {
+                "ozellik": "cevap.dil",
+                "islem": "icerir",
+                "deger": "ingilizce"
+              }
+            ]
+          },
+          {
+            "alan": "baslik",
+            "deger": "Almanca planın hazır",
+            "kosullar": [
+              {
+                "ozellik": "cevap.dil",
+                "islem": "icerir",
+                "deger": "almanca"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "paywall",
+        "tur": "paywall",
+        "baslik": "Kişisel ders planına başla",
+        "metin": "İstediğin zaman iptal edebilirsin.",
+        "dugme": "Derslerime başla",
+        "plan": "",
+        "faydalar": [
+          "Seviyene göre günlük dersler",
+          "Konuşma ve kelime pratiği",
+          "İlerleme takibi",
+          "İstediğin zaman iptal"
+        ]
+      }
+    ]
+  }
+}

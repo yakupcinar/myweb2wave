@@ -1,5 +1,7 @@
 # Blok: ödeme sonrası giriş bağlantısı (A10 / Ç46) — 2026-10-21
 
+> **Sonra değişti (2026-11-10, M9a):** URL şeması artık `uygulama_semalari` (yaml) değil, panel → Ayarlar (`uygulama_ayarlari.sema`); e-postanın gönderen adı ve yanıt adresi de oradan. Bkz. `m9a-uygulama-kimligi.md`.
+
 ## Ne yapıldı
 Web'de ödeyen kişi uygulamaya e-posta yazmadan, şifresiz girer. Stripe
 `checkout.session.completed` webhook'u aboneliğe ödeme oturumunu (`cs_…`)

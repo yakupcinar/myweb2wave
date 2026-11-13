@@ -22,7 +22,7 @@ Uygulama istemcisi ──(kendi oturumu)──► UYGULAMANIN SUNUCUSU ──(uy
 |---|---|---|
 | Çekirdek adresi | ör. `http://localhost:8081` (yerel) | **boşsa özellik KAPALI** — çekirdek dağıtılmadan üretim buna ulaşamaz |
 | Uygulama anahtarı | çekirdekte `UYGULAMA_ANAHTARI_<APP>` ile aynı değer | sır; depoya girmez |
-| Uygulama adı | `keepchat` | çekirdekte `config/packages/uygulamalar.yaml` |
+| Uygulama adı | `keepchat` | çekirdekte `config/packages/uygulamalar.yaml` (planları panel → Planlar, M1a) |
 
 ## 3 · Akış: "Aboneliğimi bağla"
 
@@ -37,7 +37,8 @@ Uygulama istemcisi ──(kendi oturumu)──► UYGULAMANIN SUNUCUSU ──(uy
    **200 `{kisi}`** ya da **422** `invalid_code` / `expired_code` / `too_many_attempts`.
 3. Sonra her gerekince: `GET /apps/{app}/kullanicilar/{kullanici}/hak` →
    **200 `{aktif, durum}`** · **404** `unknown_user` (bağlanmamış).
-   `aktif` = `active` · `trialing` · `past_due`.
+   `aktif` = `active` · `trialing` · `past_due`. Panelden duraklatılmış abonelik (M6c) `aktif: false`,
+   `durum: "paused"` döner; süre bitince kendiliğinden yeniden `aktif`.
 
 Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik → **401**.
 
@@ -45,7 +46,7 @@ Hepsinde başlık `Authorization: Bearer <uygulama anahtarı>`; yanlış/eksik �
 
 Web'de ödeyen kişi e-posta yazmadan girer. Başarı sayfası ve ödeme e-postası
 uygulamayı **`<şema>://giris?jeton=<jeton>`** ile açar (KeepChat: `keepchat`,
-çekirdekte `uygulama_semalari`).
+çekirdekte panel → Ayarlar, `uygulama_ayarlari.sema`; M9a).
 
 1. iOS: Info.plist'e şema (`CFBundleURLTypes`); `onOpenURL`'de `giris` ana
    bilgisayarını ve `jeton` sorgusunu oku. Jeton **gizlidir**: günlüğe yazma,
