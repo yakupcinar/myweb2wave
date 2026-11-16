@@ -18,8 +18,9 @@ Kullanıcı kararı: "tablolar karta dönsün, rapor kaydırmalı kalsın".
 - Yeni `KartEtiketi`: telefonda sütun başlığı gizli olduğu için çıplak değerin önüne ad koyar ("Yayında", "Önek",
   "Stripe fiyatı"…). Masaüstünde `md:hidden`. Hücre mono yazı tipliyse etiket de mono oluyordu (ekranda görüldü), bu
   yüzden etikete `font-sans` sabitlendi.
-- Rapor tabloları ve Deneyler bilerek dokunulmadı (kullanıcı: rapor kaydırmalı kalsın; Deneyler kararda yok →
-  Ç137'de açık).
+- Rapor tabloları ve Deneyler bilerek dokunulmadı (kullanıcı: rapor kaydırmalı kalsın). Deneyler'de kayan iki tablo
+  deney listesi değil (liste zaten kart), deney **sonuç** tabloları: 7 sayı sütunu, rapor kuralına girer (ölçüldü:
+  `kaydirilanKaplar` = "acilis sonuçları", "baslik sonuçları").
 
 ## Neden böyle
 
