@@ -10,10 +10,20 @@ import { api } from "../api";
 import { zaman } from "../bicim";
 import { alanSinifi, kutuSinifi, Satir } from "../ui/Alan";
 import { Bolum } from "../ui/Bolum";
+import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
-import { Tablo, Td, Th } from "../ui/Tablo";
+import {
+    KartEtiketi,
+    kartHucre,
+    kartSatir,
+    kartTablo,
+    kartTam,
+    Tablo,
+    Td,
+    Th,
+} from "../ui/Tablo";
 
 type ApiAnahtari = components["schemas"]["ApiAnahtari"];
 
@@ -114,8 +124,9 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                 <YeniAnahtar {...yeni} mcp={mcp} kapat={() => setYeni(null)} />
             ) : null}
             <Kart aria-label="Anahtarlar">
-                <Tablo>
-                    <thead>
+                {/* Ç137: telefonda satırlar karta döner (Aboneler gibi). */}
+                <Tablo className={kartTablo}>
+                    <thead className="max-md:hidden">
                         <tr>
                             {[
                                 "Ad",
@@ -129,18 +140,50 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                             ))}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="max-md:block">
                         {etkinler.map((a: ApiAnahtari) => (
-                            <tr key={a.id}>
-                                <Td>{a.ad}</Td>
-                                <Td className="font-mono text-[12.5px]">
+                            <tr key={a.id} className={kartSatir}>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        "max-md:whitespace-normal",
+                                    )}
+                                >
+                                    {a.ad}
+                                </Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "font-mono text-[12.5px] max-md:order-1",
+                                    )}
+                                >
+                                    <KartEtiketi>Önek</KartEtiketi>
                                     {a.onek}…
                                 </Td>
-                                <Td>{zaman(a.olusturma)}</Td>
-                                <Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "max-md:order-1",
+                                    )}
+                                >
+                                    <KartEtiketi>Oluşturma (UTC)</KartEtiketi>
+                                    {zaman(a.olusturma)}
+                                </Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "max-md:order-1",
+                                    )}
+                                >
+                                    <KartEtiketi>
+                                        Son kullanım (UTC)
+                                    </KartEtiketi>
                                     {a.sonKullanim ? zaman(a.sonKullanim) : "—"}
                                 </Td>
-                                <Td>
+                                <Td className={kartHucre}>
                                     {a.yonetim ? (
                                         <Rozet tur="uyari">yönetim</Rozet>
                                     ) : (
@@ -149,7 +192,13 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                                         </span>
                                     )}
                                 </Td>
-                                <Td className="text-right">
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "text-right max-md:order-1 max-md:text-left",
+                                    )}
+                                >
                                     {iptalSor === a.id ? (
                                         <span className="inline-flex gap-2">
                                             <Dugme
@@ -181,8 +230,11 @@ function AnahtarListesi({ app }: { app: string }): ReactNode {
                             </tr>
                         ))}
                         {etkinler.length ? null : (
-                            <tr>
-                                <Td colSpan={6} className="text-soluk">
+                            <tr className="max-md:block">
+                                <Td
+                                    colSpan={6}
+                                    className="text-soluk max-md:block"
+                                >
                                     Etkin anahtar yok.
                                 </Td>
                             </tr>
@@ -300,15 +352,39 @@ function IptalEdilenler({
         },
     });
     return (
-        <Tablo aria-label="İptal edilen anahtarlar">
-            <tbody>
+        // Ç137: üstteki etkin anahtarlar gibi telefonda kart.
+        <Tablo aria-label="İptal edilen anahtarlar" className={kartTablo}>
+            <tbody className="max-md:block">
                 {anahtarlar.map((a) => (
-                    <tr key={a.id} className="text-soluk">
-                        <Td>{a.ad}</Td>
-                        <Td className="font-mono text-[12.5px]">{a.onek}…</Td>
-                        <Td>{zaman(a.olusturma)}</Td>
-                        <Td>{a.sonKullanim ? zaman(a.sonKullanim) : "—"}</Td>
-                        <Td className="text-right">
+                    <tr key={a.id} className={cn(kartSatir, "text-soluk")}>
+                        <Td
+                            className={cn(
+                                kartHucre,
+                                "max-md:whitespace-normal",
+                            )}
+                        >
+                            {a.ad}
+                        </Td>
+                        <Td
+                            className={cn(kartHucre, "font-mono text-[12.5px]")}
+                        >
+                            {a.onek}…
+                        </Td>
+                        <Td className={cn(kartHucre, kartTam)}>
+                            <KartEtiketi>Oluşturma (UTC)</KartEtiketi>
+                            {zaman(a.olusturma)}
+                        </Td>
+                        <Td className={cn(kartHucre, kartTam)}>
+                            <KartEtiketi>Son kullanım (UTC)</KartEtiketi>
+                            {a.sonKullanim ? zaman(a.sonKullanim) : "—"}
+                        </Td>
+                        <Td
+                            className={cn(
+                                kartHucre,
+                                kartTam,
+                                "text-right max-md:text-left",
+                            )}
+                        >
                             {silSor === a.id ? (
                                 <span className="inline-flex flex-wrap items-center justify-end gap-2">
                                     <span className="text-metin">

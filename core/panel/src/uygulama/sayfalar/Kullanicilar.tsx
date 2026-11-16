@@ -22,7 +22,7 @@ import { Dugme, dugmeSinifi } from "../ui/Dugme";
 import { Kart } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
 import { Sayfalama } from "../ui/Sayfalama";
-import { Tablo, Td, Th } from "../ui/Tablo";
+import { kartHucre, kartSatir, kartTam, Tablo, Td, Th } from "../ui/Tablo";
 
 type Liste = Awaited<ReturnType<typeof listeAl>>;
 type Satir = Liste["satirlar"][number];
@@ -249,14 +249,8 @@ type Ay = (typeof AYLAR)[number];
 const hucre = "px-[18px] py-3.5";
 /**
  * P7g (Ç136): telefonda aynı satır karta döner — e-posta solda, durum sağda,
- * altında geldiği yer, son ödeme ve işlemler. Tek DOM (ikinci bir kart
- * listesi yok): testler ve ekran okuyucu tek kaynak görür. Masaüstü tablo
- * olduğu gibi.
+ * altında geldiği yer, son ödeme ve işlemler. Sınıflar `ui/Tablo`'da (Ç137).
  */
-const kartSatir =
-    "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-x-3 max-md:gap-y-2 max-md:border-b max-md:border-kenar max-md:px-[18px] max-md:py-3.5 max-md:last:border-b-0";
-const kartHucre = "max-md:block max-md:border-0 max-md:p-0";
-const kartTam = "max-md:col-span-2 max-md:whitespace-normal";
 
 function Liste({
     liste,

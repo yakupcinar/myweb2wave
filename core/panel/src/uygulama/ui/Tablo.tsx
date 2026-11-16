@@ -17,6 +17,26 @@ export function Tablo({
     );
 }
 
+/**
+ * P7g (Ç136) + Ç137: telefonda aynı satır karta döner. Tek DOM (ikinci bir
+ * kart listesi yok): testler ve ekran okuyucu tek kaynak görür. Masaüstü
+ * tablo olduğu gibi. Telefonda sütun başlığı gizli; çıplak değerin önüne
+ * `KartEtiketi` konur.
+ */
+export const kartTablo = "max-md:block";
+export const kartSatir =
+    "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-x-3 max-md:gap-y-2 max-md:border-b max-md:border-kenar max-md:px-[18px] max-md:py-3.5 max-md:last:border-b-0";
+export const kartHucre = "max-md:block max-md:border-0 max-md:p-0";
+export const kartTam = "max-md:col-span-2 max-md:whitespace-normal";
+
+export function KartEtiketi({ children }: { children: ReactNode }): ReactNode {
+    return (
+        <span className="font-sans text-[14px] text-soluk md:hidden">
+            {children}{" "}
+        </span>
+    );
+}
+
 export function Th({ className, ...oz }: ComponentProps<"th">): ReactNode {
     return (
         <th

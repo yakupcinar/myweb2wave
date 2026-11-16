@@ -10,11 +10,21 @@ import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { SayfaBasi } from "../Duzen";
 import { kisaEtiketSinifi, satirIciAlanSinifi } from "../ui/Alan";
+import { cn } from "../ui/cn";
 import { Dugme, dugmeSinifi } from "../ui/Dugme";
 import { EylemMenusu } from "../ui/EylemMenusu";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
-import { Tablo, Td, Th } from "../ui/Tablo";
+import {
+    KartEtiketi,
+    kartHucre,
+    kartSatir,
+    kartTablo,
+    kartTam,
+    Tablo,
+    Td,
+    Th,
+} from "../ui/Tablo";
 
 type Liste = components["schemas"]["PanelHunileri"];
 type Huni = Liste["huniler"][number];
@@ -217,18 +227,24 @@ function HuniTablosu({
                 baslik={app}
                 aciklama={`Reklam adresi tek: ${veri.adres} — hangi huninin açılacağını kurallar seçer; hiçbiri tutmazsa varsayılan.`}
             />
-            <Tablo>
-                <thead>
+            {/* Ç137: telefonda satırlar karta döner (Aboneler gibi). */}
+            <Tablo className={kartTablo}>
+                <thead className="max-md:hidden">
                     <tr>
                         {["Huni", "Yayında", "Taslak", ""].map((b) => (
                             <Th key={b}>{b}</Th>
                         ))}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="max-md:block">
                     {veri.huniler.map((h) => (
-                        <tr key={h.ad} data-huni={h.ad}>
-                            <Td>
+                        <tr key={h.ad} data-huni={h.ad} className={kartSatir}>
+                            <Td
+                                className={cn(
+                                    kartHucre,
+                                    "max-md:whitespace-normal",
+                                )}
+                            >
                                 <strong>{h.ad}</strong>{" "}
                                 {h.varsayilan ? (
                                     <Rozet tur="iyi">varsayılan</Rozet>
@@ -237,8 +253,11 @@ function HuniTablosu({
                                     <Rozet>yeni huni örneği</Rozet>
                                 ) : null}
                             </Td>
-                            <Td>{h.yayinda ? `v${h.yayinda}` : "—"}</Td>
-                            <Td>
+                            <Td className={cn(kartHucre, "max-md:text-right")}>
+                                <KartEtiketi>Yayında</KartEtiketi>
+                                {h.yayinda ? `v${h.yayinda}` : "—"}
+                            </Td>
+                            <Td className={cn(kartHucre, kartTam)}>
                                 {h.farkli ? (
                                     <Rozet tur="uyari">
                                         yayınlanmamış değişiklik
@@ -247,8 +266,14 @@ function HuniTablosu({
                                     <Rozet>yayındakiyle aynı</Rozet>
                                 )}
                             </Td>
-                            <Td className="text-right">
-                                <span className="inline-flex items-center justify-end gap-2">
+                            <Td
+                                className={cn(
+                                    kartHucre,
+                                    kartTam,
+                                    "text-right max-md:text-left",
+                                )}
+                            >
+                                <span className="inline-flex flex-wrap items-center justify-end gap-2 max-md:justify-start">
                                     <Link
                                         to={h.duzenle}
                                         className={dugmeSinifi({ tur: "ana" })}
@@ -359,8 +384,8 @@ function HuniTablosu({
                         </tr>
                     ))}
                     {veri.huniler.length ? null : (
-                        <tr>
-                            <Td colSpan={4} className="text-soluk">
+                        <tr className="max-md:block">
+                            <Td colSpan={4} className="text-soluk max-md:block">
                                 Henüz huni yok.
                             </Td>
                         </tr>
@@ -459,26 +484,48 @@ function Kurallar({
                 baslik="Yönlendirme kuralları"
                 aciklama="Üstten alta, ilk tutan kazanır."
             />
-            <Tablo>
-                <thead>
+            {/* Ç137: telefonda satırlar karta döner (Aboneler gibi). */}
+            <Tablo className={kartTablo}>
+                <thead className="max-md:hidden">
                     <tr>
                         {["#", "Adreste", "→ Huni", ""].map((b) => (
                             <Th key={b}>{b}</Th>
                         ))}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="max-md:block">
                     {veri.kurallar.map((k, i) => (
-                        <tr key={k.id} data-kural={k.id}>
-                            <Td>{i + 1}</Td>
-                            <Td className="font-mono text-[12.5px]">
+                        <tr
+                            key={k.id}
+                            data-kural={k.id}
+                            className={cn(
+                                kartSatir,
+                                "max-md:grid-cols-[auto_minmax(0,1fr)]",
+                            )}
+                        >
+                            <Td className={kartHucre}>{i + 1}</Td>
+                            <Td
+                                className={cn(
+                                    kartHucre,
+                                    "font-mono text-[12.5px] max-md:break-all max-md:whitespace-normal",
+                                )}
+                            >
                                 {PARAMETRE_ADLARI[k.parametre] ?? k.parametre}=
                                 {k.parametre === "ulke"
                                     ? k.deger.toUpperCase()
                                     : k.deger}
                             </Td>
-                            <Td>{k.huni}</Td>
-                            <Td className="text-right">
+                            <Td className={cn(kartHucre, kartTam)}>
+                                <KartEtiketi>→ Huni</KartEtiketi>
+                                {k.huni}
+                            </Td>
+                            <Td
+                                className={cn(
+                                    kartHucre,
+                                    kartTam,
+                                    "text-right max-md:text-left",
+                                )}
+                            >
                                 <span className="inline-flex gap-2">
                                     <Dugme
                                         aria-label="Yukarı taşı"
@@ -526,8 +573,8 @@ function Kurallar({
                         </tr>
                     ))}
                     {veri.kurallar.length ? null : (
-                        <tr>
-                            <Td colSpan={4} className="text-soluk">
+                        <tr className="max-md:block">
+                            <Td colSpan={4} className="text-soluk max-md:block">
                                 Kural yok — herkes varsayılan huniyi görür.
                             </Td>
                         </tr>

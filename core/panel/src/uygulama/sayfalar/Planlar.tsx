@@ -17,9 +17,19 @@ import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { SayfaBasi } from "../Duzen";
 import { kisaEtiketSinifi, satirIciAlanSinifi } from "../ui/Alan";
+import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
-import { Tablo, Td, Th } from "../ui/Tablo";
+import {
+    KartEtiketi,
+    kartHucre,
+    kartSatir,
+    kartTablo,
+    kartTam,
+    Tablo,
+    Td,
+    Th,
+} from "../ui/Tablo";
 
 type PanelPlanlari = components["schemas"]["PanelPlanlari"];
 type PlanFiyati = components["schemas"]["PlanFiyati"];
@@ -274,8 +284,9 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                     baslik="Planlar"
                     aciklama="Fiyat değişince mevcut aboneler eski fiyatta kalır; yeni ödemeler yeni fiyattan."
                 />
-                <Tablo>
-                    <thead>
+                {/* Ç137: telefonda satırlar karta döner (Aboneler gibi). */}
+                <Tablo className={kartTablo}>
+                    <thead className="max-md:hidden">
                         <tr>
                             {[
                                 "Anahtar",
@@ -290,23 +301,75 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                             ))}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="max-md:block">
                         {sorgu.data.planlar.map((p) => (
-                            <tr key={p.anahtar}>
-                                <Td className="font-mono text-[12.5px]">
+                            <tr key={p.anahtar} className={kartSatir}>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "font-mono text-[12.5px] max-md:order-1",
+                                    )}
+                                >
+                                    <KartEtiketi>Anahtar</KartEtiketi>
                                     {p.anahtar}
                                 </Td>
-                                <Td>{p.ad}</Td>
-                                <Td>{fiyatYazisi(p.fiyat)}</Td>
-                                <Td>{teklifYazisi(p.fiyat)}</Td>
-                                <Td>{eklerYazisi(p.fiyat)}</Td>
-                                <Td className="font-mono text-[12.5px]">
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        "max-md:whitespace-normal",
+                                    )}
+                                >
+                                    {p.ad}
+                                </Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        "max-md:text-right",
+                                    )}
+                                >
+                                    {fiyatYazisi(p.fiyat)}
+                                </Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "max-md:order-1",
+                                    )}
+                                >
+                                    <KartEtiketi>Teklif</KartEtiketi>
+                                    {teklifYazisi(p.fiyat)}
+                                </Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "max-md:order-1",
+                                    )}
+                                >
+                                    <KartEtiketi>Ek para birimleri</KartEtiketi>
+                                    {eklerYazisi(p.fiyat)}
+                                </Td>
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "font-mono text-[12.5px] max-md:order-1 max-md:break-all",
+                                    )}
+                                >
+                                    <KartEtiketi>Stripe fiyatı</KartEtiketi>
                                     {p.stripeFiyat}
                                 </Td>
-                                <Td className="text-right">
+                                <Td
+                                    className={cn(
+                                        kartHucre,
+                                        kartTam,
+                                        "text-right max-md:order-1 max-md:text-left",
+                                    )}
+                                >
                                     {degisen?.anahtar === p.anahtar ? (
                                         <form
-                                            className="inline-flex flex-wrap items-center justify-end gap-2"
+                                            className="inline-flex flex-wrap items-center justify-end gap-2 max-md:justify-start"
                                             onSubmit={(e) => {
                                                 e.preventDefault();
                                                 fiyat.mutate(degisen);
@@ -360,8 +423,11 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                             </tr>
                         ))}
                         {sorgu.data.planlar.length ? null : (
-                            <tr>
-                                <Td colSpan={7} className="text-soluk">
+                            <tr className="max-md:block">
+                                <Td
+                                    colSpan={7}
+                                    className="text-soluk max-md:block"
+                                >
                                     Henüz plan yok — paywall bir plan seçmeden
                                     yayınlanamaz.
                                 </Td>

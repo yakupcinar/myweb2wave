@@ -17,10 +17,19 @@ import { zaman } from "../bicim";
 import { gruplar, olayAdi, olayOzeti } from "../olaylar";
 import { alanSinifi, kutuSinifi, Satir } from "../ui/Alan";
 import { Bolum } from "../ui/Bolum";
+import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
 import { Kart, KartBasi } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
-import { Tablo, Td, Th } from "../ui/Tablo";
+import {
+    kartHucre,
+    kartSatir,
+    kartTablo,
+    kartTam,
+    Tablo,
+    Td,
+    Th,
+} from "../ui/Tablo";
 
 type Hedef = components["schemas"]["WebhookHedefi"];
 
@@ -86,8 +95,9 @@ export function WebhookBolumu({ app }: { app: string }): ReactNode {
                         Webhook'lar yüklenemedi.
                     </p>
                 ) : (
-                    <Tablo>
-                        <thead>
+                    // Ç137: telefonda satırlar karta döner (Aboneler gibi).
+                    <Tablo className={kartTablo}>
+                        <thead className="max-md:hidden">
                             <tr>
                                 {[
                                     "Adres",
@@ -100,7 +110,7 @@ export function WebhookBolumu({ app }: { app: string }): ReactNode {
                                 ))}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="max-md:block">
                             {(sorgu.data?.hedefler ?? []).map((h) => (
                                 <HedefSatiri
                                     key={h.id}
@@ -111,8 +121,11 @@ export function WebhookBolumu({ app }: { app: string }): ReactNode {
                                 />
                             ))}
                             {sorgu.data && !sorgu.data.hedefler.length ? (
-                                <tr>
-                                    <Td colSpan={5} className="text-soluk">
+                                <tr className="max-md:block">
+                                    <Td
+                                        colSpan={5}
+                                        className="text-soluk max-md:block"
+                                    >
                                         Henüz hedef yok.
                                     </Td>
                                 </tr>
@@ -285,23 +298,37 @@ function HedefSatiri({
     };
     return (
         <>
-            <tr data-hedef={h.id}>
-                <Td className="font-mono text-[12.5px]">{h.adres}</Td>
-                <Td className="whitespace-normal" title={h.olaylar.join(", ")}>
+            <tr data-hedef={h.id} className={kartSatir}>
+                <Td
+                    className={cn(
+                        kartHucre,
+                        "font-mono text-[12.5px] max-md:break-all max-md:whitespace-normal",
+                    )}
+                >
+                    {h.adres}
+                </Td>
+                <Td
+                    className={cn(
+                        kartHucre,
+                        kartTam,
+                        "whitespace-normal max-md:order-1",
+                    )}
+                    title={h.olaylar.join(", ")}
+                >
                     {olayOzeti(h.olaylar, sozluk)}
                 </Td>
-                <Td>
+                <Td className={kartHucre}>
                     {h.aktif ? (
                         <Rozet tur="iyi">etkin</Rozet>
                     ) : (
                         <Rozet>pasif</Rozet>
                     )}
                 </Td>
-                <Td>
+                <Td className={cn(kartHucre, kartTam, "max-md:order-1")}>
                     {h.teslim} teslim · {h.bekleyen} bekliyor
                     {h.vazgecildi ? ` · ${h.vazgecildi} vazgeçildi` : ""}
                 </Td>
-                <Td>
+                <Td className={cn(kartHucre, kartTam, "max-md:order-1")}>
                     <div className="flex flex-wrap gap-2">
                         <Dugme
                             onClick={() =>
@@ -361,8 +388,8 @@ function HedefSatiri({
                 </Td>
             </tr>
             {gunluk ? (
-                <tr>
-                    <Td colSpan={5}>
+                <tr className="max-md:block">
+                    <Td colSpan={5} className="max-md:block">
                         <Gunluk app={app} id={h.id} yenile={yenile} />
                     </Td>
                 </tr>
