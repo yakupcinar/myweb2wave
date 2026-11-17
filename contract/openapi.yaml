@@ -332,10 +332,11 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [uygulama_adresi, son_kullanma, deneme, metaPixelId]
+                required: [uygulama_adresi, son_kullanma, deneme, metaPixelId, tiktokPixelId]
                 properties:
                   uygulama_adresi: { type: string, description: "<şema>://giris?jeton=… — uygulamayı açar" }
                   metaPixelId: { type: [string, "null"], description: "A30 — uygulamanın Meta Pixel'i (panelden); yoksa null, piksel yüklenmez" }
+                  tiktokPixelId: { type: [string, "null"], description: "A31 — uygulamanın TikTok Pixel kodu (panelden); yoksa null, piksel yüklenmez" }
                   son_kullanma: { type: string, format: date-time }
                   deneme: { type: boolean, description: "Ç118 — oturum tutarı 0 (kartlı deneme); reklam pikseli Purchase yerine StartTrial gönderir" }
         "400": { description: Gövde JSON değil }
@@ -1366,6 +1367,69 @@ paths:
                   harcama: { $ref: "#/components/schemas/MetaDenemeSonucu" }
         "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/tiktok:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelTiktok
+      summary: "A31 — TikTok bağlantısı (dönüşüm + harcama); anahtarların yalnız son 4 hanesi"
+      responses:
+        "200": { description: Bağlantı, content: { application/json: { schema: { $ref: "#/components/schemas/PanelTiktok" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    put:
+      operationId: panelTiktokKaydet
+      summary: "Kaydeder; eventsAnahtari / raporAnahtari yoksa ya da null ise değişmez, boş dize kaldırır"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                pixelKodu: { type: string, maxLength: 40 }
+                eventsAnahtari: { type: [string, "null"], maxLength: 1000 }
+                testKodu: { type: string, maxLength: 40 }
+                reklamveren: { type: string, maxLength: 25 }
+                raporAnahtari: { type: [string, "null"], maxLength: 1000 }
+      responses:
+        "200": { description: Kaydedilen bağlantı, content: { application/json: { schema: { $ref: "#/components/schemas/PanelTiktok" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: Geçersiz değer ya da şifreleme anahtarı yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+    delete:
+      operationId: panelTiktokSil
+      summary: Bağlantıyı kaldırır (dönüşüm ve harcama durur)
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Boş bağlantı, content: { application/json: { schema: { $ref: "#/components/schemas/PanelTiktok" } } } }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Kayıtlı bağlantı yok, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/tiktok/dene:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: panelTiktokDene
+      summary: "A31 — kayıtlı değerlerle TikTok'a gerçek istek: test olay koduyla deneme olayı (Events API anahtarıyla) ve reklamveren bilgisi (Marketing API anahtarıyla)"
+      parameters:
+        - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Parça başına sonuç; mesaj anahtar içermez
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [donusum, harcama]
+                properties:
+                  donusum: { $ref: "#/components/schemas/MetaDenemeSonucu" }
+                  harcama: { $ref: "#/components/schemas/MetaDenemeSonucu" }
+        "403": { description: CSRF jetonu geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/anahtarlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -2103,6 +2167,18 @@ components:
       properties:
         durum: { type: string, enum: [tamam, hata, ayarsiz] }
         mesaj: { type: string }
+    PanelTiktok:
+      type: object
+      additionalProperties: false
+      required: [pixelKodu, eventsAnahtari, testKodu, reklamveren, raporAnahtari, sifrelemeHazir, guncellendi]
+      properties:
+        pixelKodu: { type: string }
+        eventsAnahtari: { $ref: "#/components/schemas/MetaAnahtari" }
+        testKodu: { type: string }
+        reklamveren: { type: string }
+        raporAnahtari: { $ref: "#/components/schemas/MetaAnahtari" }
+        sifrelemeHazir: { type: boolean, description: "Sunucuda AYAR_SIFRELEME_ANAHTARI var; yoksa anahtar kaydedilemez" }
+        guncellendi: { type: [string, "null"], format: date-time }
     EpostaSablonu:
       type: string
       enum: [dogrulama_kodu, giris_baglantisi, portal_baglantisi, aktivasyon_1, aktivasyon_2, kurtarma_1, kurtarma_2]
@@ -2229,13 +2305,14 @@ components:
                     olgun: { type: boolean }
                     kisiBasi: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
         kampanyalar:
-          description: "M5d — Meta kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama"
+          description: "M5d / A31 — Meta ve TikTok kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile aynı ağdan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama"
           type: array
           items:
             type: object
             additionalProperties: false
-            required: [kampanya, harcama, ziyaret, odedi, gelir, roas]
+            required: [ag, kampanya, harcama, ziyaret, odedi, gelir, roas]
             properties:
+              ag: { type: string, enum: [meta, tiktok], description: "A31 — harcamanın geldiği reklam ağı" }
               kampanya: { type: string }
               harcama: { $ref: "#/components/schemas/PanelTutar" }
               ziyaret: { type: integer, minimum: 0 }

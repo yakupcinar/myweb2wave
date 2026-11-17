@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Atif\DonusumAktarimi;
 use App\Atif\MetaBaglantisi;
+use App\Atif\TiktokBaglantisi;
 use App\Tests\Support\SahteRevenueCat;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
@@ -30,6 +31,11 @@ final class StripeWebhookControllerTest extends WebTestCase
         $meta = static::getContainer()->get(MetaBaglantisi::class);
         self::assertInstanceOf(MetaBaglantisi::class, $meta);
         self::assertSame([], $meta->kaydet('keepchat', ['pixelId' => '123456789', 'capiAnahtari' => 'test_meta_token_0123456789', 'testKodu' => 'TEST_META']));
+        // A31: TikTok bağlantısı da panel kaydından (önceden .env.test).
+        $this->db->executeStatement('TRUNCATE tiktok_baglantilari');
+        $tiktok = static::getContainer()->get(TiktokBaglantisi::class);
+        self::assertInstanceOf(TiktokBaglantisi::class, $tiktok);
+        self::assertSame([], $tiktok->kaydet('keepchat', ['pixelKodu' => 'CTESTPIXEL0123', 'eventsAnahtari' => 'test_tiktok_token_0123456789', 'testKodu' => 'TEST_TIKTOK']));
         $this->db->executeStatement('TRUNCATE reklam_donusumleri, revenuecat_gidenler, subscriptions, processed_webhook_events, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, huni_adimlari, huni_cevaplari, huni_metin_cevaplari, huni_epostalari, huni_surumleri, huni_kurallari, huniler');
     }
 
@@ -179,6 +185,9 @@ final class StripeWebhookControllerTest extends WebTestCase
         // A30: test olay kodu panel kaydından.
         self::assertSame('TEST_META', $meta['test_event_code'] ?? null);
         $tiktok = SahteRevenueCat::govde(1);
+        // A31: Pixel kodu, test kodu ve anahtar TikTok panel kaydından.
+        self::assertSame(['CTESTPIXEL0123', 'TEST_TIKTOK'], [$tiktok['event_source_id'] ?? null, $tiktok['test_event_code'] ?? null]);
+        self::assertContains('Access-Token: test_tiktok_token_0123456789', SahteRevenueCat::istek(1)['headers']);
         self::assertIsArray($meta['data'] ?? null);
         self::assertIsArray($tiktok['data'] ?? null);
         $metaData = $meta['data'][0] ?? null;
@@ -198,6 +207,28 @@ final class StripeWebhookControllerTest extends WebTestCase
         self::assertSame(12.99, $metaData['custom_data']['value'] ?? null);
         self::assertSame(12.99, $tiktokData['properties']['value'] ?? null);
         self::assertCount(2, $this->db->fetchFirstColumn('SELECT id FROM reklam_donusumleri WHERE gonderildi_at IS NOT NULL AND payload IS NULL'));
+    }
+
+    /**
+     * A31 (kırma K15 ile doğdu): TikTok bağlantısı olmayan uygulamanın olayı
+     * TikTok kuyruğuna hiç girmez — kişisel yük (IP, UA) gidemeyecek bir
+     * satırda yedi gün beklemesin. Meta yine gider.
+     */
+    public function testTiktokBaglantisiYoksaKuyrugaGirmez(): void
+    {
+        $this->db->executeStatement('TRUNCATE tiktok_baglantilari');
+        $ziyaret = $this->db->fetchOne("INSERT INTO huni_ziyaretleri (app, ttclid, izin_at) VALUES ('keepchat', 'tiklama-tt', now()) RETURNING id");
+        $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => 'cs_ttsiz', 'ziyaret_id' => $ziyaret, 'ip_adresi' => '192.0.2.25', 'user_agent' => 'Test tarayıcı']);
+
+        $this->gonder($this->olay('evt_ttsiz', 'checkout.session.completed', 1_800_000_000, [
+            'id' => 'cs_ttsiz', 'object' => 'checkout.session', 'mode' => 'subscription',
+            'subscription' => 'sub_ttsiz', 'customer' => 'cus_ttsiz', 'payment_status' => 'paid',
+            'amount_total' => 999, 'currency' => 'eur', 'metadata' => ['app' => 'keepchat'],
+        ]));
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(['meta'], $this->db->fetchFirstColumn("SELECT saglayici FROM reklam_donusumleri WHERE event_id = 'cs_ttsiz'"));
+        self::assertSame(1, SahteRevenueCat::sayi());
     }
 
     /**

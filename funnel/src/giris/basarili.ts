@@ -56,7 +56,12 @@ const goster = (id: string) => {
 const durum = document.getElementById("durum");
 
 async function iste(): Promise<
-  | { uygulama_adresi: string; deneme: boolean; metaPixelId: string | null }
+  | {
+      uygulama_adresi: string;
+      deneme: boolean;
+      metaPixelId: string | null;
+      tiktokPixelId: string | null;
+    }
   | undefined
 > {
   if (!oturum?.startsWith("cs_")) return undefined;
@@ -85,9 +90,9 @@ void iste().then((baglanti) => {
       izin: izinOku() === "evet",
       oturum,
       deneme: baglanti?.deneme ?? false,
-      // A30: uygulamanın Pixel'i panelden, yanıtta (derlemeye gömülü değil).
+      // A30 / A31: uygulamanın Pixel'leri panelden, yanıtta (derlemeye gömülü değil).
       metaPixelId: baglanti?.metaPixelId ?? "",
-      tiktokPixelId: import.meta.env.PUBLIC_TIKTOK_PIXEL_ID,
+      tiktokPixelId: baglanti?.tiktokPixelId ?? "",
     });
     a.setAttribute("href", adres);
     goster("giris");

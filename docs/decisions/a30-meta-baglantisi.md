@@ -89,3 +89,19 @@ mesajı yok — hepsi 🔴.
 - **Tam kontrol:** YEŞİL (780 çekirdek testi, `UYARI` yok), yerel, 2026-11-14.
 - **Ekran döngüsü** (`entegrasyonlar`, açık/koyu, 1440/390): bölüm çizildi, taşma ve yatay kayma yok; telefondaki
   küçük hedefler menü ve tema seçicisi (Ç141, önceden de vardı).
+
+## 2026-11-17 — İlk gerçek hesap ve "dene" düzeltmesi
+
+- **Meta tarafı** (kullanıcının onayıyla, tarayıcıda): Jacob's Adds portföyünde reklam hesabı web2quiz
+  (`act_3262719407257117`, EUR — kişisel hesap ödeme yapılmadığı için portföye alınamadı), Pixel web2quiz
+  (`29914620538145796`; "Conversions API with Meta" kapalı, Dataset Quality API açılmadı), CAPI anahtarı Events
+  Manager'dan (Meta "Conversions API System User"ı kendisi açtı), myweb2wave uygulaması (Marketing API kullanım
+  alanı) portföye eklendi, ayrı sistem kullanıcısı "web2quiz rapor" (Çalışan; reklam hesabında yalnız performansı
+  görme, uygulamada Develop app) ve süresiz `ads_read` anahtarı.
+- **Ölçüm (canlı panel):** "Harcama: bağlı"; "Dönüşüm: Meta reddetti: (#100) Missing permission" — Ç145 (2)'deki
+  varsayım yanlış: Events Manager'ın CAPI anahtarı Pixel'i okuyamıyor.
+- **Düzeltme:** dene dönüşümde Pixel'i okumaz; test olay kodu varsa CAPI anahtarıyla `POST /{pixel}/events`'e
+  `PageView` deneme olayı (test kodu, belgelere ayrılmış IP + sabit UA) gönderir, yoksa istek atmaz ("ayarsiz" +
+  nereden alınacağı) — A31 TikTok kararıyla aynı. Panelde test kodu yardımı bunu söyler.
+- **Kırma 4/4 kırmızı:** D1 test kodsuz olay atar · D2 Pixel okunur (eski davranış) · D3 test kodu eklenmez · D4 olay
+  Insights anahtarıyla.

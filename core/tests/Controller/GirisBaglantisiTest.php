@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Atif\MetaBaglantisi;
+use App\Atif\TiktokBaglantisi;
 use App\Atif\Ziyaretler;
 use App\Huni\Huniler;
 use App\Kimlik\GirisBaglantisi;
@@ -34,7 +35,7 @@ final class GirisBaglantisiTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE meta_baglantilari, posta_bastirma, giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
+        $this->db->executeStatement('TRUNCATE meta_baglantilari, tiktok_baglantilari, posta_bastirma, giris_jetonlari, revenuecat_gidenler, baglantilar, kisiler, subscriptions, processed_webhook_events, odeme_oturumlari');
     }
 
     // --- başarı sayfası ---
@@ -57,20 +58,27 @@ final class GirisBaglantisiTest extends WebTestCase
         // A30: Meta bağlı değil — alan var, değer null (piksel yüklenmez).
         self::assertArrayHasKey('metaPixelId', $this->govde());
         self::assertNull($this->govde()['metaPixelId']);
+        // A31: TikTok da aynı.
+        self::assertArrayHasKey('tiktokPixelId', $this->govde());
+        self::assertNull($this->govde()['tiktokPixelId']);
     }
 
-    /** A30: tarayıcı pikseli uygulamanın panelden girilen Pixel'iyle (derlemeye gömülü değil). */
+    /** A30 / A31: tarayıcı pikselleri uygulamanın panelden girilen Pixel'iyle (derlemeye gömülü değil). */
     public function testYanittaUygulamaninPixeli(): void
     {
         $meta = static::getContainer()->get(MetaBaglantisi::class);
         self::assertInstanceOf(MetaBaglantisi::class, $meta);
         self::assertSame([], $meta->kaydet('keepchat', ['pixelId' => '987654321']));
+        $tiktok = static::getContainer()->get(TiktokBaglantisi::class);
+        self::assertInstanceOf(TiktokBaglantisi::class, $tiktok);
+        self::assertSame([], $tiktok->kaydet('keepchat', ['pixelKodu' => 'CTESTPIXEL0123']));
         $this->odemeTamamlandi('cs_1', 'a@example.com');
         $this->sayfaIster('cs_1');
 
         self::assertResponseStatusCodeSame(201);
         Sozlesme::yanitiDogrula('POST', '/huni/giris-baglantisi', $this->client->getResponse());
         self::assertSame('987654321', $this->govde()['metaPixelId'] ?? null);
+        self::assertSame('CTESTPIXEL0123', $this->govde()['tiktokPixelId'] ?? null);
     }
 
     /**

@@ -77,8 +77,11 @@ const bolum = () =>
     screen.findByRole("region", {
         name: "Meta (Facebook ve Instagram reklamları)",
     });
+// A31: sayfada TikTok bölümünün de aynı adlı düğmeleri var — Meta bölümünde ara.
 const dugme = (ad: string) =>
-    screen.getByRole("button", { name: ad }) as HTMLButtonElement;
+    within(document.getElementById("meta")!).getByRole("button", {
+        name: ad,
+    }) as HTMLButtonElement;
 
 afterEach(() => {
     cleanup();

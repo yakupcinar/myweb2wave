@@ -950,6 +950,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/tiktok": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** A31 — TikTok bağlantısı (dönüşüm + harcama); anahtarların yalnız son 4 hanesi */
+        get: operations["panelTiktok"];
+        /** Kaydeder; eventsAnahtari / raporAnahtari yoksa ya da null ise değişmez, boş dize kaldırır */
+        put: operations["panelTiktokKaydet"];
+        post?: never;
+        /** Bağlantıyı kaldırır (dönüşüm ve harcama durur) */
+        delete: operations["panelTiktokSil"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/panel/api/uygulamalar/{app}/tiktok/dene": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A31 — kayıtlı değerlerle TikTok'a gerçek istek: test olay koduyla deneme olayı (Events API anahtarıyla) ve reklamveren bilgisi (Marketing API anahtarıyla) */
+        post: operations["panelTiktokDene"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/anahtarlar": {
         parameters: {
             query?: never;
@@ -1490,6 +1530,17 @@ export interface components {
             durum: "tamam" | "hata" | "ayarsiz";
             mesaj: string;
         };
+        PanelTiktok: {
+            pixelKodu: string;
+            eventsAnahtari: components["schemas"]["MetaAnahtari"];
+            testKodu: string;
+            reklamveren: string;
+            raporAnahtari: components["schemas"]["MetaAnahtari"];
+            /** @description Sunucuda AYAR_SIFRELEME_ANAHTARI var; yoksa anahtar kaydedilemez */
+            sifrelemeHazir: boolean;
+            /** Format: date-time */
+            guncellendi: string | null;
+        };
         /** @enum {string} */
         EpostaSablonu: "dogrulama_kodu" | "giris_baglantisi" | "portal_baglantisi" | "aktivasyon_1" | "aktivasyon_2" | "kurtarma_1" | "kurtarma_2";
         PanelEpostalar: {
@@ -1573,8 +1624,13 @@ export interface components {
                     kisiBasi: components["schemas"]["PanelTutar"][];
                 }[];
             }[];
-            /** @description M5d — Meta kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama */
+            /** @description M5d / A31 — Meta ve TikTok kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile aynı ağdan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama */
             kampanyalar: {
+                /**
+                 * @description A31 — harcamanın geldiği reklam ağı
+                 * @enum {string}
+                 */
+                ag: "meta" | "tiktok";
                 kampanya: string;
                 harcama: components["schemas"]["PanelTutar"];
                 ziyaret: number;
@@ -2664,6 +2720,8 @@ export interface operations {
                         uygulama_adresi: string;
                         /** @description A30 — uygulamanın Meta Pixel'i (panelden); yoksa null, piksel yüklenmez */
                         metaPixelId: string | null;
+                        /** @description A31 — uygulamanın TikTok Pixel kodu (panelden); yoksa null, piksel yüklenmez */
+                        tiktokPixelId: string | null;
                         /** Format: date-time */
                         son_kullanma: string;
                         /** @description Ç118 — oturum tutarı 0 (kartlı deneme); reklam pikseli Purchase yerine StartTrial gönderir */
@@ -4988,6 +5046,185 @@ export interface operations {
         };
     };
     panelMetaDene: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Parça başına sonuç; mesaj anahtar içermez */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        donusum: components["schemas"]["MetaDenemeSonucu"];
+                        harcama: components["schemas"]["MetaDenemeSonucu"];
+                    };
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelTiktok: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlantı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelTiktok"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelTiktokKaydet: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pixelKodu?: string;
+                    eventsAnahtari?: string | null;
+                    testKodu?: string;
+                    reklamveren?: string;
+                    raporAnahtari?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Kaydedilen bağlantı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelTiktok"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz değer ya da şifreleme anahtarı yok */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelTiktokSil: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Boş bağlantı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelTiktok"];
+                };
+            };
+            /** @description CSRF jetonu geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Kayıtlı bağlantı yok */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelTiktokDene: {
         parameters: {
             query?: never;
             header: {

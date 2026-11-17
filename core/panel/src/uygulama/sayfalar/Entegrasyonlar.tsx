@@ -1,5 +1,5 @@
 // Entegrasyonlar (P7d, A25): Webhook'lar, API anahtarları ve Ürün bağlamı
-// tek sayfada; A30: Meta bağlantısı (#meta). Eski adresler (/panel/webhooklar…) sunucuda #bölüm'e
+// tek sayfada; A30: Meta bağlantısı (#meta), A31: TikTok (#tiktok). Eski adresler (/panel/webhooklar…) sunucuda #bölüm'e
 // yönlenir; çizimden sonra oraya kaydırılır (tarayıcı ilk yüklemede bölümü
 // henüz bulamaz).
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { SayfaBasi } from "../Duzen";
 import { AnahtarBolumu } from "./Anahtarlar";
 import { BaglamBolumu } from "./Baglam";
 import { MetaBolumu } from "./Meta";
+import { TiktokBolumu } from "./Tiktok";
 import { WebhookBolumu } from "./Webhooklar";
 
 export function Entegrasyonlar(): ReactNode {
@@ -30,7 +31,7 @@ export function Entegrasyonlar(): ReactNode {
         <div className="max-w-[1040px]">
             <SayfaBasi
                 baslik="Entegrasyonlar"
-                aciklama="Kendi sunucuna olay gönderme, Meta reklam hesabı, Claude bağlantısı ve AI'ın ürün bilgisi."
+                aciklama="Kendi sunucuna olay gönderme, Meta ve TikTok reklam hesapları, Claude bağlantısı ve AI'ın ürün bilgisi."
             >
                 {uygulamalar.data && uygulamalar.data.length > 1 ? (
                     <select
@@ -49,6 +50,7 @@ export function Entegrasyonlar(): ReactNode {
                 <div className="flex flex-col gap-9">
                     <WebhookBolumu key={`w-${secili}`} app={secili} />
                     <MetaBolumu key={`m-${secili}`} app={secili} />
+                    <TiktokBolumu key={`t-${secili}`} app={secili} />
                     <AnahtarBolumu key={`a-${secili}`} app={secili} />
                     <BaglamBolumu key={`b-${secili}`} app={secili} />
                 </div>

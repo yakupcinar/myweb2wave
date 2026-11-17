@@ -258,7 +258,7 @@ function MetaGovdesi({
                 </Satir>
                 <Satir
                     etiket="Test olay kodu (isteğe bağlı)"
-                    yardim="Events Manager › Olayları test et'teki kod. Doluyken olaylar yalnız test görünümüne düşer; canlıya geçmeden boşalt."
+                    yardim="Events Manager › Olayları test et'teki kod. Doluyken olaylar yalnız test görünümüne düşer ve 'Bağlantıyı dene' bununla bir deneme olayı yollar; canlıya geçmeden boşalt."
                 >
                     {duz("testKodu")}
                 </Satir>

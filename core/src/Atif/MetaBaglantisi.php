@@ -173,41 +173,61 @@ final readonly class MetaBaglantisi
     }
 
     /**
-     * Kayıtlı değerlerle Meta'ya gerçek istek: Pixel'i CAPI anahtarıyla,
-     * reklam hesabını Insights anahtarıyla okur. Mesaj anahtar içermez.
+     * Kayıtlı değerlerle Meta'ya gerçek istek. Dönüşüm: Events Manager'ın
+     * CAPI anahtarı yalnız olay yazar, Pixel'i okuyamaz ((#100) Missing
+     * permission — gerçek hesapta ölçüldü, 2026-11-17) → test olay kodu varsa
+     * deneme olayı gönderir (Olayları test et'te görünür, canlı veriye
+     * karışmaz), yoksa istek atmaz. Harcama: reklam hesabını Insights
+     * anahtarıyla okur. Mesaj anahtar içermez.
      *
      * @return array{donusum: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}, harcama: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}}
      */
     public function dene(string $app): array
     {
         $m = $this->oku($app);
+        if (null === $m['pixel'] || null === $m['capi']) {
+            $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Pixel ID ve CAPI anahtarı girilmedi.'];
+        } elseif (null === $m['testKodu']) {
+            $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Denemek için test olay kodu girin (Events Manager › Olayları test et); deneme olayı yalnız orada görünür.'];
+        } else {
+            $donusum = $this->sor('POST', $m['pixel'].'/events', $m['capi'], ['json' => [
+                'test_event_code' => $m['testKodu'],
+                'data' => [[
+                    'event_name' => 'PageView',
+                    'event_time' => time(),
+                    'event_id' => 'dene-'.bin2hex(random_bytes(8)),
+                    'action_source' => 'website',
+                    // Website olayı en az bir eşleme alanı ister; belgelere ayrılmış adres (TEST-NET-3).
+                    'user_data' => ['client_ip_address' => '203.0.113.1', 'client_user_agent' => 'MyWeb2Wave baglanti denemesi'],
+                ]],
+            ]], static fn (array $g): string => "Deneme olayı gönderildi — Events Manager › Olayları test et'te görünmeli.");
+        }
 
         return [
-            'donusum' => null === $m['pixel'] || null === $m['capi']
-                ? ['durum' => 'ayarsiz', 'mesaj' => 'Pixel ID ve CAPI anahtarı girilmedi.']
-                : $this->sor($m['pixel'], 'name', $m['capi'], static fn (array $g): string => 'Pixel: '.(\is_string($g['name'] ?? null) ? $g['name'] : $m['pixel'])),
+            'donusum' => $donusum,
             'harcama' => null === $m['hesap'] || null === $m['insights']
                 ? ['durum' => 'ayarsiz', 'mesaj' => 'Reklam hesabı ve Insights anahtarı girilmedi.']
-                : $this->sor($m['hesap'], 'name,currency', $m['insights'], static fn (array $g): string => 'Reklam hesabı: '.(\is_string($g['name'] ?? null) ? $g['name'] : $m['hesap'])
+                : $this->sor('GET', $m['hesap'], $m['insights'], ['query' => ['fields' => 'name,currency']], static fn (array $g): string => 'Reklam hesabı: '.(\is_string($g['name'] ?? null) ? $g['name'] : $m['hesap'])
                     .(\is_string($g['currency'] ?? null) ? " ({$g['currency']})" : '')),
         ];
     }
 
     /**
-     * @param \Closure(array<mixed>): string $tamam
+     * @param array{query?: array<string, string>, json?: array<string, mixed>} $secenekler
+     * @param \Closure(array<mixed>): string                                    $tamam
      *
      * @return array{durum: 'tamam'|'hata', mesaj: string}
      */
-    private function sor(string $nesne, string $alanlar, string $anahtar, \Closure $tamam): array
+    private function sor(string $yontem, string $yol, string $anahtar, array $secenekler, \Closure $tamam): array
     {
         if (!$this->surumGecerli()) {
             return ['durum' => 'hata', 'mesaj' => 'Sunucuda Graph API sürümü (META_GRAPH_API_VERSION) yok.'];
         }
         try {
-            $yanit = $this->http->request('GET', 'https://graph.facebook.com/'.$this->surum.'/'.rawurlencode($nesne), [
-                'query' => ['fields' => $alanlar, 'access_token' => $anahtar],
+            $yanit = $this->http->request($yontem, 'https://graph.facebook.com/'.$this->surum.'/'.implode('/', array_map(rawurlencode(...), explode('/', $yol))), [
+                'query' => ($secenekler['query'] ?? []) + ['access_token' => $anahtar],
                 'timeout' => 10,
-            ]);
+            ] + (isset($secenekler['json']) ? ['json' => $secenekler['json']] : []));
             $govde = $yanit->toArray(false);
             $kod = $yanit->getStatusCode();
         } catch (ExceptionInterface) {

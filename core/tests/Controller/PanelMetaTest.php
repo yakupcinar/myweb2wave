@@ -125,7 +125,12 @@ final class PanelMetaTest extends WebTestCase
         self::assertFalse($baska->donusumAcik('keepchat'));
     }
 
-    /** Dene: Pixel CAPI anahtarıyla, hesap Insights anahtarıyla okunur; Meta hatası anahtarsız döner. */
+    /**
+     * Dene: dönüşüm test kodu yokken istek atmaz; varsa CAPI anahtarıyla deneme
+     * olayı (Pixel'i okumaz — gerçek CAPI anahtarı okuyamıyor, (#100) Missing
+     * permission, 2026-11-17). Hesap Insights anahtarıyla okunur; Meta hatası
+     * anahtarsız döner.
+     */
     public function testDene(): void
     {
         $jeton = $this->giris();
@@ -138,13 +143,27 @@ final class PanelMetaTest extends WebTestCase
 
         $this->put($jeton, ['pixelId' => '987654321', 'capiAnahtari' => self::CAPI, 'reklamHesabi' => 'act_12345678', 'insightsAnahtari' => self::INSIGHTS]);
         SahteMetaGraph::$yanitlar = [
-            '/v99.0/987654321' => [200, ['name' => 'KeepChat Pixel', 'id' => '987654321']],
+            '/v99.0/act_12345678' => [400, ['error' => ['message' => 'Invalid OAuth access token '.self::INSIGHTS, 'code' => 190]]],
+        ];
+        $this->dene($jeton);
+        $donusum = $this->json()['donusum'];
+        self::assertIsArray($donusum);
+        self::assertSame('ayarsiz', $donusum['durum'] ?? null);
+        self::assertSame(0, SahteRevenueCat::sayi(), 'test kodu yokken olay gönderilmez');
+
+        $this->put($jeton, ['pixelId' => '987654321', 'testKodu' => 'TEST123', 'reklamHesabi' => 'act_12345678']);
+        SahteMetaGraph::sifirla();
+        SahteMetaGraph::$yanitlar = [
             '/v99.0/act_12345678' => [400, ['error' => ['message' => 'Invalid OAuth access token '.self::INSIGHTS, 'code' => 190]]],
         ];
         $this->dene($jeton);
         Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/meta/dene', $this->client->getResponse());
         $j = $this->json();
-        self::assertSame(['durum' => 'tamam', 'mesaj' => 'Pixel: KeepChat Pixel'], $j['donusum']);
+        self::assertSame(['durum' => 'tamam', 'mesaj' => "Deneme olayı gönderildi — Events Manager › Olayları test et'te görünmeli."], $j['donusum']);
+        self::assertSame(1, SahteRevenueCat::sayi());
+        self::assertSame(['POST', 'https://graph.facebook.com/v99.0/987654321/events?access_token='.self::CAPI], [SahteRevenueCat::istek(0)['method'], SahteRevenueCat::istek(0)['url']]);
+        $olay = SahteRevenueCat::govde(0);
+        self::assertSame('TEST123', $olay['test_event_code'] ?? null);
         $harcama = $j['harcama'];
         self::assertIsArray($harcama);
         self::assertSame('hata', $harcama['durum'] ?? null);
@@ -153,7 +172,7 @@ final class PanelMetaTest extends WebTestCase
         self::assertStringNotContainsString(self::INSIGHTS, (string) $this->client->getResponse()->getContent());
         /** @var list<array<int|string, mixed>> $sorgular statik alan; önceki boşluk denetimi tipi daraltmasın */
         $sorgular = SahteMetaGraph::$sorgular;
-        self::assertSame([['/v99.0/987654321', self::CAPI, 'name'], ['/v99.0/act_12345678', self::INSIGHTS, 'name,currency']],
+        self::assertSame([['/v99.0/act_12345678', self::INSIGHTS, 'name,currency']],
             array_map(static fn (array $s): array => [$s['yol'] ?? null, $s['access_token'] ?? null, $s['fields'] ?? null], $sorgular));
 
         $this->client->request('POST', '/panel/api/uygulamalar/keepchat/meta/dene', server: ['HTTP_X_CSRF_TOKEN' => 'yanlis']);

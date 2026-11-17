@@ -22,12 +22,8 @@ final readonly class DonusumAktarimi
         private LoggerInterface $logger,
         /** A30: Pixel, CAPI anahtarı ve test kodu uygulama başına, panelden. */
         private MetaBaglantisi $metaBaglantisi,
-        #[Autowire('%env(TIKTOK_PIXEL_ID)%')]
-        private string $tiktokPixel,
-        #[Autowire('%env(TIKTOK_ACCESS_TOKEN)%')]
-        private string $tiktokToken,
-        #[Autowire('%env(TIKTOK_TEST_EVENT_CODE)%')]
-        private string $tiktokTestKodu,
+        /** A31: Pixel kodu, Events API anahtarı ve test kodu uygulama başına, panelden. */
+        private TiktokBaglantisi $tiktokBaglantisi,
         #[Autowire('%env(FUNNEL_BASE_URL)%')]
         private string $huniAdresi,
     ) {
@@ -108,9 +104,11 @@ final readonly class DonusumAktarimi
         if (\is_string($ziyaret['ttclid'] ?? null) && '' !== $ziyaret['ttclid']) {
             $tiktokUser['ttclid'] = $ziyaret['ttclid'];
         }
+        $tiktokBag = $this->tiktokBaglantisi->oku($app);
         $tiktok = [
             'event_source' => 'web',
-            'event_source_id' => $this->tiktokPixel,
+            // A31: gönderimde o anki bağlantının Pixel'iyle değiştirilir (tekGonder).
+            'event_source_id' => $tiktokBag['pixel'],
             'data' => [[
                 'event' => $deneme ? 'StartTrial' : 'CompletePayment',
                 'event_time' => $eventTime,
@@ -120,12 +118,12 @@ final readonly class DonusumAktarimi
                 'page' => ['url' => $url],
             ]],
         ];
-        if ('' !== $this->tiktokTestKodu) {
-            $tiktok['test_event_code'] = $this->tiktokTestKodu;
+        if (null !== $tiktokBag['testKodu']) {
+            $tiktok['test_event_code'] = $tiktokBag['testKodu'];
         }
 
         $this->ekle($db, 'meta', $eventId, $meta, $app, $this->metaBaglantisi->donusumAcik($app));
-        $this->ekle($db, 'tiktok', $eventId, $tiktok, $app, '' !== $this->tiktokPixel && '' !== $this->tiktokToken);
+        $this->ekle($db, 'tiktok', $eventId, $tiktok, $app, $this->tiktokBaglantisi->donusumAcik($app));
         // Kişisel eşleme sinyalleri artık yalnız teslim bekleyen kuyrukta kalır.
         $this->baglamSil($db, $oturum);
     }
@@ -222,9 +220,14 @@ final readonly class DonusumAktarimi
                     'timeout' => 10,
                 ]);
             } elseif ('tiktok' === $saglayici) {
-                $yanit = $this->http->request('POST', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', [
-                    'headers' => ['Access-Token' => $this->tiktokToken],
-                    'json' => $payload,
+                // A31: gönderim anındaki bağlantı — panelde kaldırıldıysa ya da anahtar okunamıyorsa gitmez.
+                $t = $this->tiktokBaglantisi->oku($app);
+                if (null === $t['pixel'] || null === $t['events']) {
+                    return 'uygulamanın TikTok bağlantısı yok';
+                }
+                $yanit = $this->http->request('POST', TiktokBaglantisi::API.'/event/track/', [
+                    'headers' => ['Access-Token' => $t['events']],
+                    'json' => ['event_source_id' => $t['pixel']] + $payload,
                     'timeout' => 10,
                 ]);
             } else {
