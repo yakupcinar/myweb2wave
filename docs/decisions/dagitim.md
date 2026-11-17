@@ -103,3 +103,13 @@ etkilenmeyecek.
   huni-bilesenleri`, `core/Dockerfile` panel aşamasında `/huni-bilesenleri/`'ye kopya. Ölçüm: sunucudaki gibi temiz kopya
   (`git archive`, `node_modules` yok) ile yerelde `--target uretim` derlendi. **Kırma:** kopya satırı olmadan aynı 4 hata,
   derleme 1 ile düştü. KeepChat bu sırada açıktı (derleme önce, kapatma sonra).
+- **2026-11-17 CANLI:** KeepChat `docker compose -p keepchat down` ile durduruldu (`-v` yok; 6 `keepchat_*` volume
+  yerinde). `deploy/dagit.sh` ilk koşuda TLS ölçümünde düştü: hizmetler sağlıklıydı, Caddy sertifikayı ölçümden saniyeler
+  sonra aldı (Ç147). İkinci koşu `DAGITIM TAMAM sürüm=9e29e4589b9d`. Bu bilgisayardan dışarıdan: `/health`
+  `{"status":"ok","db":"ok","version":"9e29e4589b9d"}`, huni 200, panel 302 (giriş). Tra her adımda 308 (taban ile aynı).
+  Stripe test webhook uç noktası API ile açıldı (`we_1UcfQR…`, 5 olay), sır sunucuya boruyla gitti. E-posta: Gmail SMTP
+  (uygulama şifresi; giriş ölçüldü, gönderim ölçülmedi); Postmark kendi alan adı gelince. Panel kullanıcısı `yonetici`,
+  şifre kullanıcının bilgisayarında, sunucuda yalnız özet.
+  **Eksik:** cron'lar (yedek 03:15, RevenueCat ve reklam yeniden denemeleri, 90 gün metin silme, ülke verisi) kurulmadı.
+  Sunucuda sudo ile betik koşturma izin sisteminde engellendi; kullanıcı kararı bekliyor. Yedek bu yüzden şimdilik
+  yalnız dağıtım anındaki (`dagit.sh`).
