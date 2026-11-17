@@ -33,7 +33,8 @@ if len(e["APP_SECRET"]) < 32:
     h.append("APP_SECRET 32 karakterden kısa (kod özetlerinin anahtarı)")
 if len(e["UYGULAMA_ANAHTARI_KEEPCHAT"]) < 32:
     h.append("UYGULAMA_ANAHTARI_KEEPCHAT 32 karakterden kısa")
-# `config` çıktısı $'ı $$ diye kaçışlar; konteynere giden değer tek $ (ölçüldü).
+# `config` çıktısı $ işaretini $$ diye kaçışlar; konteynere giden değer tek $ (ölçüldü).
+# (Bu blok kabukta tek tırnak içinde: yorumda bile kesme işareti olmaz; 2026-11-04 öncesi betik sözdizimi hatası veriyordu.)
 if not re.fullmatch(r"\$2y\$\d\d\$[./A-Za-z0-9]{53}|\$argon2id?\$\S+", e["PANEL_SIFRE_OZETI"].replace("$$", "$")):
     h.append("PANEL_SIFRE_OZETI geçerli bir özet değil — tek tırnak unutuldu mu? (tuzak §26)")
 if e["MAILER_DSN"].startswith("null:"):
@@ -52,6 +53,10 @@ deploy/yedek.sh || dur "yedek alınamadı — göç yapılmadı"
 
 echo "== göç"
 dc run --rm -T core php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || dur "göç"
+
+echo "== ülke verisi (M1c)"
+# Düşerse dağıtım durmaz: para birimi seçimi planın ana birimine döner (günlükte uyarı).
+dc run --rm -T core php bin/console app:ulke-verisi || echo "UYARI: ülke verisi indirilemedi — ziyaretçiler ana para birimini görür"
 
 echo "== servisler"
 dc up -d --wait --remove-orphans || dur "servisler sağlıklı değil"

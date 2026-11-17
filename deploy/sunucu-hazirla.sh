@@ -53,6 +53,20 @@ echo "15 3 * * * $KULLANICI $DIZIN/deploy/yedek.sh >> /var/log/myweb2wave-yedek.
 # A9: RevenueCat'e gidemeyen aktarımlar 5 dakikada bir yeniden denenir.
 # APP_VERSION: compose zorunlu tutuyor, exec için yer tutucu (yedek.sh'deki ölçüm, dagitim.md).
 echo "*/5 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:revenuecat:gonder >> /var/log/myweb2wave-revenuecat.log 2>&1" > /etc/cron.d/myweb2wave-revenuecat
-touch /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log
+# H6b: izinli satın alma dönüşümleri artan bekleme aralığıyla yeniden denenir.
+echo "*/5 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:reklam-donusumleri:gonder >> /var/log/myweb2wave-reklam-donusumleri.log 2>&1" > /etc/cron.d/myweb2wave-reklam-donusumleri
+# Serbest yanıtların ham metni 90 günden eskiyse silinir; diğer huni analitiği kalır.
+echo "30 3 * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:huni-metin-cevaplari-sil >> /var/log/myweb2wave-metin-cevaplari.log 2>&1" > /etc/cron.d/myweb2wave-metin-cevaplari
+# M1c: DB-IP aylık yayınlar; ayın 3'ünde (geç yayına pay) yenisi.
+echo "0 4 3 * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:ulke-verisi >> /var/log/myweb2wave-ulke.log 2>&1" > /etc/cron.d/myweb2wave-ulke
+touch /var/log/myweb2wave-ulke.log && chown "$KULLANICI" /var/log/myweb2wave-ulke.log
+# Ç133: M8a2/M8b aktivasyon ve kurtarma e-postaları 15 dakikada bir.
+echo "*/15 * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:posta:dizi >> /var/log/myweb2wave-posta.log 2>&1" > /etc/cron.d/myweb2wave-posta
+# Ç133: M7a giden webhook'lar dakikada bir.
+echo "* * * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:webhook:gonder >> /var/log/myweb2wave-webhook.log 2>&1" > /etc/cron.d/myweb2wave-webhook
+# Ç133: M5d Meta reklam harcaması günde bir (Meta bağlı değilken hatayla çıkar, zararsız; günlükte görünür).
+echo "0 5 * * * $KULLANICI cd $DIZIN && APP_VERSION=cron docker compose --env-file deploy/.env.uretim -f deploy/compose.yaml exec -T core php bin/console app:reklam-harcamalari:cek >> /var/log/myweb2wave-reklam-harcamalari.log 2>&1" > /etc/cron.d/myweb2wave-reklam-harcamalari
+touch /var/log/myweb2wave-posta.log /var/log/myweb2wave-webhook.log /var/log/myweb2wave-reklam-harcamalari.log && chown "$KULLANICI" /var/log/myweb2wave-posta.log /var/log/myweb2wave-webhook.log /var/log/myweb2wave-reklam-harcamalari.log
+touch /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log /var/log/myweb2wave-reklam-donusumleri.log /var/log/myweb2wave-metin-cevaplari.log && chown "$KULLANICI" /var/log/myweb2wave-yedek.log /var/log/myweb2wave-revenuecat.log /var/log/myweb2wave-reklam-donusumleri.log /var/log/myweb2wave-metin-cevaplari.log
 
 echo "HAZIRLIK TAMAM — sonraki: $KULLANICI ile gir, deploy/.env.uretim'i doldur, deploy/dagit.sh"

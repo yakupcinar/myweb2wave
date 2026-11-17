@@ -18,3 +18,7 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+# Ç62: Symfony'nin ürettiği IDE şekil dosyası; ortamına göre (dev/test)
+# değişip çalışma ağacını her koşuda kirletiyordu. Hiçbir kod okumuyor.
+/config/reference.php

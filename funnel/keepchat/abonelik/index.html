@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title data-metin="aboneligimiYonet">Aboneliğimi yönet</title>
+  </head>
+  <body class="huni">
+    <main>
+      <section>
+        <h1 data-metin="aboneligimiYonet">Aboneliğimi yönet</h1>
+        <p data-metin="portalAciklama">
+          Abone olduğun e-posta adresini yaz; kartını güncellemen, aboneliğini
+          iptal etmen ve faturalarını görmen için bir bağlantı gönderelim.
+        </p>
+        <form id="portal-formu" class="eposta-formu">
+          <!-- M9d2b: eposta-formu için kural yoktu; alan çıplak çiziliyordu (ekranda görüldü). -->
+          <label class="serbest-yanit">
+            <span data-metin="eposta">E-posta</span>
+            <input
+              type="email"
+              name="eposta"
+              required
+              maxlength="254"
+              autocomplete="email"
+            />
+          </label>
+          <div class="eylem">
+            <button type="submit" class="ana" data-metin="baglantiGonder">
+              Bağlantı gönder
+            </button>
+          </div>
+        </form>
+        <p id="portal-durum" role="status" hidden></p>
+      </section>
+    </main>
+    <script type="module" src="/src/giris/abonelik.ts"></script>
+  </body>
+</html>

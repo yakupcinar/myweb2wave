@@ -20,7 +20,7 @@ Sırayla, tamamını:
 |---|---|
 | `PLAN.md` | **Aktif sprint**: §0 durum, §1 şu anki 3-4 görev, §2 backlog ve sırası. Bitmiş blok kayıtları burada DEĞİL, `docs/decisions/<konu>.md`'de |
 | `docs/decisions/acik-uclar.md` | **Açık uçlar (Ç-no)**. Taslak prompt bu gözlemlerden birine dokunuyorsa söyle: karara bağlanmamış bir şeyi sessizce varsaymak promptu boşa harcatır |
-| `CLAUDE.md` | 15 değişmez kural + **tuzak indeksi** (§4, tek satırlık iddialarla) |
+| `CLAUDE.md` | 15 değişmez kural + **tuzak indeksi** (§4, anahtarlar; tam metin `docs/tuzaklar.md`) |
 | `docs/tuzaklar.md` | Tuzakların **tam metni** — CLAUDE.md'de yalnız tek satır var; ilgili tuzağa dokunan bir taslakta buradan oku |
 | `docs/decisions/` | Bitmiş blokların kayıtları. Taslak "bu daha önce yapıldı mı" sorusuna dokunuyorsa `ls` + `grep` ile doğru dosyayı bul |
 | `docs/pre-setup.md` | Kayıtlı kararlar (A + B), **özellikle reddedilen alternatifler** ve risk tablosu |

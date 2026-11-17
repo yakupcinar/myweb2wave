@@ -11,6 +11,10 @@ use Doctrine\DBAL\Connection;
  * Erişim: active, trialing, past_due — Stripe yeniden denerken kullanıcı
  * kilitlenmez. Kişinin DOĞRULANMIŞ e-postası, uygulamanın aboneliklerindeki
  * e-postayla (küçük harf) eşlenir.
+ *
+ * M6c (A28): duraklatılmış abonelik erişim vermez, durumu "paused" (Stripe'ta
+ * active kalır). Bitiş geçmişse duraklı sayılmaz — Stripe sürdürür, olayı
+ * gecikse de erişim açılır.
  */
 final readonly class Hak
 {
@@ -32,8 +36,10 @@ final readonly class Hak
         }
 
         $durumlar = $this->db->fetchFirstColumn(
-            'SELECT status FROM subscriptions WHERE app = ? AND lower(email) = ? AND status IS NOT NULL ORDER BY updated_at DESC',
-            [$app, $kisi],
+            "SELECT CASE WHEN status IN (?) AND duraklatildi AND (duraklatma_bitis IS NULL OR duraklatma_bitis > now()) THEN 'paused' ELSE status END
+             FROM subscriptions WHERE app = ? AND lower(email) = ? AND status IS NOT NULL ORDER BY updated_at DESC",
+            [self::ERISIM_VEREN, $app, $kisi],
+            [\Doctrine\DBAL\ArrayParameterType::STRING],
         );
         foreach (self::ERISIM_VEREN as $erisim) {
             if (\in_array($erisim, $durumlar, true)) {

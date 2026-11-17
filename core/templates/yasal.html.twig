@@ -1,0 +1,38 @@
+{# M9b1: herkese açık yasal sayfa — dış betik / stil yok; metin ayrıştırılmış, kaçışlanır (HTML yok). #}
+{% macro parcalar(liste) %}{% for p in liste %}{% if p.kalin %}<strong>{{ p.metin }}</strong>{% else %}{{ p.metin }}{% endif %}{% endfor %}{% endmacro %}
+<!DOCTYPE html>
+<html lang="{{ dil }}">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="referrer" content="no-referrer">
+        <title>{{ sayfa.baslik }}</title>
+        <style>
+            :root { color-scheme: light dark; --zemin: #f5f6f8; --yuzey: #fff; --metin: #111827; --soluk: #6b7280; }
+            @media (prefers-color-scheme: dark) { :root { --zemin: #0b0d12; --yuzey: #141821; --metin: #e7e9ee; --soluk: #8b93a7; } }
+            body { margin: 0; background: var(--zemin); color: var(--metin); font: 16px/1.6 system-ui, sans-serif; padding: 16px; }
+            main { max-width: 720px; margin: 0 auto; background: var(--yuzey); border-radius: 14px; padding: 28px; }
+            h1 { margin: 0 0 4px; font-size: 26px; line-height: 1.25; }
+            h2 { margin: 28px 0 8px; font-size: 19px; }
+            .tarih { margin: 0 0 20px; color: var(--soluk); font-size: 14px; }
+            p, ul { margin: 0 0 14px; }
+            ul { padding-left: 22px; }
+            li { margin-bottom: 6px; }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>{{ sayfa.baslik }}</h1>
+            <p class="tarih">{{ dil == 'tr' ? 'Son güncelleme' : 'Last updated' }}: {{ sayfa.guncellendi|date('Y-m-d') }}</p>
+            {% for b in sayfa.bloklar %}
+                {% if b.tur == 'baslik' %}
+                    <h2>{{ _self.parcalar(b.parcalar) }}</h2>
+                {% elseif b.tur == 'liste' %}
+                    <ul>{% for m in b.maddeler %}<li>{{ _self.parcalar(m) }}</li>{% endfor %}</ul>
+                {% else %}
+                    <p>{{ _self.parcalar(b.parcalar) }}</p>
+                {% endif %}
+            {% endfor %}
+        </main>
+    </body>
+</html>

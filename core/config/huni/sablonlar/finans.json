@@ -1,0 +1,441 @@
+{
+  "ad": "Kişisel finans",
+  "aciklama": "Hedef ve harcama alışkanlığı sorusu → kişisel bütçe planı; abonelik bilgi ekranı, ölçek, e-posta ve özet grafiği; yatırım tavsiyesi değildir notu.",
+  "hazirTema": "lacivert",
+  "tanim": {
+    "sayfaBasligi": "Sana özel bütçe planı",
+    "adimlar": [
+      {
+        "id": "giris",
+        "tur": "ekran",
+        "baslik": "Paranı yönetmenin sade yolu",
+        "dugme": "Teste başla",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birkaç kısa soruyla hedefini ve harcama alışkanlığını öğrenelim, sana uygun bir bütçe planı çıkaralım."
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Kişisel bütçe planı",
+              "Harcama takibi",
+              "Birikim hedefleri"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Cevapların yalnız bütçe planını hazırlamak için kullanılır; banka bilgisi istemiyoruz.",
+            "simge": "🔒"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "hedef",
+        "tur": "ekran",
+        "baslik": "Paranla ilgili ana hedefin ne?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "birikim",
+                "metin": "Birikim yapmak",
+                "simge": "🏦"
+              },
+              {
+                "id": "borc",
+                "metin": "Borcumu kapatmak",
+                "simge": "💳"
+              },
+              {
+                "id": "butce",
+                "metin": "Bütçemi kontrol etmek",
+                "simge": "📊"
+              },
+              {
+                "id": "yatirim",
+                "metin": "Yatırıma başlamak",
+                "simge": "📈"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Planın ilk ayı bu hedefe odaklanır; diğerleri sonra eklenir.",
+            "simge": "🎯"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "aysonu",
+        "tur": "ekran",
+        "baslik": "Ay sonunu nasıl getiriyorsun?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "rahat",
+                "metin": "Rahat getiriyorum",
+                "simge": "😌"
+              },
+              {
+                "id": "zor",
+                "metin": "Zorlanıyorum",
+                "simge": "😬"
+              },
+              {
+                "id": "bilmiyorum",
+                "metin": "Paramın nereye gittiğini bilmiyorum",
+                "simge": "🤷"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Doğru ya da yanlış cevap yok; plan buna göre başlar.",
+            "simge": "🤝"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "bilgi",
+        "tur": "ekran",
+        "baslik": "İlk adım: görmek",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Bütçe kısıtlamakla değil, paranın nereye gittiğini görmekle başlar.",
+            "degerler": [
+              {
+                "alan": "metin",
+                "deger": "Borç kapatmada önce faizi en yüksek borcu görmek, planın ilk adımı.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.hedef",
+                    "islem": "icerir",
+                    "deger": "borc"
+                  }
+                ]
+              },
+              {
+                "alan": "metin",
+                "deger": "Birikim, gelir geldiği gün ayrılan küçük bir tutarla başlar.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.hedef",
+                    "islem": "icerir",
+                    "deger": "birikim"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Planın bu hedefe göre hazırlanacak.",
+            "simge": "💡"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Harcamalarını kategorilere ayır",
+              "Sabit giderleri çıkar",
+              "Kalanı hedefe böl"
+            ]
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "takip",
+        "tur": "ekran",
+        "baslik": "Harcamalarını nasıl takip ediyorsun?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "uygulama",
+                "metin": "Bir uygulamayla",
+                "simge": "📱"
+              },
+              {
+                "id": "not",
+                "metin": "Not ya da tabloyla",
+                "simge": "📝"
+              },
+              {
+                "id": "yok",
+                "metin": "Takip etmiyorum",
+                "simge": "❌"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Takip etmiyorsan sorun değil: ilk haftanı yalnız harcamalarını görmeye ayırıyoruz.",
+            "simge": "👀"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "harcama",
+        "tur": "ekran",
+        "baslik": "Paranın çoğu nereye gidiyor?",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birden fazla seçebilirsin."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "coklu",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "market",
+                "metin": "Market",
+                "simge": "🛒"
+              },
+              {
+                "id": "yemek",
+                "metin": "Dışarıda yemek",
+                "simge": "🍔"
+              },
+              {
+                "id": "abonelik",
+                "metin": "Abonelikler",
+                "simge": "📺"
+              },
+              {
+                "id": "ulasim",
+                "metin": "Ulaşım",
+                "simge": "🚗"
+              },
+              {
+                "id": "alisveris",
+                "metin": "Alışveriş",
+                "simge": "🛍️"
+              },
+              {
+                "id": "eglence",
+                "metin": "Eğlence",
+                "simge": "🎉"
+              }
+            ]
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "abonelik",
+        "tur": "ekran",
+        "baslik": "Abonelikleri gözden geçir",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Küçük aylık ödemeler kolayca unutulur ve zamanla birikir."
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Bütün aboneliklerini listele",
+              "Son ay kullanmadığını iptal et",
+              "Yıllık ödemeyi takvime yaz"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Planın, abonelikleri gözden geçirmeyi ilk haftaya koyar.",
+            "simge": "📺"
+          }
+        ],
+        "ilerlemeGoster": true,
+        "goster": {
+          "kosullar": [
+            {
+              "ozellik": "cevap.harcama",
+              "islem": "icerir",
+              "deger": "abonelik"
+            }
+          ]
+        }
+      },
+      {
+        "id": "plan",
+        "tur": "ekran",
+        "baslik": "Plan yapmak neden zor?",
+        "bloklar": [
+          {
+            "tur": "kutu",
+            "metin": "“Ay başında plan yapıyorum ama ay ortasında dağılıyor.”",
+            "simge": "📅"
+          },
+          {
+            "tur": "metin",
+            "metin": "Bu cümle seni ne kadar anlatıyor?"
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "olcek",
+            "olcekSol": "Hiç katılmıyorum",
+            "olcekSag": "Tamamen katılıyorum"
+          },
+          {
+            "tur": "metin",
+            "metin": "Cevabın, planındaki haftalık kontrollerin sıklığını belirler."
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "sure",
+        "tur": "ekran",
+        "baslik": "Haftada bütçene ne kadar zaman ayırabilirsin?",
+        "bloklar": [
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "5",
+                "metin": "5 dakika"
+              },
+              {
+                "id": "15",
+                "metin": "15 dakika"
+              },
+              {
+                "id": "30",
+                "metin": "30 dakika ya da daha fazla"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Haftalık kontrol, seçtiğin süreye sığacak kadar kısa tutulur.",
+            "simge": "⏱️"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "hazirlaniyor",
+        "tur": "yukleme",
+        "sure": 6,
+        "baslik": "Bütçe planın hazırlanıyor",
+        "maddeler": [
+          "Cevapların inceleniyor",
+          "Harcama alanların sıralanıyor",
+          "Haftalık kontrollerin planlanıyor"
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "eposta",
+        "tur": "ekran",
+        "baslik": "Planını nereye gönderelim?",
+        "dugme": "Planımı göster",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Kişisel bütçe planın hazır. E-postanı yaz, planını kaybetme."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "eposta",
+            "yanitZorunlu": true,
+            "izinMetni": "Bütçe ipuçları ve teklifler e-postayla gönderilebilir. İstediğin an ayrılabilirsin."
+          },
+          {
+            "tur": "kutu",
+            "metin": "Adresin yalnız planın ve ödeme sayfası için kullanılır.",
+            "simge": "🔒"
+          }
+        ]
+      },
+      {
+        "id": "ozet",
+        "tur": "ekran",
+        "baslik": "Bütçe planın hazır",
+        "dugme": "Planımı aç",
+        "bloklar": [
+          {
+            "tur": "grafik",
+            "baslangic": "Bugün",
+            "hedef": "6. ay",
+            "egri": "artan"
+          },
+          {
+            "tur": "baslik",
+            "metin": "Planında neler var"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Harcama alanlarına göre bütçe",
+              "Haftalık kısa kontroller",
+              "Hedefe göre birikim adımları"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Plan genel bilgi içerir; yatırım tavsiyesi değildir.",
+            "simge": "ℹ️"
+          }
+        ],
+        "ilerlemeGoster": true,
+        "degerler": [
+          {
+            "alan": "baslik",
+            "deger": "Borç kapatma planın hazır",
+            "kosullar": [
+              {
+                "ozellik": "cevap.hedef",
+                "islem": "icerir",
+                "deger": "borc"
+              }
+            ]
+          },
+          {
+            "alan": "baslik",
+            "deger": "Birikim planın hazır",
+            "kosullar": [
+              {
+                "ozellik": "cevap.hedef",
+                "islem": "icerir",
+                "deger": "birikim"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "paywall",
+        "tur": "paywall",
+        "baslik": "Kişisel bütçe planına başla",
+        "metin": "İstediğin zaman iptal edebilirsin.",
+        "dugme": "Planımı başlat",
+        "plan": "",
+        "faydalar": [
+          "Sana özel bütçe planı",
+          "Harcama takibi",
+          "Haftalık hatırlatmalar",
+          "İstediğin zaman iptal"
+        ]
+      }
+    ]
+  }
+}

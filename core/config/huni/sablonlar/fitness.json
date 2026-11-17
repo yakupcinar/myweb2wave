@@ -1,0 +1,571 @@
+{
+  "ad": "Fitness",
+  "aciklama": "Hedef, seviye ve yer sorusu → kişisel antrenman planı; evi seçene ekipman sorusu, sakatlık uyarısı, ölçek, e-posta ve özet grafiği.",
+  "hazirTema": "enerji",
+  "tanim": {
+    "sayfaBasligi": "Sana özel antrenman planı",
+    "adimlar": [
+      {
+        "id": "giris",
+        "tur": "ekran",
+        "baslik": "Sana uyan antrenman planı",
+        "dugme": "Teste başla",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birkaç kısa soruyla hedefini ve temponu öğrenelim, haftana sığan bir plan çıkaralım."
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Seviyene göre antrenmanlar",
+              "Evde ya da salonda",
+              "Haftalık ilerleme takibi"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Cevapların yalnız antrenman planını hazırlamak için kullanılır.",
+            "simge": "🔒"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "hedef",
+        "tur": "ekran",
+        "baslik": "Ana hedefin ne?",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Planın bu hedefe göre kurulur."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "kilo",
+                "metin": "Kilo vermek",
+                "simge": "⚖️"
+              },
+              {
+                "id": "kas",
+                "metin": "Kas kazanmak",
+                "simge": "💪"
+              },
+              {
+                "id": "form",
+                "metin": "Formda kalmak",
+                "simge": "🏃"
+              },
+              {
+                "id": "esneklik",
+                "metin": "Esnemek ve rahatlamak",
+                "simge": "🧘"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Hedefin, haftalık programın ağırlığını belirler: kardiyo mu, kuvvet mi, esneme mi.",
+            "simge": "🎯"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "seviye",
+        "tur": "ekran",
+        "baslik": "Şu an ne kadar hareketlisin?",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Planın zorluğunu buna göre ayarlarız."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "yeni",
+                "metin": "Yeni başlıyorum",
+                "simge": "🌱"
+              },
+              {
+                "id": "ara",
+                "metin": "Ara sıra spor yapıyorum",
+                "simge": "🔥"
+              },
+              {
+                "id": "duzenli",
+                "metin": "Düzenli antrenman yapıyorum",
+                "simge": "🏆"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Yeni başlıyorsan ilk hafta hafif başlar; düzenliysen tekrar ve setler artar.",
+            "simge": "📈"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "bilgi",
+        "tur": "ekran",
+        "baslik": "Doğru yerden başlıyorsun",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Kalıcı sonuç, sürdürebildiğin bir tempodan gelir — her gün değil, düzenli.",
+            "degerler": [
+              {
+                "alan": "metin",
+                "deger": "Kas için yüklenmeyi adım adım artırmak ve dinlenme günleri en az antrenman kadar önemli.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.hedef",
+                    "islem": "icerir",
+                    "deger": "kas"
+                  }
+                ]
+              },
+              {
+                "alan": "metin",
+                "deger": "Kilo vermede hareket ve beslenme birlikte çalışır; planın ikisine de yer açar.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.hedef",
+                    "islem": "icerir",
+                    "deger": "kilo"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "İlk hafta, seviyene göre hafif bir tempoyla başlar.",
+            "simge": "💡"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Kısa ve düzenli antrenmanlar",
+              "Haftalık küçük hedefler",
+              "Dinlenme günleri planda"
+            ]
+          }
+        ],
+        "ilerlemeGoster": true,
+        "degerler": [
+          {
+            "alan": "baslik",
+            "deger": "Kas kazanmak bir süreç",
+            "kosullar": [
+              {
+                "ozellik": "cevap.hedef",
+                "islem": "icerir",
+                "deger": "kas"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "yer",
+        "tur": "ekran",
+        "baslik": "Nerede antrenman yapmak istersin?",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Hareketleri bulunduğun yere göre seçeriz."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "ev",
+                "metin": "Evde",
+                "simge": "🏠"
+              },
+              {
+                "id": "salon",
+                "metin": "Salonda",
+                "simge": "🏋️"
+              },
+              {
+                "id": "dis",
+                "metin": "Açık havada",
+                "simge": "🌳"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Evde de salonda da aynı ilerleme takibi; yalnız hareketler değişir.",
+            "simge": "📍"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "ekipman",
+        "tur": "ekran",
+        "baslik": "Evde hangileri var?",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birden fazla seçebilirsin."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "coklu",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "hicbiri",
+                "metin": "Hiçbiri",
+                "simge": "🙅"
+              },
+              {
+                "id": "dambil",
+                "metin": "Dambıl",
+                "simge": "🏋️"
+              },
+              {
+                "id": "lastik",
+                "metin": "Direnç lastiği",
+                "simge": "🪢"
+              },
+              {
+                "id": "mat",
+                "metin": "Mat",
+                "simge": "🧘"
+              }
+            ]
+          }
+        ],
+        "ilerlemeGoster": true,
+        "goster": {
+          "kosullar": [
+            {
+              "ozellik": "cevap.yer",
+              "islem": "icerir",
+              "deger": "ev"
+            }
+          ]
+        }
+      },
+      {
+        "id": "sure",
+        "tur": "ekran",
+        "baslik": "Bir antrenmana ne kadar ayırabilirsin?",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Kısa ama düzenli antrenman, uzun ama seyrek olandan iyidir."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "duzen": "izgara",
+            "secenekler": [
+              {
+                "id": "10",
+                "metin": "10 dk",
+                "simge": "⚡"
+              },
+              {
+                "id": "20",
+                "metin": "20 dk",
+                "simge": "⏱️"
+              },
+              {
+                "id": "30",
+                "metin": "30 dk",
+                "simge": "🔥"
+              },
+              {
+                "id": "45",
+                "metin": "45 dk+",
+                "simge": "💯"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Isınma ve soğuma bu sürenin içinde.",
+            "simge": "⏱️"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "gun",
+        "tur": "ekran",
+        "baslik": "Haftada kaç gün?",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Dinlenme günleri de planın parçası."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "tekli",
+            "secenekler": [
+              {
+                "id": "2",
+                "metin": "2 gün"
+              },
+              {
+                "id": "3",
+                "metin": "3 gün"
+              },
+              {
+                "id": "4",
+                "metin": "4 gün"
+              },
+              {
+                "id": "5",
+                "metin": "5 gün ya da daha fazla"
+              }
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Günleri sonra uygulamadan değiştirebilirsin.",
+            "simge": "📅"
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "motivasyon",
+        "tur": "ekran",
+        "baslik": "Başlamak kolay, sürdürmek zor",
+        "bloklar": [
+          {
+            "tur": "kutu",
+            "metin": "“Başladığım programı birkaç hafta sonra bırakıyorum.”",
+            "simge": "🔁"
+          },
+          {
+            "tur": "metin",
+            "metin": "Bu cümle seni ne kadar anlatıyor?"
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "olcek",
+            "olcekSol": "Hiç katılmıyorum",
+            "olcekSag": "Tamamen katılıyorum"
+          },
+          {
+            "tur": "metin",
+            "metin": "Cevabın, planındaki hatırlatma ve küçük hedeflerin sıklığını belirler."
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "engel",
+        "tur": "ekran",
+        "baslik": "Seni en çok ne durduruyor?",
+        "dugme": "Devam",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Birden fazla seçebilirsin."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "coklu",
+            "secenekler": [
+              {
+                "id": "zaman",
+                "metin": "Zaman",
+                "simge": "⏰"
+              },
+              {
+                "id": "motivasyon",
+                "metin": "Motivasyon",
+                "simge": "😴"
+              },
+              {
+                "id": "bilgi",
+                "metin": "Ne yapacağımı bilmemek",
+                "simge": "🤷"
+              },
+              {
+                "id": "sakatlik",
+                "metin": "Ağrı ya da sakatlık",
+                "simge": "🩹"
+              }
+            ]
+          }
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "sakatlik",
+        "tur": "ekran",
+        "baslik": "Önce sağlığın",
+        "dugme": "Anladım",
+        "bloklar": [
+          {
+            "tur": "kutu",
+            "metin": "Ağrın ya da sakatlığın varsa başlamadan önce bir doktora ya da fizyoterapiste danış.",
+            "simge": "🩺"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Hareketleri yavaş ve kontrollü yap",
+              "Ağrı artarsa dur",
+              "Isınmayı atlama"
+            ]
+          },
+          {
+            "tur": "metin",
+            "metin": "Planın, işaretlediğin durumda zorlayıcı hareketleri hafif seçeneklerle değiştirir."
+          }
+        ],
+        "ilerlemeGoster": true,
+        "goster": {
+          "kosullar": [
+            {
+              "ozellik": "cevap.engel",
+              "islem": "icerir",
+              "deger": "sakatlik"
+            }
+          ]
+        }
+      },
+      {
+        "id": "hazirlaniyor",
+        "tur": "yukleme",
+        "sure": 6,
+        "baslik": "Planın hazırlanıyor",
+        "maddeler": [
+          "Cevapların inceleniyor",
+          "Antrenmanlar seviyene göre seçiliyor",
+          "Haftan planlanıyor"
+        ],
+        "ilerlemeGoster": true
+      },
+      {
+        "id": "eposta",
+        "tur": "ekran",
+        "baslik": "Planını nereye gönderelim?",
+        "dugme": "Planımı göster",
+        "bloklar": [
+          {
+            "tur": "metin",
+            "metin": "Kişisel antrenman planın hazır. E-postanı yaz, planını kaybetme."
+          },
+          {
+            "tur": "soru",
+            "secimTuru": "eposta",
+            "yanitZorunlu": true,
+            "izinMetni": "Antrenman ipuçları ve teklifler e-postayla gönderilebilir. İstediğin an ayrılabilirsin."
+          },
+          {
+            "tur": "kutu",
+            "metin": "Adresin yalnız planın ve ödeme sayfası için kullanılır.",
+            "simge": "🔒"
+          }
+        ]
+      },
+      {
+        "id": "ozet",
+        "tur": "ekran",
+        "baslik": "Antrenman planın hazır",
+        "dugme": "Planımı aç",
+        "bloklar": [
+          {
+            "tur": "grafik",
+            "baslangic": "Bugün",
+            "hedef": "8. hafta",
+            "egri": "artan"
+          },
+          {
+            "tur": "baslik",
+            "metin": "Planında neler var"
+          },
+          {
+            "tur": "maddeler",
+            "maddeler": [
+              "Seviyene göre haftalık program",
+              "Seçtiğin süreye sığan antrenmanlar",
+              "Hareket videoları ve ilerleme takibi"
+            ]
+          },
+          {
+            "tur": "kutu",
+            "metin": "Antrenmanlar seçtiğin yere göre hazırlandı.",
+            "simge": "✅",
+            "degerler": [
+              {
+                "alan": "metin",
+                "deger": "Antrenmanlar evdeki ekipmanına göre hazırlandı.",
+                "kosullar": [
+                  {
+                    "ozellik": "cevap.yer",
+                    "islem": "icerir",
+                    "deger": "ev"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "ilerlemeGoster": true,
+        "degerler": [
+          {
+            "alan": "baslik",
+            "deger": "Kilo verme planın hazır",
+            "kosullar": [
+              {
+                "ozellik": "cevap.hedef",
+                "islem": "icerir",
+                "deger": "kilo"
+              }
+            ]
+          },
+          {
+            "alan": "baslik",
+            "deger": "Kas kazanma planın hazır",
+            "kosullar": [
+              {
+                "ozellik": "cevap.hedef",
+                "islem": "icerir",
+                "deger": "kas"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "paywall",
+        "tur": "paywall",
+        "baslik": "Kişisel planına başla",
+        "metin": "İstediğin zaman iptal edebilirsin.",
+        "dugme": "Planımı başlat",
+        "plan": "",
+        "faydalar": [
+          "Sana özel haftalık program",
+          "Evde ve salonda antrenmanlar",
+          "İlerleme takibi",
+          "İstediğin zaman iptal"
+        ]
+      }
+    ]
+  }
+}

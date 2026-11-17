@@ -1,0 +1,35 @@
+# A2: panel içi AI asistanı. Model ve efor ayarı burada; değerlendirme (A6)
+# sonrası ölçülerek değişir. Opus 5.5'te düşünme kapatılamaz, efor varsayılanı
+# medium — açıkça yazılır (docs/decisions/ai-a2-panel-arka-uc.md).
+parameters:
+    ai.model: 'claude-opus-5-5'
+    ai.efor: 'medium'
+    # Bir sohbet isteğinde en çok API turu (araç çağrısı + düzeltme döngüsü).
+    ai.azami_tur: 8
+    # Tur başına yanıt sınırı (akışsız istek: SDK zaman aşımı altında kalır).
+    ai.azami_jeton: 16000
+
+framework:
+    rate_limiter:
+        # Maliyet bekçisi: yönetici başına saatte 30 sohbet isteği.
+        ai_sohbet:
+            policy: sliding_window
+            limit: 30
+            interval: '1 hour'
+        # A5a: MCP — anahtar başına dakikada 120 istek.
+        mcp:
+            policy: sliding_window
+            limit: 120
+            interval: '1 minute'
+    cache:
+        pools:
+            # MCP oturumları (2025-11-25 çağı, Mcp-Session-Id): PSR-16 üzerinden.
+            mcp.oturumlar.havuz:
+                adapter: cache.app
+                default_lifetime: 3600
+
+services:
+    mcp.oturumlar:
+        class: Symfony\Component\Cache\Psr16Cache
+        arguments: ['@mcp.oturumlar.havuz']
+

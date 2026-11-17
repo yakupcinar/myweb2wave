@@ -68,7 +68,7 @@ Yerler CLAUDE.md §6'da; özetle:
 |---|---|
 | Karar + gerekçe + kırma denemeleri + ölçüm | `docs/decisions/<konu>.md` |
 | Durum satırı | `PLAN.md` §0-§1 |
-| Hata vermeden yanlış sonuç üreten şey | `docs/tuzaklar.md` + CLAUDE.md §4 tek satır |
+| Hata vermeden yanlış sonuç üreten şey | `docs/tuzaklar.md` + CLAUDE.md §4 tek anahtar |
 | Fark ettim ama karar vermedim | `docs/decisions/acik-uclar.md` |
 
 ## 9 · COMMIT + CI

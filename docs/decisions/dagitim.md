@@ -72,4 +72,79 @@ için ilk koşuda görünmedi; yer tutucu ile düzeltildi, `env -i` ile ölçül
 ## Açık
 Ç33 (yedek aynı diskte) · Ç30 (gerçek e-posta sağlayıcısı — dağıtım
 öncesi gerekli, `null://` ön kontrolde reddediliyor) · sunucuda ilk koşu
-(`sunucu-hazirla.sh`, gerçek alan adı, Let's Encrypt, Stripe webhook).
+(`sunucu-hazirla.sh`, gerçek alan adı, Let's Encrypt, Stripe webhook) · M1a: ilk koşuda
+`bin/console app:plan-ice-aktar keepchat monthly <price_…>` (ortam değişkeni kaldırıldı, `m1a-fiyat-katalogu.md`).
+- **2026-11-04 (M1c):** `dagit.sh` 2026-10-20'den (`028f150`) beri sözdizimi hatalıydı — ön kontroldeki tek tırnaklı Python'da yorumdaki kesme işareti (tuzak §49); düzeltildi, `bash -n` bash 3.2 + 5.2'de 0. Dağıtıma ülke verisi eklendi: `ulke-data` birimi, `dagit.sh`'te `app:ulke-verisi` (düşerse uyarı, dağıtım durmaz), ayın 3'ünde cron. İlk sunucu koşusunda ikisi de ölçülecek (Ç109).
+
+## 2026-11-17 — Sunucu kararı ve envanter (salt okuma)
+
+**Kullanıcı kararı:** KeepChat'in kullanıcısı yok; KeepChat sunucusu kapatılır, yerine MyWeb2Wave kurulur. Tra hiç
+etkilenmeyecek.
+
+Ölçüldü (`ssh keepchat-vps`, hiçbir şey değiştirilmedi):
+- **Tra ayrı makinede:** `tra-vps` 158.101.180.140, `keepchat-vps` 130.61.80.217. KeepChat makinesinde tek compose
+  projesi var (`keepchat`, 8 kap). Caddy yalnız `{$KEEPCHAT_DOMAIN}`'i yönlendiriyor, Tra'ya giden satır yok. Yani
+  iş yalnız `keepchat-vps`'te; `tra-vps`'e girilmez.
+- **Makine:** aarch64, Ubuntu 24.04.5, **1 OCPU, 5,8 GB RAM** (4,6 GB kullanılabilir), disk 48 GB'ın 25 GB'ı boş.
+- **Portlar:** 80/443 `keepchat-caddy-1`'de (docker-proxy), 22 sshd. UDP 49160-49200 ve 3478 coturn için açık.
+- **Güvenlik duvarı:** ufw yok; Oracle imajının iptables'ı (INPUT yalnız 22 + coturn). 80/443 Docker'ın kendi
+  zincirinden geçiyor. ⚠️ `sunucu-hazirla.sh`'in ufw/ssh adımları bu makinede **koşulmaz**.
+- **Yedek:** son KeepChat dump'ı 2026-10-09 (`~/yedek`, 52 MB); crontab yok. Kapatmadan önce taze dump alınır.
+- **Tra taban ölçümü (dışarıdan):** `http://158.101.180.140/` → 308. Her adımdan sonra aynı ölçüm.
+- **2026-11-17 hazırlık:** KeepChat dump'ı alındı (`~/yedek/keepchat-20261117-son.dump`, 8,8 MB, 15 tablo verisi; kopyası
+  kullanıcının bilgisayarında `~/Yedekler/keepchat/`). Kullanıcı kararıyla main h6-olay'e ileri sarıldı (`774fc5a`, CI
+  yeşil); zincirdeki 9 PR (#32–#40) içerik olarak main'de, açık duruyor. Sunucuda depo `/opt/myweb2wave` (ubuntu
+  kullanıcısı, `sunucu-hazirla.sh` koşulmadı), `deploy/.env.uretim` 600: alanlar `web2quizapi.duckdns.org` /
+  `web2quiz.duckdns.org`, rastgele sırlar sunucuda üretildi. `UYGULAMA_ANAHTARI_KEEPCHAT` rastgele (KeepChat kapanıyor,
+  eşleşecek sunucu yok). Stripe, Postmark ve panel girişi kullanıcıda.
+- **2026-11-17 ilk sunucu derlemesi düştü:** çekirdek imajının panel aşaması `huni-bilesenleri/`'yi bulamadı
+  (4 `UNRESOLVED_IMPORT`). Geliştirmede kap klasörü ayrıca bağlıyor (`compose.yaml`), CI üretim imajını derlemiyor
+  (Ç146), o yüzden görünmemişti. Düzeltme: `deploy/compose.yaml` çekirdek derlemesine `additional_contexts:
+  huni-bilesenleri`, `core/Dockerfile` panel aşamasında `/huni-bilesenleri/`'ye kopya. Ölçüm: sunucudaki gibi temiz kopya
+  (`git archive`, `node_modules` yok) ile yerelde `--target uretim` derlendi. **Kırma:** kopya satırı olmadan aynı 4 hata,
+  derleme 1 ile düştü. KeepChat bu sırada açıktı (derleme önce, kapatma sonra).
+- **2026-11-17 CANLI:** KeepChat `docker compose -p keepchat down` ile durduruldu (`-v` yok; 6 `keepchat_*` volume
+  yerinde). `deploy/dagit.sh` ilk koşuda TLS ölçümünde düştü: hizmetler sağlıklıydı, Caddy sertifikayı ölçümden saniyeler
+  sonra aldı (Ç147). İkinci koşu `DAGITIM TAMAM sürüm=9e29e4589b9d`. Bu bilgisayardan dışarıdan: `/health`
+  `{"status":"ok","db":"ok","version":"9e29e4589b9d"}`, huni 200, panel 302 (giriş). Tra her adımda 308 (taban ile aynı).
+  Stripe test webhook uç noktası API ile açıldı (`we_1UcfQR…`, 5 olay), sır sunucuya boruyla gitti. E-posta: Gmail SMTP
+  (uygulama şifresi; giriş ölçüldü, gönderim ölçülmedi); Postmark kendi alan adı gelince. Panel kullanıcısı `yonetici`,
+  şifre kullanıcının bilgisayarında, sunucuda yalnız özet.
+  **Eksik:** cron'lar (yedek 03:15, RevenueCat ve reklam yeniden denemeleri, 90 gün metin silme, ülke verisi) kurulmadı.
+  Sunucuda sudo ile betik koşturma izin sisteminde engellendi; kullanıcı kararı bekliyor. Yedek bu yüzden şimdilik
+  yalnız dağıtım anındaki (`dagit.sh`).
+- **2026-11-17 planlar:** `app:plan-ice-aktar keepchat monthly price_1UbJo1…` ve `yearly price_1UXzqz…` (yereldeki test
+  fiyatları, kullanıcı seçimi). Dışarıdan `GET /huni/keepchat`: monthly 349.99 TRY (Türkiye IP'si → ek para birimi; ülke
+  verisi çalışıyor), yearly 59.99 EUR (TRY tanımlı değil). İçe aktarma adı anahtar yapıyor ("monthly"); yereldeki
+  "Aylık / Yıllık" adları ve monthly'deki 7 günlük deneme teklifi aktarılmadı → panelden.
+- **2026-11-17 cron'lar kuruldu** (kullanıcı tek komutluk izin verdi): `/etc/cron.d/myweb2wave-*` 5 dosya, kullanıcı ubuntu.
+  Yedek elle bir kez koşturuldu (`app-…dump` 91 KB + medya). 06:50 koşusu: RevenueCat `gönderilen=0 başarısız=0`, reklam
+  dönüşümleri `Gönderilen: 0; başarısız: 0` — cron'dan compose exec çalışıyor.
+- **2026-11-17 panel girişi `yakup`** — kullanıcı kararı, riski kabul ederek kısa şifre. Kaptaki `PANEL_KULLANICI` ve
+  `password_verify` ölçüldü. ⚠️ Ara adımda betiğim boş özeti denetlemeden yazdı (yerel özet komutu düşmüştü), çekirdek
+  yeniden başlatması compose `:?` ile reddetti, çalışan kap etkilenmedi; ikinci yazımda 60 karakter denetimi var.
+  Düşme nedeni: `core/.env.local`'de boşluklu, tırnaksız Gmail uygulama şifresi Symfony dotenv'i kırıyordu (boşluklar
+  kaldırıldı). Hata iletisi şifrenin bir kısmını sohbete bastı → kullanıcıya yenilemesi söylendi; yenilenince sunucudaki
+  `MAILER_DSN` güncellenecek.
+- **2026-11-17 canlı ölçümler:** `mailer:test` sunucudan Gmail SMTP ile çıkış 0 (alıcı = gönderen, kullanıcının kutusu).
+  `POST /webhooks/stripe` imzasız → 400. `POST /checkout/sessions {keepchat, monthly}` → 201 + `cs_test_…`. Ödemenin
+  tamamlanması (kart girişi) kullanıcıda; ardından webhook teslimi, abonelik satırı ve ödeme sonrası e-posta ölçülecek.
+- **2026-11-17 ilk test ödemesi (kullanıcı, Chrome'da huni → gömülü ödeme, 07:08 UTC):** Stripe'ta abone olunan
+  olaylarda `pending_webhooks` 0 (teslim + 2xx). Sunucuda: `processed_webhook_events` 2, `subscriptions` 1 satır
+  `active` / `keepchat` / dönem sonu 2026-12-17, `odeme_oturumlari` satırı ziyarete bağlı + tamamlandı (IP/UA silinmiş —
+  Ç59), `giris_jetonlari` 2. Başarı sayfası "Ödemeniz alındı".
+  **Kusur:** uç nokta README'deki 5 olayla açılmıştı; kod 8 olay işliyor (`invoice.paid`, `invoice_payment.paid`,
+  `charge.refunded` eksikti) → bu ödemenin `odeme_faturalari` satırı yok (gelir/kohort raporuna girmez). Uç nokta 8 olaya
+  güncellendi (API ile, geri okundu), README listesi koddaki `grep` ile eşitlendi (kural 7). Kaçan fatura için geri
+  doldurma komutu yok; Stripe panelinden olay yeniden gönderilebilir.
+- **2026-11-17 Ç133 (eksik cron'lar):** `sunucu-hazirla.sh`'e `app:posta:dizi` (*/15), `app:webhook:gonder` (her dakika),
+  `app:reklam-harcamalari:cek` (05:00) eklendi; `bash -n` 0. Sunucuda elle birer kez: posta dizisi "Aktivasyon 0 /
+  Kurtarma 0" çıkış 0, webhook "Kuyruğa 0" çıkış 0, reklam harcaması Meta bağlı değil → çıkış 1 (beklenen).
+  `app:stripe-portal:kur` bir kez koşuldu: "Güncellendi" (test hesabında yerelden kalmaydı). Sunucuya cron kurulumu
+  sudo ister → kullanıcı izni bekliyor.
+- **2026-11-17 e-posta teslimi (kullanıcı gelen kutusunda doğruladı):** `mailer:test` iletisi ve ödeme sonrası giriş
+  bağlantısı iletisi geldi → Gmail SMTP ile canlı gönderim uçtan uca çalışıyor. Kullanıcı Ç133 cron'larını sunucuya
+  kurdu (`/etc/cron.d/myweb2wave-*` 8 dosya, ölçüldü).
+- **2026-11-17 kullanıcı panelden:** `genel` hunisi yayınlandı (sürüm 2; paywall metni "Aylık plan", Ç149 taslağı).
+  Yasal metinler: dört belge (`sartlar`, `gizlilik`, `kvkk`, `cerez`) Türkçe yayında (200), İngilizceleri yok (404).
+  Plan adları hâlâ "monthly"/"yearly"; RevenueCat anahtarı henüz yok.

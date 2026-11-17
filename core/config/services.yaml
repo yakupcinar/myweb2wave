@@ -23,6 +23,10 @@ services:
     # please note that last definitions always *replace* previous ones
 
     # Testte api_base stripe-mock'a çevrilir (.env.test); anahtar .env.local'den.
+    # Ç35: panel oturumları (framework.session.handler_id); DSN = uygulamanın veritabanı.
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler:
+        arguments: ['%env(DATABASE_URL)%']
+
     Stripe\StripeClient:
         arguments:
             - api_key: '%env(STRIPE_SECRET_KEY)%'
@@ -31,3 +35,6 @@ services:
 when@test:
     services:
         App\Tests\Support\SahteRevenueCat: ~
+        # Ç72: testte başsız tarayıcı yok — sahte çekici.
+        App\Huni\Ekran\EkranCekici: '@App\Tests\Support\SahteEkranCekici'
+        App\Tests\Support\SahteEkranCekici: ~

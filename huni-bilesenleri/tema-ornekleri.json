@@ -7,11 +7,34 @@
         "yaziTipi": "sistem",
         "kose": 10
     },
-    "yaziTipleri": ["sistem", "serif", "yuvarlak", "mono"],
+    "yaziTipleri": [
+        "sistem",
+        "serif",
+        "yuvarlak",
+        "mono",
+        "modern",
+        "geometrik"
+    ],
     "kontrast": [
-        { "a": "#000000", "b": "#ffffff", "oran": 21.0 },
-        { "a": "#2563eb", "b": "#2563eb", "oran": 1.0 },
-        { "a": "#767676", "b": "#ffffff", "oran": 4.54 },
-        { "a": "#777777", "b": "#ffffff", "oran": 4.48 }
+        {
+            "a": "#000000",
+            "b": "#ffffff",
+            "oran": 21.0
+        },
+        {
+            "a": "#2563eb",
+            "b": "#2563eb",
+            "oran": 1.0
+        },
+        {
+            "a": "#767676",
+            "b": "#ffffff",
+            "oran": 4.54
+        },
+        {
+            "a": "#777777",
+            "b": "#ffffff",
+            "oran": 4.48
+        }
     ]
 }

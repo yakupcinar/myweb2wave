@@ -1,0 +1,40 @@
+# Ç14 / L18: bağımlılık güncellemeleri elle izleniyordu, güvenlik yamaları
+# kaçabilirdi. Dependabot haftalık PR açar; birleştirme insanda (CI = bin/kontrol).
+# cooldown 14 gün = projenin "iki hafta kuralı": yeni çıkan sürüm hemen
+# önerilmez (bozuk/kötü niyetli sürümler genelde ilk günlerde geri çekilir).
+# Küçük ve yama güncellemeleri ekosistem başına tek PR'da toplanır.
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: /core
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    open-pull-requests-limit: 5
+    groups:
+      kucuk:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directories: [/funnel, /core/panel, /contract]
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    open-pull-requests-limit: 5
+    groups:
+      kucuk:
+        update-types: [minor, patch]
+
+  # Dockerfile'lardaki taban imajlar (digest'le sabit) ve compose.yaml'daki imajlar.
+  - package-ecosystem: docker
+    directories: [/core, /funnel, /contract, /ekran, /deploy]
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }

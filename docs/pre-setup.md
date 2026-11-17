@@ -146,6 +146,234 @@ hedef (döngü; doğrulama tek geçişte biter) · skor (puan + sonuç metni ya 
 puana göre plan — ölçülmüş ihtiyaç yok, kural 6a; puana göre plan ödeme
 kuralını değiştirirdi). Kayıt: `docs/decisions/huni-dallanma-h5.md`.
 
+**A12 · Reklam ölçümü: Meta + TikTok, piksel + sunucu, herkese onay şeridi,
+yalnız abonelik olayı** (2026-10-21, kullanıcı; B4/H6, A6'nın uygulanışı).
+Hunide herkese Kabul/Reddet şeridi; tıklama kimlikleri yalnız izinle
+saklanır. Abonelik başlayınca çekirdek Meta Conversions API + TikTok Events
+API'ye bildirir (yalnız izinli ziyaret); tarayıcıda Meta Pixel + TikTok Pixel
+yalnız izinden sonra, platformların standart satın alma olaylarıyla
+(`Purchase` / `CompletePayment`) sunucuyla aynı `event_id` (tekilleştirme).
+**Reddedilen:** yalnız Meta (önerilen; kullanıcı ikisini seçti) · GA4 (analiz
+bizde, A6) · yalnız sunucu (önerilen; kullanıcı eşleşme kalitesi için piksel
+de istedi — hunide üçüncü taraf betik, onaydan sonra) · konuma göre onay
+(ülke tespiti + hangi ülkeler hukuki karar) · onaysız test · huni olayları
+(ViewContent, InitiateCheckout — daha çok veri paylaşımı). Metinler hukuken
+doğrulanmadı (Ç12). Kayıtlar: `docs/decisions/huni-izin-h6a.md` (H6a),
+H6b, H6c.
+
+**A13 · İnceleme kararları paketi** (2026-10-26, kullanıcı; Ç58–Ç62 ve
+eski açık uçlar). Yapılacaklar: Ç58 izin yarışı **istemcide sıralanır**
+(reddedilen: sunucu sıra numarası — sözleşme + göç, ölçülmüş ihtiyaç yok) ·
+Ç59 terk edilen ödemede IP/UA `checkout.session.expired` + 48 sa cron
+temizliği · Ç60 dev DB'ye göç + `bin/kontrol`'de **uyarı** (kırmızı değil;
+CI'da dev DB yok) · Ç62 `reference.php` `.gitignore` · Ç61 Puck'ta yalnız
+3 hazır soru türü + benzersiz kimlik; paywall fayda listesi + yasal
+bağlantı alanları, görünür geri düğmesi, logo + masaüstü düzeni, okunur
+gizlilik bağlantısı · Ç55 ulaşılamayan adıma **uyarı** (yayın engellenmez;
+reddedilen: yayında reddetmek) + yeniden adlandırmada hedef güncelleme ·
+Ç44 alt metin (silme yok) · Ç53 b2 klasik düzenleyici silinir · Ç39
+eşzamanlı kayıt 409 · Ç41 8 sa oturum + uyarı, huni arşivleme · Ç35
+oturumlar DB'de (**2FA şimdilik hayır**) · Ç34 ziyaret hız sınırı +
+sekmede ziyaret sürdürme · Ç23 ölü bağlantı denetimi · Ç14 Dependabot ·
+Ç19/Ç21 fiyat tek kaynak Stripe; **Adaptive Pricing AÇIK kalır**
+(kullanıcı 2026-10-26, ilk "kapat" kararını geri aldı; → **A14 ile kapanır**, 2026-11-03) · Ç56-3 izin oranı raporu · Ç18 webhook bütünlük
+testi · Ç20 past_due test clock · Ç54 yöne göre geçiş · Ç50 Preact
+denemesi (ölç, iyiyse geç). Reddedilen / ertelenen: Ç32 bağlama geçmişi.
+Dış girdi bekleyenler (sunucu, anahtarlar, hukuk, KeepChat, anket metni)
+döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
+
+**A14 · Para modülleri: sıra, para birimi, ödeme yeri, teklifler**
+(2026-11-03, kullanıcı; plan `web2wave-platform-yapisi.md` § Ek 2026-11-03).
+- **Sıra M1 → M2 → M3 → M4** (fiyat kataloğu → ayrı paywall → downsell/
+  upsell → deneyler); sonra M5–M11. Reddedilen: önce raporlar (M5), önce
+  iptal/portal (M6).
+- **Para birimi: plan başına elle girilen sabit tutarlar** (Stripe
+  `currency_options`, ziyaretçinin ülkesinden seçilir, ziyaretçi seçmez).
+  ⚠️ A13'teki "Adaptive Pricing AÇIK kalır" kararı **değişti → kapanır**
+  (otomatik çeviri €18,47 gibi tutar verir ve paywall kesin yerel fiyatı
+  gösteremez). Reddedilen: Stripe otomatik çeviri; tek para birimi.
+  **Ülke kaynağı (2026-11-04, kullanıcı; rakip araştırması):** IP'den, DB-IP
+  IP-to-Country Lite (CC BY 4.0 — paywall'da atıf); test `?ulke=DE`; desteklenmeyen
+  ülke → planın ana para birimi. Reddedilen: MaxMind GeoLite2 (hesap+anahtar),
+  tarayıcı dili. Kayıt `m1c-cok-para-birimi.md`.
+- **Ödeme paywall sayfasında, gömülü** (Stripe gömülü form + Apple/Google
+  Pay; M2 alt bloğu). Apple Pay alan adı doğrulaması sunucuyla. Reddedilen:
+  Stripe'ın barındırılan sayfasına yönlendirme (bugünkü yol, M2'ye dek kalır).
+- **M1 teklif türleri: üçü de** — kartlı ücretsiz deneme, ücretli giriş
+  dönemi, ilk dönem indirimi (kupon). ⚠️ Giriş dönemi **değişti
+  (2026-11-04, kullanıcı)**: Subscription Schedule değil, **deneme günleri +
+  ilk faturada tek seferlik ücret** — schedule ödemeden sonra webhook'ta
+  kurulur, kurulamazsa müşteri süresiz giriş fiyatında kalırdı. Reddedilen:
+  Subscription Schedule. Kayıt `m1b-teklifler.md`.
+
+**A15 · M2 paywall: bölünme, sayaç, cevaba göre paywall** (2026-11-04, kullanıcı).
+- **Sayaç yalnız gerçek bitiş tarihine** (herkes için aynı, yöneticinin girdiği an;
+  süre dolunca teklif gerçekten kalkar → bitiş teklifin kendisinde, ödeme de uyar).
+  Reddedilen: ziyaretçi başına süre (rakiplerde yaygın; gerçek süreye bağlı değilse
+  yanıltıcı ticari uygulama riski, yönergemiz de yasaklıyor) · sayaçsız.
+- **Cevaba göre paywall = hunide birden çok paywall adımı** + mevcut koşullu
+  yönlendirme (T3); "tam bir kez, en sonda" kuralı kalkar. Reddedilen: ayrı paywall
+  varlığı (yeni tablo, sürümleme, panel sayfası — M3/M4 isterse yeniden bakılır).
+- **Sıra:** M2a plan seçici + ödeme koşulu → M2b teklif bitişi + sayaç, güven
+  rozetleri, şart onayı → M2c birden çok paywall → M2d gömülü ödeme + Apple/Google
+  Pay. Reddedilen: önce gömülü ödeme (Apple Pay sunucusuz ölçülemez).
+
+**A16 · M3 downsell / upsell** (2026-11-04, kullanıcı).
+- **Downsell tetiği:** paywall'da geri tuşu + gömülü ödeme panelini ödemeden kapatma;
+  ziyaretçi başına bir kez. Reddedilen: masaüstü çıkış niyeti (mobil trafikte yok), yalnız panel.
+- **Upsell:** ödeme sonrası **tek seferlik ek ürün** (panelde ek ürün kataloğu), kayıtlı kartla
+  tek tık; tutar düğmede açık, banka isterse 3D Secure. Reddedilen: üst plana geçiş
+  (abonelik değişikliği, M6 ile çakışır), upsell'siz.
+- **Ödeme sonrası sayfa = hunide düzenlenebilir ekran.** Reddedilen: sabit sayfa.
+- **Bölünme:** M3a downsell → M3b ödeme sonrası ekran → M3c ek ürün kataloğu + tek tık upsell.
+
+**A21 · M7c yönetim API / MCP** (2026-11-09, kullanıcı: dördü de).
+- Okuma: MCP rapor araçları (özet, kaynak, kohort, Meta ROAS, cevap, deney sonuçları) — anahtarın uygulamasıyla
+  sınırlı; olay akışı API'si (`GET /apps/{app}/olaylar`, uygulama anahtarı, imleçli).
+- Yazma: MCP'de abonelik (iptal planla / geri al / iade) ve deney (oluştur / başlat / durdur) araçları — **yalnız
+  izinli anahtar** (panelde anahtar oluşturulurken "Abonelik ve deney yönetimi"; var olanlar izinsiz kalır), araçlar
+  yıkıcı işaretli (istemci her çağrıda onay sorar). Reddedilen: tüm anahtarlar, iadeyi MCP dışında tutmak.
+  Bölünme: M7c1 okuma → M7c2 yazma.
+
+**A22 · M8 e-posta** (2026-11-10, kullanıcı: önerilere göre).
+- Sağlayıcı **Postmark** (API). İşlem e-postası `outbound`, dizi / pazarlama `broadcast` akışı. Reddedilen: Resend
+  (kolay ama genç), SES (ucuz ama sandbox + SNS + itibar yükü bugün). Dizi motoru bizde, sağlayıcı yalnız teslim.
+- Bastırma: Postmark'ın listesi esas, yerel kopyası `posta_bastirma` (Subscription Change webhook'u + 406 olayı).
+- İzin **karma**: huninin izin kutusu + izin kanıtı; adres ödeme ya da kodla kanıtlanınca dizi. Reddedilen: tek onay
+  (itibar), çift onay (terk edilen ödeme dizisini fiilen öldürür). İYS hukuk görüşü bekliyor.
+- M8b kurtarma bağlantısı: Stripe'ın kurtarma adresi (oturum 1 saatte dolar). Reddedilen: kendi uçumuzda yeni oturum
+  açmak (fazla kod; ölçüm kopyanın metadata, dönüş adresi ve e-postayı koruduğunu gösterdi), huniye dönmek
+  (anket baştan başlar). İndirim yok (teklif kuralı açık değil).
+- Sıra: M8a aktivasyon (işlem e-postası, izin gerekmez) → M8b terk edilen ödeme kurtarma. Deneme bitiyor
+  hatırlatması önce Stripe'ın kendi ayarıyla.
+
+**A23 · M9 proje ayarları** (2026-11-10, kullanıcı: dört ayar alanı da; roller şimdilik yok — tek yönetici).
+- Bölünme: M9a uygulama kimliği → M9b yasal veriler + metinler → M9c varsayılan tema/paywall → M9d dil/ülke yönlendirmesi.
+- M9a: ad, URL şeması, App Store adresi, destek e-postası panelde (`uygulama_ayarlari`); yaml / .env'den taşındı.
+  Uygulama listesi yaml'da kalır (sözleşme enum'u). Reddedilen: yaml'da bırakmak (panelden değişmez), DB + yaml
+  yedeği (§12, hangisinin geçerli olduğu belirsizleşir). Reddedilen roller: ikinci kişi yokken ölçülmemiş ihtiyaç.
+- M9b (kullanıcı: taslak + düzenlenebilir; şartlar, gizlilik, KVKK, çerez; tr + en): metinler çekirdekten
+  `/yasal/{app}/{belge}/{dil}`, kaydedilmeden yayında değil, yer tutucularla. Reddedilen: yalnız kullanıcının metni
+  (boş başlangıç), dış adres (sistemle eşleşmez), taslağı otomatik yayınlamak (hukuki görüş değil).
+- M9c (kullanıcı: yeni huniye kopyalansın): bir huninin teması, logosu ve son paywall'ı "yeni hunilere örnek" olarak
+  kopyalanır; boş huni hepsini, şablondan huni tema + logo + paywall'ın uygulama alanlarını alır, kopya huni almaz.
+  Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
+  paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
+
+**A30 · Meta bağlantısı panelden** (2026-11-14, kullanıcı: üç öneri de).
+- **Elle girilir + "Bağlantıyı dene":** Pixel ID, CAPI erişim anahtarı, reklam hesabı (`act_…`), Insights anahtarı;
+  dene düğmesi Meta Graph API'ye gerçek istek atar. Reddedilen: "Facebook ile giriş" (OAuth) — Meta uygulaması,
+  uygulama incelemesi ve herkese açık HTTPS adresi ister; sunucu yok (dağıtım ertelendi).
+- **Kapsam dönüşüm + harcama, uygulama başına**; `META_*` ortam değişkenleri kalkar (tek kaynak panel).
+  Reddedilen: yalnız dönüşüm (harcama ortamda kalırdı — iki kaynak).
+- **Anahtarlar şifreli** (sodium, şifreleme anahtarı ortamda); panelde yalnız son 4 hane, yeniden yazılabilir.
+  Reddedilen: düz metin (webhook sırrı gibi) — Meta anahtarı reklam hesabını okur / olay yazar, DB yedeği sızarsa.
+
+**A29 · R2 CSV dışa aktarım** (2026-11-12, kullanıcı: "önerin uygun").
+- **E-posta panelle aynı maskeli** (`a***@example.com`); tam adres yalnız Stripe'ta. Reddedilen: tam adres (kişisel
+  veri panelden dışarı çıkar; panelde de gösterilmiyor).
+- Ayrı sayfa değil, ilgili tabloda "CSV indir": Aboneler, Rapor › Ziyaretler, Rapor › Anket (cevaplar). Dosya o
+  anki süzgeçle, sayfasız. UTF-8 BOM + virgül; formül gibi başlayan hücre `'` ile (CSV injection).
+
+**A28 · M6c duraklat / sürdür** (2026-11-12, kullanıcı: üç öneri de).
+- **Duraklatılan abonenin erişimi kapanır:** hak sorgusu `aktif: false, durum: paused`. Stripe'ta tahsilat durur
+  (`pause_collection.behavior = void`), abonelik `active` kalır. Reddedilen: erişim sürsün (bedava dönem olur).
+- **Süre seçilir: 1 / 2 / 3 ay**; Stripe `resumes_at`'te kendisi sürdürür; elle erken sürdürme var. Reddedilen:
+  süresiz (unutulan abonelik sonsuza dek duraklı kalır).
+- **Yalnız panelden** (Aboneler satırı, M6a gibi). Reddedilen: müşteri kendi duraklatsın (huni akışı, büyük iş; portal
+  Stripe'ın, orada duraklatma yok).
+
+**A27 · Rapor sekmeleri ve onay kutusu** (2026-11-11, kullanıcı: "Rapor çok uzuyor… tiklenen şeyler çok modern
+durmuyor").
+- Rapor web2wave gibi **sekmelere** bölünür: Genel bakış · Anket · Kaynaklar · Gelir · Ziyaretler; sekme adreste;
+  Anket'te tek huni seçilir. Reddedilen: tek sayfa + katlanır bölümler (yine uzun). Ölçüm: sayfa 6.604 px, Anket
+  1.710, Ziyaretler 1.268, Cevaplar 796.
+- Onay kutusu **özel çizim** (`.kutu`, gerçek input yerinde). Reddedilenler: olaylar için hap, anahtar (switch).
+  Ayrıntı: [p7h-onay-kutusu.md](decisions/p7h-onay-kutusu.md).
+
+**A26 · Panel ekran döngüsü** (2026-11-11, kullanıcı: "1'i onaylıyorum, ekran döngüsünü kur").
+- Ekran görüntüsü için ayrı, yerel bir panel kabı (`panel-ekran`) ve yalnız bu iş için üretilmiş test kullanıcısı.
+  Gerçek panel şifresi kullanılmaz. Reddedilenler: Chrome eklentisine bağlı kalmak, geliştirme ortamında girişi
+  atlayan yol. Ayrıntı: [p7f-ekran-dongusu.md](decisions/p7f-ekran-dongusu.md).
+
+**A25 · Entegrasyonlar ve anahtarlar** (2026-11-11, kullanıcı).
+- Menüde Webhook'lar, API anahtarları ve Ürün bağlamı (AI) yerine tek **Entegrasyonlar** sayfası (taslaktaki
+  gibi). Reddedilenler: ayrı kalmaları; Ürün bağlamı'nın ayrı kalması.
+- Webhook olayları Türkçe ve gruplu seçilir (Huni · Ödeme · Abonelik), grup başına "Tümü".
+- İptal edilen API anahtarları listede gizlenir ("İptal edilenler (N)" katlanır) ve silinebilir; etkin anahtar
+  önce iptal edilir. Reddedilenler: yalnız gizlemek, iptalde silmek (geçmiş kalmaz).
+- Kaynak: [p7-taslak-farki.md](decisions/p7-taslak-farki.md) (Ç130, Ç131). Uygulama: [p7d-entegrasyonlar.md](decisions/p7d-entegrasyonlar.md).
+
+**A24 · Panel tabloları sayfalı** (2026-11-10, kullanıcı: numaralı sayfalama, büyüyen tüm tablolar).
+- Sayfa başına 25, sunucuda; sıralama da sunucuda. Aboneler'de sayfa ve sıra adreste. Rapor'un üç listesi
+  (ziyaretler, kaynaklar, serbest yanıtlar) kendi uçlarında. Reddedilenler: tarih aralığı zorunluluğu,
+  "daha fazla göster", tablo içinde kaydırma. Ayrıntı ve ölçüm:
+  [p7a2-sayfalama.md](decisions/p7a2-sayfalama.md).
+
+**A20 · M7 giden webhook** (2026-11-09, kullanıcı: hedefler panelden uygulama başına; kişisel veri yok).
+- Hedef: adres + seçilen olaylar (sözlükten) + gizli anahtar; uygulama başına, panelden. Reddedilen: yapılandırma
+  dosyası, yalnız çekme (akış API).
+- Gövde yalnız kimlikler ve sözlük verisi (`{id, ad, ziyaret, veri, zaman}`; e-posta yok, Ç90). Reddedilen: abonelik
+  olaylarında e-posta.
+- Teslim en az bir kez, üstel bekleme; imza Standard Webhooks biçimi (`webhook-id`, `webhook-timestamp`,
+  `webhook-signature: v1,<base64 HMAC-SHA256>`) — alıcılar hazır kitaplıkla doğrular. Bölünme: M7a motor →
+  M7b panel ekranı.
+
+**A19 · M6 abonelik yönetimi** (2026-11-09, kullanıcı).
+- **İptal dönem sonunda** (`cancel_at_period_end`); dönem bitene kadar geri alınabilir; denemede deneme
+  sonunda biter, ücret çekilmez. Reddedilen: hemen iptal, yöneticiye seçtirmek.
+- **İade: son tahsil edilen faturanın tamamı**, tek düğme; iade gelirden (kohort, kaynak, ROAS) düşülür.
+  Reddedilen: kısmi / tutar seçmeli iade, iadeyi yalnız Stripe panelinde bırakmak.
+- **Müşteri yönetimi Stripe Customer Portal'da** (kart, iptal, faturalar); kendi sayfamız reddedildi
+  (iş ve risk). Bölünme: M6a panel iptal + iade → M6b portal.
+- **Portala iki yol** (kullanıcı 2026-11-09): uygulama sunucusu çekirdekten kişi için portal adresi ister
+  (uygulama anahtarı) **ve** web: hunide "Aboneliğimi yönet" → tek kullanımlık e-posta bağlantısı →
+  portal (uygulamayı silen müşteri için de). **Portal ayarları kodda**, Stripe API'siyle kurulur:
+  dönem sonunda iptal (A19 ile aynı), kart güncelleme, fatura geçmişi; plan değiştirme kapalı. Reddedilen:
+  tek yol, ayarları Stripe panelinde elle tutmak. Bölünme: M6b1 ayar + uygulama ucu → M6b2 web yolu.
+
+**A18 · M5 sırası: önce olay deposu (Ç92)** (2026-11-09, kullanıcı).
+- Önce yalnız ekleme yapılan olay deposu (cevap / izin / abonelik geçmişi), sonra cevap
+  dağılımı · UTM · kohort geliri, en son Meta harcama → ROAS. Reddedilen: önce raporlar —
+  son-hâl verisinden kohort geliri sonra yeniden yazılırdı; giden webhook (M7) de aynı akışı ister.
+- **Kohort geliri Stripe faturalarından** (kullanıcı 2026-11-09): `invoice.paid` aboneliğe → ziyarete
+  bağlanır; deneme sonrası ilk ödeme ve yenilemeler dahil. Reddedilen: yalnız ilk ödeme oturumu
+  (denemeli hunide kohort geliri hep 0). Bölünme: M5b faturalar → M5c raporlar.
+- **M5c raporları** (kullanıcı 2026-11-09, üçü de): UTM kırılımı (kaynak / ortam / kampanya → ödemeye
+  geçti → deneme → ödedi → gelir), cevaba göre dönüşüm (seçenek başına seçen + dönüşüm), kohort
+  tablosu (ziyaret haftası × 0/7/30/60 gün, kişi başı birikimli gelir).
+- **M5d ROAS** (kullanıcı 2026-11-09): harcama Meta Marketing API'den (Insights, ads_read — CAPI
+  anahtarından ayrı `META_INSIGHTS_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID`); eşleşme `utm_campaign =
+  kampanya adı` ve ziyaret Meta'dan (fbclid ya da kaynak meta/facebook/fb/instagram/ig). Reddedilen:
+  elle giriş, kampanya kimliği. **Değer aktarımı (StartTrial tahmini değer) sonraya** — kohort verisi
+  birikmeden LTV tahmini yanlış olur.
+
+**A17 · M4 deneyler** (2026-11-04, kullanıcı: tür ve sonuç; atama ayrıntısı öneri).
+- **Tür: ikisi de.** Yönlendirme deneyi bir hunin trafiğini varyant hunilerine böler
+  (ilk varyant = kontrol = deneyin hunisi); içerik deneyi aynı hunide koşulda
+  `deney.<ad>` olur (T3 motoru, yeni alan yok). Reddedilen: yalnız biri.
+- **Atama:** `sha256(deney|tohum)` ilk 8 hex mod 100 → payların birikimli dilimi; tohum
+  hunin sekme deposunda (ziyaret kimliğiyle aynı sınıf, Ç34 — çerez/yeni izin yüzeyi
+  yok). Bedeli: sekme ve gün arası yapışık değil. Tohumsuz (engelli depo) ziyaretçi ve
+  `?huni=` doğrudan adresi deney dışı. Reddedilen: sunucuda saklanan atama (her
+  ziyarette yazım + kimlik), çerez (izin şeridine yük).
+- **Durum:** taslak → aktif ↔ durdu → bitti; taslak dışında varyantlar kilitli, taslağa
+  dönüş yok (sonuçlar karışmasın); hunide tek aktif yönlendirme (DB kısıtı); aktife
+  geçerken huniler yayında olmalı.
+- **Kayıt:** atama ziyaretle `ziyaret_deneyleri`'ne — istemciden gelir, yalnız ziyaretin
+  hunisindeki aktif deneyin geçerli varyantı yazılır.
+- **Sonuç: oranlar + kazanma olasılığı (Bayes).** Bölünme: M4a atama + panel yönetimi →
+  M4b sonuçlar.
+- **Dönüşüm = abone oldu, deneme dahil** (kullanıcı 2026-11-09). Reddedilen: yalnız para
+  ödeyen (denemeli hunide günlerce 0), ikisine ayrı olasılık (kalabalık). "Ödedi" ayrı sütun,
+  oturum tutarı > 0'dan — Stripe kartlı denemeyi de `paid` sayar (ölçüldü, tuzak §52).
+  Olasılık: Beta(1,1) önsel, P(en iyi) belirlenimci ızgara tümlevi (Monte Carlo reddedildi:
+  test edilemez).
+- **Rapor ve reklam olayı aynı tanıma** (kullanıcı 2026-11-09, Ç118): panel Rapor'da "ödedi"
+  tutar > 0, kartlı deneme ayrı "deneme başladı", dönüşüm = abone. Reklam ağlarına denemede
+  `StartTrial` gider (değer 0); tarayıcı pikseli adı `giris-baglantisi` yanıtının `deneme`
+  alanından seçer. Reddedilen: tahmini değerle `Purchase` (değer M5 LTV'sine kaldı).
+
 ## §B — Yığın
 
 ~~**B1 · TypeScript: Next.js (App Router) + Postgres + Stripe Node SDK,~~ — **YERİNİ B2 ALDI (2026-10-19).** Aşağıdaki gerekçe tarihî kayıttır.
@@ -181,6 +409,8 @@ değil, işe en uygun dil.
 davranışı — sessiz yanlış sonuç adayı; ilk blokta ölçülecek (risk tablosu).
 
 **B2 · Astro (statik huni, CDN) + Symfony (çekirdek API) + Postgres**
+
+> **Güncelleme 2026-11-03 (kullanıcı):** Astro kaldırıldı → **Vite çok sayfalı + Preact** (`docs/decisions/astro-kaldirma.md`). B2'nin özü aynı: sunucusuz, derlemede üretilen statik huni, aynı adresler ve `dist` düzeni.
 (2026-10-19, kullanıcı onayı; B1'in yerine). Ölçüt: profesyonel şirket
 kalitesi.
 
@@ -249,6 +479,57 @@ tanımlanamadı); rakiplerin React'i animasyon/durum için seçtiği (çıkarım
 **Bedeli:** huni JS'i ~12 KB → React ile büyür (bütçe ölçülerek konur);
 yeni ortak paket, iki tüketici (huni + düzenleyici) ve Docker bağlaması.
 Geçiş planı: `PLAN.md` §1 (H0–H6).
+**Güncelleme (L20, 2026-11-02):** hunide çalışma zamanı **Preact (compat)** — bileşenler React API'siyle yazılır, panelde React, hunide Preact'e eşlenir (tek kaynak korunur); JS 77,4 → 19,7 KB, bütçe 30 KB (`l20-preact.md`, onay Ç81).
+
+**B5 · Panel ayrı React uygulaması; Symfony panel için JSON veri servisi**
+(2026-10-27, kullanıcı: "yapılarını nasıl kurmuşlar, basite kaçmayalım,
+geliştirmemiz ileride kesilmesin"). Rakip ölçümü
+(`docs/decisions/panel-mimari-arastirmasi.md`): OpnForm (Laravel API +
+ayrı Nuxt SPA), HeyForm (NestJS + ayrı React webapp + ayrı form-renderer),
+Formbricks (Next.js + ayrı Preact anket paketi + ortak types), openFunnel
+(admin/builder/runtime + engine) — dördünde de yönetim paneli **ayrı
+istemci uygulaması**, ziyaretçi tarafı **ayrı hafif paket**, tipler ortak.
+Bizde huni (Astro+React), ortak bileşen ve OpenAPI tipleri var; eksik olan
+panel (Twig sayfaları + ayrı sayfada Puck). Twig'de CRM araması, grafik, A/B,
+sayfa yenilemeden düzenleme, çoklu dil zorlaşır.
+- Panel = `core/panel` (bugünkü `core/editor` büyür): Vite + React +
+  React Router, **Radix** (erişilebilir davranış) + **Tailwind** (stil;
+  bileşen kodu depoda, shadcn yöntemi), **TanStack Query** (veri), TanStack
+  Table (tablo), Recharts (grafik). Aynı adresten (`/panel/*`) Symfony
+  sunar: aynı köken, mevcut oturum + giriş formu korunur, CSRF başlıkla.
+- Panel uçları `/panel/api/*` JSON, **OpenAPI sözleşmesinde**; tipler
+  üretilir (huniyle aynı yol). Puck düzenleyici panelin bir sayfası olur.
+- Giriş sayfası Symfony formu kalır (güvenlik bileşeni), yalnız görünüm.
+- Geçiş adım adım (`PLAN.md` "Panel React" P0–P5); her adım testli, ayrı
+  commit; eski Twig sayfası, yerine gelen React sayfası testle eşlenince
+  silinir.
+**Reddedilen:** Twig + Symfony UX (Turbo/Stimulus) — grafik/filtre/CRM'de
+sınır, düzenleyiciyle iki dünya · Next.js ayrı sunucu (Formbricks) — ikinci
+Node sunucusu ve ikinci arka uç, oturum ve dağıtım iki yerde (B2'nin
+gerekçesi) · hazır tasarım sistemi (Mantine/Ant) — görünüm özelleştirmesi
+zor, büyük bağımlılığa kilit · kendi CSS + Radix — her bileşenin stili elle.
+**Bedeli:** panel JS'i büyür (panel herkese açık değil; bütçe yok ama
+ölçülür), bağımlılık sayısı artar (Dependabot, L18), Twig panel testleri
+JSON uç testlerine dönüşür.
+
+**B6 · AI'ın ilk kapısı dışarıya açılan MCP sunucusu (URL)** (2026-10-27,
+kullanıcı: "Quiz Builder için en mantıklı yol, ilk aşamada sistemi yalnızca
+dışarıya açılan bir MCP sunucusu (URL) olarak inşa etmek"). Önceki sıra
+(`ai-asistan-arastirmasi.md`): panel içi sohbet (A2/A3) önce, MCP (A5) sonra
+ve önce yerel stdio. Yeni sıra: **MCP (HTTP, URL) önce**.
+- Gerekçe: MCP'ye Claude Desktop / claude.ai kullanıcının KENDİ Claude
+  aboneliğiyle bağlanır; model Anthropic'te çalışır, bizde yalnız araçlar →
+  **ANTHROPIC_API_KEY gerekmez** (kullanıcıda anahtar yok, A2/A3 kapalı
+  duruyor). web2wave ve FunnelFox'ta da aynı kapı var.
+- Araçlar A0 (`HuniAraclari`) — değişmez; yalnız taslak, yayın/silme yok.
+- A2/A3 (panel içi sohbet) kalır, kapalı; ikinci aşama. Silinmez.
+- Yerel stdio artık ilk hedef değil (yalnız geliştirme kolaylığı olarak
+  istenirse).
+**Açık (MCP araştırmasında netleşecek):** herkese açık adres — dağıtım
+ertelenmişti (sunucu yok); yerel deneme için tünel (ör. Cloudflare Tunnel)
+mi, önce sunucu mu · kimlik — uygulama başına belirteç (Bearer) mı, claude.ai
+özel bağlayıcısı için OAuth mu · PHP'de MCP HTTP aktarımı (`mcp/sdk` 0.9,
+`symfony/mcp-bundle` beta; iki hafta kuralı).
 
 ## §C — Araç ortamı
 

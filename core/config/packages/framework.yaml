@@ -3,7 +3,18 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # Ç34/H6b: üretimde çekirdek Caddy'nin arkasında (yalnız Caddy dışa açık,
+    # çekirdek iç ağda). Vekil güvenilmezse her ziyaretçi Caddy'nin IP'sinden
+    # gelmiş görünür: reklam ağına giden IP ve hız sınırı anahtarı yanlış olur.
+    # Caddy istemcinin yolladığı X-Forwarded-For'u yok sayıp kendisi yazar.
+    trusted_proxies: 'private_ranges'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-proto']
+
+    # Ç35/Ç41: oturumlar Postgres'te (kap yeniden kurulunca düşmez) ve boşta
+    # 8 saat yaşar — PHP varsayılanı 1440 sn'de düzenleyicideki iş kayboluyordu.
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        gc_maxlifetime: 28800
 
     #esi: true
     #fragments: true

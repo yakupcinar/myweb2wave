@@ -1,0 +1,52 @@
+# Ç34: herkese açık ziyaret ucu sahte istekle şişirilmesin. IP başına
+# dakikada 120 — mobil operatörlerin ortak IP'si (CGNAT) arkasındaki gerçek
+# kullanıcılar takılmasın; aşan 429 alır, huni yine çalışır (ziyaret yazılmaz).
+framework:
+    rate_limiter:
+        huni_ziyaret:
+            policy: sliding_window
+            limit: 120
+            interval: '1 minute'
+
+        # Hız sınırı (App\Guvenlik\HizSiniri): herkese açık uçlar IP başına, istek
+        # controller'a ulaşmadan. Sayaçlar ayrı havuzda — testte bellek içi ve her
+        # istekte sıfırlanır (services_resetter; süitin 127.0.0.1'i birbirini
+        # düşürmesin); sınırı ölçen test (HizSiniriTest) kendi dosya havuzunu koyar.
+        # Genel: bir huni ziyareti dakikada ~20–40 istek; CGNAT arkasında ~10 kişiye yer.
+        hiz_genel:
+            policy: sliding_window
+            limit: 300
+            interval: '1 minute'
+            cache_pool: hiz.sayaclari
+        # Her istek Stripe'ta oturum açar. 5 değil 10: tek IP'den gerçek kullanıcı
+        # 2 dakikada 5 oturum açtı (canlı ölçüm, 2026-11-17).
+        hiz_odeme:
+            policy: sliding_window
+            limit: 10
+            interval: '10 minutes'
+            cache_pool: hiz.sayaclari
+        # E-posta gönderen uçlar: gönderim kotası ve başkasının kutusuna yağdırma.
+        # E-posta başına sınırlar ayrıca var (PortalBaglantisi, DogrulamaKodu).
+        hiz_eposta:
+            policy: sliding_window
+            limit: 5
+            interval: '10 minutes'
+            cache_pool: hiz.sayaclari
+        # Jeton ve kod tahmini (kod başına 5 deneme ayrıca var).
+        hiz_kimlik:
+            policy: sliding_window
+            limit: 30
+            interval: '10 minutes'
+            cache_pool: hiz.sayaclari
+        # Kayıtlı karttan ödeme alır.
+        hiz_ek_satis:
+            policy: sliding_window
+            limit: 10
+            interval: '10 minutes'
+            cache_pool: hiz.sayaclari
+        # Ç150: panelden e-posta düzeltmede yanlış kart son 4 denemesi, abonelik başına.
+        eposta_duzeltme:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'
+            cache_pool: hiz.sayaclari

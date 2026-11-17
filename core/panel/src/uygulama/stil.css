@@ -1,0 +1,147 @@
+/* Panel uygulaması görünümü (B5): Tailwind + renk değişkenleri. Açık ve koyu
+   tema kullanıcının seçimi (P7a, varsayılan açık); P6'dan beri Apple tarzı (panel-apple-tarzi.md).
+   Bileşenler renkleri adlarıyla kullanır (bg-yuzey, text-soluk…), ham renk yazmaz. */
+@import "tailwindcss";
+
+/* P3: düzenleyici sayfası bu sayfayı tanıyıp kapatır (useYalitim) — Puck
+   kabuğun stilini önizleme çerçevesine kopyalar; panelin sıfırlaması huniyi
+   önizlemede farklı çizerdi (ölçüldü: p3-duzenleyici-sayfasi.md). */
+#panel-stil-isareti {
+    --panel-stil: 1;
+}
+
+@theme {
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+        sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --color-zemin: var(--zemin);
+    --color-seri-1: var(--seri-1);
+    --color-seri-2: var(--seri-2);
+    --color-yuzey: var(--yuzey);
+    --color-yuzey-2: var(--yuzey-2);
+    --color-kenar: var(--kenar);
+    --color-kenar-2: var(--kenar-2);
+    --color-dolgu: var(--dolgu);
+    --color-metin: var(--metin);
+    --color-soluk: var(--soluk);
+    --color-vurgu: var(--vurgu);
+    --color-vurgu-yazi: var(--vurgu-yazi);
+    --color-iyi: var(--iyi);
+    --color-iyi-zemin: var(--iyi-zemin);
+    --color-uyari: var(--uyari);
+    --color-uyari-zemin: var(--uyari-zemin);
+    --color-tehlike: var(--tehlike);
+    --color-tehlike-zemin: var(--tehlike-zemin);
+}
+
+:root {
+    color-scheme: light;
+    /* P6 (2026-11-10): Apple tarzı (kullanıcı onayı; panel-apple-tarzi.md). Her
+       metin rengi her zeminde ≥ 4.5:1 (WCAG AA) — hesapla ölçüldü. */
+    --zemin: #f5f5f7;
+    --yuzey: #ffffff;
+    --yuzey-2: #f2f2f7;
+    --kenar: #e5e5ea;
+    --metin: #1d1d1f;
+    --soluk: #6e6e73;
+    --vurgu: #0066cc;
+    --vurgu-yazi: #ffffff;
+    /* P7h: onay kutusunun işareti vurgu-yazi renginde (veri URI'sinde değişken olmaz). */
+    --kutu-tik: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+    --kutu-cizgi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
+    --iyi: #1b7a3a;
+    --iyi-zemin: #e3f4e8;
+    --uyari: #9a5b00;
+    --uyari-zemin: #fff1dc;
+    --tehlike: #c4312a;
+    --tehlike-zemin: #fde7e6;
+    /* P7a: denetim kenarı (arama, ikincil düğme) ve bölmeli seçicinin zemini — taslakla aynı */
+    --kenar-2: #d2d2d7;
+    --dolgu: #e8e8ed;
+    /* P4: grafik serileri (kategorik sıra 1–2, doğrulayıcıyla: yüzeye göre geçer) */
+    --seri-1: #2a78d6;
+    --seri-2: #eb6834;
+}
+/* P7a: koyu tema data-tema ile (kullanıcı: açık varsayılan + seçici) — sistem
+   seçeneği betikte çözülür (tema.ts, şablondaki boyama öncesi betik). */
+:root[data-tema="koyu"] {
+    color-scheme: dark;
+    --zemin: #000000;
+    --yuzey: #1c1c1e;
+    --yuzey-2: #2c2c2e;
+    --kenar: #38383a;
+    --metin: #f5f5f7;
+    --soluk: #a1a1a6;
+    --vurgu: #4c9dff;
+    --vurgu-yazi: #000000;
+    --kutu-tik: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+    --kutu-cizgi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
+    --iyi: #34c759;
+    --iyi-zemin: #34c75926;
+    --uyari: #ff9f0a;
+    --uyari-zemin: #ff9f0a26;
+    --tehlike: #ff6961;
+    --tehlike-zemin: #ff696126;
+    --kenar-2: #48484a;
+    --dolgu: #3a3a3c;
+    --seri-1: #3987e5;
+    --seri-2: #d95926;
+}
+
+@layer base {
+    body {
+        /* P7-temel: satır yüksekliği taslaktaki gibi "normal" (≈1.2); Tailwind'in
+           1.5'i her öğeyi gevşetiyordu (ölçüm: p7-taslak-farki.md). */
+        @apply bg-zemin text-metin text-[14px] leading-[normal] antialiased;
+    }
+}
+
+/* P7h (kullanıcı: "özel çizilmiş kutu"): tarayıcının kendi kutusu her
+   tarayıcıda ve koyu temada farklı ve eski görünüyordu. Gerçek <input> yerinde
+   (klavye, form, ekran okuyucu aynı); yalnız görünüm baştan çizilir. Seçili ve
+   yarım (indeterminate, "Tümü") hâli vurgu dolu; Windows yüksek karşıtlıkta
+   tarayıcının kendi kutusuna dönülür (özel kutu orada görünmez olabilir). */
+@layer components {
+    .kutu {
+        appearance: none;
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        border: 1.5px solid var(--kenar-2);
+        border-radius: 5px;
+        background: var(--yuzey) center / 14px no-repeat;
+        cursor: pointer;
+        transition:
+            background-color 0.12s,
+            border-color 0.12s;
+    }
+    .kutu:hover {
+        border-color: var(--soluk);
+    }
+    .kutu:checked,
+    .kutu:indeterminate {
+        border-color: var(--vurgu);
+        background-color: var(--vurgu);
+    }
+    .kutu:checked {
+        background-image: var(--kutu-tik);
+    }
+    .kutu:indeterminate {
+        background-image: var(--kutu-cizgi);
+    }
+    .kutu:focus-visible {
+        outline: 2px solid var(--vurgu);
+        outline-offset: 2px;
+    }
+    .kutu:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+    }
+    @media (forced-colors: active) {
+        .kutu {
+            appearance: auto;
+        }
+    }
+}

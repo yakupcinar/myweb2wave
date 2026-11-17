@@ -1,5 +1,12 @@
 framework:
     cache:
+        pools:
+            # Ç19/Ç21: Stripe fiyatı (Billing\Fiyatlar), bir saat.
+            fiyat.onbellegi:
+                adapter: cache.app
+            # Hız sınırı sayaçları (config/packages/rate_limiter.yaml).
+            hiz.sayaclari:
+                adapter: cache.app
         # Unique name of your app: used to compute stable namespaces for cache keys.
         #prefix_seed: your_vendor_name/app_name
 
@@ -17,3 +24,10 @@ framework:
         # Namespaced pools use the above "app" backend by default
         #pools:
             #my.dedicated.cache: null
+
+when@test:
+    framework:
+        cache:
+            pools:
+                hiz.sayaclari:
+                    adapter: cache.adapter.array

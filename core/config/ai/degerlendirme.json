@@ -1,0 +1,8 @@
+[
+    { "ad": "aile-guvenligi", "istem": "KeepChat için aile güvenliğini öne çıkaran 4-5 adımlı bir huni kur: önce kiminle kullanacağını sor, sonra mesajların güvenle yedeklendiğini anlatan bir ekran, en sonda ödeme." },
+    { "ad": "is-kullanicisi", "istem": "İş için kullananlara yönelik, kısa ve profesyonel tonda bir huni kur; ekip yazışmalarının kaybolmamasını vurgula." },
+    { "ad": "en-kisa", "istem": "En kısa huni: tek bir karşılama ekranı ve ardından ödeme." },
+    { "ad": "kisisellestirme", "istem": "Kiminle sorusunda 'İş için' diyenleri doğrudan ödemeye gönder; diğerleri önce yedeklemeyi anlatan bir ekran görsün." },
+    { "ad": "guven", "istem": "Kullanıcı yorumları ve bir istatistik bloğuyla güven veren bir huni kur; uydurma sayı kullanma." },
+    { "ad": "tema", "istem": "Koyu zeminli, yuvarlak yazı tipli, sakin görünen bir huni kur; düğmeler hap biçiminde olsun." }
+]

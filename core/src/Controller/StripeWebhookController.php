@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Atif\DonusumAktarimi;
 use App\Billing\SubscriptionSync;
 use App\Kimlik\GirisBaglantisi;
 use App\RevenueCat\Aktarim;
@@ -25,6 +26,7 @@ final readonly class StripeWebhookController
         private SubscriptionSync $sync,
         private Aktarim $revenuecat,
         private GirisBaglantisi $giris,
+        private DonusumAktarimi $donusum,
         #[Autowire('%env(STRIPE_WEBHOOK_SECRET)%')]
         private string $secret,
     ) {
@@ -47,6 +49,8 @@ final readonly class StripeWebhookController
         $this->revenuecat->gonder();
         // Ç46: ödeme sonrası giriş bağlantısı e-postası; atmaz, gitmeyen bekler.
         $this->giris->epostalariGonder();
+        // H6b: reklam ağları Stripe durumunu durduramaz; başarısız kuyruk cron'da denenir.
+        $this->donusum->gonder();
 
         return new Response('', 200);
     }
