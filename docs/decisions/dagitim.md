@@ -126,3 +126,6 @@ etkilenmeyecek.
   Düşme nedeni: `core/.env.local`'de boşluklu, tırnaksız Gmail uygulama şifresi Symfony dotenv'i kırıyordu (boşluklar
   kaldırıldı). Hata iletisi şifrenin bir kısmını sohbete bastı → kullanıcıya yenilemesi söylendi; yenilenince sunucudaki
   `MAILER_DSN` güncellenecek.
+- **2026-11-17 canlı ölçümler:** `mailer:test` sunucudan Gmail SMTP ile çıkış 0 (alıcı = gönderen, kullanıcının kutusu).
+  `POST /webhooks/stripe` imzasız → 400. `POST /checkout/sessions {keepchat, monthly}` → 201 + `cs_test_…`. Ödemenin
+  tamamlanması (kart girişi) kullanıcıda; ardından webhook teslimi, abonelik satırı ve ödeme sonrası e-posta ölçülecek.
