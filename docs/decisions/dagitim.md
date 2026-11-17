@@ -113,3 +113,7 @@ etkilenmeyecek.
   **Eksik:** cron'lar (yedek 03:15, RevenueCat ve reklam yeniden denemeleri, 90 gün metin silme, ülke verisi) kurulmadı.
   Sunucuda sudo ile betik koşturma izin sisteminde engellendi; kullanıcı kararı bekliyor. Yedek bu yüzden şimdilik
   yalnız dağıtım anındaki (`dagit.sh`).
+- **2026-11-17 planlar:** `app:plan-ice-aktar keepchat monthly price_1UbJo1…` ve `yearly price_1UXzqz…` (yereldeki test
+  fiyatları, kullanıcı seçimi). Dışarıdan `GET /huni/keepchat`: monthly 349.99 TRY (Türkiye IP'si → ek para birimi; ülke
+  verisi çalışıyor), yearly 59.99 EUR (TRY tanımlı değil). İçe aktarma adı anahtar yapıyor ("monthly"); yereldeki
+  "Aylık / Yıllık" adları ve monthly'deki 7 günlük deneme teklifi aktarılmadı → panelden.
