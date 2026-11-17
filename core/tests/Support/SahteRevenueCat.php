@@ -62,6 +62,9 @@ final class SahteRevenueCat
         if ('GET' === $method && str_starts_with($url, 'https://graph.facebook.com/')) {
             return (new SahteMetaGraph())($url);
         }
+        if ('GET' === $method && str_starts_with($url, 'https://business-api.tiktok.com/')) {
+            return (new SahteTiktok())($url, $secenekler);
+        }
         if (str_starts_with($url, 'https://api.pexels.com/') || str_starts_with($url, 'https://images.pexels.com/')) {
             return (new SahtePexels())($url, $secenekler);
         }

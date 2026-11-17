@@ -12,7 +12,6 @@ COPY huni-bilesenleri/ ../huni-bilesenleri/
 # Huni çekirdeğin adresini derlemede gömer; boşsa derleme durur
 # (yoksa sayfa sessizce funnel/.env'deki localhost'a istek atar).
 ARG PUBLIC_CORE_URL
-ARG PUBLIC_TIKTOK_PIXEL_ID=
 RUN test -n "$PUBLIC_CORE_URL" && npm run build
 
 FROM caddy:2.11.7@sha256:685ae3d7c34d9b5f8caeddc5d14051db7bbd88ff1f5a2fa0c16bd8ca328fb7af

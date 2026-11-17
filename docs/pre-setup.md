@@ -260,6 +260,14 @@ döngüde atlanır. Blok bitince kural 11 ile commit + push, sorulmaz.
   Reddedilen: çalışırken miras (yayınlanmış sürüm donmuş olmaktan çıkar, deney sonuçları belirsizleşir), tema miras +
   paywall kopya; Ayarlar'da ayrı tema / paywall düzenleyicisi (Puck'ın kopyası olurdu).
 
+**A31 · TikTok bağlantısı panelden** (2026-11-17, kullanıcı: "Meta'daki gibi bağlansın, panele ek yapalım").
+- **A30'un kalıbı:** Pixel kodu, Events API anahtarı, isteğe bağlı test olay kodu; reklamveren kimliği + Marketing
+  API anahtarı; uygulama başına, anahtarlar şifreli, `TIKTOK_*` ortamı kalkar. Reddedilen: ortamda bırakıp yalnız
+  belgelemek (tek Pixel, değişince imaj kurulur, harcama / ROAS yok).
+- **"Dene" dönüşümde yalnız test olay koduyla** deneme olayı gönderir. Reddedilen: kodsuz canlı olay (gerçek veriye
+  sahte olay düşer) — Events API anahtarını yan etkisiz okuyan uç yok.
+- Ayrı tablo + sınıf. Reddedilen: Meta ile ortak soyutlama (alanlar farklı, iki kullanıcı). Kayıt `a31-tiktok-baglantisi.md`.
+
 **A30 · Meta bağlantısı panelden** (2026-11-14, kullanıcı: üç öneri de).
 - **Elle girilir + "Bağlantıyı dene":** Pixel ID, CAPI erişim anahtarı, reklam hesabı (`act_…`), Insights anahtarı;
   dene düğmesi Meta Graph API'ye gerçek istek atar. Reddedilen: "Facebook ile giriş" (OAuth) — Meta uygulaması,

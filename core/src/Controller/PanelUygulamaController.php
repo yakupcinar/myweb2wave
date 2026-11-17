@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Ai\UrunBaglami;
 use App\Atif\MetaBaglantisi;
+use App\Atif\TiktokBaglantisi;
 use App\Huni\Varsayilanlar;
 use App\Mcp\ApiAnahtarlari;
 use App\Posta\EpostaSablonlari;
@@ -42,6 +43,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly CanliyaGecis $canliyaGecis,
         private readonly EpostaSablonlari $epostalar,
         private readonly MetaBaglantisi $meta,
+        private readonly TiktokBaglantisi $tiktok,
         /** A5a: MCP istemcisine verilecek adres (herkese açık adres gelince ortamdan). */
         #[Autowire('%env(MCP_GENEL_ADRES)%')]
         private readonly string $mcpAdresi,
@@ -298,6 +300,60 @@ final class PanelUygulamaController extends AbstractController
         }
 
         return self::korumali(new JsonResponse($this->meta->dene($app)));
+    }
+
+    /** A31: TikTok bağlantısı — anahtarların yalnız son 4 hanesi. */
+    #[Route('/{app}/tiktok', name: 'panel_api_tiktok', methods: ['GET'])]
+    public function tiktok(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->tiktok->panel($app)));
+    }
+
+    #[Route('/{app}/tiktok', name: 'panel_api_tiktok_kaydet', methods: ['PUT'])]
+    public function tiktokKaydet(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+        $hatalar = $this->tiktok->kaydet($app, json_decode($request->getContent(), true));
+
+        return self::korumali([] === $hatalar
+            ? new JsonResponse($this->tiktok->panel($app))
+            : new JsonResponse(['hatalar' => $hatalar], 422));
+    }
+
+    /** Bağlantıyı kaldır: dönüşüm ve harcama durur. */
+    #[Route('/{app}/tiktok', name: 'panel_api_tiktok_sil', methods: ['DELETE'])]
+    public function tiktokSil(Request $request, string $app): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+
+        return self::korumali($this->tiktok->sil($app)
+            ? new JsonResponse($this->tiktok->panel($app))
+            : new JsonResponse(['hatalar' => ['Kayıtlı TikTok bağlantısı yok.']], 404));
+    }
+
+    /** Kayıtlı değerlerle TikTok'a gerçek istek (test olayı ve reklamveren bilgisi). */
+    #[Route('/{app}/tiktok/dene', name: 'panel_api_tiktok_dene', methods: ['POST'])]
+    public function tiktokDene(Request $request, string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+        if (!$this->isCsrfTokenValid(self::JETON, $request->headers->get('X-CSRF-Token', ''))) {
+            return self::korumali(new JsonResponse(['hatalar' => ['Oturum jetonu geçersiz — sayfayı yenileyin.']], 403));
+        }
+
+        return self::korumali(new JsonResponse($this->tiktok->dene($app)));
     }
 
     /** A5a: kişisel API anahtarları (MCP) — liste; anahtarın kendisi yok, önek var. */
