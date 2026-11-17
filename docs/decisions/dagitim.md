@@ -117,3 +117,12 @@ etkilenmeyecek.
   fiyatları, kullanıcı seçimi). Dışarıdan `GET /huni/keepchat`: monthly 349.99 TRY (Türkiye IP'si → ek para birimi; ülke
   verisi çalışıyor), yearly 59.99 EUR (TRY tanımlı değil). İçe aktarma adı anahtar yapıyor ("monthly"); yereldeki
   "Aylık / Yıllık" adları ve monthly'deki 7 günlük deneme teklifi aktarılmadı → panelden.
+- **2026-11-17 cron'lar kuruldu** (kullanıcı tek komutluk izin verdi): `/etc/cron.d/myweb2wave-*` 5 dosya, kullanıcı ubuntu.
+  Yedek elle bir kez koşturuldu (`app-…dump` 91 KB + medya). 06:50 koşusu: RevenueCat `gönderilen=0 başarısız=0`, reklam
+  dönüşümleri `Gönderilen: 0; başarısız: 0` — cron'dan compose exec çalışıyor.
+- **2026-11-17 panel girişi `yakup`** — kullanıcı kararı, riski kabul ederek kısa şifre. Kaptaki `PANEL_KULLANICI` ve
+  `password_verify` ölçüldü. ⚠️ Ara adımda betiğim boş özeti denetlemeden yazdı (yerel özet komutu düşmüştü), çekirdek
+  yeniden başlatması compose `:?` ile reddetti, çalışan kap etkilenmedi; ikinci yazımda 60 karakter denetimi var.
+  Düşme nedeni: `core/.env.local`'de boşluklu, tırnaksız Gmail uygulama şifresi Symfony dotenv'i kırıyordu (boşluklar
+  kaldırıldı). Hata iletisi şifrenin bir kısmını sohbete bastı → kullanıcıya yenilemesi söylendi; yenilenince sunucudaki
+  `MAILER_DSN` güncellenecek.
