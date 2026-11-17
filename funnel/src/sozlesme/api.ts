@@ -2087,6 +2087,16 @@ export interface components {
                 "application/json": components["schemas"]["Hata"];
             };
         };
+        /** @description Hız sınırı: bu IP'den çok istek (App\Guvenlik\HizSiniri); Retry-After saniyesi kadar bekle */
+        CokIstek: {
+            headers: {
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Hata"];
+            };
+        };
     };
     parameters: {
         App: string;
@@ -2175,6 +2185,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
             /** @description Ödeme sağlayıcısına ulaşılamadı */
             502: {
                 headers: {
@@ -2245,7 +2256,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
-            /** @description Ç34: bu IP'den dakikada 120'den fazla ziyaret; huni yine çalışır */
+            /** @description Ç34: bu IP'den dakikada 120'den fazla ziyaret ya da genel hız sınırı (CokIstek); huni yine çalışır */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2298,6 +2309,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     getDraftFunnel: {
@@ -2336,6 +2348,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     recordFunnelProgress: {
@@ -2392,6 +2405,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     recordFunnelEmail: {
@@ -2446,6 +2460,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     grantMeasurementConsent: {
@@ -2498,6 +2513,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     revokeMeasurementConsent: {
@@ -2527,6 +2543,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     requestPortalLink: {
@@ -2575,6 +2592,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     createLoginLink: {
@@ -2639,7 +2657,7 @@ export interface operations {
                 };
             };
             422: components["responses"]["IstekHatasi"];
-            /** @description Bu ödeme için bağlantı sınırı doldu */
+            /** @description Bu ödeme için bağlantı sınırı doldu ya da IP hız sınırı (CokIstek) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2690,6 +2708,7 @@ export interface operations {
             };
             401: components["responses"]["Yetkisiz"];
             422: components["responses"]["IstekHatasi"];
+            429: components["responses"]["CokIstek"];
         };
     };
     requestLinkCode: {
@@ -2731,7 +2750,7 @@ export interface operations {
             };
             401: components["responses"]["Yetkisiz"];
             422: components["responses"]["IstekHatasi"];
-            /** @description Bu e-postaya 10 dakikada 3'ten fazla kod */
+            /** @description Bu e-postaya 10 dakikada 3'ten fazla kod ya da IP hız sınırı (CokIstek) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2787,6 +2806,7 @@ export interface operations {
             };
             401: components["responses"]["Yetkisiz"];
             422: components["responses"]["IstekHatasi"];
+            429: components["responses"]["CokIstek"];
         };
     };
     getEntitlement: {
@@ -2824,6 +2844,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     listEvents: {
@@ -2872,6 +2893,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
         };
     };
     createPortalSession: {
@@ -2908,6 +2930,7 @@ export interface operations {
                     "application/json": components["schemas"]["Hata"];
                 };
             };
+            429: components["responses"]["CokIstek"];
             /** @description portal_not_configured (app:stripe-portal:kur koşulmadı) ya da stripe_error */
             503: {
                 headers: {
@@ -5260,6 +5283,7 @@ export interface operations {
                     };
                 };
             };
+            429: components["responses"]["CokIstek"];
             /** @description Stripe'a ulaşılamadı */
             502: {
                 headers: {

@@ -467,3 +467,14 @@ ve E1a `Version20261112090000`); `migrate` sonrası sayfa yedi kartla çizildi.
 **Doğrusu:** kontrol çıktısını `UYARI` satırlarıyla birlikte oku (`grep -E "EXIT=[^0]|KONTROL|UYARI"`); göçlü blokta
 gerçek doğrulamadan önce `docker compose run --rm -T core bin/console doctrine:migrations:migrate --no-interaction`;
 ekranda "yüklenemedi" görünce önce `migrations:status`.
+
+## §61 — Testte `ArrayAdapter`'lı hız sınırı sayacı her istekte sıfırlanır, `disableReboot()` olsa bile
+**Belirti:** sınırı ölçen test aşan isteği beklerken `429` yerine ucun normal yanıtını alır (422/401/404); sınırın
+yokluğunu bekleyen bir test olsaydı yanlış nedenle yeşil kalırdı.
+**Sebep:** bellek içi önbellek havuzu `kernel.reset` etiketli; Symfony kernel yeniden başlamasa da her istek
+öncesinde `services_resetter` ile `ArrayAdapter`'ı boşaltır. `$client->disableReboot()` bunu durdurmaz.
+**Ölçüm (2026-11-17, `hiz-siniri.md`):** `hiz.sayaclari` testte `cache.adapter.array` iken 6 sınır testinin 5'i
+"422/401/404 is identical to 429" ile düştü; dinleyici kayıtlıydı (`debug:event-dispatcher`).
+**Doğrusu:** süitin geri kalanı için bellek içi havuz (sayaçların her istekte sıfırlanması orada istenen şey);
+sınırı ölçen testte `static::getContainer()->set('hiz.sayaclari', new FilesystemAdapter(uniqid(), 0, sys_get_temp_dir()))`
++ `disableReboot()`.

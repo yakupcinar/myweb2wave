@@ -66,6 +66,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Hata"
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/ziyaretler:
     post:
       operationId: recordFunnelVisit
@@ -110,7 +111,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
         "429":
-          description: "Ç34: bu IP'den dakikada 120'den fazla ziyaret; huni yine çalışır"
+          description: "Ç34: bu IP'den dakikada 120'den fazla ziyaret ya da genel hız sınırı (CokIstek); huni yine çalışır"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -140,6 +141,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/{app}/taslak:
     get:
       operationId: getDraftFunnel
@@ -161,6 +163,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/ziyaretler/{ziyaret}/ilerleme:
     post:
       operationId: recordFunnelProgress
@@ -201,6 +204,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/ziyaretler/{ziyaret}/eposta:
     post:
       operationId: recordFunnelEmail
@@ -231,6 +235,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/ziyaretler/{ziyaret}/izin:
     post:
       operationId: grantMeasurementConsent
@@ -260,6 +265,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
     delete:
       operationId: revokeMeasurementConsent
       summary: Ziyaretin reklam ölçümü iznini geri al; bekleyen paylaşım yüklerini sil
@@ -272,6 +278,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/portal-baglantisi:
     post:
       operationId: requestPortalLink
@@ -296,6 +303,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /huni/giris-baglantisi:
     post:
       operationId: createLoginLink
@@ -343,7 +351,7 @@ paths:
               schema: { $ref: "#/components/schemas/Hata" }
         "422": { $ref: "#/components/responses/IstekHatasi" }
         "429":
-          description: Bu ödeme için bağlantı sınırı doldu
+          description: Bu ödeme için bağlantı sınırı doldu ya da IP hız sınırı (CokIstek)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -378,6 +386,7 @@ paths:
         "400": { description: Gövde JSON değil }
         "401": { $ref: "#/components/responses/Yetkisiz" }
         "422": { $ref: "#/components/responses/IstekHatasi" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /apps/{app}/baglama/kod:
     post:
       operationId: requestLinkCode
@@ -401,7 +410,7 @@ paths:
         "401": { $ref: "#/components/responses/Yetkisiz" }
         "422": { $ref: "#/components/responses/IstekHatasi" }
         "429":
-          description: Bu e-postaya 10 dakikada 3'ten fazla kod
+          description: Bu e-postaya 10 dakikada 3'ten fazla kod ya da IP hız sınırı (CokIstek)
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
@@ -437,6 +446,7 @@ paths:
         "400": { description: Gövde JSON değil }
         "401": { $ref: "#/components/responses/Yetkisiz" }
         "422": { $ref: "#/components/responses/IstekHatasi" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /apps/{app}/kullanicilar/{kullanici}/hak:
     get:
       operationId: getEntitlement
@@ -463,6 +473,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /apps/{app}/olaylar:
     get:
       operationId: listEvents
@@ -501,6 +512,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /apps/{app}/kullanicilar/{kullanici}/portal:
     post:
       operationId: createPortalSession
@@ -531,6 +543,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Hata" }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /panel/api/rapor:
     get:
       operationId: panelRaporu
@@ -1483,6 +1496,7 @@ paths:
                 properties:
                   error: { type: string, enum: [invalid_request, unknown_product, unknown_session, session_not_eligible, currency_mismatch, card_declined, in_progress] }
         "502": { description: Stripe'a ulaşılamadı, content: { application/json: { schema: { type: object, required: [error], properties: { error: { type: string, enum: [payment_provider_unavailable] } } } } } }
+        "429": { $ref: "#/components/responses/CokIstek" }
   /panel/api/uygulamalar/{app}/ek-urunler:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -1786,6 +1800,13 @@ components:
           schema: { $ref: "#/components/schemas/Hata" }
     IstekHatasi:
       description: Geçersiz alan ya da kod
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Hata" }
+    CokIstek:
+      description: "Hız sınırı: bu IP'den çok istek (App\\Guvenlik\\HizSiniri); Retry-After saniyesi kadar bekle"
+      headers:
+        Retry-After: { schema: { type: integer } }
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Hata" }
