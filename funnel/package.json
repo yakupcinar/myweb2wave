@@ -15,18 +15,18 @@
   },
   "dependencies": {
     "openapi-fetch": "0.17.0",
-    "preact": "11.0.1"
+    "preact": "11.1.1"
   },
   "devDependencies": {
     "@testing-library/dom": "10.4.2",
-    "@testing-library/preact": "3.2.4",
+    "@testing-library/preact": "3.2.6",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "happy-dom": "20.14.6",
-    "prettier": "3.9.9",
+    "prettier": "3.9.10",
     "typescript": "6.0.3",
-    "vite": "8.3.4",
-    "vitest": "5.0.3"
+    "vite": "8.3.5",
+    "vitest": "5.1.0"
   }
 }
