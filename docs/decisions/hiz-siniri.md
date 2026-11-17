@@ -76,3 +76,7 @@ Betik: `$TMPDIR/…/scratchpad/kir-hiz.py`.
 - **Tam kontrol:** ilk iki koşu başka oturumun eşzamanlı süiti / `npm ci`'siyle kırmızı (aynı test DB'si, paylaşılan
   `node_modules`; düşenler eşzamanlılığa duyarlı `GidenWebhookTest`, `OlaylarTest` ve huni testleri). Tek başına
   33/33 yeşil. Üçüncü koşu `TEST_TOKEN=hiz`: **YEŞİL**, 786 çekirdek testi.
+- **Canlı (2026-11-17, kullanıcı dağıttı, `/health` sürüm `8b47fb01c66e`):** kullanıcının IP'sinden geçersiz gövdeli 11
+  `POST /checkout/sessions` → 10 × 422, 11. `429` + `Retry-After: 60` + `{"error":"too_many_requests"}` (Stripe'a
+  gidilmedi). Aynı anda sunucunun kendi IP'sinden aynı istek → 422: anahtar Caddy'nin değil gerçek istemcinin IP'si
+  (trusted_proxies üretimde doğru). `/health` 200, Tra 308.
