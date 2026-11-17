@@ -14,7 +14,10 @@ denemeleri: `docs/decisions/dagitim.md`.
    `checkout.session.completed`, `customer.subscription.created`,
    `customer.subscription.updated`, `customer.subscription.deleted`,
    `checkout.session.expired` (terk edilen ödemenin IP/UA'sı hemen silinir — Ç59;
-   seçilmezse 48 sa cron temizliği yine siler).
+   seçilmezse 48 sa cron temizliği yine siler), `invoice.paid` +
+   `invoice_payment.paid` (fatura ↔ ziyaret, gelir raporları — M5b) ve
+   `charge.refunded` (iadeler — M6a). Liste koddaki olaylarla aynı olmalı:
+   `grep -rhoE "'(checkout|customer|invoice|invoice_payment|charge)\.[a-z_.]+'" core/src | sort -u`.
    Verilen `whsec_` → `STRIPE_WEBHOOK_SECRET`.
 4. E-posta sağlayıcısı (Ç30): SMTP bilgisi → `MAILER_DSN`. Gönderen alan
    adında SPF/DKIM yoksa kodlar spam'e düşer.

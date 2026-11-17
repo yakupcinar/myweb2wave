@@ -129,3 +129,16 @@ etkilenmeyecek.
 - **2026-11-17 canlı ölçümler:** `mailer:test` sunucudan Gmail SMTP ile çıkış 0 (alıcı = gönderen, kullanıcının kutusu).
   `POST /webhooks/stripe` imzasız → 400. `POST /checkout/sessions {keepchat, monthly}` → 201 + `cs_test_…`. Ödemenin
   tamamlanması (kart girişi) kullanıcıda; ardından webhook teslimi, abonelik satırı ve ödeme sonrası e-posta ölçülecek.
+- **2026-11-17 ilk test ödemesi (kullanıcı, Chrome'da huni → gömülü ödeme, 07:08 UTC):** Stripe'ta abone olunan
+  olaylarda `pending_webhooks` 0 (teslim + 2xx). Sunucuda: `processed_webhook_events` 2, `subscriptions` 1 satır
+  `active` / `keepchat` / dönem sonu 2026-12-17, `odeme_oturumlari` satırı ziyarete bağlı + tamamlandı (IP/UA silinmiş —
+  Ç59), `giris_jetonlari` 2. Başarı sayfası "Ödemeniz alındı".
+  **Kusur:** uç nokta README'deki 5 olayla açılmıştı; kod 8 olay işliyor (`invoice.paid`, `invoice_payment.paid`,
+  `charge.refunded` eksikti) → bu ödemenin `odeme_faturalari` satırı yok (gelir/kohort raporuna girmez). Uç nokta 8 olaya
+  güncellendi (API ile, geri okundu), README listesi koddaki `grep` ile eşitlendi (kural 7). Kaçan fatura için geri
+  doldurma komutu yok; Stripe panelinden olay yeniden gönderilebilir.
+- **2026-11-17 Ç133 (eksik cron'lar):** `sunucu-hazirla.sh`'e `app:posta:dizi` (*/15), `app:webhook:gonder` (her dakika),
+  `app:reklam-harcamalari:cek` (05:00) eklendi; `bash -n` 0. Sunucuda elle birer kez: posta dizisi "Aktivasyon 0 /
+  Kurtarma 0" çıkış 0, webhook "Kuyruğa 0" çıkış 0, reklam harcaması Meta bağlı değil → çıkış 1 (beklenen).
+  `app:stripe-portal:kur` bir kez koşuldu: "Güncellendi" (test hesabında yerelden kalmaydı). Sunucuya cron kurulumu
+  sudo ister → kullanıcı izni bekliyor.
