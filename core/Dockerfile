@@ -18,6 +18,10 @@ WORKDIR /panel
 COPY panel/package.json panel/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY panel/ ./
+# Panel huni bileşenlerini ../../../huni-bilesenleri'den alıyor (B4/H1); bağlam
+# core/ olduğu için klasör deploy/compose.yaml'daki ek bağlamdan gelir. react
+# panelin kökünden çözülür (vite dedupe), bileşenlerin node_modules'u gerekmez.
+COPY --from=huni-bilesenleri . /huni-bilesenleri/
 RUN npm run build
 
 # Üretim (deploy/compose.yaml): kod imajın içinde, geliştirme bağımlılıkları

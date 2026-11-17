@@ -97,3 +97,9 @@ etkilenmeyecek.
   kullanıcısı, `sunucu-hazirla.sh` koşulmadı), `deploy/.env.uretim` 600: alanlar `web2quizapi.duckdns.org` /
   `web2quiz.duckdns.org`, rastgele sırlar sunucuda üretildi. `UYGULAMA_ANAHTARI_KEEPCHAT` rastgele (KeepChat kapanıyor,
   eşleşecek sunucu yok). Stripe, Postmark ve panel girişi kullanıcıda.
+- **2026-11-17 ilk sunucu derlemesi düştü:** çekirdek imajının panel aşaması `huni-bilesenleri/`'yi bulamadı
+  (4 `UNRESOLVED_IMPORT`). Geliştirmede kap klasörü ayrıca bağlıyor (`compose.yaml`), CI üretim imajını derlemiyor
+  (Ç146), o yüzden görünmemişti. Düzeltme: `deploy/compose.yaml` çekirdek derlemesine `additional_contexts:
+  huni-bilesenleri`, `core/Dockerfile` panel aşamasında `/huni-bilesenleri/`'ye kopya. Ölçüm: sunucudaki gibi temiz kopya
+  (`git archive`, `node_modules` yok) ile yerelde `--target uretim` derlendi. **Kırma:** kopya satırı olmadan aynı 4 hata,
+  derleme 1 ile düştü. KeepChat bu sırada açıktı (derleme önce, kapatma sonra).

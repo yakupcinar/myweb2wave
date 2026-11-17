@@ -24,6 +24,9 @@ services:
     build:
       context: ../core
       target: uretim
+      # Panel derlemesi huni bileşenlerini kullanıyor (core/Dockerfile, panel aşaması).
+      additional_contexts:
+        huni-bilesenleri: ../huni-bilesenleri
     image: myweb2wave-core:uretim
     restart: unless-stopped
     environment:
