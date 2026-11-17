@@ -145,3 +145,6 @@ etkilenmeyecek.
 - **2026-11-17 e-posta teslimi (kullanıcı gelen kutusunda doğruladı):** `mailer:test` iletisi ve ödeme sonrası giriş
   bağlantısı iletisi geldi → Gmail SMTP ile canlı gönderim uçtan uca çalışıyor. Kullanıcı Ç133 cron'larını sunucuya
   kurdu (`/etc/cron.d/myweb2wave-*` 8 dosya, ölçüldü).
+- **2026-11-17 kullanıcı panelden:** `genel` hunisi yayınlandı (sürüm 2; paywall metni "Aylık plan", Ç149 taslağı).
+  Yasal metinler: dört belge (`sartlar`, `gizlilik`, `kvkk`, `cerez`) Türkçe yayında (200), İngilizceleri yok (404).
+  Plan adları hâlâ "monthly"/"yearly"; RevenueCat anahtarı henüz yok.
