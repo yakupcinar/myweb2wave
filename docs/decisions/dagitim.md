@@ -142,3 +142,6 @@ etkilenmeyecek.
   Kurtarma 0" çıkış 0, webhook "Kuyruğa 0" çıkış 0, reklam harcaması Meta bağlı değil → çıkış 1 (beklenen).
   `app:stripe-portal:kur` bir kez koşuldu: "Güncellendi" (test hesabında yerelden kalmaydı). Sunucuya cron kurulumu
   sudo ister → kullanıcı izni bekliyor.
+- **2026-11-17 e-posta teslimi (kullanıcı gelen kutusunda doğruladı):** `mailer:test` iletisi ve ödeme sonrası giriş
+  bağlantısı iletisi geldi → Gmail SMTP ile canlı gönderim uçtan uca çalışıyor. Kullanıcı Ç133 cron'larını sunucuya
+  kurdu (`/etc/cron.d/myweb2wave-*` 8 dosya, ölçüldü).
