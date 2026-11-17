@@ -26,7 +26,8 @@ kanıtlayacak, alakasız biri de destek yazabilir." Kullanıcı kararı: **siste
 - **Yeni adres hak vermez:** hak e-postayı uygulamada kod ya da giriş bağlantısıyla kanıtlayan hesaba (`Hak`).
   Düzeltilen adresin sahibi yine kanıtlar; ayrıca e-posta göndermeye gerek yok.
 - **Kayıt olay deposunda değil, günlükte:** `olaylar` ziyarete bağlı ve giden webhook'larla dışarı akar; e-posta
-  sızardı. Günlüğe abonelik kimliği ve sonuç yazılır, e-posta yazılmaz. Panelde denetim geçmişi istenirse ayrı iş.
+  sızardı. Günlüğe abonelik kimliği ve sonuç (`info` / `warning`), e-posta değil. ⚠️ **Üretimde görünmüyor** (Ç151):
+  monolog yok, yerleşik günlükçü bu seviyeleri basmıyor — kullanıcının `1111` denemesinden sonra günlükte 0 satır (ölçüldü).
 - **Webhook düzeltmeyi ezmez:** e-postayı yalnız `checkout.session.completed` yazıyor; olaylar tekrar işlenmiyor.
 - P7g'deki "işlemsiz kartta işlem satırı gizli" kuralı kalktı: artık her satırda en az bir işlem var.
 
@@ -54,3 +55,6 @@ yeni düğmeyle güncellendi). Tam kontrol ve canlı: aşağıda.
 - **Tam kontrol:** ilk koşu biçim (`use` sırası), PHPStan (2 tip) ve belge bağlantısı (rehberdeki `#L` satırları
   kaydı, tuzak §58) ile kırmızı; düzeltildi, rehbere yeni işlem eklendi. İkinci koşu `TEST_TOKEN=duz`: **YEŞİL**,
   791 çekirdek testi.
+- **Canlı (2026-11-17, kullanıcı dağıttı, sürüm `c54639010a15`):** kullanıcı panelden önce yanlış son 4 (reddedildi), sonra
+  doğru son 4 denedi: "doğru çalışıyor". Sunucuda düzeltilen aboneliğin `updated_at` 11:08; Stripe müşterisinin
+  e-postası veritabanındakiyle aynı (değerler basılmadan özetle karşılaştırıldı). Denetim izi günlükte yok → Ç151.
