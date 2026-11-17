@@ -31,7 +31,7 @@ final class PanelAbonelikTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE subscriptions, odeme_faturalari, fatura_odemeleri, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, kisiler, baglantilar CASCADE');
+        $this->db->executeStatement('TRUNCATE subscriptions, odeme_faturalari, fatura_odemeleri, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, kisiler, baglantilar, panel_islemleri CASCADE');
         $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_x', 'stripe_customer_id' => 'cus_x', 'status' => 'active', 'email' => 'a@example.com', 'app' => 'keepchat']);
         $this->stripe = new KayitliStripeIstemcisi();
         ApiRequestor::setHttpClient($this->stripe);
@@ -306,6 +306,68 @@ final class PanelAbonelikTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertStringContainsString('çok fazla yanlış deneme', $this->hata());
         self::assertSame('a@example.com', $this->eposta());
+    }
+
+    /**
+     * Ç151: başarılı ve reddedilen her deneme kim / ne / sonuçla yazılır; geçmiş
+     * yeniden eskiye döner. Reddedilende ayrıntı sunucunun hata metni.
+     */
+    public function testHerDenemeGecmiseYazilir(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = [
+            'post /v1/subscriptions/sub_x' => ['id' => 'sub_x', 'object' => 'subscription', 'cancel_at_period_end' => true],
+            'get /v1/subscriptions/sub_x' => self::abonelikKartli('4242'),
+        ];
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/iptal', $jeton);
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'dogru@example.com', 'son4' => '1111']);
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/iade', $jeton);
+
+        $this->client->request('GET', '/panel/api/abonelikler/sub_x/gecmis');
+
+        self::assertResponseIsSuccessful();
+        Sozlesme::yanitiDogrula('GET', '/panel/api/abonelikler/{abonelik}/gecmis', $this->client->getResponse());
+        $gecmis = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($gecmis);
+        $islemler = $gecmis['islemler'] ?? null;
+        self::assertIsArray($islemler);
+        self::assertSame([
+            ['yonetici', 'iade', false, 'iade edilecek tahsil edilmiş fatura yok'],
+            ['yonetici', 'eposta_duzelt', false, 'kartın son 4 hanesi eşleşmiyor'],
+            ['yonetici', 'iptal', true, null],
+        ], array_map(static fn (mixed $i): array => \is_array($i) ? [$i['kullanici'] ?? null, $i['islem'] ?? null, $i['basarili'] ?? null, $i['ayrinti'] ?? null] : [], $islemler));
+    }
+
+    /** Ç151: geçmişte e-posta yok — düzeltilen adres de, eski adres de yazılmaz. */
+    public function testGecmisteEpostaYok(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = [
+            'get /v1/subscriptions/sub_x' => self::abonelikKartli('4242'),
+            'post /v1/customers/cus_x' => ['id' => 'cus_x', 'object' => 'customer'],
+        ];
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'dogru@example.com', 'son4' => '4242']);
+        self::assertResponseStatusCodeSame(204);
+
+        $satirlar = (string) json_encode($this->db->fetchAllAssociative('SELECT * FROM panel_islemleri'));
+        self::assertStringContainsString('eposta_duzelt', $satirlar);
+        self::assertStringNotContainsString('example.com', $satirlar);
+    }
+
+    /** Ç151: iz sonradan değiştirilemez — güncelleme de satır silme de reddedilir. */
+    public function testGecmisDegistirilemez(): void
+    {
+        $this->db->insert('panel_islemleri', ['kullanici' => 'yonetici', 'abonelik' => 'sub_x', 'islem' => 'iade', 'basarili' => 'true']);
+
+        foreach (['UPDATE panel_islemleri SET basarili = false', 'DELETE FROM panel_islemleri'] as $sql) {
+            try {
+                $this->db->executeStatement($sql);
+                self::fail("geçti: {$sql}");
+            } catch (\Doctrine\DBAL\Exception $e) {
+                self::assertStringContainsString('yalnız ekleme', $e->getMessage(), $sql);
+            }
+        }
+        self::assertEquals(1, $this->db->fetchOne('SELECT count(*) FROM panel_islemleri'));
     }
 
     /** @return array<string, mixed> */

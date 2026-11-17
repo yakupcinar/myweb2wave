@@ -502,6 +502,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/abonelikler/{abonelik}/gecmis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        /** Ç151 — bu aboneliğe panelden yapılan işlemler (başarılı ve reddedilen), yeniden eskiye, son 50 */
+        get: operations["panelAbonelikGecmis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/kullanicilar.csv": {
         parameters: {
             query?: never;
@@ -3650,6 +3669,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelAbonelikGecmis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description İşlem geçmişi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        islemler: {
+                            /** Format: date-time */
+                            zaman: string;
+                            kullanici: string;
+                            /** @enum {string} */
+                            islem: "iptal" | "iptal_geri_al" | "duraklat" | "surdur" | "iade" | "eposta_duzelt";
+                            basarili: boolean;
+                            /** @description Reddedildiyse sunucunun hata metni */
+                            ayrinti: string | null;
+                        }[];
+                    };
                 };
             };
         };

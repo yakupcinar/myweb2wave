@@ -248,6 +248,8 @@ isteğinde "bu kişinin aboneliğini dönem sonunda iptal et" ya da "son ödemes
   - Abonelik sürüyorsa ve iptal planlı değilse "Duraklat"; onayda süre seçilir (1 / 2 / 3 ay). Duraklıysa durum
     "Duraklatıldı · 12 Ocak 2027'ye kadar" ve "Sürdür" (M6c).
   - Son faturanın iade edilmemiş kalanı varsa "€6,99 iade et".
+  - Her satırda "Geçmiş" (Ç151): bu aboneliğe panelden yapılan işlemler — zaman (UTC), kim, işlem, yapıldı /
+    reddedildi ve gerekçe. Kayıt değiştirilemez, e-posta tutmaz.
   - Her satırda "E-postayı düzelt" (Ç150): ödeme formunda yanlış yazılmış e-posta. Onayda yeni e-posta ve müşterinin
     söylediği kartın son 4 hanesi istenir; panel son 4'ü göstermez.
 

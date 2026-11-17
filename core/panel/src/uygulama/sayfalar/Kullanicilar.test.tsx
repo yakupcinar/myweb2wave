@@ -84,6 +84,9 @@ let istenen: string[] = [];
 let islemler: string[] = [];
 let islemYaniti: Response | null = null;
 let toplam: number | null = null;
+// Ç151: abonelik geçmişi yanıtı; her GET'te kaç kez istendiği.
+let gecmisYaniti: unknown[] = [];
+let gecmisIstendi = 0;
 
 function kur(satirlar = SATIRLAR, adres = "/panel/kullanicilar") {
     istenen = [];
@@ -100,6 +103,13 @@ function kur(satirlar = SATIRLAR, adres = "/panel/kullanicilar") {
                 return islemYaniti ?? new Response(null, { status: 204 });
             }
             const adres = new URL(istek.url, "http://x");
+            if (adres.pathname.endsWith("/gecmis")) {
+                gecmisIstendi++;
+                return new Response(
+                    JSON.stringify({ islemler: gecmisYaniti }),
+                    { status: 200 },
+                );
+            }
             istenen.push(adres.search);
             return new Response(
                 JSON.stringify({
@@ -143,6 +153,8 @@ afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     islemYaniti = null;
+    gecmisYaniti = [];
+    gecmisIstendi = 0;
     toplam = null;
 });
 
@@ -170,10 +182,15 @@ describe("M6a — abonelik işlemleri", () => {
             "Duraklat",
             "€6,99 iade et",
             "E-postayı düzelt",
+            "Geçmiş",
         ]);
-        expect(metin("sub_c")).toEqual(["İptali geri al", "E-postayı düzelt"]);
-        // Ç150: biten abonelikte de e-posta düzeltilebilir (yalnız o düğme).
-        expect(metin("sub_b")).toEqual(["E-postayı düzelt"]);
+        expect(metin("sub_c")).toEqual([
+            "İptali geri al",
+            "E-postayı düzelt",
+            "Geçmiş",
+        ]);
+        // Ç150/Ç151: biten abonelikte de e-posta düzeltilebilir, geçmiş görülür.
+        expect(metin("sub_b")).toEqual(["E-postayı düzelt", "Geçmiş"]);
     });
 
     it("denemede: düğme ve onay deneme sonunu söyler", async () => {
@@ -441,10 +458,12 @@ describe("M6c — duraklat / sürdür", () => {
             "Dönem sonunda iptal et",
             "Sürdür",
             "E-postayı düzelt",
+            "Geçmiş",
         ]);
         expect(dugmeler("sub_c")).toEqual([
             "İptali geri al",
             "E-postayı düzelt",
+            "Geçmiş",
         ]);
 
         fireEvent.click(
@@ -562,6 +581,81 @@ describe("Ç150 — e-posta düzeltme", () => {
                 within(altSatir("sub_a")).getByRole("alert").textContent,
             ).toBe("kartın son 4 hanesi eşleşmiyor"),
         );
+    });
+});
+
+describe("Ç151 — işlem geçmişi", () => {
+    it("Geçmiş satırın altında açılır: zaman (UTC), kim, işlem, sonuç ve reddedilenin gerekçesi; ikinci tık kapatır", async () => {
+        gecmisYaniti = [
+            {
+                zaman: "2026-11-17T11:08:16Z",
+                kullanici: "yakup",
+                islem: "eposta_duzelt",
+                basarili: false,
+                ayrinti: "kartın son 4 hanesi eşleşmiyor",
+            },
+            {
+                zaman: "2026-11-17T10:00:00Z",
+                kullanici: "yakup",
+                islem: "iade",
+                basarili: true,
+                ayrinti: null,
+            },
+        ];
+        kur();
+        await screen.findAllByRole("row");
+        const dugme = within(islemHucresi("sub_a")).getByRole("button", {
+            name: "Geçmiş",
+        });
+        expect(dugme.getAttribute("aria-expanded")).toBe("false");
+        fireEvent.click(dugme);
+        const liste = await screen.findByRole("list", {
+            name: "İşlem geçmişi",
+        });
+        expect(
+            [...liste.querySelectorAll("li")].map((l) => l.textContent),
+        ).toEqual([
+            "2026-11-17 11:08 UTC · yakup · E-posta düzeltme · reddedildi: kartın son 4 hanesi eşleşmiyor",
+            "2026-11-17 10:00 UTC · yakup · İade · yapıldı",
+        ]);
+        expect(dugme.getAttribute("aria-expanded")).toBe("true");
+        fireEvent.click(dugme);
+        await waitFor(() =>
+            expect(
+                screen.queryByRole("list", { name: "İşlem geçmişi" }),
+            ).toBeNull(),
+        );
+    });
+
+    it("işlem yoksa söyler; reddedilen işlemden sonra geçmiş yeniden istenir", async () => {
+        islemYaniti = new Response(
+            JSON.stringify({
+                hatalar: ["iade edilecek tahsil edilmiş fatura yok"],
+            }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+        );
+        kur();
+        await screen.findAllByRole("row");
+        fireEvent.click(
+            within(islemHucresi("sub_a")).getByRole("button", {
+                name: "Geçmiş",
+            }),
+        );
+        expect(
+            await screen.findByText(
+                "Panelden bu aboneliğe henüz işlem yapılmadı.",
+            ),
+        ).toBeTruthy();
+        const once = gecmisIstendi;
+        fireEvent.click(
+            within(islemHucresi("sub_a")).getByRole("button", {
+                name: "€6,99 iade et",
+            }),
+        );
+        fireEvent.click(
+            within(altSatir("sub_a")).getByRole("button", { name: "İade et" }),
+        );
+        await waitFor(() => expect(gecmisIstendi).toBeGreaterThan(once));
     });
 });
 

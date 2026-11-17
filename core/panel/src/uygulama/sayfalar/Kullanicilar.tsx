@@ -14,7 +14,7 @@ import {
 import { Fragment, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { api } from "../api";
-import { ekliTarih, kisaTarih, tutarlar, uzunTarih } from "../bicim";
+import { ekliTarih, kisaTarih, tutarlar, uzunTarih, zaman } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import { satirIciAlanSinifi } from "../ui/Alan";
 import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
@@ -274,6 +274,8 @@ function Liste({
         metin: string;
     } | null>(null);
     const [calisiyor, setCalisiyor] = useState(false);
+    // Ç151: geçmişi açık abonelik.
+    const [gecmis, setGecmis] = useState<string | null>(null);
     const yap = async (abonelik: string, is: Is, ek: Ek): Promise<void> => {
         setHata(null);
         setCalisiyor(true);
@@ -318,6 +320,8 @@ function Liste({
                           );
         setCalisiyor(false);
         setOnay(null);
+        // Ç151: reddedilen deneme de geçmişe yazılır.
+        await istemci.invalidateQueries({ queryKey: ["gecmis", abonelik] });
         if (response.status !== 204)
             return setHata({
                 abonelik,
@@ -369,6 +373,14 @@ function Liste({
                             <Fragment key={s.abonelik}>
                                 <SatirGorunumu
                                     s={s}
+                                    gecmisAcik={gecmis === s.abonelik}
+                                    gecmisAc={() =>
+                                        setGecmis(
+                                            gecmis === s.abonelik
+                                                ? null
+                                                : s.abonelik,
+                                        )
+                                    }
                                     sec={(is) => {
                                         setHata(null);
                                         setOnay({ abonelik: s.abonelik, is });
@@ -402,6 +414,9 @@ function Liste({
                                             </span>
                                         </Td>
                                     </tr>
+                                ) : null}
+                                {gecmis === s.abonelik ? (
+                                    <GecmisSatiri abonelik={s.abonelik} />
                                 ) : null}
                             </Fragment>
                         ))}
@@ -441,9 +456,13 @@ const kalan = (s: Satir): number =>
 function SatirGorunumu({
     s,
     sec,
+    gecmisAcik,
+    gecmisAc,
 }: {
     s: Satir;
     sec: (is: Is) => void;
+    gecmisAcik: boolean;
+    gecmisAc: () => void;
 }): ReactNode {
     const [nokta, durumMetni] = durumBilgisi(s);
     const alt = [
@@ -574,7 +593,78 @@ function SatirGorunumu({
                     <Dugme className={dugme} onClick={() => sec("eposta")}>
                         E-postayı düzelt
                     </Dugme>
+                    {/* Ç151: panelden yapılan işlemler. */}
+                    <Dugme
+                        tur="sade"
+                        className={dugme}
+                        aria-expanded={gecmisAcik}
+                        onClick={gecmisAc}
+                    >
+                        Geçmiş
+                    </Dugme>
                 </div>
+            </Td>
+        </tr>
+    );
+}
+
+const ISLEM_ADLARI = {
+    iptal: "İptal planlandı",
+    iptal_geri_al: "İptal geri alındı",
+    duraklat: "Duraklatma",
+    surdur: "Sürdürme",
+    iade: "İade",
+    eposta_duzelt: "E-posta düzeltme",
+} as const;
+
+/**
+ * Ç151: aboneliğe panelden yapılan işlemler, yeniden eskiye — kim, ne zaman,
+ * sonuç; reddedilende sunucunun gerekçesi. E-posta tutulmaz.
+ */
+function GecmisSatiri({ abonelik }: { abonelik: string }): ReactNode {
+    const sorgu = useQuery({
+        queryKey: ["gecmis", abonelik],
+        queryFn: async () =>
+            (
+                await api.GET("/panel/api/abonelikler/{abonelik}/gecmis", {
+                    params: { path: { abonelik } },
+                })
+            ).data?.islemler ?? [],
+    });
+    return (
+        <tr className="bg-zemin/50 max-md:block">
+            <Td
+                colSpan={5}
+                className={cn(hucre, "whitespace-normal max-md:block")}
+            >
+                <span className="font-semibold">İşlem geçmişi</span>
+                {sorgu.data === undefined ? (
+                    <p className="text-soluk">Yükleniyor…</p>
+                ) : sorgu.data.length === 0 ? (
+                    <p className="text-soluk">
+                        Panelden bu aboneliğe henüz işlem yapılmadı.
+                    </p>
+                ) : (
+                    <ul aria-label="İşlem geçmişi" className="mt-1 grid gap-1">
+                        {sorgu.data.map((i, n) => (
+                            <li key={n} className="text-[13px]">
+                                <span className="text-soluk">
+                                    {zaman(i.zaman)} UTC · {i.kullanici} ·{" "}
+                                </span>
+                                {ISLEM_ADLARI[i.islem]}
+                                {" · "}
+                                {i.basarili ? (
+                                    <span className="text-iyi">yapıldı</span>
+                                ) : (
+                                    <span className="text-tehlike">
+                                        reddedildi
+                                        {i.ayrinti ? `: ${i.ayrinti}` : ""}
+                                    </span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </Td>
         </tr>
     );
