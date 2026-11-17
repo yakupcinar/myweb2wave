@@ -96,7 +96,7 @@ services:
   # Gerçek istekle doğrulama: Stripe test olaylarını yerel çekirdeğe iletir.
   # `docker compose run --rm stripe-cli listen --forward-to core:80/webhooks/stripe`
   stripe-cli:
-    image: stripe/stripe-cli:v1.53.1@sha256:11c46caeead82e329f14823dd622d494b4cc8c1b9766f724d122d2af42c97540
+    image: stripe/stripe-cli:v1.55.6@sha256:16a5c75bd681b756fdd174e54840623170f811efe9d49522d401013d97ade7bd
     profiles: ["araclar"]
     env_file: core/.env.local
 
