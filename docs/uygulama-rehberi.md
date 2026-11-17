@@ -391,6 +391,24 @@ gösterir. **"Bağlantıyı kaldır"** (onaylı) dönüşüm gönderimini ve har
 kuyruğu gönderim anındaki bağlantıyı okur; harcama komutu bağlı her hesabı çeker; huni pikseli Pixel'i giriş
 bağlantısı yanıtından alır ([a30](decisions/a30-meta-baglantisi.md)).
 
+### 2.7b TikTok — `/panel/entegrasyonlar#tiktok`
+
+**Ne işe yarar.** Meta bölümünün TikTok karşılığı: satın almalar TikTok'a bildirilir (tarayıcı pikseli + Events API)
+ve kampanya harcaması ROAS için çekilir (A31; harcama TB3 ile).
+
+**Ekranda ne var** ([`Tiktok.tsx`](../core/panel/src/uygulama/sayfalar/Tiktok.tsx)) — **Dönüşüm** kartı: Pixel kodu,
+Events API anahtarı, isteğe bağlı test olay kodu · **Harcama** kartı: reklamveren kimliği, Marketing API anahtarı.
+Kayıtlı anahtarın yalnız son 4 hanesi görünür.
+
+**Ne yapabilirsin.** Meta ile aynı: **"Bağlantıyı kaydet"** (boş anahtar alanı kayıtlıyı değiştirmez, **"Kaldır"**
+siler), **"Bağlantıyı kaldır"** (onaylı). **"Bağlantıyı dene"** dönüşümü yalnız **test olay kodu doluyken** dener —
+TikTok'a bir deneme olayı yollar, TikTok › Test events'te görünür; kod yoksa "Ayarlı değil" der ve istek atmaz
+(Events API anahtarını yan etkisiz okuyan uç yok). Harcamayı reklamveren adını ve para birimini okuyarak dener.
+
+**Arkada nasıl çalışır.** Değerler `tiktok_baglantilari`'nda, anahtarlar aynı `AYAR_SIFRELEME_ANAHTARI` ile şifreli
+([`TiktokBaglantisi`](../core/src/Atif/TiktokBaglantisi.php)). Dönüşüm kuyruğu gönderim anındaki Pixel kodunu ve
+anahtarı kullanır; huni pikseli Pixel kodunu giriş bağlantısı yanıtından alır ([a31](decisions/a31-tiktok-baglantisi.md)).
+
 ### 2.8 API anahtarları — `/panel/entegrasyonlar#anahtarlar`
 
 **Ne işe yarar.** Claude Code ya da Claude Desktop'un MCP ile panele bağlanmasını sağlar: Claude raporları okuyabilir,

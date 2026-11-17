@@ -64,3 +64,27 @@ eklendi) → 🔴 · K16 gönderimde başka anahtar — hepsi 🔴. Betik yamala
   DB silindi.
 - **Ortam:** yerel, macOS + Docker, ayrı worktree (`tiktok-baglantisi`) ve test DB'si `app_testtiktok` (kural 15 —
   aynı dalda paralel dağıtım oturumu vardı).
+
+## TB2 — Ne yapıldı (panel)
+
+- **Entegrasyonlar › TikTok** (`#tiktok`, [`Tiktok.tsx`](../../core/panel/src/uygulama/sayfalar/Tiktok.tsx)), Meta'nın
+  altında, iki kart: **Dönüşüm** (Pixel kodu, Events API anahtarı, test olay kodu) ve **Harcama** (reklamveren kimliği,
+  Marketing API anahtarı). Her alanın altında TikTok'ta nereden alınacağı yazar; test olay kodu yardımı "dene"nin
+  bununla çalıştığını söyler.
+- Davranış Meta bölümünün aynısı (A30 MB2): anahtar alanları `password`, yer tutucuda son 4 hane; boş alan `null`,
+  "Kaldır" `''`; okunamayan anahtar rozeti; dene yalnız kaydedilmemiş değişiklik yokken; kaldırmak onaylı. Graph
+  sürümü uyarısının karşılığı yok (TikTok sürümü uçta sabit, `v1.3`).
+- `Meta.test.tsx` düğmeleri artık Meta bölümünde arar — sayfada aynı adlı TikTok düğmeleri var (yalnız bu satır).
+
+## TB2 — Kırma denemeleri — 10/10 kırmızı
+
+N1 boş anahtar alanı `''` gider · N2 "Kaldır" yok sayılır · N3 son 4 hane yok · N4 kaydedilmemişken dene açık · N5
+onaysız kaldır · N6 anahtar düz metin alanı · N7 şifreleme uyarısı yok · N8 deneme mesajı yok · N9 bölüm sayfada yok ·
+N10 TikTok yerine Meta ucuna yazar — hepsi 🔴 (`Tiktok.test.tsx`, `--testTimeout=30000`, Ç151).
+
+## TB2 — Ölçüm
+
+- **Panel:** `Tiktok.test.tsx` 5 test; `Meta.test.tsx` 5 test yeşil; tip denetimi temiz.
+- **Ekran döngüsü KOŞULMADI:** `panel-ekran` kabı ortak compose projesinde ana klasörün kodunu bağlıyor ve ortak
+  geliştirme DB'sinde `tiktok_baglantilari` yok — worktree'den koşmak paralel oturumun kabını ve DB'sini değiştirirdi.
+  Dal birleşince `bin/panel-ekran entegrasyonlar` (açık/koyu, 1440/390) koşulacak (Ç150 (5)).

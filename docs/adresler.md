@@ -35,6 +35,7 @@ Sol menü sırasıyla:
 | `/panel/entegrasyonlar` | **Entegrasyonlar** | Üç bölüm: `#webhooklar` giden webhook hedefleri (ekle, etkin/pasif, sil, teslim günlüğü) · `#anahtarlar` MCP için kişisel anahtar (oluştur, iptal, iptal edilmişi sil) · `#baglam` ürün bağlamı (AI). Eski `/panel/webhooklar`, `/panel/anahtarlar`, `/panel/baglam` buraya 301 | React (M7b, P7d) |
 | `/panel/yasal` | **Yasal metinler** | Yasal veriler + 4 belge × 2 dil; kaydet = yayınla | React (M9b1) |
 | `/panel/entegrasyonlar#meta` | **Meta** | Pixel + CAPI anahtarı, reklam hesabı + Insights anahtarı; kaydet, dene, kaldır | React (A30) |
+| `/panel/entegrasyonlar#tiktok` | **TikTok** | Pixel kodu + Events API anahtarı, reklamveren + Marketing API anahtarı; kaydet, dene (test koduyla), kaldır | React (A31) |
 | `/panel/epostalar` | **E-postalar** | 7 e-posta şablonu × 2 dil; kaydet, varsayılana dön | React (E1b) |
 | `/panel/ayarlar` | **Uygulama** | Canlıya geçiş adımları (`GET /panel/api/uygulamalar/{app}/canliya-gecis`), uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a, P7c) |
 | `/panel/cikis` | **Çıkış** | | |
