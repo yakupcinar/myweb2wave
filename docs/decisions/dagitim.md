@@ -75,3 +75,19 @@ için ilk koşuda görünmedi; yer tutucu ile düzeltildi, `env -i` ile ölçül
 (`sunucu-hazirla.sh`, gerçek alan adı, Let's Encrypt, Stripe webhook) · M1a: ilk koşuda
 `bin/console app:plan-ice-aktar keepchat monthly <price_…>` (ortam değişkeni kaldırıldı, `m1a-fiyat-katalogu.md`).
 - **2026-11-04 (M1c):** `dagit.sh` 2026-10-20'den (`028f150`) beri sözdizimi hatalıydı — ön kontroldeki tek tırnaklı Python'da yorumdaki kesme işareti (tuzak §49); düzeltildi, `bash -n` bash 3.2 + 5.2'de 0. Dağıtıma ülke verisi eklendi: `ulke-data` birimi, `dagit.sh`'te `app:ulke-verisi` (düşerse uyarı, dağıtım durmaz), ayın 3'ünde cron. İlk sunucu koşusunda ikisi de ölçülecek (Ç109).
+
+## 2026-11-17 — Sunucu kararı ve envanter (salt okuma)
+
+**Kullanıcı kararı:** KeepChat'in kullanıcısı yok; KeepChat sunucusu kapatılır, yerine MyWeb2Wave kurulur. Tra hiç
+etkilenmeyecek.
+
+Ölçüldü (`ssh keepchat-vps`, hiçbir şey değiştirilmedi):
+- **Tra ayrı makinede:** `tra-vps` 158.101.180.140, `keepchat-vps` 130.61.80.217. KeepChat makinesinde tek compose
+  projesi var (`keepchat`, 8 kap). Caddy yalnız `{$KEEPCHAT_DOMAIN}`'i yönlendiriyor, Tra'ya giden satır yok. Yani
+  iş yalnız `keepchat-vps`'te; `tra-vps`'e girilmez.
+- **Makine:** aarch64, Ubuntu 24.04.5, **1 OCPU, 5,8 GB RAM** (4,6 GB kullanılabilir), disk 48 GB'ın 25 GB'ı boş.
+- **Portlar:** 80/443 `keepchat-caddy-1`'de (docker-proxy), 22 sshd. UDP 49160-49200 ve 3478 coturn için açık.
+- **Güvenlik duvarı:** ufw yok; Oracle imajının iptables'ı (INPUT yalnız 22 + coturn). 80/443 Docker'ın kendi
+  zincirinden geçiyor. ⚠️ `sunucu-hazirla.sh`'in ufw/ssh adımları bu makinede **koşulmaz**.
+- **Yedek:** son KeepChat dump'ı 2026-10-09 (`~/yedek`, 52 MB); crontab yok. Kapatmadan önce taze dump alınır.
+- **Tra taban ölçümü (dışarıdan):** `http://158.101.180.140/` → 308. Her adımdan sonra aynı ölçüm.
