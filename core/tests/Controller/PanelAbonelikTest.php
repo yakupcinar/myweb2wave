@@ -12,6 +12,7 @@ use Stripe\ApiRequestor;
 use Stripe\HttpClient\CurlClient;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 /**
  * M6a (A19): panelden dönem sonunda iptal / geri alma ve son faturanın tam
@@ -30,7 +31,7 @@ final class PanelAbonelikTest extends WebTestCase
         $db = static::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE subscriptions, odeme_faturalari, fatura_odemeleri, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari CASCADE');
+        $this->db->executeStatement('TRUNCATE subscriptions, odeme_faturalari, fatura_odemeleri, huni_ziyaretleri, ziyaret_deneyleri, olaylar, webhook_teslimleri, odeme_oturumlari, kisiler, baglantilar CASCADE');
         $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_x', 'stripe_customer_id' => 'cus_x', 'status' => 'active', 'email' => 'a@example.com', 'app' => 'keepchat']);
         $this->stripe = new KayitliStripeIstemcisi();
         ApiRequestor::setHttpClient($this->stripe);
@@ -208,6 +209,122 @@ final class PanelAbonelikTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['hatalar' => ['iade edilecek tahsil edilmiş fatura yok']], json_decode((string) $this->client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * Ç150: kanıt kartın son 4 hanesi — Stripe'taki ödeme yöntemiyle eşleşince
+     * Stripe müşterisi ve abonelik yeni (küçük harfli) e-postaya geçer.
+     */
+    public function testEpostaDuzeltSon4Eslesince(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = [
+            'get /v1/subscriptions/sub_x' => self::abonelikKartli('4242'),
+            'post /v1/customers/cus_x' => ['id' => 'cus_x', 'object' => 'customer'],
+        ];
+
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => ' Dogru@Example.com ', 'son4' => '4242']);
+
+        self::assertResponseStatusCodeSame(204);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/abonelikler/{abonelik}/eposta', $this->client->getResponse());
+        self::assertSame('dogru@example.com', $this->eposta());
+        self::assertSame([['post', 'email', 'dogru@example.com']], $this->stripeIstekleri('/v1/customers/cus_x', 'email'));
+    }
+
+    /** Ç150: yanlış son 4 — alakasız biri destek yazmış olabilir; hiçbir şey değişmez. */
+    public function testSon4EslesmezseDuzeltmez(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = ['get /v1/subscriptions/sub_x' => self::abonelikKartli('4242')];
+
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'baska@example.com', 'son4' => '1111']);
+
+        self::assertResponseStatusCodeSame(422);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/abonelikler/{abonelik}/eposta', $this->client->getResponse());
+        self::assertStringContainsString('eşleşmiyor', $this->hata());
+        self::assertSame('a@example.com', $this->eposta());
+        self::assertSame([], $this->stripeIstekleri('/v1/customers/cus_x'));
+    }
+
+    /** Ç150: abonelikte kart yoksa (eski abonelik) müşterinin varsayılan kartı. */
+    public function testMusterininVarsayilanKartindanOkur(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = [
+            'get /v1/subscriptions/sub_x' => ['id' => 'sub_x', 'object' => 'subscription', 'default_payment_method' => null,
+                'customer' => ['id' => 'cus_x', 'object' => 'customer', 'invoice_settings' => ['default_payment_method' => ['id' => 'pm_m', 'object' => 'payment_method', 'card' => ['last4' => '0005']]]]],
+            'post /v1/customers/cus_x' => ['id' => 'cus_x', 'object' => 'customer'],
+        ];
+
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'dogru@example.com', 'son4' => '0005']);
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('dogru@example.com', $this->eposta());
+    }
+
+    /**
+     * Ç150: eski e-posta uygulamada doğrulanmışsa yanlış yazılmamıştır;
+     * düzeltme aboneliği doğrulanmış sahibinden almak olur — Stripe'a bile gidilmez.
+     */
+    public function testEskiEpostaBagliysaDuzeltmez(): void
+    {
+        $jeton = $this->girisVeJeton();
+        // Ödeme formundaki yazım olduğu gibi; kişi tablosu küçük harf tutar.
+        $this->db->executeStatement("UPDATE subscriptions SET email = 'A@Example.com'");
+        $kisi = $this->db->fetchOne("INSERT INTO kisiler (email) VALUES ('a@example.com') RETURNING id");
+        $this->db->insert('baglantilar', ['app' => 'keepchat', 'harici_kullanici' => 'u1', 'kisi_id' => $kisi]);
+
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'dogru@example.com', 'son4' => '4242']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertStringContainsString('doğrulanmış', $this->hata());
+        self::assertSame('A@Example.com', $this->eposta());
+        self::assertSame([], $this->stripe->istekler);
+    }
+
+    /**
+     * Ç150: yanlış son 4 abonelik başına saatte 5 — destek her aramada başka
+     * 4 hane deneyerek kandırılamaz; altıncıda doğru hane de kabul edilmez.
+     * Sayaç bu teste ait dosya havuzunda (tuzak §61).
+     */
+    public function testYanlisDenemeSaatteBes(): void
+    {
+        $this->client->disableReboot();
+        static::getContainer()->set('hiz.sayaclari', new FilesystemAdapter(uniqid('duz', true), 0, sys_get_temp_dir()));
+        $jeton = $this->girisVeJeton();
+        $this->stripe->yanitlar = [
+            'get /v1/subscriptions/sub_x' => self::abonelikKartli('4242'),
+            'post /v1/customers/cus_x' => ['id' => 'cus_x', 'object' => 'customer'],
+        ];
+        for ($i = 0; $i < 5; ++$i) {
+            $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'dogru@example.com', 'son4' => sprintf('%04d', $i)]);
+            self::assertStringContainsString('eşleşmiyor', $this->hata(), "deneme {$i}");
+        }
+
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/eposta', $jeton, ['eposta' => 'dogru@example.com', 'son4' => '4242']);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertStringContainsString('çok fazla yanlış deneme', $this->hata());
+        self::assertSame('a@example.com', $this->eposta());
+    }
+
+    /** @return array<string, mixed> */
+    private static function abonelikKartli(string $son4): array
+    {
+        return ['id' => 'sub_x', 'object' => 'subscription', 'customer' => 'cus_x',
+            'default_payment_method' => ['id' => 'pm_x', 'object' => 'payment_method', 'card' => ['last4' => $son4]]];
+    }
+
+    private function hata(): string
+    {
+        $govde = json_decode((string) $this->client->getResponse()->getContent(), true);
+
+        return \is_array($govde) && \is_array($govde['hatalar'] ?? null) ? implode(' ', array_filter($govde['hatalar'], \is_string(...))) : '';
+    }
+
+    private function eposta(): mixed
+    {
+        return $this->db->fetchOne("SELECT email FROM subscriptions WHERE stripe_subscription_id = 'sub_x'");
     }
 
     private function iptalPlanli(): bool

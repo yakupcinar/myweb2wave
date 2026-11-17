@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace App\Billing;
 
+use App\Kimlik\DogrulamaKodu;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 /**
  * M6a (A19): panelden abonelik yönetimi. İptal dönem sonunda (geri
  * alınabilir); iade son tahsil edilen faturanın kalanının tamamı. Stripe'ın
  * döndürdüğü durum hemen yazılır — webhook gecikse de panel doğru göstersin;
- * webhook aynı değeri yazar. M6c (A28): duraklat / sürdür.
+ * webhook aynı değeri yazar. M6c (A28): duraklat / sürdür. Ç150: ödeme
+ * formunda yanlış yazılmış e-postayı düzelt.
  */
 final readonly class AbonelikYonetimi
 {
@@ -24,6 +27,7 @@ final readonly class AbonelikYonetimi
         private StripeClient $stripe,
         private SubscriptionSync $sync,
         private LoggerInterface $logger,
+        private RateLimiterFactory $epostaDuzeltmeLimiter,
     ) {
     }
 
@@ -80,6 +84,81 @@ final readonly class AbonelikYonetimi
             ['durak' => null !== $durak, 'bitis' => null !== $durak && \is_int($durak['resumes_at'] ?? null) ? $durak['resumes_at'] : null, 's' => $abonelik],
             ['durak' => \Doctrine\DBAL\ParameterType::BOOLEAN],
         );
+
+        return null;
+    }
+
+    /**
+     * Ç150: ödeme formunda yanlış yazılmış e-postayı düzelt. Talebi yapanın
+     * ödeyen olduğunu kanıtı: müşterinin söylediği kartın son 4 hanesi,
+     * Stripe'taki ödeme yöntemiyle eşleşmeli (panel son 4'ü göstermez).
+     * Yanlış deneme abonelik başına saatte 5 — destek tahminle kandırılamaz.
+     * Eski e-posta uygulamada doğrulanmışsa (bağlı) düzeltilmez: yanlış
+     * değildir, düzeltme aboneliği başkasına taşımak olur. Yeni adres hak
+     * vermez; sahibi yine kod ya da giriş bağlantısıyla kanıtlar (Hak).
+     * Günlüğe abonelik ve sonuç yazılır, e-posta değil.
+     *
+     * @return string|null hata metni ya da null (tamam)
+     */
+    public function epostaDuzelt(string $abonelik, string $yeni, string $son4): ?string
+    {
+        /** @var array{email: ?string, app: string, stripe_customer_id: string}|false $s */
+        $s = $this->db->fetchAssociative('SELECT email, app, stripe_customer_id FROM subscriptions WHERE stripe_subscription_id = :s', ['s' => $abonelik]);
+        if (false === $s) {
+            return 'bilinmeyen abonelik';
+        }
+        $yeni = DogrulamaKodu::normal($yeni);
+        if (false === filter_var($yeni, \FILTER_VALIDATE_EMAIL)) {
+            return 'yeni e-posta geçersiz';
+        }
+        if ($yeni === DogrulamaKodu::normal((string) $s['email'])) {
+            return 'yeni e-posta eskisiyle aynı';
+        }
+        if (1 !== preg_match('/^\d{4}$/', $son4)) {
+            return 'kartın son 4 hanesi 4 rakam olmalı';
+        }
+        if (false !== $this->db->fetchOne(
+            'SELECT 1 FROM baglantilar b JOIN kisiler k ON k.id = b.kisi_id WHERE b.app = :app AND lower(k.email) = :eski',
+            ['app' => $s['app'], 'eski' => DogrulamaKodu::normal((string) $s['email'])],
+        )) {
+            return 'eski e-posta uygulamada doğrulanmış; yanlış yazılmamış, düzeltilemez';
+        }
+        $sinir = $this->epostaDuzeltmeLimiter->create($abonelik);
+        if (0 === $sinir->consume(0)->getRemainingTokens()) {
+            return 'bu abonelik için çok fazla yanlış deneme; bir saat sonra yeniden deneyin';
+        }
+        try {
+            $sub = $this->stripe->subscriptions->retrieve($abonelik, ['expand' => ['default_payment_method', 'customer.invoice_settings.default_payment_method']])->toArray();
+        } catch (ApiErrorException $e) {
+            $this->logger->error('Stripe aboneliği okunamadı', ['abonelik' => $abonelik, 'exception' => $e]);
+
+            return 'Stripe isteği reddetti: '.self::kisa($e);
+        }
+        $pm = $sub['default_payment_method'] ?? null;
+        $musteri = $sub['customer'] ?? null;
+        if (!\is_array($pm) && \is_array($musteri) && \is_array($musteri['invoice_settings'] ?? null)) {
+            $pm = $musteri['invoice_settings']['default_payment_method'] ?? null;
+        }
+        $kart = \is_array($pm) && \is_array($pm['card'] ?? null) && \is_string($pm['card']['last4'] ?? null) ? $pm['card']['last4'] : null;
+        if (null === $kart) {
+            return 'aboneliğin kart bilgisi Stripe\'ta yok';
+        }
+        if (!hash_equals($kart, $son4)) {
+            $sinir->consume();
+            $this->logger->warning('abonelik e-postası düzeltilemedi: kart son 4 eşleşmedi', ['abonelik' => $abonelik]);
+
+            return 'kartın son 4 hanesi eşleşmiyor';
+        }
+        try {
+            // Makbuz ve portal doğru adrese gitsin.
+            $this->stripe->customers->update($s['stripe_customer_id'], ['email' => $yeni]);
+        } catch (ApiErrorException $e) {
+            $this->logger->error('Stripe müşteri e-postası güncellenemedi', ['abonelik' => $abonelik, 'exception' => $e]);
+
+            return 'Stripe isteği reddetti: '.self::kisa($e);
+        }
+        $this->db->executeStatement('UPDATE subscriptions SET email = :e, updated_at = now() WHERE stripe_subscription_id = :s', ['e' => $yeni, 's' => $abonelik]);
+        $this->logger->info('abonelik e-postası düzeltildi', ['abonelik' => $abonelik]);
 
         return null;
     }

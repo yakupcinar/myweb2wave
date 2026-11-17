@@ -781,6 +781,29 @@ paths:
         "204": { description: İade edildi }
         "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
         "422": { description: "İade edilecek fatura yok, zaten iade edildi ya da Stripe reddetti", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/abonelikler/{abonelik}/eposta:
+    parameters:
+      - { name: abonelik, in: path, required: true, schema: { type: string, pattern: "^sub_[A-Za-z0-9]{1,250}$" } }
+      - { name: X-CSRF-Token, in: header, required: true, schema: { type: string } }
+    post:
+      operationId: panelAbonelikEpostaDuzelt
+      summary: "Ç150 — ödeme formunda yanlış yazılmış e-postayı düzelt; kanıt: kartın son 4 hanesi Stripe'takiyle eşleşmeli"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [eposta, son4]
+              properties:
+                eposta: { type: string, format: email }
+                son4: { type: string, pattern: "^[0-9]{4}$", description: Müşterinin söylediği kartın son 4 hanesi }
+      responses:
+        "204": { description: Düzeltildi (Stripe müşterisi ve abonelik) }
+        "403": { description: Jeton geçersiz, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "404": { description: Bilinmeyen abonelik, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+        "422": { description: "Geçersiz alan, son 4 eşleşmedi, eski e-posta doğrulanmış, çok yanlış deneme ya da Stripe reddetti", content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/kullanicilar.csv:
     get:
       operationId: panelApiKullanicilarCsv

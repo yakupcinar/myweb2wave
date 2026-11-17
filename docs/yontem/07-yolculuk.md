@@ -95,3 +95,4 @@
 | 88 | R1b: süzgeç satırı | ikinci kez aynı ders: kırma yeşil kaldı çünkü test üç listeden yalnız birine bakıyordu. Bir de yöntem notu: kırmızı testle koşulan kırma sayılmaz, test yeşilken yeniden koşulur — [kayıt](../decisions/r1b-rapor-suzgec-satiri.md) |
 | 89 | Ç137: telefon kartları | ilk kırma turu beşte beş tutmadı ve suç denemedeydi: kaymayı tablo değil satır ve hücre sınıfları kaldırıyordu. Yanlış parçayı bozan deneme, ölçmeyen test kadar yanıltır |
 | 90 | Hız sınırı | bir kırma denemesi yine tutmadı ve bu kez suçlu ölü koddu: CORS katmanı ön isteği benden önce yanıtlıyordu, yazdığım denetim hiç çalışmıyordu. Tutmayan deneme her zaman testin kusuru değil; bazen silinmesi gereken satırı gösterir |
+| 91 | Ç150: e-posta düzeltme | test önce Türkçe hata metnini kaçışlı JSON'da aradı, sonra silinmiş satırda hata mesajı bekledi; ikisi de kodu değil testi gösterdi. Tutmayan P1 de aynı: test hiç "son 4 tamam, e-posta yok" anına bakmıyordu |

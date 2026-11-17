@@ -481,6 +481,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/abonelikler/{abonelik}/eposta": {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ç150 — ödeme formunda yanlış yazılmış e-postayı düzelt; kanıt: kartın son 4 hanesi Stripe'takiyle eşleşmeli */
+        post: operations["panelAbonelikEpostaDuzelt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/kullanicilar.csv": {
         parameters: {
             query?: never;
@@ -3565,6 +3586,64 @@ export interface operations {
                 };
             };
             /** @description İade edilecek fatura yok, zaten iade edildi ya da Stripe reddetti */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelAbonelikEpostaDuzelt: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                abonelik: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    eposta: string;
+                    /** @description Müşterinin söylediği kartın son 4 hanesi */
+                    son4: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Düzeltildi (Stripe müşterisi ve abonelik) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Jeton geçersiz */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Bilinmeyen abonelik */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+            /** @description Geçersiz alan, son 4 eşleşmedi, eski e-posta doğrulanmış, çok yanlış deneme ya da Stripe reddetti */
             422: {
                 headers: {
                     [name: string]: unknown;

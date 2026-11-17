@@ -169,9 +169,11 @@ describe("M6a — abonelik işlemleri", () => {
             "Dönem sonunda iptal et",
             "Duraklat",
             "€6,99 iade et",
+            "E-postayı düzelt",
         ]);
-        expect(metin("sub_c")).toEqual(["İptali geri al"]);
-        expect(metin("sub_b")).toEqual([]);
+        expect(metin("sub_c")).toEqual(["İptali geri al", "E-postayı düzelt"]);
+        // Ç150: biten abonelikte de e-posta düzeltilebilir (yalnız o düğme).
+        expect(metin("sub_b")).toEqual(["E-postayı düzelt"]);
     });
 
     it("denemede: düğme ve onay deneme sonunu söyler", async () => {
@@ -435,8 +437,15 @@ describe("M6c — duraklat / sürdür", () => {
             [...islemHucresi(a).querySelectorAll("button")].map(
                 (b) => b.textContent,
             );
-        expect(dugmeler("sub_e")).toEqual(["Dönem sonunda iptal et", "Sürdür"]);
-        expect(dugmeler("sub_c")).toEqual(["İptali geri al"]);
+        expect(dugmeler("sub_e")).toEqual([
+            "Dönem sonunda iptal et",
+            "Sürdür",
+            "E-postayı düzelt",
+        ]);
+        expect(dugmeler("sub_c")).toEqual([
+            "İptali geri al",
+            "E-postayı düzelt",
+        ]);
 
         fireEvent.click(
             within(islemHucresi("sub_e")).getByRole("button", {
@@ -480,6 +489,78 @@ describe("M6c — duraklat / sürdür", () => {
             expect(islemler).toEqual([
                 'POST /panel/api/abonelikler/sub_a/duraklat true {"ay":3}',
             ]),
+        );
+    });
+});
+
+describe("Ç150 — e-posta düzeltme", () => {
+    it("her satırda; onay kartın son 4'ünü ister, geçerli olana dek gönderilmez, gövde jetonla gider", async () => {
+        kur();
+        await screen.findAllByRole("row");
+        fireEvent.click(
+            within(islemHucresi("sub_b")).getByRole("button", {
+                name: "E-postayı düzelt",
+            }),
+        );
+        const onay = within(altSatir("sub_b"));
+        expect(altSatir("sub_b").textContent).toContain(
+            "müşteriden ödediği kartın son 4 hanesini isteyin; panel bu bilgiyi göstermez",
+        );
+        const dugme = onay.getByRole("button", { name: "Düzelt" });
+        expect((dugme as HTMLButtonElement).disabled).toBe(true);
+        // Son 4 tamam ama e-posta yok: yine kapalı.
+        fireEvent.change(
+            onay.getByRole("textbox", { name: "Kartın son 4 hanesi" }),
+            { target: { value: "4242" } },
+        );
+        expect((dugme as HTMLButtonElement).disabled).toBe(true);
+        fireEvent.change(onay.getByRole("textbox", { name: "Yeni e-posta" }), {
+            target: { value: "dogru@ornek.com" },
+        });
+        fireEvent.change(
+            onay.getByRole("textbox", { name: "Kartın son 4 hanesi" }),
+            { target: { value: "42a4" } },
+        );
+        // Rakam dışı atılır: "424" — 4 hane değil, hâlâ kapalı.
+        expect((dugme as HTMLButtonElement).disabled).toBe(true);
+        fireEvent.change(
+            onay.getByRole("textbox", { name: "Kartın son 4 hanesi" }),
+            { target: { value: "4242" } },
+        );
+        fireEvent.click(dugme);
+        await waitFor(() =>
+            expect(islemler).toEqual([
+                'POST /panel/api/abonelikler/sub_b/eposta true {"eposta":"dogru@ornek.com","son4":"4242"}',
+            ]),
+        );
+    });
+
+    it("son 4 eşleşmezse sunucunun mesajı satırda", async () => {
+        islemYaniti = new Response(
+            JSON.stringify({ hatalar: ["kartın son 4 hanesi eşleşmiyor"] }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+        );
+        kur();
+        await screen.findAllByRole("row");
+        fireEvent.click(
+            within(islemHucresi("sub_a")).getByRole("button", {
+                name: "E-postayı düzelt",
+            }),
+        );
+        const onay = within(altSatir("sub_a"));
+        fireEvent.change(onay.getByRole("textbox", { name: "Yeni e-posta" }), {
+            target: { value: "dogru@ornek.com" },
+        });
+        fireEvent.change(
+            onay.getByRole("textbox", { name: "Kartın son 4 hanesi" }),
+            { target: { value: "1111" } },
+        );
+        fireEvent.click(onay.getByRole("button", { name: "Düzelt" }));
+        // Yanıt gelince onay satırı kalkar, yerine hata satırı gelir: her denemede yeniden bul.
+        await waitFor(() =>
+            expect(
+                within(altSatir("sub_a")).getByRole("alert").textContent,
+            ).toBe("kartın son 4 hanesi eşleşmiyor"),
         );
     });
 });

@@ -43,6 +43,19 @@ final class PanelAbonelikController extends AbstractController
         });
     }
 
+    /** Ç150: POST {eposta, son4} — ödeme formunda yanlış yazılmış e-postayı düzelt. */
+    #[Route('/eposta', name: 'panel_api_abonelik_eposta', methods: ['POST'])]
+    public function eposta(Request $request, string $abonelik): JsonResponse
+    {
+        return $this->yanit($request, function () use ($request, $abonelik): ?string {
+            $govde = json_decode($request->getContent(), true);
+            $eposta = \is_array($govde) ? $govde['eposta'] ?? null : null;
+            $son4 = \is_array($govde) ? $govde['son4'] ?? null : null;
+
+            return \is_string($eposta) && \is_string($son4) ? $this->yonetim->epostaDuzelt($abonelik, $eposta, $son4) : 'yeni e-posta ve kartın son 4 hanesi gerekli';
+        });
+    }
+
     #[Route('/iade', name: 'panel_api_abonelik_iade', methods: ['POST'])]
     public function iade(Request $request, string $abonelik): JsonResponse
     {
