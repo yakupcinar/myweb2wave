@@ -29,7 +29,8 @@ final class MetaHarcamalariTest extends KernelTestCase
         $db = self::getContainer()->get(Connection::class);
         self::assertInstanceOf(Connection::class, $db);
         $this->db = $db;
-        $this->db->executeStatement('TRUNCATE reklam_harcamalari, meta_baglantilari');
+        // A31: komut TikTok'u da çeker — başka testten kalan TikTok bağlantısı sonucu değiştirmesin.
+        $this->db->executeStatement('TRUNCATE reklam_harcamalari, meta_baglantilari, tiktok_baglantilari');
         SahteMetaInsights::sifirla();
     }
 

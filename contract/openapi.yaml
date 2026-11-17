@@ -2233,13 +2233,14 @@ components:
                     olgun: { type: boolean }
                     kisiBasi: { type: array, items: { $ref: "#/components/schemas/PanelTutar" } }
         kampanyalar:
-          description: "M5d — Meta kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama"
+          description: "M5d / A31 — Meta ve TikTok kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile aynı ağdan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama"
           type: array
           items:
             type: object
             additionalProperties: false
-            required: [kampanya, harcama, ziyaret, odedi, gelir, roas]
+            required: [ag, kampanya, harcama, ziyaret, odedi, gelir, roas]
             properties:
+              ag: { type: string, enum: [meta, tiktok], description: "A31 — harcamanın geldiği reklam ağı" }
               kampanya: { type: string }
               harcama: { $ref: "#/components/schemas/PanelTutar" }
               ziyaret: { type: integer, minimum: 0 }

@@ -88,3 +88,47 @@ N10 TikTok yerine Meta ucuna yazar — hepsi 🔴 (`Tiktok.test.tsx`, `--testTim
 - **Ekran döngüsü KOŞULMADI:** `panel-ekran` kabı ortak compose projesinde ana klasörün kodunu bağlıyor ve ortak
   geliştirme DB'sinde `tiktok_baglantilari` yok — worktree'den koşmak paralel oturumun kabını ve DB'sini değiştirirdi.
   Dal birleşince `bin/panel-ekran entegrasyonlar` (açık/koyu, 1440/390) koşulacak (Ç150 (5)).
+
+## TB3 — Ne yapıldı (harcama + ROAS)
+
+- **Göç** `Version20261117140000`: `reklam_harcamalari.saglayici` kısıtı `('meta', 'tiktok')`.
+- **`TiktokHarcamalari`** (`MetaHarcamalari`'nın karşılığı): reklamveren başına önce `advertiser/info` (para birimi —
+  rapor satırında yok), sonra `report/integrated/get` (`BASIC`, `AUCTION_CAMPAIGN`, boyut `campaign_id` +
+  `stat_time_day`, ölçü `spend` + `campaign_name`, sayfa 1000). Gün boyutuyla bir istekte en çok 30 gün → aralık 30
+  günlük pencerelere bölünür; sayfalar `page_info.total_page`. Biri hata verirse hiçbiri yazılmaz; mesaj anahtarsız,
+  uygulama adıyla.
+- **Komut** `app:reklam-harcamalari:cek` bağlı her ağı çeker (Meta, TikTok); biri hata verirse öteki yine yazılır,
+  çıkış hata; hiçbiri bağlı değilse hata.
+- **Rapor:** `Rapor::kampanyalar` iki ağı tek listede döner, her satırda `ag`; ziyaret ve gelir ağın kendi tanımıyla
+  (`Rapor::META` / yeni `Rapor::TIKTOK` — `ttclid` ya da `utm_source` tiktok/tt). Sözleşmede `ag` zorunlu.
+- **Panel:** Rapor › Reklam harcaması tablosu "Reklam kampanyaları", ilk sütun **Ağ**; boş kart "Bu dönemde reklam
+  harcaması yok", bağlantı `/panel/entegrasyonlar` (önceden `/panel/ayarlar` — A30'dan beri Meta orada değil).
+  Ayarlar'daki zamanlı görev adı "reklam harcaması (Meta, TikTok)". MCP `rapor_kampanyalar` açıklaması güncellendi
+  (veri aynı uçtan, `ag` kendiliğinden gelir).
+
+| # | Karar | Elenen | Neden |
+|---|---|---|---|
+| 6 | Tek liste + `ag` alanı, panelde Ağ sütunu | ayrı `tiktokKampanyalari` alanı ve ikinci tablo | Aynı tablo iki kez çizilirdi; MCP aracı da TikTok'u ek iş olmadan görür |
+| 7 | Gelir ağın kendi tanımıyla eşlenir | yalnız kampanya adıyla | Aynı adlı Meta ve TikTok kampanyası birbirinin gelirini almasın (M5d'deki Meta kuralının aynısı) |
+| 8 | Komut ağ başına bağımsız | ilk hatada durmak | TikTok hatası Meta harcamasını (ya da tersi) bekletmesin; cron yine hata görür |
+| 9 | Para birimi `advertiser/info`'dan | rapor ölçüsü olarak istemek | Rapor ölçüsünde para birimi alanı olduğu doğrulanamadı; reklamveren bilgisinde var |
+
+## TB3 — Kırma denemeleri — 15/15 kırmızı
+
+H1 harcama `meta` olarak yazılır · H2 para birimi sabit · H3 30 günlük pencere yok · H4 yalnız ilk sayfa · H5 TikTok
+hata kodu yok sayılır · H6 mesajda anahtar · H7 tarih biçimi denetlenmez · H8 yarım çekiş yazılır · H9 komut hatada
+başarılı döner · H10 bağlı olmayan ağ denenir · H11 TikTok ziyareti Meta koşuluyla · H12 gelir ağdan bağımsız · H13
+yanıtta ağ sabit · H14 panelde ağ sütunu boş · H15 boş durum eski adrese — hepsi 🔴.
+
+## TB3 — Ölçüm
+
+- **Testler:** yeni `TiktokHarcamalariTest` (6); `PanelTest` +1 (`testTiktokKampanyaRoas`: aynı adlı iki ağ) ve
+  Meta ROAS beklenenine `ag`; `MetaHarcamalariTest` kurulumu TikTok bağlantısını da siler (tuzak §13); panel
+  `Rapor.test.tsx` Ağ sütunu ve boş kart.
+- **Gerçek sistem** (geçici DB `app_ttdene`, gerçek TikTok Business API v1.3, sahte anahtar): `cek(3)` →
+  "keepchat: TikTok reddetti: Access token is incorrect or has been revoked. (kod 40105)", satır yazılmadı, mesajda
+  anahtar yok; `report/integrated/get` ucu ayrıca: HTTP 200, `code` 40105 — uç yolu ve `{code, message}` biçimi doğru.
+  Geçerli anahtarla satır biçimi ölçülmedi (Ç150 (6)). DB silindi.
+- **Kontrol:** ilk koşuda belge bağlantısı kaydı (`Rapor::kohort` satırı, `--duzelt`) ve panel Huniler zaman aşımı;
+  ikinci koşuda huni Ç34 testi yine düştü → Ç151 kapatıldı: huniye panelin Ç134 kurulumu (`waitFor` 3 sn), panele
+  test başına 15 sn; kırma 1 ms'de huni 40 / panel 5 test düşürdü (ayar gerçekten uygulanıyor).

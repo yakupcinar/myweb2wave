@@ -39,6 +39,9 @@ final readonly class Rapor
      */
     public const META = "(z.fbclid IS NOT NULL OR lower(z.utm_source) IN ('meta', 'facebook', 'fb', 'instagram', 'ig'))";
 
+    /** A31: ziyaret TikTok reklamından mı — META'nın karşılığı (aynı adlı Meta kampanyası TikTok'a yazılmasın). */
+    public const TIKTOK = "(z.ttclid IS NOT NULL OR lower(z.utm_source) IN ('tiktok', 'tt'))";
+
     /** Kohort pencereleri (gün); 0 = ilk 24 saat. */
     public const KOHORT_GUNLERI = [0, 7, 30, 60];
 
@@ -287,51 +290,60 @@ final readonly class Rapor
      * utm_campaign ile Meta'dan gelen ziyaretlerin geliri (aralıkta gelen,
      * bugüne kadar). ROAS yalnız hesabın para biriminde — başka para birimi
      * gelir listesinde görünür, çevrilmez. Kampanya adı değişirse son ad.
+     * A31: TikTok kampanyaları da aynı listede (ag); ziyaret ve gelir her
+     * ağın kendi tanımıyla (META / TIKTOK) — aynı adlı kampanya iki ağda
+     * olsa da birbirinin gelirini almaz.
      *
-     * @return list<array{kampanya: string, harcama: array{paraBirimi: string, tutar: int|float}, ziyaret: int, odedi: int,
+     * @return list<array{ag: string, kampanya: string, harcama: array{paraBirimi: string, tutar: int|float}, ziyaret: int, odedi: int,
      *                    gelir: list<array{paraBirimi: string, tutar: int|float}>, roas: float|null}>
      */
     public function kampanyalar(int $gun, RaporSuzgeci $suzgec = new RaporSuzgeci()): array
     {
         $harcamalar = $this->db->fetchAllAssociative(
-            "SELECT (array_agg(kampanya_adi ORDER BY gun DESC))[1] AS ad, para_birimi, sum(harcama_kucuk) AS harcama
+            "SELECT saglayici, (array_agg(kampanya_adi ORDER BY gun DESC))[1] AS ad, para_birimi, sum(harcama_kucuk) AS harcama
              FROM reklam_harcamalari
-             WHERE saglayici = 'meta' AND gun > (now() AT TIME ZONE 'UTC')::date - CAST(:gun AS int)
-             GROUP BY kampanya_id, para_birimi ORDER BY harcama DESC, kampanya_id COLLATE \"C\"",
+             WHERE gun > (now() AT TIME ZONE 'UTC')::date - CAST(:gun AS int)
+             GROUP BY saglayici, kampanya_id, para_birimi ORDER BY harcama DESC, saglayici, kampanya_id COLLATE \"C\"",
             ['gun' => $gun],
         );
-        $adlar = array_values(array_unique(array_map(static fn (array $h): string => self::dizge($h['ad']), $harcamalar)));
         $ziyaret = [];
         $gelir = [];
-        if ([] !== $adlar) {
+        foreach (['meta' => self::META, 'tiktok' => self::TIKTOK] as $ag => $kosul) {
+            $adlar = array_values(array_unique(array_map(static fn (array $h): string => self::dizge($h['ad']),
+                array_filter($harcamalar, static fn (array $h): bool => $ag === $h['saglayici']))));
+            if ([] === $adlar) {
+                continue;
+            }
             $v = 'WITH v AS (SELECT z.id, z.utm_campaign AS ad FROM huni_ziyaretleri z
-                   WHERE z.utm_campaign IN (:adlar) AND z.created_at >= now() - make_interval(days => :gun)'.$suzgec->kosul().' AND '.self::META.') ';
+                   WHERE z.utm_campaign IN (:adlar) AND z.created_at >= now() - make_interval(days => :gun)'.$suzgec->kosul().' AND '.$kosul.') ';
             foreach ($this->db->fetchAllAssociative(
                 $v.'SELECT v.ad, count(*) AS ziyaret, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM odeme_oturumlari o WHERE o.ziyaret_id = v.id AND '.self::ODEDI.')) AS odedi FROM v GROUP BY 1',
                 ['adlar' => $adlar, 'gun' => $gun] + $suzgec->parametreler(), ['adlar' => ArrayParameterType::STRING],
             ) as $s) {
-                $ziyaret[self::dizge($s['ad'])] = [self::sayi($s['ziyaret']), self::sayi($s['odedi'])];
+                $ziyaret[$ag][self::dizge($s['ad'])] = [self::sayi($s['ziyaret']), self::sayi($s['odedi'])];
             }
             foreach ($this->db->fetchAllAssociative(
                 $v.'SELECT v.ad, f.para_birimi, sum(f.tutar_kucuk - f.iade_kucuk) AS toplam FROM v JOIN odeme_oturumlari o ON o.ziyaret_id = v.id
                  JOIN odeme_faturalari f ON f.stripe_subscription_id = o.stripe_subscription_id GROUP BY 1, 2 ORDER BY 2',
                 ['adlar' => $adlar, 'gun' => $gun] + $suzgec->parametreler(), ['adlar' => ArrayParameterType::STRING],
             ) as $s) {
-                $gelir[self::dizge($s['ad'])][self::dizge($s['para_birimi'])] = self::sayi($s['toplam']);
+                $gelir[$ag][self::dizge($s['ad'])][self::dizge($s['para_birimi'])] = self::sayi($s['toplam']);
             }
         }
 
         return array_map(static function (array $h) use ($ziyaret, $gelir): array {
+            $ag = self::dizge($h['saglayici']);
             $ad = self::dizge($h['ad']);
             $para = self::dizge($h['para_birimi']);
             $harcama = self::sayi($h['harcama']);
-            $tutarlar = $gelir[$ad] ?? [];
+            $tutarlar = $gelir[$ag][$ad] ?? [];
 
             return [
+                'ag' => $ag,
                 'kampanya' => $ad,
                 'harcama' => ['paraBirimi' => strtoupper($para), 'tutar' => ParaBirimi::anaBirim($harcama, $para)],
-                'ziyaret' => $ziyaret[$ad][0] ?? 0,
-                'odedi' => $ziyaret[$ad][1] ?? 0,
+                'ziyaret' => $ziyaret[$ag][$ad][0] ?? 0,
+                'odedi' => $ziyaret[$ag][$ad][1] ?? 0,
                 'gelir' => array_map(static fn (string $p, int $t): array => ['paraBirimi' => strtoupper($p), 'tutar' => ParaBirimi::anaBirim($t, $p)], array_keys($tutarlar), $tutarlar),
                 // Aynı para birimindeki gelir / harcama; harcama 0 ise tanımsız.
                 'roas' => $harcama > 0 ? round(($tutarlar[$para] ?? 0) / $harcama, 2) : null,

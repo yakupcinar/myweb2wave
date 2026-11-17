@@ -343,10 +343,42 @@ final class PanelTest extends WebTestCase
         $this->girisYapmis();
 
         self::assertSame([
-            ['kampanya' => 'kasim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 20], 'ziyaret' => 0, 'odedi' => 0, 'gelir' => [], 'roas' => 0],
-            ['kampanya' => 'ekim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 15], 'ziyaret' => 3, 'odedi' => 2,
+            ['ag' => 'meta', 'kampanya' => 'kasim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 20], 'ziyaret' => 0, 'odedi' => 0, 'gelir' => [], 'roas' => 0],
+            ['ag' => 'meta', 'kampanya' => 'ekim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 15], 'ziyaret' => 3, 'odedi' => 2,
                 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 9.99], ['paraBirimi' => 'TRY', 'tutar' => 20]], 'roas' => 0.67],
-            ['kampanya' => 'yaz-2', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 6], 'ziyaret' => 0, 'odedi' => 0, 'gelir' => [], 'roas' => 0],
+            ['ag' => 'meta', 'kampanya' => 'yaz-2', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 6], 'ziyaret' => 0, 'odedi' => 0, 'gelir' => [], 'roas' => 0],
+        ], $this->rapor()['kampanyalar']);
+    }
+
+    /**
+     * A31: TikTok kampanyası aynı listede (ag); aynı adlı Meta kampanyasıyla
+     * ziyaret ve gelir karışmaz. Meta "ekim" 20 EUR ← fbclid ziyareti 8 EUR
+     * (ROAS 0,4). TikTok "ekim" 10 EUR ← ttclid ziyareti 5 EUR + utm_source
+     * tiktok ödemesiz ziyaret (2 ziyaret, ROAS 0,5).
+     */
+    public function testTiktokKampanyaRoas(): void
+    {
+        foreach ([['meta', 'm1', 2000], ['tiktok', 't1', 1000]] as [$ag, $id, $harcama]) {
+            $this->db->executeStatement(
+                "INSERT INTO reklam_harcamalari (saglayici, kampanya_id, kampanya_adi, gun, harcama_kucuk, para_birimi)
+                 VALUES (:ag, :id, 'ekim', (now() AT TIME ZONE 'UTC')::date - 1, :h, 'eur')",
+                ['ag' => $ag, 'id' => $id, 'h' => $harcama],
+            );
+        }
+        $tt = $this->ziyaretEkle(['utm_campaign' => 'ekim', 'ttclid' => 'tt-1'], '2 days');
+        $fb = $this->ziyaretEkle(['utm_campaign' => 'ekim', 'fbclid' => 'fb-1'], '2 days');
+        $this->ziyaretEkle(['utm_source' => 'tiktok', 'utm_campaign' => 'ekim'], '2 days');
+        foreach ([[$tt, 500], [$fb, 800]] as $n => [$z, $tutar]) {
+            $this->db->insert('odeme_oturumlari', ['stripe_checkout_session_id' => "cs_t{$n}", 'ziyaret_id' => $z, 'stripe_subscription_id' => "sub_t{$n}",
+                'abonelik_at' => '2026-11-01 10:00:00+00', 'tutar_kucuk' => $tutar, 'para_birimi' => 'eur']);
+            $this->db->insert('odeme_faturalari', ['stripe_invoice_id' => "in_t{$n}", 'stripe_subscription_id' => "sub_t{$n}", 'app' => 'keepchat',
+                'tutar_kucuk' => $tutar, 'para_birimi' => 'eur', 'odendi_at' => '2026-11-01 10:00:00+00']);
+        }
+        $this->girisYapmis();
+
+        self::assertSame([
+            ['ag' => 'meta', 'kampanya' => 'ekim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 20], 'ziyaret' => 1, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 8]], 'roas' => 0.4],
+            ['ag' => 'tiktok', 'kampanya' => 'ekim', 'harcama' => ['paraBirimi' => 'EUR', 'tutar' => 10], 'ziyaret' => 2, 'odedi' => 1, 'gelir' => [['paraBirimi' => 'EUR', 'tutar' => 5]], 'roas' => 0.5],
         ], $this->rapor()['kampanyalar']);
     }
 
@@ -590,9 +622,9 @@ final class PanelTest extends WebTestCase
     private function ziyaretEkle(array $alanlar, string $once): string
     {
         $id = $this->db->fetchOne(
-            'INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, fbclid, created_at)
-             VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :fbclid, now() - CAST(:once AS interval)) RETURNING id',
-            array_merge(['app' => 'keepchat', 'utm_source' => null, 'utm_medium' => null, 'utm_campaign' => null, 'fbclid' => null, 'once' => $once], $alanlar),
+            'INSERT INTO huni_ziyaretleri (app, utm_source, utm_medium, utm_campaign, fbclid, ttclid, created_at)
+             VALUES (:app, :utm_source, :utm_medium, :utm_campaign, :fbclid, :ttclid, now() - CAST(:once AS interval)) RETURNING id',
+            array_merge(['app' => 'keepchat', 'utm_source' => null, 'utm_medium' => null, 'utm_campaign' => null, 'fbclid' => null, 'ttclid' => null, 'once' => $once], $alanlar),
         );
         self::assertIsString($id);
 

@@ -138,7 +138,7 @@ const GOREV_ADLARI: Record<string, string> = {
     "app:posta:dizi": "hatırlatma e-postaları",
     "app:reklam-donusumleri:gonder": "reklam dönüşümleri",
     "app:revenuecat:gonder": "RevenueCat aktarımı",
-    "app:reklam-harcamalari:cek": "Meta harcaması",
+    "app:reklam-harcamalari:cek": "reklam harcaması (Meta, TikTok)",
     "app:huni-metin-cevaplari-sil": "eski yanıtların silinmesi",
 };
 

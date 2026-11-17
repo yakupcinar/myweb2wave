@@ -1584,8 +1584,13 @@ export interface components {
                     kisiBasi: components["schemas"]["PanelTutar"][];
                 }[];
             }[];
-            /** @description M5d — Meta kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama */
+            /** @description M5d / A31 — Meta ve TikTok kampanyası başına aralıktaki harcama; ziyaret / ödedi / gelir aynı adlı utm_campaign ile aynı ağdan gelen ziyaretlerden (aralıkta gelen, bugüne kadar); ROAS hesabın para biriminde gelir / harcama */
             kampanyalar: {
+                /**
+                 * @description A31 — harcamanın geldiği reklam ağı
+                 * @enum {string}
+                 */
+                ag: "meta" | "tiktok";
                 kampanya: string;
                 harcama: components["schemas"]["PanelTutar"];
                 ziyaret: number;

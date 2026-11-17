@@ -122,8 +122,8 @@ değiştirmez.
 | Anket adımları | Her ekrana kaç ziyaretçinin ulaştığı; nerede bırakıldığı | Huni her ekran geçişinde ilerleme bildirir; `huni_adimlari` tablosundan sayılır |
 | Cevaplar | Her şıkkı kaç kişinin seçtiği ve o şıkkı seçenlerin kaçının abone olduğu | `huni_cevaplari` + aynı ziyaretin aboneliği başlamış ödeme oturumu |
 | Kaynak kırılımı | `utm_source` / `utm_campaign`'e göre ziyaret, ödeyen ve gelir | Gelir = bu ziyaretlerin **bugüne kadar** tahsil edilen faturaları eksi iadeler |
-| Meta kampanyaları | Kampanya başına Meta harcaması, getirdiği gelir, ROAS (gelir ÷ harcama) | Harcama Meta'dan çekilir; aynı adlı `utm_campaign` ile **Meta'dan** gelen ziyaretlerin geliri eşleştirilir ([`Rapor::META`](../core/src/Panel/Rapor.php#L40)) |
-| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L356)) |
+| Reklam kampanyaları | Ağ (Meta / TikTok) ve kampanya başına harcama, getirdiği gelir, ROAS (gelir ÷ harcama) | Harcama ağdan çekilir; aynı adlı `utm_campaign` ile **aynı ağdan** gelen ziyaretlerin geliri eşleştirilir ([`Rapor::META`](../core/src/Panel/Rapor.php#L40), [`Rapor::TIKTOK`](../core/src/Panel/Rapor.php#L43); A31) |
+| Kohort geliri | Ziyaretçilerin geldiği hafta başına, ilk 24 saat / 7 / 30 / 60 günde ziyaretçi başına gelir | Pencere henüz dolmadıysa "—": yarım pencerenin geliri düşük görünürdü ([`Rapor::kohort`](../core/src/Panel/Rapor.php#L368)) |
 | Serbest yanıtlar | Metin sorularına yazılanlar | 90 gün saklanır, sonra silinir |
 
 Ziyaretler, Kaynak kırılımı ve Serbest yanıtlar 25'er satırlık sayfalarla gelir. Her biri kendi ucundan
@@ -145,16 +145,17 @@ okunur (`/panel/api/rapor/ziyaretler|kaynaklar|serbestYanitlar`, P7a2).
    servisinin her kart için ayrı sorgusunu çağırır (`sayimlar`, `gunluk`, `adimlar`, `cevaplar`, `utm`, `kampanyalar`,
    `kohort`…). Her sorgu ham SQL'dir; ORM yok.
 3. Veriler şu tablolardan gelir: ziyaretler `huni_ziyaretleri`, olaylar `olaylar` (görünümü `ziyaret_olaylari`),
-   ödeme oturumları `odeme_oturumlari`, faturalar ve iadeler `odeme_faturalari`, Meta harcaması `reklam_harcamalari`.
+   ödeme oturumları `odeme_oturumlari`, faturalar ve iadeler `odeme_faturalari`, Meta ve TikTok harcaması `reklam_harcamalari`.
 4. Faturalar ve iadeler Stripe webhook'uyla gelir ([`SubscriptionSync`](../core/src/Billing/SubscriptionSync.php)).
-   Meta harcamasını ise [`MetaHarcamalari`](../core/src/Atif/MetaHarcamalari.php) her gün `app:reklam-harcamalari:cek`
-   komutuyla, panelde bağlı her uygulamanın reklam hesabından çeker (cron gerekir; A30, Entegrasyonlar › Meta).
+   Harcamayı ise [`MetaHarcamalari`](../core/src/Atif/MetaHarcamalari.php) ve [`TiktokHarcamalari`](../core/src/Atif/TiktokHarcamalari.php)
+   her gün `app:reklam-harcamalari:cek` komutuyla, panelde bağlı her uygulamanın reklam hesabından çeker (cron gerekir;
+   A30 / A31, Entegrasyonlar › Meta / TikTok).
 5. Aynı sorgular Claude'a MCP araçları olarak da açıktır ([`RaporAraclari`](../core/src/Mcp/RaporAraclari.php)): "geçen
    haftanın Meta ROAS'ı ne?" diye sorulabilir.
 
 **Bilinen sınırlar**
 - Gerçek bir Meta reklam hesabıyla harcama çekilmedi; yanıt biçimi Meta'nın belgesinden alındı
-  ([Ç121](decisions/acik-uclar.md)).
+  ([Ç121](decisions/acik-uclar.md)). TikTok'unki de gerçek hesapla çekilmedi; biçim üçüncü taraf örneklerinden (Ç150).
 - Ülke, deney varyantı ya da huniye göre süzgeç yok; önceki dönemle karşılaştırma yok. Bunlar R1 bloğunda gelecek
   ([web2wave farkı](decisions/web2wave-platform-yapisi.md)).
 
@@ -555,7 +556,7 @@ gider, HTML yok. Bilinmeyen yer tutucu ya da metinde eksik zorunlu yer tutucu ka
 | `app:posta:dizi` | Aktivasyon ve kurtarma e-postaları (4.3) | `posta_dizisi` | 15 dakikada bir |
 | `app:reklam-donusumleri:gonder` | Gidemeyen Meta CAPI / TikTok olaylarını yeniden dener ([`DonusumAktarimi::gonder`](../core/src/Atif/DonusumAktarimi.php#L138)) | `reklam_donusumleri` | birkaç dakikada bir |
 | `app:revenuecat:gonder` | Bekleyen RevenueCat aktarımları | `revenuecat_gidenler` | birkaç dakikada bir |
-| `app:reklam-harcamalari:cek` | Meta harcaması, son 7 gün (Meta yakın günleri düzeltir) | `reklam_harcamalari` | günde bir |
+| `app:reklam-harcamalari:cek` | Meta ve TikTok harcaması (bağlı olanlar), son 7 gün (ağlar yakın günleri düzeltir) | `reklam_harcamalari` | günde bir |
 | `app:huni-metin-cevaplari-sil` | 90 günü geçen serbest yanıtlar ve izinsiz e-postalar | — | günde bir |
 | `app:ulke-verisi` | DB-IP ülke verisi | — | ayda bir |
 
@@ -727,7 +728,7 @@ sequenceDiagram
 |---|---|---|
 | [`Huni`](../core/src/Huni/) | Huni tanımı, doğrulama bekçisi, yayın, deneyler, ekran görüntüsü | [`Tanim`](../core/src/Huni/Tanim.php), [`Huniler`](../core/src/Huni/Huniler.php), [`Deneyler`](../core/src/Huni/Deneyler.php), [`ChromeEkranCekici`](../core/src/Huni/Ekran/ChromeEkranCekici.php) |
 | [`Ai`](../core/src/Ai/) | Huni asistanı (Claude), ürün bağlamı, maliyet | [`HuniAsistani`](../core/src/Ai/HuniAsistani.php), [`UrunBaglami`](../core/src/Ai/UrunBaglami.php) |
-| [`Atif`](../core/src/Atif/) | Ziyaret, izin, reklam dönüşümü, harcama | [`Ziyaretler`](../core/src/Atif/Ziyaretler.php), [`DonusumAktarimi`](../core/src/Atif/DonusumAktarimi.php), [`MetaHarcamalari`](../core/src/Atif/MetaHarcamalari.php) |
+| [`Atif`](../core/src/Atif/) | Ziyaret, izin, reklam dönüşümü, harcama | [`Ziyaretler`](../core/src/Atif/Ziyaretler.php), [`DonusumAktarimi`](../core/src/Atif/DonusumAktarimi.php), [`MetaHarcamalari`](../core/src/Atif/MetaHarcamalari.php), [`TiktokBaglantisi`](../core/src/Atif/TiktokBaglantisi.php), [`TiktokHarcamalari`](../core/src/Atif/TiktokHarcamalari.php) |
 | [`Billing`](../core/src/Billing/) | Stripe eşitleme, katalog, abonelik yönetimi, müşteri portalı | [`SubscriptionSync`](../core/src/Billing/SubscriptionSync.php), [`Planlar`](../core/src/Billing/Planlar.php), [`AbonelikYonetimi`](../core/src/Billing/AbonelikYonetimi.php), [`MusteriPortali`](../core/src/Billing/MusteriPortali.php) |
 | [`Kimlik`](../core/src/Kimlik/) | Kişi ↔ uygulama kullanıcısı bağı, kod, giriş bağlantısı, hak | [`Baglama`](../core/src/Kimlik/Baglama.php), [`DogrulamaKodu`](../core/src/Kimlik/DogrulamaKodu.php), [`GirisBaglantisi`](../core/src/Kimlik/GirisBaglantisi.php), [`Hak`](../core/src/Kimlik/Hak.php) |
 | [`Posta`](../core/src/Posta/) | Bastırma listesi, aktivasyon ve kurtarma dizileri | [`Bastirma`](../core/src/Posta/Bastirma.php), [`AktivasyonDizisi`](../core/src/Posta/AktivasyonDizisi.php), [`KurtarmaDizisi`](../core/src/Posta/KurtarmaDizisi.php) |

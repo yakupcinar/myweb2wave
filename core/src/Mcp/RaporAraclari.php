@@ -36,7 +36,7 @@ final readonly class RaporAraclari
             $gunlu('rapor_ozet', 'Huni özeti: reklam / organik ziyaret, ödemeye geçen, deneme, ödedi (ilk ödeme ya da fatura); reklam ölçümü izni; günlük seri.'),
             $gunlu('rapor_kaynaklar', 'Kaynak / ortam / kampanya başına ziyaret, ödemeye geçti, deneme, ödedi ve tahsil edilen gelir (para birimi başına, iade düşülmüş).'),
             $gunlu('rapor_kohort', 'Kohort geliri: ziyaret haftası (UTC) × ilk 24 saat / 7 / 30 / 60 gün, ziyaret başına birikimli gelir; dolmamış pencere olgun=false.'),
-            $gunlu('rapor_kampanyalar', 'Meta kampanyası başına harcama, aynı adlı utm_campaign ile Meta\'dan gelen ziyaret / ödedi / gelir ve ROAS (hesabın para biriminde).'),
+            $gunlu('rapor_kampanyalar', 'Meta ve TikTok kampanyası başına harcama (ag alanı), aynı adlı utm_campaign ile aynı ağdan gelen ziyaret / ödedi / gelir ve ROAS (hesabın para biriminde).'),
             $gunlu('rapor_cevaplar', 'Anket cevapları: seçenek başına seçen ziyaret ve abone olan (dönüşüm = abone / seçen).'),
             [
                 'name' => 'deney_sonuclari',

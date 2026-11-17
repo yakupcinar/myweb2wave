@@ -769,21 +769,25 @@ function Anket({
     );
 }
 
+/** A31: kampanya satırının reklam ağı. */
+const AG = { meta: "Meta", tiktok: "TikTok" } as const;
+
 function ReklamHarcamasi({ r }: { r: PanelRaporu }): ReactNode {
     return (
         <Bolum
             baslik="Reklam harcaması"
             aciklama={
                 r.kampanyalar.length
-                    ? "Harcama Meta'dan (günlük çekilir); gelir aynı adlı utm_campaign ile Meta'dan gelen ziyaretlerin faturaları. ROAS hesabın para biriminde."
+                    ? "Harcama Meta ve TikTok'tan (günlük çekilir); gelir aynı adlı utm_campaign ile aynı ağdan gelen ziyaretlerin faturaları. ROAS hesabın para biriminde."
                     : undefined
             }
         >
             {r.kampanyalar.length ? (
                 <Kart className="overflow-hidden">
-                    <Tablo aria-label="Meta kampanyaları">
+                    <Tablo aria-label="Reklam kampanyaları">
                         <thead>
                             <tr>
+                                <Th>Ağ</Th>
                                 <Th>Kampanya</Th>
                                 <Th className="text-right">Harcama</Th>
                                 <Th className="text-right">Ziyaret</Th>
@@ -795,8 +799,9 @@ function ReklamHarcamasi({ r }: { r: PanelRaporu }): ReactNode {
                         <tbody>
                             {r.kampanyalar.map((k) => (
                                 <tr
-                                    key={`${k.kampanya}/${k.harcama.paraBirimi}`}
+                                    key={`${k.ag}/${k.kampanya}/${k.harcama.paraBirimi}`}
                                 >
+                                    <Td>{AG[k.ag]}</Td>
                                     <Td>{k.kampanya}</Td>
                                     <Td className="text-right tabular-nums">
                                         {tutarlar([k.harcama])}
@@ -823,27 +828,27 @@ function ReklamHarcamasi({ r }: { r: PanelRaporu }): ReactNode {
             ) : (
                 // Harcama yoksa iki sebep olabilir; hangisi olduğu panelden bilinmez (Ç121).
                 <Kart
-                    aria-label="Meta harcaması yok"
+                    aria-label="Reklam harcaması yok"
                     className="flex flex-wrap items-center justify-between gap-4 p-7"
                 >
                     <span className="flex flex-col gap-1">
                         <span className="text-[15px] font-semibold">
-                            Bu dönemde Meta harcaması yok
+                            Bu dönemde reklam harcaması yok
                         </span>
                         <span className="text-soluk">
-                            Meta reklam hesabı bağlı değilse harcama çekilmez.
-                            Bağlayınca kampanya başına harcama ve getiri (ROAS)
-                            burada görünür.
+                            Meta ya da TikTok reklam hesabı bağlı değilse
+                            harcama çekilmez. Bağlayınca kampanya başına harcama
+                            ve getiri (ROAS) burada görünür.
                         </span>
                     </span>
                     <Link
-                        to="/panel/ayarlar"
+                        to="/panel/entegrasyonlar"
                         className={cn(
                             dugmeSinifi({ tur: "ana" }),
                             "min-h-11 px-4.5 text-[14px]",
                         )}
                     >
-                        Meta hesabını bağla
+                        Reklam hesabını bağla
                     </Link>
                 </Kart>
             )}

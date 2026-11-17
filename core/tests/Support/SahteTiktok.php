@@ -15,8 +15,15 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
  */
 final class SahteTiktok
 {
-    /** @var array<string, array{int, array<mixed>}> */
+    /**
+     * Yol → yanıt; sorguya göre değişen yanıt (sayfa, tarih penceresi) için
+     * sorguyu alan bir işlev.
+     *
+     * @var array<string, array{int, array<mixed>}|\Closure(array<mixed>): array{int, array<mixed>}>
+     */
     public static array $yanitlar = [];
+    /** Doluysa yanıt yerine ağ hatası (bağlantı kurulamadı). */
+    public static ?string $agHatasi = null;
     /** @var list<array<int|string, mixed>> */
     public static array $sorgular = [];
 
@@ -24,6 +31,7 @@ final class SahteTiktok
     {
         self::$yanitlar = [];
         self::$sorgular = [];
+        self::$agHatasi = null;
     }
 
     /** @param array<string, mixed> $secenekler */
@@ -33,7 +41,11 @@ final class SahteTiktok
         parse_str((string) parse_url($url, \PHP_URL_QUERY), $sorgu);
         $basliklar = $secenekler['headers'] ?? [];
         self::$sorgular[] = ['yol' => $yol, 'basliklar' => \is_array($basliklar) ? array_values($basliklar) : []] + $sorgu;
-        [$durum, $govde] = self::$yanitlar[$yol] ?? [200, ['code' => 40002, 'message' => 'No permission to operate advertiser']];
+        if (null !== self::$agHatasi) {
+            return new MockResponse('', ['error' => self::$agHatasi]);
+        }
+        $yanit = self::$yanitlar[$yol] ?? [200, ['code' => 40002, 'message' => 'No permission to operate advertiser']];
+        [$durum, $govde] = $yanit instanceof \Closure ? $yanit($sorgu) : $yanit;
 
         return new MockResponse((string) json_encode($govde), ['http_code' => $durum]);
     }

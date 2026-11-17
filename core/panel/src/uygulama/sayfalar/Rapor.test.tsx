@@ -56,6 +56,7 @@ const RAPOR: PanelRaporu = {
     ],
     kampanyalar: [
         {
+            ag: "meta",
             kampanya: "ekim",
             harcama: { paraBirimi: "EUR", tutar: 15 },
             ziyaret: 3,
@@ -67,6 +68,7 @@ const RAPOR: PanelRaporu = {
             roas: 0.67,
         },
         {
+            ag: "tiktok",
             kampanya: "sifir",
             harcama: { paraBirimi: "EUR", tutar: 0 },
             ziyaret: 0,
@@ -354,7 +356,7 @@ describe("Rapor", () => {
         expect(satir(ziyaret, "2026-11-02")).toEqual(["2 Kasım Pzt", "0"]);
     });
 
-    it("M5c: kaynaklar, cevaba göre dönüşüm, Meta kampanyaları, kohort hücreleri", async () => {
+    it("M5c: kaynaklar, cevaba göre dönüşüm, reklam kampanyaları, kohort hücreleri", async () => {
         kur("/panel?sekme=kaynaklar");
         await screen.findByRole("table", { name: "Kaynaklar" });
         // Dönüşüm (deneme + ödedi) / ziyaret = 2/3; para birimleri toplanmaz.
@@ -387,9 +389,10 @@ describe("Rapor", () => {
         ]);
         cleanup();
         kur();
-        await screen.findByRole("table", { name: "Meta kampanyaları" });
-        // M5d: ROAS hesabın para biriminde; harcama 0 → tanımsız "—".
-        expect(hucreler("Meta kampanyaları")).toEqual([
+        await screen.findByRole("table", { name: "Reklam kampanyaları" });
+        // M5d: ROAS hesabın para biriminde; harcama 0 → tanımsız "—". A31: ağ sütunu.
+        expect(hucreler("Reklam kampanyaları")).toEqual([
+            "Meta",
             "ekim",
             "€15,00",
             "3",
@@ -397,7 +400,8 @@ describe("Rapor", () => {
             "€9,99 · ₺20,00",
             "0,67×",
         ]);
-        expect(hucreler("Meta kampanyaları", 2).at(-1)).toBe("—");
+        expect(hucreler("Reklam kampanyaları", 2)[0]).toBe("TikTok");
+        expect(hucreler("Reklam kampanyaları", 2).at(-1)).toBe("—");
         cleanup();
         kur("/panel?sekme=gelir");
         await screen.findByRole("table", { name: "Kohort geliri" });
@@ -412,19 +416,20 @@ describe("Rapor", () => {
         ]);
     });
 
-    it("P7b: Meta harcaması yoksa boş kart ve bağlama bağlantısı", async () => {
+    it("P7b: reklam harcaması yoksa boş kart ve bağlama bağlantısı", async () => {
         kur("/panel", { ...RAPOR, kampanyalar: [] });
         const kart = await screen.findByRole("region", {
-            name: "Meta harcaması yok",
+            name: "Reklam harcaması yok",
         });
-        expect(kart.textContent).toContain("Bu dönemde Meta harcaması yok");
+        expect(kart.textContent).toContain("Bu dönemde reklam harcaması yok");
+        // A31: Meta ve TikTok bağlantıları Entegrasyonlar'da.
         expect(
             within(kart)
-                .getByRole("link", { name: "Meta hesabını bağla" })
+                .getByRole("link", { name: "Reklam hesabını bağla" })
                 .getAttribute("href"),
-        ).toBe("/panel/ayarlar");
+        ).toBe("/panel/entegrasyonlar");
         expect(
-            screen.queryByRole("table", { name: "Meta kampanyaları" }),
+            screen.queryByRole("table", { name: "Reklam kampanyaları" }),
         ).toBeNull();
     });
 
