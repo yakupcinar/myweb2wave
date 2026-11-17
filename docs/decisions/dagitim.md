@@ -91,3 +91,9 @@ etkilenmeyecek.
   zincirinden geçiyor. ⚠️ `sunucu-hazirla.sh`'in ufw/ssh adımları bu makinede **koşulmaz**.
 - **Yedek:** son KeepChat dump'ı 2026-10-09 (`~/yedek`, 52 MB); crontab yok. Kapatmadan önce taze dump alınır.
 - **Tra taban ölçümü (dışarıdan):** `http://158.101.180.140/` → 308. Her adımdan sonra aynı ölçüm.
+- **2026-11-17 hazırlık:** KeepChat dump'ı alındı (`~/yedek/keepchat-20261117-son.dump`, 8,8 MB, 15 tablo verisi; kopyası
+  kullanıcının bilgisayarında `~/Yedekler/keepchat/`). Kullanıcı kararıyla main h6-olay'e ileri sarıldı (`774fc5a`, CI
+  yeşil); zincirdeki 9 PR (#32–#40) içerik olarak main'de, açık duruyor. Sunucuda depo `/opt/myweb2wave` (ubuntu
+  kullanıcısı, `sunucu-hazirla.sh` koşulmadı), `deploy/.env.uretim` 600: alanlar `web2quizapi.duckdns.org` /
+  `web2quiz.duckdns.org`, rastgele sırlar sunucuda üretildi. `UYGULAMA_ANAHTARI_KEEPCHAT` rastgele (KeepChat kapanıyor,
+  eşleşecek sunucu yok). Stripe, Postmark ve panel girişi kullanıcıda.
