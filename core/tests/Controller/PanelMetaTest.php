@@ -148,12 +148,11 @@ final class PanelMetaTest extends WebTestCase
         $this->dene($jeton);
         $donusum = $this->json()['donusum'];
         self::assertIsArray($donusum);
-        self::assertSame(['durum' => 'tamam', 'mesaj' => 'Deneme olayı gönderildi — Meta kabul etti.'], $donusum);
-        self::assertSame(1, SahteRevenueCat::sayi(), 'test kodu yokken de deneme olayı gönderilir');
+        self::assertSame('ayarsiz', $donusum['durum'] ?? null);
+        self::assertSame(0, SahteRevenueCat::sayi(), 'test kodu yokken olay gönderilmez');
 
         $this->put($jeton, ['pixelId' => '987654321', 'testKodu' => 'TEST123', 'reklamHesabi' => 'act_12345678']);
         SahteMetaGraph::sifirla();
-        SahteRevenueCat::sifirla();
         SahteMetaGraph::$yanitlar = [
             '/v99.0/act_12345678' => [400, ['error' => ['message' => 'Invalid OAuth access token '.self::INSIGHTS, 'code' => 190]]],
         ];

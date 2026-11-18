@@ -114,3 +114,6 @@ mesajı yok — hepsi 🔴.
   olay kimliği `dene-…` göründü. Events Manager'ın CAPI anahtarı olay yazabiliyor — Ç145 (2) kapandı.
 - Ölçümden sonra test kodu boşaltılıp kaydedildi; sayfa yenilenince alan boş (`""`), Pixel değeri duruyor.
 - `cf2d370` test kodu yokken de olay gönderiyor; bu ölçüm o yolu **kullanmadı** (Ç155, karar kullanıcıda).
+- **Ç155 kararı (kullanıcı, 2026-11-18):** `cf2d370` geri alındı. Test kodu olmayan "dene" olayı Meta'da gerçek olay
+  sayılır (sahte IP ile Pixel istatistiğine ve optimizasyona girer); deneme yalnız test koduyla, TikTok'la aynı.
+  Kırma D1 (test kodsuz olay atar) yeniden ölçülür.

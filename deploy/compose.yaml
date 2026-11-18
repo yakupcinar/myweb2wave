@@ -50,6 +50,9 @@ services:
       AYAR_SIFRELEME_ANAHTARI: ${AYAR_SIFRELEME_ANAHTARI:-}
       # V3b: boş = stok fotoğraf kapalı.
       PEXELS_API_KEY: ${PEXELS_API_KEY:-}
+      # Ç156 / A5b: panelde gösterilen MCP adresi ve /mcp'nin kabul ettiği Host (DNS rebinding koruması).
+      MCP_GENEL_ADRES: https://${API_ALANI:?}/mcp
+      MCP_IZINLI_HOSTLAR: ${API_ALANI:?}
     volumes:
       # E2.3: yüklenen görseller. Birim ilk açılışta imajdaki dizinin
       # sahipliğini (cekirdek) alır.

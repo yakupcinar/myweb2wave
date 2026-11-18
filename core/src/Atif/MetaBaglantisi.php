@@ -187,8 +187,11 @@ final readonly class MetaBaglantisi
         $m = $this->oku($app);
         if (null === $m['pixel'] || null === $m['capi']) {
             $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Pixel ID ve CAPI anahtarı girilmedi.'];
+        } elseif (null === $m['testKodu']) {
+            $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Denemek için test olay kodu girin (Events Manager › Olayları test et); deneme olayı yalnız orada görünür.'];
         } else {
-            $yuk = [
+            $donusum = $this->sor('POST', $m['pixel'].'/events', $m['capi'], ['json' => [
+                'test_event_code' => $m['testKodu'],
                 'data' => [[
                     'event_name' => 'PageView',
                     'event_time' => time(),
@@ -197,13 +200,7 @@ final readonly class MetaBaglantisi
                     // Website olayı en az bir eşleme alanı ister; belgelere ayrılmış adres (TEST-NET-3).
                     'user_data' => ['client_ip_address' => '203.0.113.1', 'client_user_agent' => 'MyWeb2Wave baglanti denemesi'],
                 ]],
-            ];
-            if (null !== $m['testKodu'] && '' !== $m['testKodu']) {
-                $yuk['test_event_code'] = $m['testKodu'];
-            }
-            $donusum = $this->sor('POST', $m['pixel'].'/events', $m['capi'], ['json' => $yuk], static fn (array $g): string => null !== $m['testKodu'] && '' !== $m['testKodu']
-                ? "Deneme olayı gönderildi — Events Manager › Olayları test et'te görünmeli."
-                : 'Deneme olayı gönderildi — Meta kabul etti.');
+            ]], static fn (array $g): string => "Deneme olayı gönderildi — Events Manager › Olayları test et'te görünmeli.");
         }
 
         return [
