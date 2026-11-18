@@ -56,7 +56,7 @@ eklendi) → 🔴 · K16 gönderimde başka anahtar — hepsi 🔴. Betik yamala
 - **Tam kontrol:** çekirdek 788 test yeşil, biçim / statik analiz / sözleşme yeşil; ilk koşuda biçim kırmızısı
   (docblock hizası, düzeltildi). İkinci koşuda `panel-test` 5 zaman aşımı (Anahtarlar, Huniler, Planlar — bu blokta
   dokunulmayan sayfalar; yük ortalaması 11, paralel oturum) — aynı üç dosya `--testTimeout=30000` ile 26/26 yeşil.
-  Üçüncü koşuda huni `Huni.test.tsx` Ç34 testi bir kez düştü (tek başına 95/95) — ikisi Ç151. **Dördüncü koşu:
+  Üçüncü koşuda huni `Huni.test.tsx` Ç34 testi bir kez düştü (tek başına 95/95) — ikisi Ç153. **Dördüncü koşu:
   YEŞİL** (788 çekirdek testi; `UYARI dev-goc` — ortak geliştirme DB'sine bu göç bilerek uygulanmadı, tuzak §60).
 - **Gerçek sistem** (ayrı geçici DB `app_ttdene`, gerçek TikTok Business API v1.3, sahte anahtar): kaydet `[]`; DB'de
   düz anahtar yok; panel `kayitli · …`; dene iki parçada "TikTok reddetti: Access token is incorrect or has been
@@ -80,14 +80,14 @@ eklendi) → 🔴 · K16 gönderimde başka anahtar — hepsi 🔴. Betik yamala
 
 N1 boş anahtar alanı `''` gider · N2 "Kaldır" yok sayılır · N3 son 4 hane yok · N4 kaydedilmemişken dene açık · N5
 onaysız kaldır · N6 anahtar düz metin alanı · N7 şifreleme uyarısı yok · N8 deneme mesajı yok · N9 bölüm sayfada yok ·
-N10 TikTok yerine Meta ucuna yazar — hepsi 🔴 (`Tiktok.test.tsx`, `--testTimeout=30000`, Ç151).
+N10 TikTok yerine Meta ucuna yazar — hepsi 🔴 (`Tiktok.test.tsx`, `--testTimeout=30000`, Ç153).
 
 ## TB2 — Ölçüm
 
 - **Panel:** `Tiktok.test.tsx` 5 test; `Meta.test.tsx` 5 test yeşil; tip denetimi temiz.
 - **Ekran döngüsü KOŞULMADI:** `panel-ekran` kabı ortak compose projesinde ana klasörün kodunu bağlıyor ve ortak
   geliştirme DB'sinde `tiktok_baglantilari` yok — worktree'den koşmak paralel oturumun kabını ve DB'sini değiştirirdi.
-  Dal birleşince `bin/panel-ekran entegrasyonlar` (açık/koyu, 1440/390) koşulacak (Ç150 (5)).
+  Dal birleşince `bin/panel-ekran entegrasyonlar` (açık/koyu, 1440/390) koşulacak (Ç154 (5)).
 
 ## TB3 — Ne yapıldı (harcama + ROAS)
 
@@ -128,7 +128,7 @@ yanıtta ağ sabit · H14 panelde ağ sütunu boş · H15 boş durum eski adrese
 - **Gerçek sistem** (geçici DB `app_ttdene`, gerçek TikTok Business API v1.3, sahte anahtar): `cek(3)` →
   "keepchat: TikTok reddetti: Access token is incorrect or has been revoked. (kod 40105)", satır yazılmadı, mesajda
   anahtar yok; `report/integrated/get` ucu ayrıca: HTTP 200, `code` 40105 — uç yolu ve `{code, message}` biçimi doğru.
-  Geçerli anahtarla satır biçimi ölçülmedi (Ç150 (6)). DB silindi.
+  Geçerli anahtarla satır biçimi ölçülmedi (Ç154 (6)). DB silindi.
 - **Kontrol:** ilk koşuda belge bağlantısı kaydı (`Rapor::kohort` satırı, `--duzelt`) ve panel Huniler zaman aşımı;
-  ikinci koşuda huni Ç34 testi yine düştü → Ç151 kapatıldı: huniye panelin Ç134 kurulumu (`waitFor` 3 sn), panele
+  ikinci koşuda huni Ç34 testi yine düştü → Ç153 kapatıldı: huniye panelin Ç134 kurulumu (`waitFor` 3 sn), panele
   test başına 15 sn; kırma 1 ms'de huni 40 / panel 5 test düşürdü (ayar gerçekten uygulanıyor).
