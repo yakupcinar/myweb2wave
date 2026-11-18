@@ -105,3 +105,12 @@ mesajı yok — hepsi 🔴.
   nereden alınacağı) — A31 TikTok kararıyla aynı. Panelde test kodu yardımı bunu söyler.
 - **Kırma 4/4 kırmızı:** D1 test kodsuz olay atar · D2 Pixel okunur (eski davranış) · D3 test kodu eklenmez · D4 olay
   Insights anahtarıyla.
+
+## 2026-11-18 — Olay gönderimi canlıda ölçüldü
+
+- **Ölçüm (canlı panel, sürüm `cf2d370`):** Events Manager › web2quiz › Olayları test et'ten kod alındı, panele
+  girilip kaydedildi, "Bağlantıyı dene": panel "Dönüşüm: Bağlı — Deneme olayı gönderildi", "Harcama: Bağlı —
+  Reklam hesabı: web2quiz (EUR)". Meta tarafında aynı anda `PageView` · Server · Manual setup · **Processed**,
+  olay kimliği `dene-…` göründü. Events Manager'ın CAPI anahtarı olay yazabiliyor — Ç145 (2) kapandı.
+- Ölçümden sonra test kodu boşaltılıp kaydedildi; sayfa yenilenince alan boş (`""`), Pixel değeri duruyor.
+- `cf2d370` test kodu yokken de olay gönderiyor; bu ölçüm o yolu **kullanmadı** (Ç155, karar kullanıcıda).
