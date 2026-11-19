@@ -600,7 +600,7 @@ denenir ([`GirisBaglantisi::epostalariGonder`](../core/src/Kimlik/GirisBaglantis
 `app:stripe-portal:kur` (müşteri portalının Stripe ayarını koddakiyle aynı yapar) · `app:plan-ice-aktar` (Stripe'taki
 var olan bir fiyatı kataloğa alır) · `app:huni yayinla|onizleme` · `app:huni-arac` (AI araçlarını konsoldan çalıştırır)
 · `app:huni-semasi` (sözleşmeden AI araç şeması üretir) · `app:ai-degerlendir` (model karşılaştırması) ·
-`app:olaylar <ziyaret>` ve `app:ozellikler` (bir ziyaretin olaylarını / özelliklerini gösterir) · `app:simge-dizini`.
+`app:olaylar <ziyaret>` ve `app:ozellikler` (bir ziyaretin olaylarını / özelliklerini gösterir) · `app:simge-dizini` · `app:panel-denetim [--son N]` (panelden yapılan son yazmalar: kim, rota, kaynak, sonuç — Ç152).
 
 ---
 
@@ -617,7 +617,7 @@ kuralların bir kısmı veritabanında da durur (`CHECK` kısıtları, tetikleyi
 | Para | `planlar`, `ek_urunler`, `ek_satislar`, `odeme_oturumlari`, `subscriptions`, `odeme_faturalari`, `fatura_odemeleri`, `processed_webhook_events` | Katalog, ödeme oturumları (ziyaret bağı), abonelikler, faturalar ve iadeler, işlenmiş Stripe olayları |
 | Kimlik | `kisiler`, `baglantilar`, `dogrulama_kodlari`, `giris_jetonlari`, `portal_jetonlari` | Kişiler, uygulama bağları, kısa ömürlü kod ve jetonlar (yalnız özetleri) |
 | Dışa | `reklam_donusumleri`, `reklam_harcamalari`, `revenuecat_gidenler`, `webhook_hedefleri`, `webhook_teslimleri`, `posta_bastirma`, `posta_dizisi` | Giden kutuları, harcama, bastırma listesi, dizi kayıtları |
-| Ayar ve erişim | `uygulama_ayarlari`, `yasal_metinler`, `api_anahtarlari`, `mcp_cagrilari`, `sessions`, `zamanli_gorevler` | Uygulama kimliği, yasal metinler, MCP anahtarları ve çağrıları, panel oturumları, zamanlı komutların son çalışması |
+| Ayar ve erişim | `uygulama_ayarlari`, `yasal_metinler`, `api_anahtarlari`, `mcp_cagrilari`, `sessions`, `zamanli_gorevler`, `panel_islemleri`, `panel_denetim` | Uygulama kimliği, yasal metinler, MCP anahtarları ve çağrıları, panel oturumları, zamanlı komutların son çalışması, panel denetim izi (yalnız ekleme: abonelik işlemleri Ç151, her panel yazması Ç152) |
 
 ---
 
