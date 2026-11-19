@@ -17,7 +17,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * A31 (TB3): TikTok kampanya harcaması (Marketing API report/integrated/get).
- * Yanıt biçimi üçüncü taraf örneklerinden (Ç150): data.list[] satırı
+ * Yanıt biçimi üçüncü taraf örneklerinden (Ç154): data.list[] satırı
  * dimensions {campaign_id, stat_time_day "YYYY-MM-DD HH:MM:SS"}, metrics
  * {spend (ondalık metin), campaign_name}; sayfalar data.page_info.total_page.
  * Para birimi satırda yok — advertiser/info'dan.

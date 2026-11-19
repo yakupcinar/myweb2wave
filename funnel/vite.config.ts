@@ -81,7 +81,7 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: "happy-dom",
     include: ["src/**/*.test.{ts,tsx}"],
-    // Ç151: testlerin bekleme üst sınırı tek yerde (panelin Ç134 kurulumu).
+    // Ç155: testlerin bekleme üst sınırı tek yerde (panelin Ç134 kurulumu).
     setupFiles: ["src/test-kurulum.ts"],
   },
 }));

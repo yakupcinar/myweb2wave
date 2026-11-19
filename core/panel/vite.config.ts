@@ -23,7 +23,7 @@ export default defineConfig({
     // React). dedupe kökten çözdürür (B4/H1).
     resolve: { dedupe: ["react", "react-dom"] },
     base: "/varliklar/panel/",
-    // Ç134: testlerin bekleme üst sınırı tek yerde. Ç151: test başına üst
+    // Ç134: testlerin bekleme üst sınırı tek yerde. Ç155: test başına üst
     // sınır 5 → 15 sn (yük altında Anahtarlar/Huniler/Planlar 5 sn'yi aştı).
     test: { setupFiles: ["src/test-kurulum.ts"], testTimeout: 15000 },
     build: {

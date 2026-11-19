@@ -155,7 +155,7 @@ okunur (`/panel/api/rapor/ziyaretler|kaynaklar|serbestYanitlar`, P7a2).
 
 **Bilinen sınırlar**
 - Gerçek bir Meta reklam hesabıyla harcama çekilmedi; yanıt biçimi Meta'nın belgesinden alındı
-  ([Ç121](decisions/acik-uclar.md)). TikTok'unki de gerçek hesapla çekilmedi; biçim üçüncü taraf örneklerinden (Ç150).
+  ([Ç121](decisions/acik-uclar.md)). TikTok'unki de gerçek hesapla çekilmedi; biçim üçüncü taraf örneklerinden (Ç154).
 - Ülke, deney varyantı ya da huniye göre süzgeç yok; önceki dönemle karşılaştırma yok. Bunlar R1 bloğunda gelecek
   ([web2wave farkı](decisions/web2wave-platform-yapisi.md)).
 
