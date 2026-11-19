@@ -126,3 +126,6 @@ düşmezdi) · K4/K5 panel `kayitli` dalı yok (Meta.test, Tiktok.test).
 - Ölçülmedi: dönem sonunda `void` faturadan sonra RevenueCat hakkı uzatıyor mu ("fatura ödenince" ayarına göre
   uzatmaması beklenir). Bunun için 2026-12-17'den sonra aynı müşteriye bakmak ya da Stripe test saatiyle
   denemek gerekiyor.
+- Ölçümden sonra (kullanıcı kararı, 2026-11-20): abonelik panelden sürdürüldü (DB `duraklatildi=f`,
+  `duraklatma_bitis` boş), RevenueCat sandbox müşterisi `olcum-c143` silindi ("Customer not found"). Dönem sonu
+  ölçümü bu yüzden yapılmayacak; gerekirse Stripe test saatiyle.
