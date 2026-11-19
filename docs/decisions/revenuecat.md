@@ -81,3 +81,18 @@ tablo + cron).
 - **Bulgu — kuyruk boş kalır:** canlıda 3 aktif `keepchat` aboneliği var ama `baglantilar` 0 satır. Aktarım yalnız
   e-postası bu uygulamada bir kişiye bağlı aboneliği kuyruğa alıyor; KeepChat uygulaması kişiyi bağlayana kadar
   anahtar yazılsa da RevenueCat'e hiçbir şey gitmez (Ç158).
+
+### Ölçüm (2026-11-19, akşam)
+
+- **Anahtar tuttu:** kullanıcı Sandbox API key'i panodan okuyan bir `curl` ile `POST /v1/receipts` attı
+  (`X-Platform: stripe`, `app_user_id=olcum-20261119`, `fetch_token=sub_1UciiGPfp6LpRKk1MQnFvqFq`). RevenueCat
+  Customers › `olcum-20261119` (sandbox verisi): **KeepChat Pro — Active · renews in 1 month**, ürün
+  MyWeb2Wave Pro (test) aylık, TRY 349,99. Yani sayfadaki "harici satın alımda kullanılamaz" notuna rağmen bu
+  anahtar (`strp_` önekli, 32 karakter) receipts ucunda geçerli. Ç43 kapandı, Ç158 (1) kapandı.
+- Anahtar sunucuda `deploy/.env.uretim`'e kullanıcının komutuyla yazıldı (değer sohbete ve depoya girmedi).
+  Dağıtım `faf1e0a7a37e`; konteynerde `REVENUECAT_STRIPE_KEEPCHAT` uzunluk 32, önek `strp_`.
+  `app:revenuecat:gonder` → `gönderilen=0 başarısız=0`, çıkış 0 — beklenen, çünkü `baglantilar` 0 satır (Ç158 (2)).
+- Deneme müşterisi `olcum-20261119` RevenueCat'te duruyor (sandbox). Aynı abonelik ileride kişi UUID'iyle
+  gönderilince "Transfer to new App User ID" davranışıyla yeni kimliğe geçer; istenirse panelden silinir.
+- Kalan: Ç143 gerçek duraklatmayla (ayar "reject paused" seçili) · KeepChat'in kişiyi bağlaması (ilk gerçek
+  aktarım) · canlıya geçişte üretim anahtarı.
