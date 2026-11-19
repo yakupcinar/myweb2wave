@@ -107,3 +107,6 @@ kodu boşken deneme olayı gönderilmez ve sunucu bunu da `ayarsiz` döndürüyo
 kodu girin…". İstek atılmaması (Ç155) aynı. **Kırma 5/5 kırmızı:** K1/K2 sunucu `ayarsiz` döner (PanelTiktokTest,
 PanelMetaTest) · K3 sözleşme enum'undan `kayitli` çıkar (yanıt doğrulaması — bu satır kırmadan önce eklendi; yoksa
 düşmezdi) · K4/K5 panel `kayitli` dalı yok (Meta.test, Tiktok.test).
+- **Canlıda (dağıtım `ebbe30a9f9fd`):** panel › Entegrasyonlar › "Bağlantıyı dene" — TikTok: Dönüşüm **Kayıtlı**
+  ("Canlı olaylar gönderiliyor…"), Harcama Ayarlı değil (Marketing API anahtarı yok). Meta: Dönüşüm **Kayıtlı**,
+  Harcama Bağlı ("Reklam hesabı: web2quiz (EUR)").
