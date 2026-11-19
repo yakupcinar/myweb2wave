@@ -478,3 +478,13 @@ yokluğunu bekleyen bir test olsaydı yanlış nedenle yeşil kalırdı.
 **Doğrusu:** süitin geri kalanı için bellek içi havuz (sayaçların her istekte sıfırlanması orada istenen şey);
 sınırı ölçen testte `static::getContainer()->set('hiz.sayaclari', new FilesystemAdapter(uniqid(), 0, sys_get_temp_dir()))`
 + `disableReboot()`.
+
+## §62 — Chrome aracının `read_page`'i metni alt öğede olan düğmeyi adsız gösterir
+**Belirti:** `<button><span>Metin</span></button>` erişilebilirlik ağacında `button` olarak adsız döner; erişilebilir
+adı boş sanılıp düzeltmeye girişilir (Ç148).
+**Sebep:** araç düğmenin adını yalnız doğrudan metin düğümünden okuyor; accname'in "içerikten ad" kuralı alt öğe
+metnini de katar, tarayıcı ve ekran okuyucu bu adı kullanır.
+**Ölçüm (2026-11-19):** aynı sayfada `<button><span>Ic ice metin</span></button>` → `button [ref_1]` (adsız, metin
+ayrı `generic` düğümde); `<button>Duz metin</button>` → `button "Duz metin"`.
+**Doğrusu:** adı araçtan değil testten ölç: `getByRole("button", { name: "…" })` (dom-accessibility-api accname
+hesaplar); tarayıcıda `read_page` `filter: "all"` ile alt düğümdeki metne bak.
