@@ -24,3 +24,18 @@ jobs:
         run: docker --version && docker compose version
       - name: bin/kontrol
         run: bin/kontrol
+
+  # Ç146: sunucuda derlenen üretim imajları (deploy/compose.yaml: çekirdek + panel
+  # aşaması, web) bin/kontrol'ün dışında; kırıldıklarını ilk kez sunucu görüyordu.
+  # Değerler örnek dosyadan, boşlar "ci" — yalnız derleme, hiçbir şey çalışmaz.
+  uretim-imaji:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Örnek ortam
+        run: |
+          sed -E -e "s/^([A-Z_]+)=$/\1=ci/" -e "s/^([A-Z_]+)=''$/\1=ci/" deploy/env.uretim.ornek > "$RUNNER_TEMP/ci.env"
+          echo APP_VERSION=ci >> "$RUNNER_TEMP/ci.env"
+      - name: Üretim imajları
+        run: docker compose --env-file "$RUNNER_TEMP/ci.env" -f deploy/compose.yaml build

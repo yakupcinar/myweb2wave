@@ -148,3 +148,16 @@ etkilenmeyecek.
 - **2026-11-17 kullanıcı panelden:** `genel` hunisi yayınlandı (sürüm 2; paywall metni "Aylık plan", Ç149 taslağı).
   Yasal metinler: dört belge (`sartlar`, `gizlilik`, `kvkk`, `cerez`) Türkçe yayında (200), İngilizceleri yok (404).
   Plan adları hâlâ "monthly"/"yearly"; RevenueCat anahtarı henüz yok.
+
+## 2026-11-19 — Ç146 ve Ç147 kapandı
+
+- **Ç147 (sertifika yarışı):** `dagit.sh` dışarıdan ölçümleri (`/health`, huni) `yeniden_dene` ile sarar —
+  `DENEME_SAYISI` (varsayılan 12) × 5 sn, ara mesajlar stderr'e (ölçülen çıktıya karışmaz). Fonksiyon tek başına
+  ölçüldü: üçüncüde geçen komut → kod 0, çıktı yalnız komutunki; çözülemeyen alan adı, sınır 2 → kod 1.
+  **Kırma 2/2 kırmızı:** K1 sınırda `return 0` → ikinci ölçüm 0 gösterdi · K2 döngüsüz tek deneme → ilk ölçüm 1.
+  Gerçek yarış yalnız yeni alan adında olur; sonraki dağıtımda yalnız betiğin geçtiği görülür.
+- **Ç146 (üretim imajı CI'da yok):** `kontrol.yml`'e ayrı iş `uretim-imaji`: `env.uretim.ornek`'in boş değerleri
+  `ci` yapılır, `docker compose -f deploy/compose.yaml build` (çekirdek + panel aşaması + web). Yerelde aynı komut
+  EXIT=0, 40 sn (önbellekli; CI'da önbelleksiz daha uzun — ilk koşumda ölçülür). **Kırma 1/1 kırmızı:**
+  `additional_contexts` kaldırılınca derleme `huni-bilesenleri ... pull access denied` ile EXIT=1 — Ç146'yı
+  doğuran hatanın kendisi.

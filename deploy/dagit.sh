@@ -9,6 +9,18 @@ cd "$(dirname "$0")/.." || exit 1
 ENV_DOSYASI=deploy/.env.uretim
 dc() { docker compose --env-file "$ENV_DOSYASI" -f deploy/compose.yaml "$@"; }
 dur() { echo "HATA: $*"; exit 1; }
+# Ç147: yeni alan adında Caddy sertifikayı hizmetler sağlıklı olduktan birkaç saniye sonra alır;
+# dışarıdan ölçüm bu yüzden DENEME_SAYISI × 5 sn yeniden denenir. Son denemenin hatası görünür kalır.
+DENEME_SAYISI=${DENEME_SAYISI:-12}
+yeniden_dene() {
+	n=1
+	until "$@"; do
+		[ "$n" -ge "$DENEME_SAYISI" ] && return 1
+		echo "  deneme $n/$DENEME_SAYISI tutmadı, 5 sn sonra yeniden" >&2
+		n=$((n + 1))
+		sleep 5
+	done
+}
 
 [ -f "$ENV_DOSYASI" ] || dur "$ENV_DOSYASI yok — deploy/env.uretim.ornek'ten kopyala"
 
@@ -64,14 +76,14 @@ dc up -d --wait --remove-orphans || dur "servisler sağlıklı değil"
 echo "== ölçüm (dışarıdan, TLS üzerinden)"
 API_ALANI=$(printf '%s' "$yapi" | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["web"]["environment"]["API_ALANI"])')
 HUNI_ALANI=$(printf '%s' "$yapi" | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["web"]["environment"]["HUNI_ALANI"])')
-saglik=$(curl -fsS --max-time 20 "https://$API_ALANI/health") || dur "https://$API_ALANI/health yanıt vermedi"
+saglik=$(yeniden_dene curl -fsS --max-time 20 "https://$API_ALANI/health") || dur "https://$API_ALANI/health yanıt vermedi"
 echo "$saglik"
 printf '%s' "$saglik" | APP_VERSION="$APP_VERSION" python3 -c '
 import json, os, sys
 d = json.load(sys.stdin)
 sys.exit(0 if d.get("status") == "ok" and d.get("db") == "ok" and d.get("version") == os.environ["APP_VERSION"] else 1)
 ' || dur "/health beklenen sürümü ($APP_VERSION) ya da db:ok döndürmüyor"
-huni=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://$HUNI_ALANI/keepchat/") || dur "huni yanıt vermedi"
+huni=$(yeniden_dene curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://$HUNI_ALANI/keepchat/") || dur "huni yanıt vermedi"
 [ "$huni" = "200" ] || dur "https://$HUNI_ALANI/keepchat/ → $huni"
 
 echo "DAGITIM TAMAM sürüm=$APP_VERSION"
