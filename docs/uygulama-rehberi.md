@@ -547,6 +547,22 @@ gider, HTML yok. Bilinmeyen yer tutucu ya da metinde eksik zorunlu yer tutucu ka
 **Arkada nasıl çalışır.** Şablonlar `eposta_sablonlari`'nda; kayıt yoksa koddaki varsayılan gider; dil ve gönderim
 §4.3'te ([e1a](decisions/e1a-eposta-sablonlari.md), [e1b](decisions/e1b-eposta-ekrani.md)).
 
+### 2.10b İşlem geçmişi — `/panel/islem-gecmisi`
+
+**Ne işe yarar.** Panelden yapılan son 200 değişiklik: kim, ne zaman, ne yaptı, nerede, sonuç. API anahtarı, fiyat,
+huni yayını, webhook, Meta / TikTok anahtarı, yasal metin, e-posta şablonu, abonelik işlemleri — panelin her yazması.
+
+**Ekranda ne var** ([`IslemGecmisi.tsx`](../core/panel/src/uygulama/sayfalar/IslemGecmisi.tsx)) — yeniden eskiye tablo
+(telefonda kart): zaman (UTC), kullanıcı, işlem ("Plan fiyatı değiştirme"…), kaynak ("app: keepchat · anahtar:
+aylik"), sonuç ("Yapıldı" ya da "Reddedildi · 403").
+
+**Ne yapabilirsin.** Yalnız okursun; kayıt değiştirilemez, silinemez. Yazılan içerik (anahtar, metin, fiyat tutarı)
+tutulmaz — neyin nereye yapıldığı görünür, ne yazıldığı görünmez.
+
+**Arkada nasıl çalışır.** Tek dinleyici [`PanelDenetimi`](../core/src/Panel/PanelDenetimi.php) `/panel` altındaki her
+yazmayı `panel_denetim`'e ekler (oturum açmış kullanıcı, reddedilen deneme de); okuma `GET /panel/api/denetim`,
+sunucuda `app:panel-denetim` ([c152](decisions/c152-panel-denetim.md)).
+
 ### 4.1 Gelen webhook'lar
 
 | Uç | Kimden | Ne yapar |

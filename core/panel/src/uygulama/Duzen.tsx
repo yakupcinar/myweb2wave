@@ -4,10 +4,12 @@
 // gizlenir, bağlantılar tek satırda kayar. P7a: menünün altında tema seçici.
 // P7d (A25): Webhook'lar, API anahtarları, Ürün bağlamı → tek Entegrasyonlar.
 // E1b: Ayarlar'da E-postalar (Yasal metinlerin altında).
+// Ç152: Ayarlar'ın sonunda İşlem geçmişi (panel yazma denetimi).
 import {
     ChartColumn,
     FlaskConical,
     Filter,
+    History,
     LogOut,
     Mail,
     Plug,
@@ -120,6 +122,10 @@ export function Duzen(): ReactNode {
                     <NavLink to="/panel/entegrasyonlar" className={ogeSinifi}>
                         <Plug aria-hidden="true" className="size-4.5" />
                         Entegrasyonlar
+                    </NavLink>
+                    <NavLink to="/panel/islem-gecmisi" className={ogeSinifi}>
+                        <History aria-hidden="true" className="size-4.5" />
+                        İşlem geçmişi
                     </NavLink>
                 </Grup>
                 <TemaSecici />

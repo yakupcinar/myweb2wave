@@ -99,3 +99,4 @@
 | 92 | Ç151: panel işlem geçmişi | "günlüğe yazılır" diye yazdığım şey üretimde hiç yazılmıyordu; canlı ölçüm olmasa denetim izi var sanılacaktı. Bir iddianın yeri kayıt değil, ölçüm |
 | 93 | Ç148: adsız düğme | "erişilebilir adı boş" bulgusu kodun değil ölçüm aracının kusuruydu: araç iç içe metni okumuyordu. Bulguyu düzeltmeden önce aracı aynı biçimde küçük bir sayfada ölç |
 | 94 | Ç152: panel yazma denetimi | 45 rotaya tek tek kayıt eklemek yerine tek dinleyici; ama ilk kırma turundan önce "yalnız /panel/api" bozmasını ölçen test yoktu. Bir kuralı tek yerden uygulamak, ailenin her üyesini test etmenin yerini tutmaz |
+| 95 | Ç149 + Ç152 sayfası | iki yeni test boşluğunu kırma turundan önce kapattım: "boş kaynak {} mi" ve "her rota adlı mı" sorularını ölçen test yoktu. Tutmayacak kırma denemesini önceden görmek, testi yazarken "bu kararı ne bozardı" diye sormaktan geçiyor |

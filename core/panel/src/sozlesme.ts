@@ -521,6 +521,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/denetim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ç152 — panelden yapılan son yazmalar (her panel yazması; başarılı ve reddedilen), yeniden eskiye, son 200. Gövde tutulmaz */
+        get: operations["panelDenetim"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/kullanicilar.csv": {
         parameters: {
             query?: never;
@@ -2118,11 +2135,28 @@ export interface components {
         };
         /** @description H5 dallanma: bu düğme / seçenek sıradaki adım yerine bu kimlikli adıma gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz. Yoksa sıradaki adım. */
         AdimHedefi: components["schemas"]["HuniKimligi"];
+        /** @description Ç152: panelden yapılan bir yazma — gövde tutulmaz */
+        PanelDenetimKaydi: {
+            /** Format: date-time */
+            zaman: string;
+            kullanici: string;
+            /** @enum {string} */
+            yontem: "POST" | "PUT" | "PATCH" | "DELETE";
+            /** @description Symfony rota adı (panel_api_plan_fiyat…) */
+            rota: string;
+            /** @description Rota parametreleri (app, id, anahtar…) */
+            kaynak: {
+                [key: string]: string;
+            };
+            /** @description HTTP durumu; 2xx yapıldı, ötekiler reddedildi */
+            durum: number;
+        };
         PaywallAdimi: {
             id: components["schemas"]["HuniKimligi"];
             /** @enum {string} */
             tur: "paywall";
             baslik: string;
+            /** @description Ç149: {fiyat} seçili planın biçimlenmiş fiyatıyla değişir (ülkenin para birimiyle); fiyatı elle yazma */
             metin: string;
             dugme: string;
             ilerlemeGoster?: boolean;
@@ -3759,6 +3793,28 @@ export interface operations {
                             /** @description Reddedildiyse sunucunun hata metni */
                             ayrinti: string | null;
                         }[];
+                    };
+                };
+            };
+        };
+    };
+    panelDenetim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Denetim izi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        kayitlar: components["schemas"]["PanelDenetimKaydi"][];
                     };
                 };
             };

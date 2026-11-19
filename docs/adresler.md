@@ -37,6 +37,7 @@ Sol menü sırasıyla:
 | `/panel/entegrasyonlar#meta` | **Meta** | Pixel + CAPI anahtarı, reklam hesabı + Insights anahtarı; kaydet, dene, kaldır | React (A30) |
 | `/panel/entegrasyonlar#tiktok` | **TikTok** | Pixel kodu + Events API anahtarı, reklamveren + Marketing API anahtarı; kaydet, dene (test koduyla), kaldır | React (A31) |
 | `/panel/epostalar` | **E-postalar** | 7 e-posta şablonu × 2 dil; kaydet, varsayılana dön | React (E1b) |
+| `/panel/islem-gecmisi` | **İşlem geçmişi** | Panelden yapılan son 200 değişiklik: kim, ne, nerede, sonuç (salt okur) | React (Ç152) |
 | `/panel/ayarlar` | **Uygulama** | Canlıya geçiş adımları (`GET /panel/api/uygulamalar/{app}/canliya-gecis`), uygulama kimliği: görünen ad, URL şeması, App Store adresi, destek e-postası | React (M9a, P7c) |
 | `/panel/cikis` | **Çıkış** | | |
 

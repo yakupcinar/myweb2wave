@@ -365,6 +365,24 @@ const YASAL = [
     ["iptal", "iptalIade"],
 ] as const;
 
+/**
+ * Ç149: paywall metnindeki {fiyat} seçili planın biçimlenmiş fiyatıyla
+ * değişir (ülkeye göre para birimi dahil) — elle yazılan fiyat plan ya da
+ * para birimi değişince yanlış kalıyordu. Fiyat okunamadıysa (ya da panel
+ * önizlemesinde) yer tutucu ve kalan ayraç düşer: "Aylık plan · {fiyat}" →
+ * "Aylık plan".
+ */
+export function fiyatli(metin: string, fiyat: string | undefined): string {
+    if (!metin.includes("{fiyat}")) return metin;
+    if (fiyat) return metin.replaceAll("{fiyat}", fiyat);
+    return metin
+        .replaceAll("{fiyat}", "")
+        .split("·")
+        .map((parca) => parca.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join(" · ");
+}
+
 export function Paywall({
     baslik,
     metin,
@@ -430,7 +448,14 @@ export function Paywall({
     return (
         <section>
             <h1 tabIndex={-1}>{baslik}</h1>
-            <p>{metin}</p>
+            <p>
+                {fiyatli(
+                    metin,
+                    planlar.length > 1
+                        ? planlar.find((p) => p.anahtar === secili)?.fiyat
+                        : fiyat,
+                )}
+            </p>
             {faydalar.length ? (
                 <ul className="faydalar">
                     {faydalar.map((f, i) => (

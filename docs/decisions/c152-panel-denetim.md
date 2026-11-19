@@ -37,6 +37,22 @@ yeniye · K7 tetikleyici düşürüldü · K8 oturumsuz da yazılır. İlk kırm
 
 ## Açık kalanlar
 
-- Panelde görünür denetim sayfası yok; okuma sunucuda komutla.
+- ~~Panelde görünür denetim sayfası yok~~ → 2026-11-19 sayfa eklendi (aşağıda).
 - Başarısız panel girişi izde yok (oturumsuz); giriş saldırısını görmek gerekirse ayrı ve hız sınırlı kayıt.
 - MCP yönetim araçları (iptal planlama, iade, deney başlat/durdur — `/mcp`) bu izde değil; kimlik API anahtarı.
+
+## 2026-11-19 — İşlem geçmişi sayfası (kullanıcı: "Ç152 öneri oluştur onu yap")
+
+- **Öneri ve karar:** Ayarlar grubunun sonunda **İşlem geçmişi** (`/panel/islem-gecmisi`) — son 200, yeniden eskiye;
+  zaman, kullanıcı, okunur işlem adı, kaynak, sonuç rozeti; telefonda kart (Ç137). Süzgeç ve sayfalama yok (200 kayıt
+  bir yöneticili panelde haftalarca yeter; gerekirse sonra). **Reddedilen:** abonelikteki gibi kaynak başına geçmiş —
+  kaynakların çoğunun (plan, webhook, anahtar) panelde satırı farklı sayfalarda; tek liste kim-ne-zaman sorusunu
+  tek yerde yanıtlar.
+- `GET /panel/api/denetim` ([`PanelDenetimController`](../../core/src/Controller/PanelDenetimController.php)): sözleşme
+  `PanelDenetimKaydi`; parametresiz rotanın (giriş) kaynağı `{}` (PHP boş dizisi `[]` çıkardı). Sayfa sunucu rotası
+  `PanelController` (tuzak §51). `son()` kaynağı nesne döner; komut çıktısı `{"app":"keepchat"}`.
+- Rota → okunur ad haritası panelde (`ISLEM_ADLARI`); bilinmeyen rota adıyla görünür. Çekirdek testi her panel
+  yazma rotasının haritada olduğunu ölçer — yeni uç adı unutulursa düşer.
+- **Testler:** çekirdek 9 (+3: sözleşme ve sıra, oturumsuz okunmaz + doğrudan adres, rota-ad kapsamı), panel 2.
+- **Kırma 5/5 kırmızı:** P1 bir ad eksik (çekirdek kapsam + panel) · P2 hep "Yapıldı" · P3 istemci sırayı çevirir ·
+  P4 sayfa rotası yok · P5 boş kaynak `[]`. P5'i ölçen kayıt (giriş) ilk taslakta yoktu — teste doğrudan eklendi.

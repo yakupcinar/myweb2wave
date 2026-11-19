@@ -48,9 +48,9 @@ final readonly class PanelDenetimi
     }
 
     /**
-     * Son kayıtlar, yeniden eskiye.
+     * Son kayıtlar, yeniden eskiye; kaynak nesne (panel sayfası ve komut).
      *
-     * @return list<array{zaman: string, kullanici: string, yontem: string, rota: string, kaynak: string, durum: int}>
+     * @return list<array{zaman: string, kullanici: string, yontem: string, rota: string, kaynak: array<string, string>, durum: int}>
      */
     public function son(int $adet): array
     {
@@ -62,6 +62,13 @@ final readonly class PanelDenetimi
             ['n' => \Doctrine\DBAL\ParameterType::INTEGER],
         );
 
-        return $satirlar;
+        return array_map(static function (array $s): array {
+            /** @var array<string, string> $kaynak */
+            $kaynak = json_decode($s['kaynak'], true, flags: \JSON_THROW_ON_ERROR);
+            ksort($kaynak); // JSONB anahtar sırasını tutmaz (tuzak §28)
+            $s['kaynak'] = $kaynak;
+
+            return $s;
+        }, $satirlar);
     }
 }

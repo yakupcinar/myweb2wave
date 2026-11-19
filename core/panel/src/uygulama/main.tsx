@@ -13,6 +13,7 @@ import { Entegrasyonlar } from "./sayfalar/Entegrasyonlar";
 import { Epostalar } from "./sayfalar/Epostalar";
 import { Yasal } from "./sayfalar/Yasal";
 import { Huniler } from "./sayfalar/Huniler";
+import { IslemGecmisi } from "./sayfalar/IslemGecmisi";
 import { Kullanicilar } from "./sayfalar/Kullanicilar";
 import { Planlar } from "./sayfalar/Planlar";
 import { Rapor } from "./sayfalar/Rapor";
@@ -37,6 +38,7 @@ export const yollar = [
             { path: "epostalar", element: <Epostalar /> },
             // P7d: eski /panel/webhooklar, /anahtarlar, /baglam sunucuda buraya yönlenir.
             { path: "entegrasyonlar", element: <Entegrasyonlar /> },
+            { path: "islem-gecmisi", element: <IslemGecmisi /> },
         ],
     },
     {

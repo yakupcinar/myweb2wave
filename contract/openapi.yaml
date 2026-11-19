@@ -833,6 +833,23 @@ paths:
                         islem: { type: string, enum: [iptal, iptal_geri_al, duraklat, surdur, iade, eposta_duzelt] }
                         basarili: { type: boolean }
                         ayrinti: { type: [string, "null"], description: Reddedildiyse sunucunun hata metni }
+  /panel/api/denetim:
+    get:
+      operationId: panelDenetim
+      summary: "Ç152 — panelden yapılan son yazmalar (her panel yazması; başarılı ve reddedilen), yeniden eskiye, son 200. Gövde tutulmaz"
+      responses:
+        "200":
+          description: Denetim izi
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [kayitlar]
+                properties:
+                  kayitlar:
+                    type: array
+                    items: { $ref: "#/components/schemas/PanelDenetimKaydi" }
   /panel/api/kullanicilar.csv:
     get:
       operationId: panelApiKullanicilarCsv
@@ -3016,6 +3033,18 @@ components:
         gider. Yalnız İLERİ (tanımda daha sonraki bir adım) — döngü olamaz.
         Yoksa sıradaki adım.
       allOf: [{ $ref: "#/components/schemas/HuniKimligi" }]
+    PanelDenetimKaydi:
+      description: "Ç152: panelden yapılan bir yazma — gövde tutulmaz"
+      type: object
+      additionalProperties: false
+      required: [zaman, kullanici, yontem, rota, kaynak, durum]
+      properties:
+        zaman: { type: string, format: date-time }
+        kullanici: { type: string }
+        yontem: { type: string, enum: [POST, PUT, PATCH, DELETE] }
+        rota: { type: string, description: "Symfony rota adı (panel_api_plan_fiyat…)" }
+        kaynak: { type: object, additionalProperties: { type: string }, description: "Rota parametreleri (app, id, anahtar…)" }
+        durum: { type: integer, description: "HTTP durumu; 2xx yapıldı, ötekiler reddedildi" }
     PaywallAdimi:
       type: object
       additionalProperties: false
@@ -3024,7 +3053,9 @@ components:
         id: { $ref: "#/components/schemas/HuniKimligi" }
         tur: { type: string, enum: [paywall] }
         baslik: { type: string }
-        metin: { type: string }
+        metin:
+          description: "Ç149: {fiyat} seçili planın biçimlenmiş fiyatıyla değişir (ülkenin para birimiyle); fiyatı elle yazma"
+          type: string
         dugme: { type: string }
         ilerlemeGoster: { type: boolean }
         plan: { $ref: "#/components/schemas/PlanAnahtari" }

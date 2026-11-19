@@ -6,6 +6,7 @@ import {
     kalanSure,
     Ekran,
     Logo,
+    fiyatli,
     Paywall,
     Yukleme,
     type EkranBlogu,
@@ -806,5 +807,53 @@ describe("V5 — grafik, önce/sonra, ölçek", () => {
         expect(html).toContain('aria-label="1 — Hiç"');
         expect(html).toContain('aria-label="3"');
         expect(html).toContain('aria-label="5 — Tamamen"');
+    });
+});
+
+// Ç149: paywall metnindeki {fiyat} seçili planın fiyatıyla değişir; elle yazılan
+// fiyat plan ya da para birimi değişince yanlış kalıyordu (canlıda "9,99 €", plan ₺349,99).
+describe("Paywall {fiyat}", () => {
+    it("tek planda fiyat satırının fiyatı", () => {
+        const html = renderToStaticMarkup(
+            <Paywall
+                baslik="Pro"
+                metin="Aylık plan · {fiyat}"
+                dugme="Al"
+                fiyat="₺349,99 / ay"
+            />,
+        );
+        expect(html).toContain("<p>Aylık plan · ₺349,99 / ay</p>");
+        expect(html).not.toContain("{fiyat}");
+    });
+    it("plan seçicide seçili planın fiyatı, öteki değil", () => {
+        const planlar = [
+            { anahtar: "aylik", ad: "Aylık", fiyat: "€9,99 / ay" },
+            { anahtar: "yillik", ad: "Yıllık", fiyat: "€59,99 / yıl" },
+        ];
+        const ciz = (secili: string) =>
+            renderToStaticMarkup(
+                <Paywall
+                    baslik="Pro"
+                    metin="Bugün {fiyat} ile başla"
+                    dugme="Al"
+                    fiyat="€1,00"
+                    planlar={planlar}
+                    secili={secili}
+                />,
+            );
+        expect(ciz("yillik")).toContain("<p>Bugün €59,99 / yıl ile başla</p>");
+        expect(ciz("aylik")).toContain("<p>Bugün €9,99 / ay ile başla</p>");
+    });
+    it("fiyat yokken yer tutucu ve artan ayraç düşer", () => {
+        expect(fiyatli("Aylık plan · {fiyat}", undefined)).toBe("Aylık plan");
+        expect(fiyatli("{fiyat} · aylık", undefined)).toBe("aylık");
+        expect(fiyatli("A · {fiyat} · B", undefined)).toBe("A · B");
+        expect(fiyatli("{fiyat}", undefined)).toBe("");
+    });
+    it("yer tutucusuz metin olduğu gibi kalır", () => {
+        expect(fiyatli("Aylık  plan · 7 gün", undefined)).toBe(
+            "Aylık  plan · 7 gün",
+        );
+        expect(fiyatli("x {fiyat} {fiyat}", "€1")).toBe("x €1 €1");
     });
 });

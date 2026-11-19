@@ -30,7 +30,7 @@ final readonly class PanelDenetimCommand
             return Command::INVALID;
         }
         foreach ($this->denetim->son($son) as $s) {
-            $cikti->writeln("{$s['zaman']} · {$s['kullanici']} · {$s['yontem']} {$s['rota']} {$s['kaynak']} → {$s['durum']}");
+            $cikti->writeln("{$s['zaman']} · {$s['kullanici']} · {$s['yontem']} {$s['rota']} ".json_encode($s['kaynak'], \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR)." → {$s['durum']}");
         }
 
         return Command::SUCCESS;

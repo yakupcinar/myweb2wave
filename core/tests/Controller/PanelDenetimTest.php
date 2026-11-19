@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Panel\YoneticiSaglayici;
+use App\Tests\Support\Sozlesme;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -151,8 +152,60 @@ final class PanelDenetimTest extends WebTestCase
         self::assertSame(0, $komut->execute(['--son' => '1']));
         $satirlar = array_values(array_filter(explode("\n", $komut->getDisplay())));
         self::assertCount(1, $satirlar);
-        self::assertMatchesRegularExpression('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ · yonetici · DELETE panel_api_tiktok_sil \{"app": "keepchat"\} → \d{3}$/', $satirlar[0]);
+        self::assertMatchesRegularExpression('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ · yonetici · DELETE panel_api_tiktok_sil \{"app":"keepchat"\} → \d{3}$/', $satirlar[0]);
 
         self::assertSame(2, $komut->execute(['--son' => '0']), 'sınır dışı reddedilir');
+    }
+
+    public function testPanelUcuSozlesmeyleYenidenEskiye(): void
+    {
+        $this->giris();
+        $this->istek('DELETE', '/meta');
+        $this->client->request('POST', '/panel/api/abonelikler/sub_YOK123/iptal', server: ['HTTP_X_CSRF_TOKEN' => $this->jeton]);
+        // Parametresiz rota (panele giriş): kaynak JSON'da {} olmalı, [] değil (sözleşme nesne ister).
+        $this->db->insert('panel_denetim', ['kullanici' => 'yonetici', 'yontem' => 'POST', 'rota' => 'panel_giris', 'kaynak' => '{}', 'durum' => 302]);
+
+        $this->client->request('GET', '/panel/api/denetim');
+        self::assertResponseIsSuccessful();
+        Sozlesme::yanitiDogrula('GET', '/panel/api/denetim', $this->client->getResponse());
+        self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
+        /** @var array{kayitlar: list<array{rota: string, kaynak: array<string, string>}>} $j */
+        $j = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('"kaynak":{}', (string) $this->client->getResponse()->getContent());
+        self::assertSame([
+            ['panel_giris', []],
+            ['panel_api_abonelik_iptal', ['abonelik' => 'sub_YOK123']],
+            ['panel_api_meta_sil', ['app' => 'keepchat']],
+        ], array_map(static fn (array $k): array => [$k['rota'], $k['kaynak']], $j['kayitlar']));
+        self::assertCount(3, $this->kayitlar(), 'okuma ucu kendini yazmaz');
+    }
+
+    public function testOturumsuzOkunmazSayfaDogrudanAcilir(): void
+    {
+        $this->client->request('GET', '/panel/api/denetim');
+        self::assertResponseRedirects('/panel/giris');
+        $this->client->request('GET', '/panel/islem-gecmisi');
+        self::assertResponseRedirects('/panel/giris');
+
+        $this->giris();
+        $this->client->request('GET', '/panel/islem-gecmisi');
+        self::assertResponseIsSuccessful('doğrudan adres de açılır (tuzak §51)');
+        self::assertCount(1, $this->client->getCrawler()->filter('#panel-uygulama'));
+    }
+
+    /** Yeni panel yazma ucu eklenince İşlem geçmişi'nde okunur adı da yazılmalı (yoksa rota adı görünür). */
+    public function testHerPanelYazmaRotasininSayfadaAdiVar(): void
+    {
+        $router = static::getContainer()->get('router');
+        self::assertInstanceOf(\Symfony\Component\Routing\RouterInterface::class, $router);
+        $sayfa = (string) file_get_contents(\dirname(__DIR__, 2).'/panel/src/uygulama/sayfalar/IslemGecmisi.tsx');
+        $yazmalar = [];
+        foreach ($router->getRouteCollection() as $ad => $rota) {
+            if (str_starts_with($rota->getPath(), '/panel') && [] !== array_intersect($rota->getMethods(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+                $yazmalar[] = $ad;
+            }
+        }
+        self::assertGreaterThanOrEqual(45, \count($yazmalar), 'rota listesi okundu');
+        self::assertSame([], array_values(array_filter($yazmalar, static fn (string $ad): bool => !str_contains($sayfa, "    {$ad}: "))));
     }
 }

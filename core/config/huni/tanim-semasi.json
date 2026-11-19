@@ -739,6 +739,7 @@
                     "type": "string"
                 },
                 "metin": {
+                    "description": "Ç149: {fiyat} seçili planın biçimlenmiş fiyatıyla değişir (ülkenin para birimiyle); fiyatı elle yazma",
                     "type": "string"
                 },
                 "dugme": {

@@ -1519,7 +1519,10 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
                 fields: {
                     kimlik: kimlikAlani,
                     baslik: { type: "text", label: "Başlık" },
-                    metin: { type: "text", label: "Fiyat satırı" },
+                    metin: {
+                        type: "text",
+                        label: "Fiyat satırı — {fiyat} seçili planın fiyatıyla değişir",
+                    },
                     dugme: { type: "text", label: "Düğme" },
                     ilerlemeGoster: ilerlemeAlani,
                     plan: {
