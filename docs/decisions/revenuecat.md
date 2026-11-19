@@ -70,7 +70,8 @@ tablo + cron).
 - Satın alma izleme ayarları varsayılan bırakıldı, kararla aynı: **sunucudan sunucuya izleme kapalı** (açık olsa
   RevenueCat aynı aboneliği anonim kimlikle ikinci müşteri olarak açardı; kimliği biz kişi UUID'iyle veriyoruz),
   **fatura ödenince** işlem tanınır, **incomplete / past_due / unpaid / paused abonelik reddedilir** (Ç143'ün
-  açığını ayar olarak kapatır; gerçek duraklatmayla ölçülmedi).
+  açığını **kapatmıyor** — 2026-11-19 ölçüldü: `paused` Stripe'ın durum değeri, bizim `pause_collection`'lı
+  aboneliğimiz `active` kalıyor; § Ç143 ölçümü).
 - Ürünler: canlı `planlar` tablosundaki iki fiyat içe aktarıldı — `monthly` → `prod_VTArs3nl8F9i0B` /
   `price_1UbJo1…`, `yearly` → `prod_VZ87RLllPfXiIt` / `price_1UXzqz…`. Stripe CLI artığı üç "myproduct" ve tek
   seferlik koçluk paketi alınmadı. İkisi de var olan **`keepchat_pro`** hakkına bağlandı (yeni `pro` açılmadı:
@@ -94,7 +95,7 @@ tablo + cron).
   `app:revenuecat:gonder` → `gönderilen=0 başarısız=0`, çıkış 0 — beklenen, çünkü `baglantilar` 0 satır (Ç158 (2)).
 - Deneme müşterisi `olcum-20261119` RevenueCat'te duruyor (sandbox). Aynı abonelik ileride kişi UUID'iyle
   gönderilince "Transfer to new App User ID" davranışıyla yeni kimliğe geçer; istenirse panelden silinir.
-- Kalan: Ç143 gerçek duraklatmayla (ayar "reject paused" seçili) · KeepChat'in kişiyi bağlaması (ilk gerçek
+- Kalan: ~~Ç143 gerçek duraklatmayla~~ → ölçüldü, hak veriliyor (§ Ç143 ölçümü) · KeepChat'in kişiyi bağlaması (ilk gerçek
   aktarım) · canlıya geçişte üretim anahtarı.
 - Deneme müşterisi `olcum-20261119` kullanıcı isteğiyle RevenueCat'ten silindi (2026-11-19; Stripe'taki abonelik yerinde).
 
@@ -110,3 +111,18 @@ düşmezdi) · K4/K5 panel `kayitli` dalı yok (Meta.test, Tiktok.test).
 - **Canlıda (dağıtım `ebbe30a9f9fd`):** panel › Entegrasyonlar › "Bağlantıyı dene" — TikTok: Dönüşüm **Kayıtlı**
   ("Canlı olaylar gönderiliyor…"), Harcama Ayarlı değil (Marketing API anahtarı yok). Meta: Dönüşüm **Kayıtlı**,
   Harcama Bağlı ("Reklam hesabı: web2quiz (EUR)").
+
+### Ç143 ölçümü (2026-11-19, gece)
+
+- Abonelik `sub_1UciiG…` panelden 1 ay duraklatıldı (M6c: `pause_collection {behavior: void}`, `resumes_at`
+  2026-12-19 19:40 UTC). Sunucu DB'si: `status=active`, `duraklatildi=t`.
+- Kullanıcı sandbox anahtarıyla `POST /v1/receipts` (`X-Platform: stripe`, kimlik `olcum-c143`) gönderdi. İlk
+  deneme 400 döndü; gövdesi görülmediği için gerekçesi bilinmiyor. Aynı istek tekrarlandığında **200** döndü:
+  `entitlements.keepchat_pro` aktif, `expires_date` 2026-12-17 (dönem sonu), `auto_resume_date: null`,
+  `unsubscribe_detected_at: null`.
+- **Sonuç:** RevenueCat duraklatmayı görmüyor ve hak veriyor. "Reject paused" ayarı yalnız Stripe'ın `paused`
+  durumunu (ödeme yöntemsiz biten deneme) reddediyor. Bizim hak ucumuz aynı kişiye `paused` diyor; iki kaynak
+  ayrışıyor (Ç143'te açık kalan karar).
+- Ölçülmedi: dönem sonunda `void` faturadan sonra RevenueCat hakkı uzatıyor mu ("fatura ödenince" ayarına göre
+  uzatmaması beklenir). Bunun için 2026-12-17'den sonra aynı müşteriye bakmak ya da Stripe test saatiyle
+  denemek gerekiyor.
