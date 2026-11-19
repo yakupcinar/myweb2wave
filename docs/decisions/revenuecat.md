@@ -61,3 +61,23 @@ RevenueCat SDK'sında `logIn(kisi)` kullanacağı yazıldı.
 Ç43 (gerçek RevenueCat ölçümü; Offering ürün kimliği eşlemesi; KeepChat
 iOS'ta `logIn(kisi)` — KeepChat oturumunda) · Ç17 (kuyruk Messenger değil,
 tablo + cron).
+
+## 2026-11-19 — Gerçek RevenueCat kurulumu (tarayıcıda)
+
+- Proje KeepChat (`1d3080e2`). Stripe'ta (sandbox `myweb2wave sandbox`) RevenueCat uygulamasının kurulumunu
+  kullanıcı onayladı; RevenueCat'te "KeepChat (Stripe)" yapılandırması (`app9374f6a228`, Web altında) Claude kurdu.
+  Managed Payments kapalı.
+- Satın alma izleme ayarları varsayılan bırakıldı, kararla aynı: **sunucudan sunucuya izleme kapalı** (açık olsa
+  RevenueCat aynı aboneliği anonim kimlikle ikinci müşteri olarak açardı; kimliği biz kişi UUID'iyle veriyoruz),
+  **fatura ödenince** işlem tanınır, **incomplete / past_due / unpaid / paused abonelik reddedilir** (Ç143'ün
+  açığını ayar olarak kapatır; gerçek duraklatmayla ölçülmedi).
+- Ürünler: canlı `planlar` tablosundaki iki fiyat içe aktarıldı — `monthly` → `prod_VTArs3nl8F9i0B` /
+  `price_1UbJo1…`, `yearly` → `prod_VZ87RLllPfXiIt` / `price_1UXzqz…`. Stripe CLI artığı üç "myproduct" ve tek
+  seferlik koçluk paketi alınmadı. İkisi de var olan **`keepchat_pro`** hakkına bağlandı (yeni `pro` açılmadı:
+  App Store ve web aynı hakta buluşmalı; hakta Test Store ürünleri de duruyor).
+- **Bulgu — anahtar:** belge (Track External Purchases) `/v1/receipts` için "Stripe app public API key" istiyor;
+  yeni (Web altındaki) Stripe yapılandırmasında yalnız **Sandbox API key** var ve altında "harici, API ile
+  gönderilen satın alımda kullanılamaz" notu yazıyor. Hangi anahtarın tuttuğu ölçülecek (Ç158).
+- **Bulgu — kuyruk boş kalır:** canlıda 3 aktif `keepchat` aboneliği var ama `baglantilar` 0 satır. Aktarım yalnız
+  e-postası bu uygulamada bir kişiye bağlı aboneliği kuyruğa alıyor; KeepChat uygulaması kişiyi bağlayana kadar
+  anahtar yazılsa da RevenueCat'e hiçbir şey gitmez (Ç158).
