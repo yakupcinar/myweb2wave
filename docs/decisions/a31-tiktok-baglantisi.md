@@ -132,3 +132,22 @@ yanıtta ağ sabit · H14 panelde ağ sütunu boş · H15 boş durum eski adrese
 - **Kontrol:** ilk koşuda belge bağlantısı kaydı (`Rapor::kohort` satırı, `--duzelt`) ve panel Huniler zaman aşımı;
   ikinci koşuda huni Ç34 testi yine düştü → Ç153 kapatıldı: huniye panelin Ç134 kurulumu (`waitFor` 3 sn), panele
   test başına 15 sn; kırma 1 ms'de huni 40 / panel 5 test düşürdü (ayar gerçekten uygulanıyor).
+
+## 2026-11-19 — İlk gerçek hesap, dönüşüm canlıda ölçüldü
+
+- **TikTok tarafı** (tarayıcıda; hesabı ve kimlik doğrulamasını kullanıcı yaptı): reklam hesabı "Jacob's Ads1119",
+  reklamveren `7709864002196766721`; Etkinlik Yöneticisi › Web › Manuel › "TikTok Pixel + Etkinlik API'si", Pixel
+  `web2quiz` (`DBVFBNRC77UB463C9AK0`, alan `web2quiz.duckdns.org`). Otomatik Gelişmiş Eşleştirme **kapalı** bırakıldı
+  (sayfadaki müşteri bilgisini tarar; H6'nın yalnız izinli gönderim kararıyla çelişir); birinci taraf çerez ve
+  gelişmiş veri geri bildirimi TikTok varsayılanı (açık). Etkinlik Oluşturucu kullanılmadı (olaylar kodda).
+- Events API erişim anahtarı sihirbazda üretildi; panele kullanıcı yapıştırdı (canlıda anahtar girişi Claude'a kapalı).
+  Pixel kodu, reklamveren ve test kodu (`TEST06394`) panele Claude yazdı.
+- **Ölçüm:** panel "Dönüşüm: Bağlı — Deneme olayı gönderildi"; TikTok Test events'te iki `ViewContent` (16:23:50
+  kullanıcı, 16:25:41 Claude), bağlantı yöntemi Sunucu, olay kimliği `dene-…`, durum "Bağlandı". Uyarı: `content_id`
+  eksik (deneme olayında beklenen). Ölçümden sonra test kodu boşaltılıp kaydedildi; uç `testKodu: ""`, anahtar
+  `kayitli` (son 4 aynı).
+- Ç154: (1) Pixel kodu gerçek kodla biçime uydu (20 karakter, büyük harf + rakam) — kapandı · (2) IP/UA'sız deneme
+  olayını TikTok kabul etti — kapandı. Kalan: gerçek `CompletePayment` (ilk test ödemesinde Test events'e bakılır;
+  `content_id` uyarısı orada da çıkarsa eklenir), harcama (Marketing API — geliştirici uygulaması onayı).
+- Yan gözlem: yalnız `#tiktok` parçası değişen adrese gidiş sayfayı yenilemiyor; eski form durumu "Önce kaydet"
+  gösterdi. Ürün kusuru değil — gerçek yenilemede "Kayıtlı (…972f)".
