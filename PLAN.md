@@ -17,7 +17,7 @@
 | Uygulama boyutu | ✅ 19 test, kırma 7/7, gerçek ödeme `metadata.app` | `docs/decisions/uygulama-boyutu.md` |
 | Rakip araştırması | ✅ 5 araç × 4 soru + akış özeti, 5 bulgu → Ç24–Ç28 (kod yok) | `docs/decisions/rakip-arastirmasi.md` |
 | Kimlik + hak | ✅ 41 test, kırma 11/11 (2'si eksik testi buldu), web ödemesi → bağlama → hak uçtan uca | `docs/decisions/kimlik-hak.md` |
-| Dağıtım dosyaları | 🟡 yerelde uçtan uca TLS + sürüm ölçümü, kırma 10/10 (+K9 tutmadı → iki katman ölçüldü); **sunucu bekleniyor** | `docs/decisions/dagitim.md` |
+| Dağıtım dosyaları | ✅ canlı (2026-11-17, `keepchat-vps`); son ölçüm 2026-11-19 `/health` sürüm `c9d0c63d84eb`; üretim imajı CI'da (Ç146), dış ölçüm yeniden denemeli (Ç147) | `docs/decisions/dagitim.md` |
 | Reklam atfı (A6/1) | ✅ 52 test, kırma 13/13 (+A13 tutmadı → tuzak §25), gerçek Stripe ile reklam → ödeme → abonelik | `docs/decisions/atif.md` |
 | İç panel (A6/2) | ✅ 63 test, kırma 13/14 (P5 tutmadı → yorum düzeltildi), tarayıcıda gerçek veriyle | `docs/decisions/panel.md` |
 | Huni anket + tanıtım | ✅ 72 test, kırma 13/13 (3'ü derleme), tarayıcıda geri tuşu + panel | `docs/decisions/huni-anket.md` |

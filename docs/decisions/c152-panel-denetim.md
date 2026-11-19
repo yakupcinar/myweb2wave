@@ -56,3 +56,9 @@ yeniye · K7 tetikleyici düşürüldü · K8 oturumsuz da yazılır. İlk kırm
 - **Testler:** çekirdek 9 (+3: sözleşme ve sıra, oturumsuz okunmaz + doğrudan adres, rota-ad kapsamı), panel 2.
 - **Kırma 5/5 kırmızı:** P1 bir ad eksik (çekirdek kapsam + panel) · P2 hep "Yapıldı" · P3 istemci sırayı çevirir ·
   P4 sayfa rotası yok · P5 boş kaynak `[]`. P5'i ölçen kayıt (giriş) ilk taslakta yoktu — teste doğrudan eklendi.
+
+## 2026-11-19 — Canlıda
+
+`deploy/dagit.sh` → `DAGITIM TAMAM sürüm=c9d0c63d84eb` (göç `Version20261119090000` yedekle). Dışarıdan:
+`/panel/islem-gecmisi` ve `/panel/api/denetim` oturumsuz 302 → `/panel/giris`; sunucuda `app:panel-denetim --son 5`
+çıkış 0, kayıt yok (dağıtımdan beri panel yazması yok). Dağıtım betiğinde yeniden deneme satırı 0 (sertifika hazırdı).
