@@ -96,3 +96,14 @@ tablo + cron).
   gönderilince "Transfer to new App User ID" davranışıyla yeni kimliğe geçer; istenirse panelden silinir.
 - Kalan: Ç143 gerçek duraklatmayla (ayar "reject paused" seçili) · KeepChat'in kişiyi bağlaması (ilk gerçek
   aktarım) · canlıya geçişte üretim anahtarı.
+- Deneme müşterisi `olcum-20261119` kullanıcı isteğiyle RevenueCat'ten silindi (2026-11-19; Stripe'taki abonelik yerinde).
+
+### Etiket — "Bağlantıyı dene"de `kayitli` (2026-11-19, kullanıcı: "etiketi değiştir")
+
+Canlı TikTok denemesinde pixel + anahtar kayıtlıyken dönüşüm satırı "Ayarlı değil" diyordu: Ç155 kararıyla test
+kodu boşken deneme olayı gönderilmez ve sunucu bunu da `ayarsiz` döndürüyordu. Artık ayrı durum **`kayitli`**
+(sözleşme `MetaDenemeSonucu.durum`; Meta ve TikTok ortak şema): bilgiler kayıtlı, deneme yapılmadı; rozet
+"Kayıtlı" (nötr — doğrulanmış "Bağlı" değil), mesaj "Canlı olaylar gönderiliyor. Bağlantıyı denemek için test olay
+kodu girin…". İstek atılmaması (Ç155) aynı. **Kırma 5/5 kırmızı:** K1/K2 sunucu `ayarsiz` döner (PanelTiktokTest,
+PanelMetaTest) · K3 sözleşme enum'undan `kayitli` çıkar (yanıt doğrulaması — bu satır kırmadan önce eklendi; yoksa
+düşmezdi) · K4/K5 panel `kayitli` dalı yok (Meta.test, Tiktok.test).

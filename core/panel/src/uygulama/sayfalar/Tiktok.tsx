@@ -356,7 +356,9 @@ function DenemeSatiri({ ad, s }: { ad: string; s: Deneme }): ReactNode {
                     ? "Bağlı"
                     : s.durum === "hata"
                       ? "Hata"
-                      : "Ayarlı değil"}
+                      : s.durum === "kayitli"
+                        ? "Kayıtlı"
+                        : "Ayarlı değil"}
             </Rozet>
             <span className="min-w-0 break-words text-soluk">{s.mesaj}</span>
         </li>

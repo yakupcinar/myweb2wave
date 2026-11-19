@@ -148,9 +148,11 @@ final class PanelTiktokTest extends WebTestCase
         // Test kodu yok: dönüşüm denenmez, istek yok.
         $this->put($jeton, ['pixelKodu' => 'CABCDE12345', 'eventsAnahtari' => self::EVENTS]);
         $this->dene($jeton);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/tiktok/dene', $this->client->getResponse());
         $donusum = $this->json()['donusum'];
         self::assertIsArray($donusum);
-        self::assertSame('ayarsiz', $donusum['durum'] ?? null);
+        // Ç158 yan not: bilgiler kayıtlı, yalnız test kodu yok → "ayarsız" değil "kayıtlı".
+        self::assertSame('kayitli', $donusum['durum'] ?? null);
         self::assertSame(0, SahteRevenueCat::sayi(), 'test kodu yokken olay gönderilmez');
 
         $this->put($jeton, ['pixelKodu' => 'CABCDE12345', 'testKodu' => 'TEST123', 'reklamveren' => '7123456789012', 'raporAnahtari' => self::RAPOR]);

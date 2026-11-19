@@ -180,7 +180,7 @@ final readonly class MetaBaglantisi
      * karışmaz), yoksa istek atmaz. Harcama: reklam hesabını Insights
      * anahtarıyla okur. Mesaj anahtar içermez.
      *
-     * @return array{donusum: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}, harcama: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}}
+     * @return array{donusum: array{durum: 'tamam'|'hata'|'ayarsiz'|'kayitli', mesaj: string}, harcama: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}}
      */
     public function dene(string $app): array
     {
@@ -188,7 +188,7 @@ final readonly class MetaBaglantisi
         if (null === $m['pixel'] || null === $m['capi']) {
             $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Pixel ID ve CAPI anahtarı girilmedi.'];
         } elseif (null === $m['testKodu']) {
-            $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Denemek için test olay kodu girin (Events Manager › Olayları test et); deneme olayı yalnız orada görünür.'];
+            $donusum = ['durum' => 'kayitli', 'mesaj' => 'Canlı olaylar gönderiliyor. Bağlantıyı denemek için test olay kodu girin (Events Manager › Olayları test et); deneme olayı yalnız orada görünür.'];
         } else {
             $donusum = $this->sor('POST', $m['pixel'].'/events', $m['capi'], ['json' => [
                 'test_event_code' => $m['testKodu'],

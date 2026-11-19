@@ -1543,8 +1543,11 @@ export interface components {
             guncellendi: string | null;
         };
         MetaDenemeSonucu: {
-            /** @enum {string} */
-            durum: "tamam" | "hata" | "ayarsiz";
+            /**
+             * @description kayitli = bağlantı bilgileri kayıtlı ama test olay kodu yok, deneme olayı gönderilmedi (canlı olaylar etkilenmez)
+             * @enum {string}
+             */
+            durum: "tamam" | "hata" | "ayarsiz" | "kayitli";
             mesaj: string;
         };
         PanelTiktok: {

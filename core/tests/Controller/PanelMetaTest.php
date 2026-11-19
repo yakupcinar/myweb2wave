@@ -146,9 +146,11 @@ final class PanelMetaTest extends WebTestCase
             '/v99.0/act_12345678' => [400, ['error' => ['message' => 'Invalid OAuth access token '.self::INSIGHTS, 'code' => 190]]],
         ];
         $this->dene($jeton);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/uygulamalar/{app}/meta/dene', $this->client->getResponse());
         $donusum = $this->json()['donusum'];
         self::assertIsArray($donusum);
-        self::assertSame('ayarsiz', $donusum['durum'] ?? null);
+        // Ç158 yan not: bilgiler kayıtlı, yalnız test kodu yok → "ayarsız" değil "kayıtlı".
+        self::assertSame('kayitli', $donusum['durum'] ?? null);
         self::assertSame(0, SahteRevenueCat::sayi(), 'test kodu yokken olay gönderilmez');
 
         $this->put($jeton, ['pixelId' => '987654321', 'testKodu' => 'TEST123', 'reklamHesabi' => 'act_12345678']);

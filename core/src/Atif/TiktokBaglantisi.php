@@ -167,7 +167,7 @@ final readonly class TiktokBaglantisi
      * Harcama reklamveren bilgisini Marketing API anahtarıyla okur. Mesaj
      * anahtar içermez.
      *
-     * @return array{donusum: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}, harcama: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}}
+     * @return array{donusum: array{durum: 'tamam'|'hata'|'ayarsiz'|'kayitli', mesaj: string}, harcama: array{durum: 'tamam'|'hata'|'ayarsiz', mesaj: string}}
      */
     public function dene(string $app): array
     {
@@ -175,7 +175,7 @@ final readonly class TiktokBaglantisi
         if (null === $t['pixel'] || null === $t['events']) {
             $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Pixel kodu ve Events API anahtarı girilmedi.'];
         } elseif (null === $t['testKodu']) {
-            $donusum = ['durum' => 'ayarsiz', 'mesaj' => 'Denemek için test olay kodu girin (Events Manager › Test events); deneme olayı yalnız orada görünür.'];
+            $donusum = ['durum' => 'kayitli', 'mesaj' => 'Canlı olaylar gönderiliyor. Bağlantıyı denemek için test olay kodu girin (Events Manager › Test events); deneme olayı yalnız orada görünür.'];
         } else {
             $donusum = $this->sor('POST', '/event/track/', $t['events'], ['json' => [
                 'event_source' => 'web',

@@ -161,7 +161,7 @@ describe("TikTok bağlantısı", () => {
                 new Response(
                     JSON.stringify({
                         donusum: {
-                            durum: "ayarsiz",
+                            durum: "kayitli",
                             mesaj: "Denemek için test olay kodu girin",
                         },
                         harcama: {
@@ -180,7 +180,7 @@ describe("TikTok bağlantısı", () => {
         expect(
             sonuc.getAllByRole("listitem").map((l) => l.textContent),
         ).toEqual([
-            "DönüşümAyarlı değilDenemek için test olay kodu girin",
+            "DönüşümKayıtlıDenemek için test olay kodu girin",
             "HarcamaHataTikTok reddetti: Access token is incorrect (kod 40105)",
         ]);
         expect(istekler.map((i) => [i.yontem, i.adres, i.jeton])).toEqual([

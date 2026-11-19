@@ -194,6 +194,31 @@ describe("Meta bağlantısı", () => {
         ]);
     });
 
+    // Ç158 yan not: test kodu yokken bilgiler kayıtlı olsa da "Ayarlı değil" yazıyordu.
+    it("dene: kayitli 'Kayıtlı', ayarsiz 'Ayarlı değil' der", async () => {
+        kur(
+            KAYITLI,
+            () =>
+                new Response(
+                    JSON.stringify({
+                        donusum: { durum: "kayitli", mesaj: "test kodu yok" },
+                        harcama: { durum: "ayarsiz", mesaj: "girilmedi" },
+                    }),
+                ),
+        );
+        await within(await bolum()).findByDisplayValue("987654321");
+        fireEvent.click(dugme("Bağlantıyı dene"));
+        const sonuc = within(
+            await screen.findByRole("region", { name: "Deneme sonucu" }),
+        );
+        expect(
+            sonuc.getAllByRole("listitem").map((l) => l.textContent),
+        ).toEqual([
+            "DönüşümKayıtlıtest kodu yok",
+            "HarcamaAyarlı değilgirilmedi",
+        ]);
+    });
+
     it("bağlantıyı kaldır onay ister; Vazgeç istek göndermez", async () => {
         const istekler = kur();
         await within(await bolum()).findByDisplayValue("987654321");

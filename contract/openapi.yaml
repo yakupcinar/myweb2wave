@@ -2182,7 +2182,10 @@ components:
       additionalProperties: false
       required: [durum, mesaj]
       properties:
-        durum: { type: string, enum: [tamam, hata, ayarsiz] }
+        durum:
+          type: string
+          enum: [tamam, hata, ayarsiz, kayitli]
+          description: "kayitli = bağlantı bilgileri kayıtlı ama test olay kodu yok, deneme olayı gönderilmedi (canlı olaylar etkilenmez)"
         mesaj: { type: string }
     PanelTiktok:
       type: object
