@@ -129,3 +129,13 @@ düşmezdi) · K4/K5 panel `kayitli` dalı yok (Meta.test, Tiktok.test).
 - Ölçümden sonra (kullanıcı kararı, 2026-11-20): abonelik panelden sürdürüldü (DB `duraklatildi=f`,
   `duraklatma_bitis` boş), RevenueCat sandbox müşterisi `olcum-c143` silindi ("Customer not found"). Dönem sonu
   ölçümü bu yüzden yapılmayacak; gerekirse Stripe test saatiyle.
+
+### Kararlar (2026-11-20, kullanıcı)
+
+- Ç143 → duraklatma RevenueCat'li uygulamada kapalı (`m6c-duraklat.md` § Ç143); dönem sonu ölçümü yapılmayacak.
+- Ç158 (2) → KeepChat girişte bağlar, ilk gerçek web satışından önce (KeepChat deposu).
+- TikTok harcaması → geliştirici uygulaması onayı beklenir; kod değişmez. Onay gelince anahtarı kullanıcı girer.
+- Anahtar değişimi → canlıya açılırken toplu (PLAN "Değişecek anahtarlar").
+- İngilizce yasal metinler → **zaten canlıda** (4 belge × en, 2026-11-17 kaydedildi; şartlar tr ile karşılaştırıldı,
+  birebir çeviri). Önceki "yazılacak" önerisi eski bilgiydi. Kalan yalnız Ç126 (hukuki gözden geçirme; Ç126 kaydına göre huni yalnız tr'ye — bugün ölçülmedi —
+  bağlanıyor).

@@ -85,6 +85,10 @@ Jeton **tek kullanımlıktır**: ikinci cihaz için e-posta kodu yolu.
   olmalı; Stripe iptali RevenueCat'e en geç ~2 saatte yansır (yeniden
   gönderimle hemen — çekirdek her durum değişikliğinde yeniden gönderir).
 - Bizim hak ucumuz (§3, `…/hak`) uygulama RevenueCat'e geçene kadar yedek.
+- RevenueCat anahtarı kayıtlı uygulamada panelden **duraklatma yok** (Ç143): RevenueCat Stripe'ın
+  duraklatmasını görmez, erişim sürerdi. İptal dönem sonunda.
+- ⚠️ Durum (2026-11-20): canlıda `baglantilar` boş — KeepChat bağlamayı (§3 ya da §3b) yapana dek
+  web'den ödeyen kişi uygulamada Pro görmez ve hata da çıkmaz. İlk gerçek web satışından önce gerekli (Ç158).
 
 ## 5 · ⚠️ App Store kuralları (iOS istemcisi)
 

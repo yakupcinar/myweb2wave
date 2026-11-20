@@ -894,7 +894,7 @@ paths:
                     items:
                       type: object
                       additionalProperties: false
-                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli, iptalDonemSonu, donemSonu, duraklatildi, duraklatmaBitis, sonFatura]
+                      required: [abonelik, app, durum, email, guncelleme, odeme, reklam, kaynak, ortam, kampanya, huni, kisi, bagli, iptalDonemSonu, donemSonu, duraklatildi, duraklatmaBitis, duraklatilabilir, sonFatura]
                       properties:
                         abonelik: { type: string }
                         app: { type: [string, "null"] }
@@ -912,6 +912,7 @@ paths:
                         iptalDonemSonu: { type: boolean, description: "M6a — dönem sonunda iptal planlı (geri alınabilir)" }
                         duraklatildi: { type: boolean, description: "M6c — tahsilat duraklı, erişim yok (bitişi geçmişse false)" }
                         duraklatmaBitis: { type: [string, "null"], format: date-time, description: "M6c — Stripe'ın kendiliğinden sürdüreceği an" }
+                        duraklatilabilir: { type: boolean, description: "Ç143 — RevenueCat aktarımı açık uygulamada false (RevenueCat duraklatmayı görmez, erişim sürer)" }
                         donemSonu: { type: [string, "null"], description: "M6a — geçerli dönemin sonu (UTC); iptal planlıysa erişimin bittiği an" }
                         sonFatura:
                           description: "M6a — son tahsil edilen fatura (ana birim); iade = iade edilen kısım"

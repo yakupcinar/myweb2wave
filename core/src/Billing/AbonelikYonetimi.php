@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Billing;
 
 use App\Kimlik\DogrulamaKodu;
+use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
@@ -28,6 +29,7 @@ final readonly class AbonelikYonetimi
         private SubscriptionSync $sync,
         private LoggerInterface $logger,
         private RateLimiterFactory $epostaDuzeltmeLimiter,
+        private Aktarim $aktarim,
     ) {
     }
 
@@ -56,14 +58,20 @@ final readonly class AbonelikYonetimi
     /**
      * M6c (A28): $ay (1–3) ay duraklat — tahsilat durur (void), Stripe o
      * tarihte kendisi sürdürür; null hemen sürdürür (stripe-php boş alan
-     * gönderir). Stripe'ın yanıtı yazılır.
+     * gönderir). Stripe'ın yanıtı yazılır. Ç143: RevenueCat aktarımı açık
+     * uygulamada duraklatma kapalı — RevenueCat pause_collection'ı görmez,
+     * hakkı sürdürür (2026-11-19 ölçüldü); sürdürmek her zaman açık.
      *
      * @return string|null hata metni ya da null (tamam)
      */
     public function duraklat(string $abonelik, ?int $ay): ?string
     {
-        if (false === $this->db->fetchOne('SELECT 1 FROM subscriptions WHERE stripe_subscription_id = :s', ['s' => $abonelik])) {
+        $app = $this->db->fetchOne('SELECT app FROM subscriptions WHERE stripe_subscription_id = :s', ['s' => $abonelik]);
+        if (!\is_string($app)) {
             return 'bilinmeyen abonelik';
+        }
+        if (null !== $ay && $this->aktarim->acik($app)) {
+            return 'Bu uygulamada erişimi RevenueCat veriyor; RevenueCat duraklatmayı görmez, erişim sürer. Dönem sonunda iptal edin.';
         }
         if (null !== $ay && !\in_array($ay, self::DURAKLATMA_AYLARI, true)) {
             return 'süre 1, 2 ya da 3 ay olmalı';

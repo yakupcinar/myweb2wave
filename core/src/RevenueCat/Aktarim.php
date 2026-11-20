@@ -36,10 +36,16 @@ final readonly class Aktarim
     ) {
     }
 
+    /** Bu uygulamada aktarım açık mı (anahtar var) — hak kaynağı RevenueCat. */
+    public function acik(string $app): bool
+    {
+        return '' !== ($this->anahtarlar[$app] ?? '');
+    }
+
     /** Bu abonelik bağlı bir kişininse kuyruğa al. Çağıranın işlemi içinde. */
     public function aboneligiKuyrugaAl(Connection $db, string $app, string $abonelik): void
     {
-        if ('' === ($this->anahtarlar[$app] ?? '')) {
+        if (!$this->acik($app)) {
             return;
         }
         $db->executeStatement(
@@ -57,7 +63,7 @@ final readonly class Aktarim
     /** Bağlama sonrası: bu kişinin bu uygulamadaki bütün abonelikleri. Çağıranın işlemi içinde. */
     public function kisiyiKuyrugaAl(Connection $db, string $app, string $kisi): void
     {
-        if ('' === ($this->anahtarlar[$app] ?? '')) {
+        if (!$this->acik($app)) {
             return;
         }
         $db->executeStatement(

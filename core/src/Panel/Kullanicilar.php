@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Panel;
 
 use App\Billing\ParaBirimi;
+use App\RevenueCat\Aktarim;
 use Doctrine\DBAL\Connection;
 
 /**
@@ -50,7 +51,7 @@ final class Kullanicilar
           AND (:ara = '' OR lower(s.email) LIKE :desen OR lower(z.utm_source) LIKE :desen OR lower(z.utm_campaign) LIKE :desen)
         SQL;
 
-    public function __construct(private readonly Connection $db)
+    public function __construct(private readonly Connection $db, private readonly Aktarim $aktarim)
     {
     }
 
@@ -67,7 +68,7 @@ final class Kullanicilar
      *
      * @return list<array{abonelik: string, app: ?string, durum: string, email: ?string, guncelleme: string, odeme: ?string,
      *                    reklam: bool, kaynak: ?string, ortam: ?string, kampanya: ?string, huni: ?string, kisi: bool, bagli: bool,
-     *                    iptalDonemSonu: bool, donemSonu: ?string, duraklatildi: bool, duraklatmaBitis: ?string, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float, odendi: string|null}|null}>
+     *                    iptalDonemSonu: bool, donemSonu: ?string, duraklatildi: bool, duraklatmaBitis: ?string, duraklatilabilir: bool, sonFatura: array{paraBirimi: string, tutar: int|float, iade: int|float, odendi: string|null}|null}>
      */
     public function liste(string $ara, string $durum, ?string $app = null, int $sayfa = 1, int $boyut = self::AZAMI_SATIR, string $sirala = '', bool $artan = true): array
     {
@@ -76,7 +77,7 @@ final class Kullanicilar
             : '';
         $zaman = static fn (string $s): string => "to_char({$s} AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"+00:00\"')";
 
-        return array_map(static fn (array $s): array => [
+        return array_map(fn (array $s): array => [
             'abonelik' => self::dizgeYaDaNull($s['abonelik']) ?? '',
             'app' => self::dizgeYaDaNull($s['app']),
             'durum' => \is_string($s['durum']) ? $s['durum'] : '',
@@ -96,6 +97,8 @@ final class Kullanicilar
             // M6c: bitişi geçmiş duraklatma sürmüş sayılır (Stripe sürdürür; hak ile aynı kural).
             'duraklatildi' => true === $s['durakli'],
             'duraklatmaBitis' => true === $s['durakli'] ? self::dizgeYaDaNull($s['duraklatma_bitis']) : null,
+            // Ç143: AbonelikYonetimi::duraklat ile aynı kural.
+            'duraklatilabilir' => !$this->aktarim->acik(\is_string($s['app']) ? $s['app'] : ''),
             'sonFatura' => \is_string($s['f_para']) ? ['paraBirimi' => strtoupper($s['f_para']), 'tutar' => ParaBirimi::anaBirim(self::sayi($s['f_tutar']), $s['f_para']),
                 'iade' => ParaBirimi::anaBirim(self::sayi($s['f_iade']), $s['f_para']),
                 // P7a: panel "€6,99 · 3 Kas" ve iade onayında "3 Kasım faturası" diye yazar.

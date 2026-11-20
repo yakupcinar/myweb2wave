@@ -3911,6 +3911,8 @@ export interface operations {
                              * @description M6c — Stripe'ın kendiliğinden sürdüreceği an
                              */
                             duraklatmaBitis: string | null;
+                            /** @description Ç143 — RevenueCat aktarımı açık uygulamada false (RevenueCat duraklatmayı görmez, erişim sürer) */
+                            duraklatilabilir: boolean;
                             /** @description M6a — geçerli dönemin sonu (UTC); iptal planlıysa erişimin bittiği an */
                             donemSonu: string | null;
                             /** @description M6a — son tahsil edilen fatura (ana birim); iade = iade edilen kısım */

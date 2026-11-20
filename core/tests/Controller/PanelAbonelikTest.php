@@ -77,6 +77,7 @@ final class PanelAbonelikTest extends WebTestCase
      */
     public function testDuraklatVeSurdur(): void
     {
+        $this->revenuecatsizUygulama();
         $jeton = $this->girisVeJeton();
         $this->stripe->yanitlar = ['post /v1/subscriptions/sub_x' => ['id' => 'sub_x', 'object' => 'subscription', 'pause_collection' => ['behavior' => 'void', 'resumes_at' => 1_900_000_000]]];
         $once = (new \DateTimeImmutable('+2 months'))->getTimestamp();
@@ -104,6 +105,7 @@ final class PanelAbonelikTest extends WebTestCase
     /** Süre yalnız 1–3 ay; geçersizde Stripe'a istek gitmez. */
     public function testDuraklatmaSuresiDenetlenir(): void
     {
+        $this->revenuecatsizUygulama();
         $jeton = $this->girisVeJeton();
         foreach ([['ay' => 4], ['ay' => 0], ['ay' => '1'], []] as $govde) {
             $this->istek('POST', '/panel/api/abonelikler/sub_x/duraklat', $jeton, $govde);
@@ -116,6 +118,38 @@ final class PanelAbonelikTest extends WebTestCase
         $this->istek('POST', '/panel/api/abonelikler/sub_yok/duraklat', $jeton, ['ay' => 1]);
         self::assertResponseStatusCodeSame(404);
         self::assertSame([], $this->stripe->istekler);
+    }
+
+    /**
+     * Ç143: RevenueCat aktarımı açık uygulamada (test ortamında keepchat'in
+     * anahtarı var) duraklatma reddedilir, Stripe'a istek gitmez — RevenueCat
+     * pause_collection'ı görmez, hakkı sürdürür (2026-11-19 ölçüldü).
+     * Sürdürmek açık: daha önce duraklatılmış abonelik takılı kalmasın.
+     * Listede aynı kural duraklatilabilir alanında.
+     */
+    public function testRevenueCatliUygulamadaDuraklatmaKapali(): void
+    {
+        $jeton = $this->girisVeJeton();
+        $this->istek('POST', '/panel/api/abonelikler/sub_x/duraklat', $jeton, ['ay' => 1]);
+        self::assertResponseStatusCodeSame(422);
+        Sozlesme::yanitiDogrula('POST', '/panel/api/abonelikler/{abonelik}/duraklat', $this->client->getResponse());
+        self::assertStringContainsString('RevenueCat duraklatmayı görmez', (string) json_encode(json_decode((string) $this->client->getResponse()->getContent()), \JSON_UNESCAPED_UNICODE));
+        self::assertSame([], $this->stripe->istekler);
+        self::assertSame([false, null], $this->duraklatma());
+
+        $this->db->executeStatement("UPDATE subscriptions SET duraklatildi = true, duraklatma_bitis = '2099-02-01 10:00Z' WHERE stripe_subscription_id = 'sub_x'");
+        $this->stripe->yanitlar = ['post /v1/subscriptions/sub_x' => ['id' => 'sub_x', 'object' => 'subscription', 'pause_collection' => null]];
+        $this->istek('DELETE', '/panel/api/abonelikler/sub_x/duraklat', $jeton);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame([false, null], $this->duraklatma());
+
+        $this->db->insert('subscriptions', ['stripe_subscription_id' => 'sub_b', 'stripe_customer_id' => 'cus_b', 'status' => 'active', 'email' => 'c@example.com', 'app' => 'rcsiz']);
+        $this->client->request('GET', '/panel/api/kullanicilar');
+        Sozlesme::yanitiDogrula('GET', '/panel/api/kullanicilar', $this->client->getResponse());
+        /** @var array{satirlar: list<array<string, mixed>>} $j */
+        $j = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $satirlar = array_column($j['satirlar'], null, 'abonelik');
+        self::assertSame([false, true], [$satirlar['sub_x']['duraklatilabilir'] ?? null, $satirlar['sub_b']['duraklatilabilir'] ?? null]);
     }
 
     /** Listede duraklatma; bitişi geçmiş duraklatma sürmüş sayılır. */
@@ -429,6 +463,12 @@ final class PanelAbonelikTest extends WebTestCase
     {
         $this->client->request($yontem, $adres, server: ['HTTP_X_CSRF_TOKEN' => $jeton, 'CONTENT_TYPE' => 'application/json'],
             content: null === $govde ? null : (string) json_encode($govde));
+    }
+
+    /** Duraklatma testleri: RevenueCat anahtarı olmayan uygulama (Ç143). */
+    private function revenuecatsizUygulama(): void
+    {
+        $this->db->executeStatement("UPDATE subscriptions SET app = 'rcsiz' WHERE stripe_subscription_id = 'sub_x'");
     }
 
     /** @return array{0: mixed, 1: mixed} */

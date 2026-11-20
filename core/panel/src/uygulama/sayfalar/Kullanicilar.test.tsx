@@ -34,6 +34,7 @@ const satir = (abonelik: string, ek: object) => ({
     donemSonu: null,
     duraklatildi: false,
     duraklatmaBitis: null,
+    duraklatilabilir: true,
     sonFatura: null,
     ...ek,
 });
@@ -509,6 +510,17 @@ describe("M6c — duraklat / sürdür", () => {
                 'POST /panel/api/abonelikler/sub_a/duraklat true {"ay":3}',
             ]),
         );
+    });
+
+    // Ç143: RevenueCat duraklatmayı görmez, erişim sürer — o uygulamada düğme yok.
+    it("duraklatılamayan satırda Duraklat yok, iptal var", async () => {
+        kur([satir("sub_r", { duraklatilabilir: false }), ...SATIRLAR]);
+        await screen.findAllByRole("row");
+        expect(
+            [...islemHucresi("sub_r").querySelectorAll("button")].map(
+                (b) => b.textContent,
+            ),
+        ).toEqual(["Dönem sonunda iptal et", "E-postayı düzelt", "Geçmiş"]);
     });
 });
 

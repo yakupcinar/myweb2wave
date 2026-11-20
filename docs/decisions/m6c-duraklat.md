@@ -63,3 +63,19 @@ testleri düşürdü (çıkış 2). Kırmızı sayılmadı; kaçışla yeniden k
 - **Ekran döngüsü** (`kullanicilar`, abonelik geçici duraklı): masaüstünde kesilme düzeldi; telefonda e-posta ezilmiyor,
   durum iki satır.
 - **Açık:** RevenueCat duraklatılmış aboneliğe hak verir mi, ölçülmedi — Ç143.
+
+## 2026-11-20 — Ç143: RevenueCat'li uygulamada duraklatma kapalı (kullanıcı kararı)
+
+- **Ölçüm** (`revenuecat.md` § Ç143 ölçümü): RevenueCat `pause_collection`'lı aboneliğe hak veriyor; bizim hak
+  ucumuz aynı kişiye `paused` diyor.
+- **Karar:** `Aktarim::acik($app)` (anahtar dolu) ise `AbonelikYonetimi::duraklat` süreli isteği reddeder (422,
+  "Dönem sonunda iptal edin"), Stripe'a istek gitmez. Sürdürmek (DELETE) açık kalır — önceden duraklatılmış
+  abonelik takılı kalmasın. Liste aynı kuralı `duraklatilabilir` alanıyla verir; panel `false`'ta Duraklat
+  düğmesini göstermez. Kural tek yerde (`Aktarim::acik`), aktarımın kendisi de onu kullanır.
+- **Reddedilenler:** uygulama hem RevenueCat'e hem bizim hak ucumuza baksın (iki doğruluk kaynağı, her uygulamada
+  tekrar) · duraklatınca RevenueCat'te hakkı elle geri al (mağaza satın almasında RevenueCat izin vermiyor) ·
+  dönem sonu `void` ölçümü (kullanıcı: gerekli değil; duraklatma artık bu uygulamalarda oluşmuyor).
+- **Test:** `PanelAbonelikTest::testRevenueCatliUygulamadaDuraklatmaKapali` (test ortamında keepchat'in anahtarı
+  var); eski duraklatma testleri anahtarsız `rcsiz` uygulamasında. Panel: "duraklatılamayan satırda Duraklat yok".
+- **Kırma 5/5 kırmızı:** K1 sunucu kapısı yok (Stripe'a istek gitti) · K2 sürdürme de kapalı (DELETE 422) ·
+  K3 liste hep `true` · K4 sözleşmede alan yok (yanıt doğrulaması, 3 hata) · K5 panel koşulu yok.

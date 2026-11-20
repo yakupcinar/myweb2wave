@@ -261,19 +261,19 @@ söyler; örneğin "€6,99 iade edilsin mi? … 3 Kasım faturası. Geri alına
 kırmızı "İade et". Stripe'ın verdiği hata satırın altında görünür.
 
 **Arkada nasıl çalışır**
-1. Liste [`Kullanicilar::liste`](../core/src/Panel/Kullanicilar.php#L72)'den gelir.
-2. İptal: [`AbonelikYonetimi::donemSonundaIptal`](../core/src/Billing/AbonelikYonetimi.php#L35) Stripe'a
+1. Liste [`Kullanicilar::liste`](../core/src/Panel/Kullanicilar.php#L73)'den gelir.
+2. İptal: [`AbonelikYonetimi::donemSonundaIptal`](../core/src/Billing/AbonelikYonetimi.php#L37) Stripe'a
    `cancel_at_period_end` gönderir ve **Stripe'ın döndürdüğü** durumu yazar — Stripe reddetse panel yalan söylemez.
-3. İade: [`AbonelikYonetimi::sonFaturayiIadeEt`](../core/src/Billing/AbonelikYonetimi.php#L167) son faturanın ödemesini
+3. İade: [`AbonelikYonetimi::sonFaturayiIadeEt`](../core/src/Billing/AbonelikYonetimi.php#L175) son faturanın ödemesini
    bulur ve kalan tutarı iade eder. Fatura ile ödeme arasındaki bağ Stripe'ın `invoice_payment.paid` olayından gelir
    (`fatura_odemeleri`); yeni Stripe API'de bu bağ faturanın üstünde değildir (tuzak §54).
-4. Duraklat: [`AbonelikYonetimi::duraklat`](../core/src/Billing/AbonelikYonetimi.php#L63) Stripe'a `pause_collection`
+4. Duraklat: [`AbonelikYonetimi::duraklat`](../core/src/Billing/AbonelikYonetimi.php#L67) Stripe'a `pause_collection`
    (`void`, `resumes_at`) gönderir; abonelik Stripe'ta `active` kalır, erişimi hak sorgusu kapatır. Süre bitince Stripe
    kendisi sürdürür ([m6c](decisions/m6c-duraklat.md)).
 5. Stripe panelinden yapılan iade de `charge.refunded` ile gelir ve **birikimli** düşülür
    ([`SubscriptionSync::iadeYaz`](../core/src/Billing/SubscriptionSync.php#L240)); aynı olay iki kez gelse gelir iki kez
    düşmez.
-6. E-posta düzelt: [`AbonelikYonetimi::epostaDuzelt`](../core/src/Billing/AbonelikYonetimi.php#L103) son 4'ü Stripe'taki
+6. E-posta düzelt: [`AbonelikYonetimi::epostaDuzelt`](../core/src/Billing/AbonelikYonetimi.php#L111) son 4'ü Stripe'taki
    kartla karşılaştırır (yanlış deneme saatte 5); eski e-posta uygulamada doğrulanmışsa reddeder; eşleşince Stripe
    müşterisinin ve aboneliğin e-postasını günceller. Yeni adres hak vermez, sahibi yine kod ya da bağlantıyla kanıtlar
    ([c150](decisions/c150-eposta-duzeltme.md)).

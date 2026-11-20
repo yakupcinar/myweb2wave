@@ -572,7 +572,10 @@ function SatirGorunumu({
                         >
                             Sürdür
                         </Dugme>
-                    ) : SURER.includes(s.durum) && !s.iptalDonemSonu ? (
+                    ) : SURER.includes(s.durum) &&
+                      !s.iptalDonemSonu &&
+                      s.duraklatilabilir ? (
+                        // Ç143: RevenueCat'li uygulamada duraklatma yok (sunucu da reddeder).
                         <Dugme
                             className={dugme}
                             onClick={() => sec("duraklat")}
