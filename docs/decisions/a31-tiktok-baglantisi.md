@@ -151,3 +151,15 @@ yanıtta ağ sabit · H14 panelde ağ sütunu boş · H15 boş durum eski adrese
   `content_id` uyarısı orada da çıkarsa eklenir), harcama (Marketing API — geliştirici uygulaması onayı).
 - Yan gözlem: yalnız `#tiktok` parçası değişen adrese gidiş sayfayı yenilemiyor; eski form durumu "Önce kaydet"
   gösterdi. Ürün kusuru değil — gerçek yenilemede "Kayıtlı (…972f)".
+
+## 2026-11-20 — Gerçek ödeme olayı (denemeli plan) canlıda ölçüldü
+
+- Test kodu `TEST06394` (dünküyle aynı; TikTok › Pixel › Etkinlik test etme › Talimatlar "Göster") panele girildi,
+  "Bağlantıyı dene" → Test events'te yeni `ViewContent` (10:18:35).
+- Kullanıcı canlı hunide Stripe test kartıyla denemeli planı aldı (`sub_1Udm8T…`, `trialing`). Giden kutusu:
+  `reklam_donusumleri` meta + tiktok satırı, ikisi de 07:21:34 UTC gönderildi, deneme 0, hata yok.
+- TikTok Test events: **"Deneme başlatma" (`StartTrial`)**, sunucudan, `currency: TRY`, `value: 0`,
+  `contents: [{"currency":"TRY"}]`, ip + user_agent geldi. **Uyarı:** "satın alma işlemi değeri geçersiz" — `value`
+  0 kabul görmüyor (Ç160).
+- Ölçümden sonra test kodu boşaltıldı (sunucuda `test_kodu` boş, 07:23:35).
+- Ölçülmedi: `CompletePayment` (denemesiz plan ya da deneme sonu ilk tahsilat).
