@@ -18,6 +18,7 @@ import { Kart } from "../ui/Kart";
 
 type UygulamaAyarlari = components["schemas"]["UygulamaAyarlari"];
 type CanliyaGecis = components["schemas"]["CanliyaGecis"];
+type UygulamaBaglantisi = components["schemas"]["UygulamaBaglantisi"];
 
 /** Alan, sınır (sözleşmedeki maxLength ile aynı), girdi türü, açıklama, örnek. */
 const ALANLAR: {
@@ -132,6 +133,74 @@ const ADIMLAR: {
     },
 ];
 
+/**
+ * BR1: uygulamanın çekirdeğe bağlanması — adımlar sunucuda ölçülür. İsteğe
+ * bağlı adım sayaçta yok (yalnız App Store'da da satan uygulamaya gerekir).
+ */
+const BAGLANTI_ADIMLARI: {
+    ad: keyof UygulamaBaglantisi;
+    baslik: string;
+    aciklama: (d: UygulamaBaglantisi) => string;
+    nasil?: string;
+    istegeBagli?: boolean;
+}[] = [
+    {
+        ad: "anahtar",
+        baslik: "Uygulama anahtarı",
+        aciklama: () =>
+            "Uygulamanın sunucusu çekirdeğe bununla konuşur; telefondaki uygulamaya gitmez.",
+        nasil: "Sunucunun ortam dosyasına UYGULAMA_ANAHTARI_<UYGULAMA> yazılır (ör. openssl rand -hex 32); aynı değer uygulamanın sunucusuna girilir.",
+    },
+    {
+        ad: "istek",
+        baslik: "Uygulamanın sunucusu bağlandı",
+        aciklama: ({ istek }) =>
+            istek.son
+                ? `Son istek ${uzunTarih(istek.son)}.`
+                : "Uygulamanın sunucusundan henüz geçerli anahtarla istek gelmedi.",
+        nasil: "Uygulamanın sunucusuna çekirdeğin adresi ve uygulama anahtarı girilir; ilk istekte (ör. hak sorgusu GET /apps/<uygulama>/kullanicilar/<kullanıcı>/hak) tamamlanır.",
+    },
+    {
+        ad: "baglama",
+        baslik: "İlk bağlama",
+        aciklama: ({ baglama }) =>
+            baglama.son
+                ? `${baglama.sayi} kişi bağlı; son ${uzunTarih(baglama.son)}.`
+                : "Henüz kimse bağlanmadı; web'den ödeyen kişi uygulamada aboneliğini görmez.",
+        nasil: 'Uygulamada "Aboneliğimi bağla": e-posta → 6 haneli kod (POST /apps/<uygulama>/baglama/kod, sonra …/baglama/dogrula).',
+    },
+    {
+        ad: "girisBaglantisi",
+        baslik: "Ödeme sonrası giriş bağlantısı",
+        aciklama: ({ girisBaglantisi: g }) =>
+            g.son
+                ? `Son kullanım ${uzunTarih(g.son)}.`
+                : "Ödeyen kişi e-posta yazmadan uygulamaya girer.",
+        nasil: "Uygulama <şema>://giris?jeton=… bağlantısını açar, sunucusu POST /apps/<uygulama>/giris/kullan çağırır. Şema aşağıdaki Uygulama bilgilerinde.",
+    },
+    {
+        ad: "revenuecat",
+        baslik: "RevenueCat aktarımı",
+        aciklama: ({ revenuecat: r }) =>
+            !r.acik
+                ? "Kapalı: RevenueCat Stripe anahtarı yok."
+                : r.gonderilen > 0
+                  ? `${r.gonderilen} abonelik gönderildi${r.bekleyen ? `, ${r.bekleyen} bekliyor` : ""}.`
+                  : "Açık; bağlı bir kişinin aboneliği olunca gönderilir.",
+        nasil: "RevenueCat › Web › Stripe yapılandırmasının anahtarı REVENUECAT_STRIPE_<UYGULAMA>'ya yazılır; uygulama bağlamadan sonra Purchases.logIn(kisi) yapar.",
+    },
+    {
+        ad: "magaza",
+        baslik: "Mağaza aboneliğini okuma",
+        aciklama: ({ magaza }) =>
+            magaza.tamam
+                ? "App Store abonesi web'e geçerken bitiş tarihi okunabiliyor."
+                : "İsteğe bağlı — yalnız uygulama App Store'da da satıyorsa (web'e geçiş).",
+        nasil: "RevenueCat › API keys › V2 gizli anahtar (yalnız customer_information:subscriptions:read) ve proje kimliği: REVENUECAT_V2_<UYGULAMA>, REVENUECAT_PROJE_<UYGULAMA>.",
+        istegeBagli: true,
+    },
+];
+
 /** P7f: zamanlı komutların okunur adı (CanliyaGecis::GOREVLER); bilinmeyen komut adıyla. */
 const GOREV_ADLARI: Record<string, string> = {
     "app:webhook:gonder": "webhook gönderimi",
@@ -179,6 +248,7 @@ export function Ayarlar(): ReactNode {
             {secili ? (
                 <div className="flex flex-col gap-7">
                     <CanliyaGecisBolumu key={`c-${secili}`} app={secili} />
+                    <BaglantiBolumu key={`b-${secili}`} app={secili} />
                     <AyarFormu key={secili} app={secili} />
                     <VarsayilanKarti key={`v-${secili}`} app={secili} />
                 </div>
@@ -258,13 +328,71 @@ function CanliyaGecisBolumu({ app }: { app: string }): ReactNode {
     );
 }
 
-function Adim({
+function BaglantiBolumu({ app }: { app: string }): ReactNode {
+    const sorgu = useQuery({
+        queryKey: ["baglanti", app],
+        queryFn: async () => {
+            const { data } = await api.GET(
+                "/panel/api/uygulamalar/{app}/baglanti",
+                { params: { path: { app } } },
+            );
+            if (!data) throw new Error("durum alınamadı");
+            return data;
+        },
+    });
+    const d = sorgu.data;
+    const zorunlu = BAGLANTI_ADIMLARI.filter((a) => !a.istegeBagli);
+    const tamam = d ? zorunlu.filter((a) => d[a.ad].tamam).length : 0;
+
+    return (
+        <Bolum
+            baslik="Uygulama bağlantısı"
+            sag={
+                d ? (
+                    <span className="text-[13px] text-soluk">
+                        {zorunlu.length} adımdan {belirtme(tamam)} tamam
+                    </span>
+                ) : null
+            }
+        >
+            {sorgu.isError ? (
+                <p role="alert" className="text-tehlike">
+                    Durum yüklenemedi. Sayfayı yenileyin.
+                </p>
+            ) : !d ? (
+                <p role="status" className="text-soluk">
+                    Yükleniyor…
+                </p>
+            ) : (
+                <Kart>
+                    <ul aria-label="Uygulama bağlantısı">
+                        {BAGLANTI_ADIMLARI.map((a) => (
+                            <Adim
+                                key={a.ad}
+                                adim={a}
+                                durum={d}
+                                tamam={d[a.ad].tamam}
+                            />
+                        ))}
+                    </ul>
+                </Kart>
+            )}
+        </Bolum>
+    );
+}
+
+function Adim<D>({
     adim,
     durum,
     tamam,
 }: {
-    adim: (typeof ADIMLAR)[number];
-    durum: CanliyaGecis;
+    adim: {
+        baslik: string;
+        aciklama: (d: D) => string;
+        nasil?: string;
+        ac?: string;
+    };
+    durum: D;
     tamam: boolean;
 }): ReactNode {
     const [acik, setAcik] = useState(false);

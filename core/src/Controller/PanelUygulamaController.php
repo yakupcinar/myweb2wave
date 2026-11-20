@@ -10,6 +10,7 @@ use App\Atif\TiktokBaglantisi;
 use App\Huni\Varsayilanlar;
 use App\Mcp\ApiAnahtarlari;
 use App\Posta\EpostaSablonlari;
+use App\Uygulama\BaglantiDurumu;
 use App\Uygulama\CanliyaGecis;
 use App\Uygulama\UygulamaAyarlari;
 use App\Yasal\Taslaklar;
@@ -41,6 +42,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly Varsayilanlar $varsayilanlar,
         private readonly ApiAnahtarlari $anahtarlar,
         private readonly CanliyaGecis $canliyaGecis,
+        private readonly BaglantiDurumu $baglantiDurumu,
         private readonly EpostaSablonlari $epostalar,
         private readonly MetaBaglantisi $meta,
         private readonly TiktokBaglantisi $tiktok,
@@ -118,6 +120,17 @@ final class PanelUygulamaController extends AbstractController
         }
 
         return self::korumali(new JsonResponse($this->canliyaGecis->durum($app, new \DateTimeImmutable())));
+    }
+
+    /** BR1: uygulamanın çekirdeğe bağlanma adımları — her biri çalışan sistemden ölçülür. */
+    #[Route('/{app}/baglanti', name: 'panel_api_baglanti', methods: ['GET'])]
+    public function baglanti(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse($this->baglantiDurumu->durum($app)));
     }
 
     /** M9c (A23): yeni hunilere kopyalanan görünüm — hangi huniden, ne zaman, neler. */

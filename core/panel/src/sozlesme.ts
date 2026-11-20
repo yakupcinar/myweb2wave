@@ -648,6 +648,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/baglanti": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** BR1: uygulamanın çekirdeğe bağlanma adımları — her biri çalışan sistemden ölçülür (anahtarların kendisi yok) */
+        get: operations["panelUygulamaBaglantisi"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/varsayilanlar": {
         parameters: {
             query?: never;
@@ -1402,6 +1421,48 @@ export interface components {
                 tamam: boolean;
                 /** @description Çalışmamış ya da gecikmiş komutlar */
                 eksikler: string[];
+            };
+        };
+        /** @description BR1: uygulamanın çekirdeğe bağlandığı çalışan sistemden ölçülür */
+        UygulamaBaglantisi: {
+            /** @description Uygulama anahtarı sunucuda dolu (UYGULAMA_ANAHTARI_<UYGULAMA>) */
+            anahtar: {
+                tamam: boolean;
+            };
+            /** @description Uygulamanın sunucusu bu anahtarla en az bir istek attı */
+            istek: {
+                tamam: boolean;
+                /**
+                 * Format: date-time
+                 * @description Son istek (dakika duyarlılığında)
+                 */
+                son: string | null;
+            };
+            /** @description En az bir kişi bu uygulamaya bağlandı (e-posta kodu ya da giriş bağlantısı) */
+            baglama: {
+                tamam: boolean;
+                sayi: number;
+                /** Format: date-time */
+                son: string | null;
+            };
+            /** @description Ödeme sonrası giriş bağlantısı uygulamada en az bir kez kullanıldı */
+            girisBaglantisi: {
+                tamam: boolean;
+                /** Format: date-time */
+                son: string | null;
+            };
+            /** @description RevenueCat aktarımı açık ve en az bir abonelik gönderildi */
+            revenuecat: {
+                tamam: boolean;
+                /** @description Aktarım anahtarı dolu */
+                acik: boolean;
+                gonderilen: number;
+                /** @description Henüz gönderilemeyen (yeniden denenecek) */
+                bekleyen: number;
+            };
+            /** @description G2: mağaza aboneliğini okuma (RevenueCat v2 proje + anahtar) — yalnız uygulama mağazada da satıyorsa gerekir */
+            magaza: {
+                tamam: boolean;
             };
         };
         /** @description M9c: hangi huniden, ne zaman alındı ve neleri içeriyor; kaynak null = varsayılan yok */
@@ -4146,6 +4207,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CanliyaGecis"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelUygulamaBaglantisi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Adımların durumu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UygulamaBaglantisi"];
                 };
             };
             /** @description Bilinmeyen uygulama */

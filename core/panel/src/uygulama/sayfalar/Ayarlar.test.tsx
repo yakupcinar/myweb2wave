@@ -36,9 +36,20 @@ const CANLI = {
     },
 };
 
+/** BR1: KeepChat'in bugünkü hâline benzer — anahtar var, uygulamanın sunucusu hiç gelmedi. */
+const BAGLANTI = {
+    anahtar: { tamam: true },
+    istek: { tamam: false, son: null },
+    baglama: { tamam: false, sayi: 0, son: null },
+    girisBaglantisi: { tamam: false, son: null },
+    revenuecat: { tamam: false, acik: true, gonderilen: 0, bekleyen: 0 },
+    magaza: { tamam: false },
+};
+
 function kur(
     put: (govde: unknown) => Response = (g) => new Response(JSON.stringify(g)),
     canli: unknown = CANLI,
+    baglanti: unknown = BAGLANTI,
 ) {
     const kabuk = document.createElement("div");
     kabuk.id = "panel-uygulama";
@@ -73,6 +84,8 @@ function kur(
                 );
             if (istek.url.endsWith("/canliya-gecis"))
                 return new Response(JSON.stringify(canli));
+            if (istek.url.endsWith("/baglanti"))
+                return new Response(JSON.stringify(baglanti));
             if (istek.url.endsWith("/varsayilanlar"))
                 return new Response(
                     JSON.stringify({
@@ -257,6 +270,64 @@ describe("Ayarlar", () => {
         fireEvent.click(nasil);
         expect(nasil.getAttribute("aria-expanded")).toBe("true");
         expect(bildirim.textContent).toContain("STRIPE_WEBHOOK_SECRET");
+    });
+
+    // BR1: "kod var, canlıda kapalı" (Ç158) ilk bakışta görünsün; isteğe bağlı mağaza adımı sayılmaz.
+    it("BR1: uygulama bağlantısı — ölçülen adımlar, isteğe bağlı sayaç dışı, eksikte nasıl yapılır", async () => {
+        kur();
+        expect(await screen.findByText("5 adımdan 1'i tamam")).toBeTruthy();
+        const satirlar = within(
+            screen.getByRole("list", { name: "Uygulama bağlantısı" }),
+        ).getAllByRole("listitem");
+        expect(
+            satirlar.map(
+                (s) =>
+                    within(s).getByRole("img").getAttribute("aria-label") ?? "",
+            ),
+        ).toEqual([
+            "Tamam",
+            "Yapılmadı",
+            "Yapılmadı",
+            "Yapılmadı",
+            "Yapılmadı",
+            "Yapılmadı",
+        ]);
+        const [, istek, baglama, , rc, magaza] = satirlar as HTMLElement[];
+        expect(istek!.textContent).toContain(
+            "henüz geçerli anahtarla istek gelmedi",
+        );
+        expect(baglama!.textContent).toContain("Henüz kimse bağlanmadı");
+        expect(rc!.textContent).toContain("Açık; bağlı bir kişinin");
+        expect(magaza!.textContent).toContain("İsteğe bağlı");
+        fireEvent.click(
+            within(istek!).getByRole("button", { name: "Nasıl yapılır" }),
+        );
+        expect(istek!.textContent).toContain("hak sorgusu");
+    });
+
+    it("BR1: bağlı uygulamada tarih ve sayılar; RevenueCat kapalıysa söyler", async () => {
+        kur(undefined, CANLI, {
+            anahtar: { tamam: true },
+            istek: { tamam: true, son: "2026-11-20T09:00:00+00:00" },
+            baglama: { tamam: true, sayi: 3, son: "2026-11-19T08:00:00+00:00" },
+            girisBaglantisi: { tamam: true, son: "2026-11-18T08:00:00+00:00" },
+            revenuecat: {
+                tamam: false,
+                acik: false,
+                gonderilen: 0,
+                bekleyen: 0,
+            },
+            magaza: { tamam: true },
+        });
+        expect(await screen.findByText("5 adımdan 4'ü tamam")).toBeTruthy();
+        const satirlar = within(
+            screen.getByRole("list", { name: "Uygulama bağlantısı" }),
+        ).getAllByRole("listitem");
+        expect(satirlar[1]!.textContent).toContain("Son istek 20 Kasım.");
+        expect(satirlar[2]!.textContent).toContain("3 kişi bağlı");
+        expect(satirlar[4]!.textContent).toContain(
+            "Kapalı: RevenueCat Stripe anahtarı yok.",
+        );
     });
 
     it("P7c: hepsi tamamsa 6'sı; hiçbiri değilse 0'ı; son bildirim tarihi", async () => {

@@ -998,6 +998,15 @@ paths:
       responses:
         "200": { description: Adımların durumu, content: { application/json: { schema: { $ref: "#/components/schemas/CanliyaGecis" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/baglanti:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelUygulamaBaglantisi
+      summary: "BR1: uygulamanın çekirdeğe bağlanma adımları — her biri çalışan sistemden ölçülür (anahtarların kendisi yok)"
+      responses:
+        "200": { description: Adımların durumu, content: { application/json: { schema: { $ref: "#/components/schemas/UygulamaBaglantisi" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/varsayilanlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -2028,6 +2037,61 @@ components:
           properties:
             tamam: { type: boolean }
             eksikler: { type: array, items: { type: string }, description: Çalışmamış ya da gecikmiş komutlar }
+    UygulamaBaglantisi:
+      description: "BR1: uygulamanın çekirdeğe bağlandığı çalışan sistemden ölçülür"
+      type: object
+      additionalProperties: false
+      required: [anahtar, istek, baglama, girisBaglantisi, revenuecat, magaza]
+      properties:
+        anahtar:
+          type: object
+          additionalProperties: false
+          required: [tamam]
+          description: Uygulama anahtarı sunucuda dolu (UYGULAMA_ANAHTARI_<UYGULAMA>)
+          properties:
+            tamam: { type: boolean }
+        istek:
+          type: object
+          additionalProperties: false
+          required: [tamam, son]
+          description: Uygulamanın sunucusu bu anahtarla en az bir istek attı
+          properties:
+            tamam: { type: boolean }
+            son: { type: [string, "null"], format: date-time, description: "Son istek (dakika duyarlılığında)" }
+        baglama:
+          type: object
+          additionalProperties: false
+          required: [tamam, sayi, son]
+          description: En az bir kişi bu uygulamaya bağlandı (e-posta kodu ya da giriş bağlantısı)
+          properties:
+            tamam: { type: boolean }
+            sayi: { type: integer, minimum: 0 }
+            son: { type: [string, "null"], format: date-time }
+        girisBaglantisi:
+          type: object
+          additionalProperties: false
+          required: [tamam, son]
+          description: Ödeme sonrası giriş bağlantısı uygulamada en az bir kez kullanıldı
+          properties:
+            tamam: { type: boolean }
+            son: { type: [string, "null"], format: date-time }
+        revenuecat:
+          type: object
+          additionalProperties: false
+          required: [tamam, acik, gonderilen, bekleyen]
+          description: RevenueCat aktarımı açık ve en az bir abonelik gönderildi
+          properties:
+            tamam: { type: boolean }
+            acik: { type: boolean, description: Aktarım anahtarı dolu }
+            gonderilen: { type: integer, minimum: 0 }
+            bekleyen: { type: integer, minimum: 0, description: Henüz gönderilemeyen (yeniden denenecek) }
+        magaza:
+          type: object
+          additionalProperties: false
+          required: [tamam]
+          description: "G2: mağaza aboneliğini okuma (RevenueCat v2 proje + anahtar) — yalnız uygulama mağazada da satıyorsa gerekir"
+          properties:
+            tamam: { type: boolean }
     YeniHuniVarsayilani:
       description: "M9c: hangi huniden, ne zaman alındı ve neleri içeriyor; kaynak null = varsayılan yok"
       type: object
