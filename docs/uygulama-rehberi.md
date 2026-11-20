@@ -578,7 +578,7 @@ sunucuda `app:panel-denetim` ([c152](decisions/c152-panel-denetim.md)).
 |---|---|---|---|
 | `app:webhook:gonder` | Olayları müşterinin hedeflerine imzalı gönderir (2.6) | `webhook_teslimleri` | dakikada bir |
 | `app:posta:dizi` | Aktivasyon ve kurtarma e-postaları (4.3) | `posta_dizisi` | 15 dakikada bir |
-| `app:reklam-donusumleri:gonder` | Gidemeyen Meta CAPI / TikTok olaylarını yeniden dener ([`DonusumAktarimi::gonder`](../core/src/Atif/DonusumAktarimi.php#L138)) | `reklam_donusumleri` | birkaç dakikada bir |
+| `app:reklam-donusumleri:gonder` | Gidemeyen Meta CAPI / TikTok olaylarını yeniden dener ([`DonusumAktarimi::gonder`](../core/src/Atif/DonusumAktarimi.php#L137)) | `reklam_donusumleri` | birkaç dakikada bir |
 | `app:revenuecat:gonder` | Bekleyen RevenueCat aktarımları | `revenuecat_gidenler` | birkaç dakikada bir |
 | `app:reklam-harcamalari:cek` | Meta ve TikTok harcaması (bağlı olanlar), son 7 gün (ağlar yakın günleri düzeltir) | `reklam_harcamalari` | günde bir |
 | `app:huni-metin-cevaplari-sil` | 90 günü geçen serbest yanıtlar ve izinsiz e-postalar | — | günde bir |

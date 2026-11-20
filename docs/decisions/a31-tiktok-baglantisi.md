@@ -163,3 +163,14 @@ yanıtta ağ sabit · H14 panelde ağ sütunu boş · H15 boş durum eski adrese
   0 kabul görmüyor (Ç160).
 - Ölçümden sonra test kodu boşaltıldı (sunucuda `test_kodu` boş, 07:23:35).
 - Ölçülmedi: `CompletePayment` (denemesiz plan ya da deneme sonu ilk tahsilat).
+
+### Araştırma: TikTok test olayları ve olay adları (2026-11-20)
+
+- Test olay kodu Pixel › Etkinlik test etme sekmesinde; olaya `test_event_code` eklenince yalnız test görünümüne
+  düşer, canlı veriye / optimizasyona girmez (satıcı belgeleri: Tealium, CommandersAct, Elevar; TikTok'un kendi
+  geliştirici sayfası aramada çıkmadı). Canlıya geçmeden kod kaldırılmalı — bizde ölçümden sonra boşaltılıyor.
+  Bizim ölçümümüzde kod pixel'de sabit kaldı (19 ve 20 Kasım ikisi de `TEST06394`).
+- TikTok'un standart olay sayfası (Nisan 2026 güncel): satın alma olayı **`Purchase`**; `CompletePayment` listede
+  **yok** (yeniden adlandırma ya da kaldırma da yazmıyor). `StartTrial` için önerilen alanlar content_ids, currency,
+  value — "önerilen", zorunlu değil; değerin 0'dan büyük olması gerektiği sayfada yazmıyor (uyarı ise test ekranında
+  çıktı). Ç161.

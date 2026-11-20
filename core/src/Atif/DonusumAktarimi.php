@@ -75,7 +75,8 @@ final readonly class DonusumAktarimi
         // başlangıcı. Tarayıcı aynı adı giris-baglantisi yanıtındaki deneme'den seçer
         // (tekilleştirme ad + event ID ile).
         $deneme = 0 === $tutar;
-        $anaBirimTutar = ParaBirimi::anaBirim($tutar, $para);
+        // Ç160: denemede değer yok (tarayıcı pikseli gibi) — TikTok value 0'ı "geçersiz" sayıyor (2026-11-20 ölçüldü).
+        $deger = $deneme ? [] : ['value' => ParaBirimi::anaBirim($tutar, $para), 'currency' => strtoupper($para)];
         $metaUser = ['client_ip_address' => $ip, 'client_user_agent' => $ua];
         $fbclid = $ziyaret['fbclid'] ?? null;
         $createdAt = $ziyaret['created_at'] ?? null;
@@ -93,7 +94,7 @@ final readonly class DonusumAktarimi
                 'action_source' => 'website',
                 'event_source_url' => $url,
                 'user_data' => $metaUser,
-                'custom_data' => ['value' => $anaBirimTutar, 'currency' => strtoupper($para)],
+                ...([] === $deger ? [] : ['custom_data' => $deger]),
             ]],
         ];
         $metaTestKodu = $this->metaBaglantisi->oku($app)['testKodu'];
@@ -114,7 +115,7 @@ final readonly class DonusumAktarimi
                 'event_time' => $eventTime,
                 'event_id' => $eventId,
                 'user' => $tiktokUser,
-                'properties' => ['value' => $anaBirimTutar, 'currency' => strtoupper($para)],
+                ...([] === $deger ? [] : ['properties' => $deger]),
                 'page' => ['url' => $url],
             ]],
         ];

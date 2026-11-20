@@ -234,7 +234,8 @@ final class StripeWebhookControllerTest extends WebTestCase
     /**
      * Ç118 (tuzak §52): kartlı deneme "paid" + tutar 0 — reklam ağlarına satın
      * alma değil StartTrial gider (aynı event ID; tarayıcı pikseli aynı adı
-     * giris-baglantisi yanıtının deneme alanından seçer).
+     * giris-baglantisi yanıtının deneme alanından seçer). Ç160: değer alanı
+     * yok — TikTok value 0'ı geçersiz sayıyor; tarayıcı pikseli de göndermiyor.
      */
     public function testKartliDenemeReklamAglarinaStartTrialGider(): void
     {
@@ -257,8 +258,8 @@ final class StripeWebhookControllerTest extends WebTestCase
         $tiktok = $tiktokGovde[0] ?? null;
         self::assertIsArray($meta);
         self::assertIsArray($tiktok);
-        self::assertSame(['StartTrial', 'cs_deneme', ['value' => 0, 'currency' => 'EUR']], [$meta['event_name'] ?? null, $meta['event_id'] ?? null, $meta['custom_data'] ?? null]);
-        self::assertSame(['StartTrial', 'cs_deneme', ['value' => 0, 'currency' => 'EUR']], [$tiktok['event'] ?? null, $tiktok['event_id'] ?? null, $tiktok['properties'] ?? null]);
+        self::assertSame(['StartTrial', 'cs_deneme', false], [$meta['event_name'] ?? null, $meta['event_id'] ?? null, \array_key_exists('custom_data', $meta)]);
+        self::assertSame(['StartTrial', 'cs_deneme', false], [$tiktok['event'] ?? null, $tiktok['event_id'] ?? null, \array_key_exists('properties', $tiktok)]);
     }
 
     public function testIzinsizZiyaretReklamAglarinaGonderilmez(): void
