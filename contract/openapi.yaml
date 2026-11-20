@@ -1007,6 +1007,15 @@ paths:
       responses:
         "200": { description: Adımların durumu, content: { application/json: { schema: { $ref: "#/components/schemas/UygulamaBaglantisi" } } } }
         "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
+  /panel/api/uygulamalar/{app}/rehber:
+    parameters:
+      - { name: app, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: panelEntegrasyonRehberi
+      summary: "BR2: uygulamanın kod tabanındaki yapay zekâya verilecek talimat (uçlar, sıra, test, App Store kuralları); gizli değer yok"
+      responses:
+        "200": { description: Talimat, content: { application/json: { schema: { $ref: "#/components/schemas/EntegrasyonRehberi" } } } }
+        "404": { description: Bilinmeyen uygulama, content: { application/json: { schema: { $ref: "#/components/schemas/PanelHatalari" } } } }
   /panel/api/uygulamalar/{app}/varsayilanlar:
     parameters:
       - { name: app, in: path, required: true, schema: { type: string } }
@@ -2037,6 +2046,13 @@ components:
           properties:
             tamam: { type: boolean }
             eksikler: { type: array, items: { type: string }, description: Çalışmamış ya da gecikmiş komutlar }
+    EntegrasyonRehberi:
+      description: "BR2: Markdown talimat; anahtar yer tutucudur, eksik adımlar çalışan sistemden"
+      type: object
+      additionalProperties: false
+      required: [metin]
+      properties:
+        metin: { type: string, minLength: 1 }
     UygulamaBaglantisi:
       description: "BR1: uygulamanın çekirdeğe bağlandığı çalışan sistemden ölçülür"
       type: object

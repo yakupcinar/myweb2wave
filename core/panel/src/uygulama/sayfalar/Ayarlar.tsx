@@ -340,6 +340,17 @@ function BaglantiBolumu({ app }: { app: string }): ReactNode {
             return data;
         },
     });
+    // BR2: talimat çekirdekte üretilir (MCP aracı da aynısını döner); gizli değer yok.
+    const kopya = useMutation({
+        mutationFn: async () => {
+            const { data } = await api.GET(
+                "/panel/api/uygulamalar/{app}/rehber",
+                { params: { path: { app } } },
+            );
+            if (!data) throw new Error("Talimat alınamadı.");
+            await navigator.clipboard.writeText(data.metin);
+        },
+    });
     const d = sorgu.data;
     const zorunlu = BAGLANTI_ADIMLARI.filter((a) => !a.istegeBagli);
     const tamam = d ? zorunlu.filter((a) => d[a.ad].tamam).length : 0;
@@ -377,6 +388,25 @@ function BaglantiBolumu({ app }: { app: string }): ReactNode {
                     </ul>
                 </Kart>
             )}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Dugme
+                    onClick={() => kopya.mutate()}
+                    disabled={kopya.isPending}
+                >
+                    Yapay zekâ için kopyala
+                </Dugme>
+                {kopya.isSuccess ? (
+                    <span role="status" className="text-[13px] text-soluk">
+                        Kopyalandı — uygulamanın kod tabanındaki yapay zekâya
+                        yapıştırın. Anahtar yer tutucudur.
+                    </span>
+                ) : null}
+                {kopya.isError ? (
+                    <span role="alert" className="text-tehlike">
+                        Kopyalanamadı. Tekrar deneyin.
+                    </span>
+                ) : null}
+            </div>
         </Bolum>
     );
 }

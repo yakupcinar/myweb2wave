@@ -12,6 +12,7 @@ use App\Mcp\ApiAnahtarlari;
 use App\Posta\EpostaSablonlari;
 use App\Uygulama\BaglantiDurumu;
 use App\Uygulama\CanliyaGecis;
+use App\Uygulama\EntegrasyonRehberi;
 use App\Uygulama\UygulamaAyarlari;
 use App\Yasal\Taslaklar;
 use App\Yasal\YasalMetinler;
@@ -43,6 +44,7 @@ final class PanelUygulamaController extends AbstractController
         private readonly ApiAnahtarlari $anahtarlar,
         private readonly CanliyaGecis $canliyaGecis,
         private readonly BaglantiDurumu $baglantiDurumu,
+        private readonly EntegrasyonRehberi $rehber,
         private readonly EpostaSablonlari $epostalar,
         private readonly MetaBaglantisi $meta,
         private readonly TiktokBaglantisi $tiktok,
@@ -131,6 +133,17 @@ final class PanelUygulamaController extends AbstractController
         }
 
         return self::korumali(new JsonResponse($this->baglantiDurumu->durum($app)));
+    }
+
+    /** BR2: uygulamanın kod tabanındaki yapay zekâya talimat — gizli değer yok, eksik adımlar ölçülür. */
+    #[Route('/{app}/rehber', name: 'panel_api_rehber', methods: ['GET'])]
+    public function rehber(string $app): JsonResponse
+    {
+        if (!isset($this->uygulamalar[$app])) {
+            return self::korumali(new JsonResponse(['hatalar' => ["bilinmeyen uygulama: {$app}"]], 404));
+        }
+
+        return self::korumali(new JsonResponse(['metin' => $this->rehber->metin($app)]));
     }
 
     /** M9c (A23): yeni hunilere kopyalanan görünüm — hangi huniden, ne zaman, neler. */

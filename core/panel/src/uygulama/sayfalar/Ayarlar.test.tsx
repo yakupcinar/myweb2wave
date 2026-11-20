@@ -86,6 +86,10 @@ function kur(
                 return new Response(JSON.stringify(canli));
             if (istek.url.endsWith("/baglanti"))
                 return new Response(JSON.stringify(baglanti));
+            if (istek.url.endsWith("/rehber"))
+                return new Response(
+                    JSON.stringify({ metin: "# KeepChat talimatı" }),
+                );
             if (istek.url.endsWith("/varsayilanlar"))
                 return new Response(
                     JSON.stringify({
@@ -303,6 +307,27 @@ describe("Ayarlar", () => {
             within(istek!).getByRole("button", { name: "Nasıl yapılır" }),
         );
         expect(istek!.textContent).toContain("hak sorgusu");
+    });
+
+    it("BR2: Yapay zekâ için kopyala — çekirdeğin talimatı panoya gider", async () => {
+        const yaz = vi.fn(async (_: string) => {});
+        Object.defineProperty(navigator, "clipboard", {
+            value: { writeText: yaz },
+            configurable: true,
+        });
+        const istekler = kur();
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Yapay zekâ için kopyala",
+            }),
+        );
+        await waitFor(() =>
+            expect(yaz).toHaveBeenCalledWith("# KeepChat talimatı"),
+        );
+        expect(await screen.findByText(/Kopyalandı/)).toBeTruthy();
+        expect(istekler.map((i) => i.adres)).toContain(
+            "/panel/api/uygulamalar/keepchat/rehber",
+        );
     });
 
     it("BR1: bağlı uygulamada tarih ve sayılar; RevenueCat kapalıysa söyler", async () => {

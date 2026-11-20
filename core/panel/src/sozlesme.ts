@@ -667,6 +667,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/panel/api/uygulamalar/{app}/rehber": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        /** BR2: uygulamanın kod tabanındaki yapay zekâya verilecek talimat (uçlar, sıra, test, App Store kuralları); gizli değer yok */
+        get: operations["panelEntegrasyonRehberi"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/panel/api/uygulamalar/{app}/varsayilanlar": {
         parameters: {
             query?: never;
@@ -1422,6 +1441,10 @@ export interface components {
                 /** @description Çalışmamış ya da gecikmiş komutlar */
                 eksikler: string[];
             };
+        };
+        /** @description BR2: Markdown talimat; anahtar yer tutucudur, eksik adımlar çalışan sistemden */
+        EntegrasyonRehberi: {
+            metin: string;
         };
         /** @description BR1: uygulamanın çekirdeğe bağlandığı çalışan sistemden ölçülür */
         UygulamaBaglantisi: {
@@ -4238,6 +4261,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UygulamaBaglantisi"];
+                };
+            };
+            /** @description Bilinmeyen uygulama */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelHatalari"];
+                };
+            };
+        };
+    };
+    panelEntegrasyonRehberi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Talimat */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntegrasyonRehberi"];
                 };
             };
             /** @description Bilinmeyen uygulama */
