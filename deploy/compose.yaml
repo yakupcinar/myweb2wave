@@ -45,6 +45,8 @@ services:
       PANEL_SIFRE_OZETI: ${PANEL_SIFRE_OZETI:?}
       # A9: boş bırakılabilir (aktarım kapalı); ':-' — zorunlu değil.
       REVENUECAT_STRIPE_KEEPCHAT: ${REVENUECAT_STRIPE_KEEPCHAT:-}
+      REVENUECAT_PROJE_KEEPCHAT: ${REVENUECAT_PROJE_KEEPCHAT:-}
+      REVENUECAT_V2_KEEPCHAT: ${REVENUECAT_V2_KEEPCHAT:-}
       # H6b: boş değer ilgili ağ aktarımını devre dışı bırakır. A30 / A31: Meta ve TikTok hesabı panelden.
       META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-}
       AYAR_SIFRELEME_ANAHTARI: ${AYAR_SIFRELEME_ANAHTARI:-}

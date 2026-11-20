@@ -68,6 +68,9 @@ final class SahteRevenueCat
         if (str_starts_with($url, 'https://api.pexels.com/') || str_starts_with($url, 'https://images.pexels.com/')) {
             return (new SahtePexels())($url, $secenekler);
         }
+        if ('GET' === $method && str_contains($url, '/v2/projects/')) {
+            return SahteRevenueCatV2::yanit($url, $secenekler);
+        }
         $basliklar = $secenekler['headers'] ?? [];
         $govde = $secenekler['body'] ?? '';
         self::$istekler[] = [

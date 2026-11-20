@@ -11,5 +11,10 @@ parameters:
     # (Project → Apps → Stripe). Boşsa aktarım KAPALI (hiçbir şey kuyruğa girmez).
     revenuecat_anahtarlari:
         keepchat: '%env(REVENUECAT_STRIPE_KEEPCHAT)%'
+    # G2 (Ç159): mağaza (App Store…) aboneliğinin bitişini okumak için RevenueCat
+    # REST v2 — proje kimliği + v2 gizli anahtarı (izin customer_information:
+    # subscriptions:read). İkisinden biri boşsa web'e geçiş KAPALI.
+    revenuecat_v2:
+        keepchat: { proje: '%env(REVENUECAT_PROJE_KEEPCHAT)%', anahtar: '%env(REVENUECAT_V2_KEEPCHAT)%' }
     # URL şeması, görünen ad, mağaza adresi, destek e-postası: panel → Ayarlar
     # (M9a, A23; `uygulama_ayarlari`).
