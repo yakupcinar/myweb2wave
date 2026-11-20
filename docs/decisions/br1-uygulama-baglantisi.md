@@ -24,3 +24,9 @@ da yazar · K2 dakika sınırı yok · K3 hiç güncellemez · K4 başka uygulam
 giriş jetonu sayılır · K6 bekleyen gönderilmiş sayılır · K7 anahtar hep tamam (**ilk denemede tutmadı** — test ortamında
 anahtar hep dolu; boş anahtar testi eklendi, sonra kırmızı) · K8 isteğe bağlı sayılır · K9 son istek gösterilmez ·
 K10 bölüm yok.
+
+## Canlıda (2026-11-20, `715d36a2c682`)
+
+Panel › Uygulama: "Uygulama bağlantısı — 5 adımdan 1'i tamam". Yalnız uygulama anahtarı tamam; uygulamanın sunucusu
+hiç gelmedi, kimse bağlanmadı, giriş bağlantısı kullanılmadı, RevenueCat aktarımı açık ama gönderilen yok, mağaza
+okuma anahtarı yok. Ç158'deki "KeepChat'te kod var, canlıda kapalı" durumu ekranda görünüyor (beklenen).
