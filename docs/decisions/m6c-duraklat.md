@@ -79,3 +79,6 @@ testleri düşürdü (çıkış 2). Kırmızı sayılmadı; kaçışla yeniden k
   var); eski duraklatma testleri anahtarsız `rcsiz` uygulamasında. Panel: "duraklatılamayan satırda Duraklat yok".
 - **Kırma 5/5 kırmızı:** K1 sunucu kapısı yok (Stripe'a istek gitti) · K2 sürdürme de kapalı (DELETE 422) ·
   K3 liste hep `true` · K4 sözleşmede alan yok (yanıt doğrulaması, 3 hata) · K5 panel koşulu yok.
+- **Canlıda (2026-11-20, `66c9fd1290bc`):** dağıtım tamam; panel paketinde `duraklatilabilir` var, sunucuda kural var,
+  keepchat'in RevenueCat anahtarı dolu (32 karakter) → keepchat satırlarında Duraklat gizli olmalı. Ekranda bakılmadı
+  (tarayıcı eklentisi bağlı değildi).
