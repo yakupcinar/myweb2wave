@@ -26,3 +26,7 @@ anahtarı metne girer · K2 bağlama hep "eksik" · K3 şema ayardan okunmaz · 
 İlk kontrol KIRMIZI (24 test, 2026-11-20): yeni test `uygulama_ayarlari`'nı TRUNCATE ediyordu — o tablo göç
 tohumudur (keepchat şeması), giriş bağlantısı ve e-posta testleri 500 aldı. Düzeltme: test satırı yedekleyip
 `tearDown`'da geri yazar; test DB'sine tohum satırı elle geri kondu.
+
+## Canlıda (2026-11-20, `4de722af4659`)
+
+`/health` sürümü doğru; `GET /panel/api/uygulamalar/keepchat/rehber` girişsiz 302 → `/panel/giris` (uç var, korumalı). Ekranda düğmeye basılıp panoya bakılmadı.
