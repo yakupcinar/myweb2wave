@@ -27,4 +27,5 @@ eklendi (initialize yanıtının `instructions`'ı).
 - Gerçek HTTP (yerel `localhost:8081/mcp`, dev DB, geçici okur anahtarı — ölçümden sonra iptal edildi):
   initialize talimatında araç adı var · `tools/call entegrasyon_rehberi` `isError=false`, durum 6 alan, metin KeepChat
   başlığıyla · dev `UYGULAMA_ANAHTARI_KEEPCHAT` değeri yanıtta 0 kez.
-- Canlıda ölçülmedi (dağıtım sonrası `/health` sürümüyle).
+- Canlıda (2026-11-23): `/health` sürümü `11b7886d8519` (dağıtımı kullanıcı çalıştırdı). Anahtarsız `POST /mcp` → 401
+  (uç korumalı). Araç canlıda anahtarla çağrılmadı — üretimde ölçüm için anahtar açılmadı; ilk gerçek kullanımda bakılır.
