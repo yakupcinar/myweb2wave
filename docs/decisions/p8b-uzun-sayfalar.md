@@ -34,3 +34,7 @@ Yasal 1.159 px (1440) / 1.425 px (390); Planlar 1.270 / 2.015; Rapor değişmedi
 (Rapor ekseni hariç, Ç163), kırılan düğme, yatay kayma yok. `bin/kontrol` EXIT=0 (2026-11-23, yerel macOS + Docker;
 833 çekirdek testi) — önce iki koşu `core-kur` kırmızı: tuzak §37 iCloud kopyaları tekrarladı, `de~` silindi.
 İlk koşuda `panel-tip` kırmızıydı (`?belge=` dizgesi belge adı birleşimine atanıyordu) — `find` ile düzeldi.
+
+## Canlıda (2026-11-23)
+
+`/health` sürümü `c3297cbbb973` (CI success, `dagit.sh` + dış ölçüm). P8 ilk kısmı (`9ec69ab652ee`) aynı gün dağıtıldı. Canlı panelde ekrana bakılmadı.
