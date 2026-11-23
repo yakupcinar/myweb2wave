@@ -293,7 +293,7 @@
 ### C. Canlıya Geçiş (Dağıtım Hazırlıkları — özellik değil, sürüm kapısı)
 - [ ] **Alan adı, TLS ve gerçek HTTP kanıtı:** DNS, HTTPS, CORS ön isteği ve webhook imza doğrulaması canlı alan adında ölçülür.
 - [ ] **Cloudflare ücretsiz kalkan & WAF:** Satın alınan alan adının DNS'ini Cloudflare'e (ücretsiz plan) bağlama, turuncu bulut (proxy) ile sunucu gerçek IP'sini gizleme, DDoS koruması, SSL ve bot engelleme (Managed Challenge) aktif etme; sunucu güvenlik duvarını (UFW) yalnız Cloudflare IP'lerine açma.
-- [ ] **Değişecek anahtarlar:** Gmail uygulama şifresi · panel şifresi (123) · Stripe test anahtarları ve webhook sırrı · TikTok Events API anahtarı (sohbete yazıldı, 2026-11-19).
+- [ ] **Değişecek anahtarlar:** Gmail uygulama şifresi · panel şifresi (123) · Stripe test anahtarları ve webhook sırrı · TikTok Events API anahtarı (sohbete yazıldı, 2026-11-19). → **Kullanıcı kararı 2026-11-23: değiştirilmez** — gerçek kullanıcıya çıkılmayacak; gerçek trafik kararı verilirse bu madde yeniden açılır.
 - [ ] **Stripe canlıya geçiş:** canlı anahtarlar, canlı webhook, şirket/banka doğrulaması; gerçek düşük tutarlı uçtan uca ödeme ve iade denemesi.
 - [ ] **Stripe Radar dolandırıcılık kuralları:** Stripe panelinde risk skoru > 65 için dinamik 3D Secure (SMS onayı) zorunluluğu; aynı IP veya parmak izinden 30 dakikada 3 ardışık kart reddinde (card_declined) otomatik bloklama kuralı.
 - [ ] **Stripe webhook ve DB havuzu yüksek trafik/zaman aşımı testi:** FrankenPHP worker ve PostgreSQL connection pool sınırlarını ölçen stres testi; yüksek eşzamanlı webhook ve kuyruk yükünde kilitlenme/zaman aşımı koruması.
