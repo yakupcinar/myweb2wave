@@ -442,19 +442,14 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                 ) : null}
             </Kart>
             {sorgu.data.planlar.length ? (
-                <Kart>
+                <Kart aria-label="Plan ayarları">
+                    {/* P8: para birimleri ve teklif aynı planın ayarı — iki kart ve iki
+                        "Plan: seç" yerine tek kart, tek seçim. */}
                     <KartBasi
-                        baslik="Para birimleri"
-                        aciklama="Ziyaretçi ülkesinin para birimini (IP'den) görür; o para birimi yoksa ana para birimini. Boş bırakılan para birimi satılmaz. Kaydetmek yeni Stripe fiyatı açar; mevcut aboneler eskisinde kalır."
+                        baslik="Plan ayarları"
+                        aciklama="Seçilen planın para birimleri ve teklifi. Kaydetmek yalnız yeni ödemelere uygulanır; mevcut aboneler eskisinde kalır."
                     />
-                    <form
-                        aria-label="Para birimleri"
-                        className="flex flex-wrap items-end gap-3 px-4.5 py-4"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            ekKaydet.mutate();
-                        }}
-                    >
+                    <div className="flex px-4.5 pt-4">
                         <label className="grid gap-1.5">
                             <span className={kisaEtiketSinifi}>Plan</span>
                             <select
@@ -465,6 +460,7 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                         (x) => x.anahtar === anahtar,
                                     );
                                     setEkPlan(anahtar);
+                                    setTeklif({ ...teklif, anahtar });
                                     setEkTutarlar(
                                         Object.fromEntries(
                                             Object.entries(
@@ -486,6 +482,23 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                                 ))}
                             </select>
                         </label>
+                    </div>
+                    <h3 className="px-4.5 pt-4 text-[15px] font-semibold">
+                        Para birimleri
+                    </h3>
+                    <p className="px-4.5 text-[13px] text-soluk">
+                        Ziyaretçi ülkesinin para birimini (IP'den) görür; o para
+                        birimi yoksa ana para birimini. Boş bırakılan para
+                        birimi satılmaz. Kaydetmek yeni Stripe fiyatı açar.
+                    </p>
+                    <form
+                        aria-label="Para birimleri"
+                        className="flex flex-wrap items-end gap-3 px-4.5 py-4"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            ekKaydet.mutate();
+                        }}
+                    >
                         {PARA_BIRIMLERI.filter(
                             (para) =>
                                 ekPlan &&
@@ -524,14 +537,9 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                             </span>
                         ) : null}
                     </form>
-                </Kart>
-            ) : null}
-            {sorgu.data.planlar.length ? (
-                <Kart>
-                    <KartBasi
-                        baslik="Teklif"
-                        aciklama="Ödeme sayfası ve paywall planın teklifini kullanır. Değişiklik yalnız yeni ödemelere uygulanır."
-                    />
+                    <h3 className="border-t border-kenar px-4.5 pt-4 text-[15px] font-semibold">
+                        Teklif
+                    </h3>
                     <form
                         aria-label="Teklif"
                         className="flex flex-wrap items-end gap-3 px-4.5 py-4"
@@ -540,26 +548,6 @@ function PlanListesi({ app }: { app: string }): ReactNode {
                             teklifKaydet.mutate();
                         }}
                     >
-                        <label className="grid gap-1.5">
-                            <span className={kisaEtiketSinifi}>Plan</span>
-                            <select
-                                value={teklif.anahtar}
-                                onChange={(e) =>
-                                    setTeklif({
-                                        ...teklif,
-                                        anahtar: e.currentTarget.value,
-                                    })
-                                }
-                                className={girdiSinifi}
-                            >
-                                <option value="">seç</option>
-                                {sorgu.data.planlar.map((p) => (
-                                    <option key={p.anahtar} value={p.anahtar}>
-                                        {p.ad}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
                         <label className="grid gap-1.5">
                             <span className={kisaEtiketSinifi}>Tür</span>
                             <select

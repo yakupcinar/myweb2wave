@@ -3,8 +3,12 @@
 // /panel/api/uygulamalar/{app}/yasal (sözleşme PanelYasal); yazma kabuğun CSRF
 // jetonuyla (api.ts). P7e: Uygulama sayfasının dilinde — Şirket bilgileri
 // (solda etiket) ve Metinler bölümleri; belge kartında durum ve dil.
+// P8: dört belge alt alta sayfayı 2.499 px'e uzatıyordu — belgeler sekme
+// (adreste ?belge=); kartlar gizlenir, sökülmez: sekme değişince yazılan
+// kaydedilmemiş metin kaybolmasın.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router";
 import type { components } from "../../sozlesme";
 import { api } from "../api";
 import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
@@ -15,6 +19,7 @@ import { cn } from "../ui/cn";
 import { Dugme } from "../ui/Dugme";
 import { Kart } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
+import { sekmeCubuguSinifi, sekmeSinifi } from "../ui/sekme";
 
 type PanelYasal = components["schemas"]["PanelYasal"];
 type YasalVeriler = components["schemas"]["YasalVeriler"];
@@ -94,6 +99,7 @@ export function Yasal(): ReactNode {
 }
 
 function YasalIcerik({ app }: { app: string }): ReactNode {
+    const [adres] = useSearchParams();
     const sorgu = useQuery({
         queryKey: ["yasal", app],
         queryFn: async () => {
@@ -119,6 +125,14 @@ function YasalIcerik({ app }: { app: string }): ReactNode {
             </p>
         );
     const belgeler = [...new Set(sorgu.data.belgeler.map((b) => b.belge))];
+    const istenen = adres.get("belge");
+    const acik = belgeler.find((b) => b === istenen) ?? belgeler[0];
+    const ad = (belge: string): string =>
+        (
+            sorgu.data.belgeler.find(
+                (b) => b.belge === belge && b.dil === "tr",
+            ) ?? sorgu.data.belgeler.find((b) => b.belge === belge)
+        )?.baslik ?? belge;
     return (
         <div className="flex flex-col gap-7">
             <VeriFormu app={app} kayitli={sorgu.data.veriler} />
@@ -126,14 +140,27 @@ function YasalIcerik({ app }: { app: string }): ReactNode {
                 baslik="Metinler"
                 aciklama="Kaydetmek yayınlar; kaydedilmemiş belgenin sayfası yoktur."
             >
+                <nav aria-label="Belgeler" className={sekmeCubuguSinifi}>
+                    {belgeler.map((belge) => (
+                        <Link
+                            key={belge}
+                            to={`?belge=${belge}`}
+                            aria-current={belge === acik ? "page" : undefined}
+                            className={sekmeSinifi}
+                        >
+                            {ad(belge)}
+                        </Link>
+                    ))}
+                </nav>
                 {belgeler.map((belge) => (
-                    <BelgeKarti
-                        key={belge}
-                        app={app}
-                        diller={sorgu.data.belgeler.filter(
-                            (b) => b.belge === belge,
-                        )}
-                    />
+                    <div key={belge} hidden={belge !== acik}>
+                        <BelgeKarti
+                            app={app}
+                            diller={sorgu.data.belgeler.filter(
+                                (b) => b.belge === belge,
+                            )}
+                        />
+                    </div>
                 ))}
             </Bolum>
         </div>

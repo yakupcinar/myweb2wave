@@ -289,6 +289,8 @@ ona takılıyor. **Ölçüm (2026-10-26):** `defaults read com.apple.finder
 FXICloudDriveDesktop` = 1; `find core/var -name "* 2"` üç dizin; `du` 0 B,
 bağlantı sayısı 65535; silmek 5 dk'yı aştı. **Doğrusu:** projeyi iCloud
 dışında tut (ya da `.nosync`); kırmızıda önce `find . -name "* 2"`.
+**Tekrar (2026-11-23, P8):** `core-kur` iki koşu üst üste kırmızı; `de~` içinde `Symfony 3`, `pools 3`, `twig 3`
+(bağlantı 65535) + `dev 2`…`dev 6`; `rm -rf` 5 dk sürdü, sonra `bin/kontrol` EXIT=0. Proje hâlâ iCloud'daki masaüstünde.
 
 ## §38 — Docker'daki Vite geliştirme sunucusu macOS'taki değişikliği görmez
 **Belirti:** `huni-bilesenleri/huni.css` değişti, testler yeni kuralı

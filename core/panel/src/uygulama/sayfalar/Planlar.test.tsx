@@ -174,9 +174,12 @@ describe("Planlar", () => {
         const form = within(
             await screen.findByRole("form", { name: "Para birimleri" }),
         );
-        fireEvent.change(form.getByLabelText("Plan"), {
-            target: { value: "monthly" },
-        });
+        fireEvent.change(
+            within(
+                screen.getByRole("region", { name: "Plan ayarları" }),
+            ).getByLabelText("Plan"),
+            { target: { value: "monthly" } },
+        );
         expect(form.queryByLabelText("EUR")).toBeNull();
         expect((form.getByLabelText("TRY") as HTMLInputElement).value).toBe(
             "349.99",
@@ -202,14 +205,40 @@ describe("Planlar", () => {
         });
     });
 
+    // P8: para birimleri ve teklif tek kartta, TEK plan seçimiyle — seçim ikisini de kurar.
+    it("P8: plan ayarları tek seçimle: sayfada bir Plan seçimi, teklif formu ondan planı alır", async () => {
+        kur();
+        const kart = within(
+            await screen.findByRole("region", { name: "Plan ayarları" }),
+        );
+        expect(screen.getAllByLabelText("Plan")).toHaveLength(1);
+        const teklif = within(kart.getByRole("form", { name: "Teklif" }));
+        const kaydet = teklif.getByRole("button", {
+            name: "Teklifi kaydet",
+        }) as HTMLButtonElement;
+        expect(kaydet.disabled).toBe(true);
+        fireEvent.change(kart.getByLabelText("Plan"), {
+            target: { value: "monthly" },
+        });
+        expect(kaydet.disabled).toBe(false);
+        expect(
+            within(
+                kart.getByRole("form", { name: "Para birimleri" }),
+            ).getByLabelText("TRY"),
+        ).toBeTruthy();
+    });
+
     it("M1b: teklif formu türün alanlarını SAYI olarak gönderir, fazlasını göndermez", async () => {
         const istekler = kur();
         const form = within(
             await screen.findByRole("form", { name: "Teklif" }),
         );
-        fireEvent.change(form.getByLabelText("Plan"), {
-            target: { value: "monthly" },
-        });
+        fireEvent.change(
+            within(
+                screen.getByRole("region", { name: "Plan ayarları" }),
+            ).getByLabelText("Plan"),
+            { target: { value: "monthly" } },
+        );
         const gonder = async (tur: string, alanlar: Record<string, string>) => {
             fireEvent.change(form.getByLabelText("Tür"), {
                 target: { value: tur },

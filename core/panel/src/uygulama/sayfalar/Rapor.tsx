@@ -16,6 +16,7 @@ import { sayi, tutarlar, yuzde, zaman } from "../bicim";
 import { SayfaBasi } from "../Duzen";
 import { bolmeliSinif, bolmeSinifi } from "../ui/bolmeli";
 import { cn } from "../ui/cn";
+import { sekmeCubuguSinifi, sekmeSinifi } from "../ui/sekme";
 import { dugmeSinifi } from "../ui/Dugme";
 import { Kart } from "../ui/Kart";
 import { Rozet } from "../ui/Rozet";
@@ -118,9 +119,6 @@ function CsvIndir({
     );
 }
 
-const sekmeSinifi =
-    "-mb-px shrink-0 border-b-2 border-transparent px-3 pb-2.5 text-[15px] whitespace-nowrap text-soluk hover:text-metin aria-[current=page]:border-vurgu aria-[current=page]:font-medium aria-[current=page]:text-metin";
-
 export function Rapor(): ReactNode {
     const [sorgu] = useSearchParams();
     const gun = gunOku(sorgu.get("gun"));
@@ -158,7 +156,7 @@ export function Rapor(): ReactNode {
             </SayfaBasi>
             <nav
                 aria-label="Rapor bölümleri"
-                className="mb-7 flex gap-1 overflow-x-auto border-b border-kenar"
+                className={cn("mb-7", sekmeCubuguSinifi)}
             >
                 {SEKMELER.map(([s, ad]) => (
                     <Link

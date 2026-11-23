@@ -32,7 +32,10 @@ const YANIT = {
     belgeler: [belge("tr"), belge("en")],
 };
 
-function kur(put?: (adres: string, govde: unknown) => Response) {
+function kur(
+    put?: (adres: string, govde: unknown) => Response,
+    yanit: object = YANIT,
+) {
     const kabuk = document.createElement("div");
     kabuk.id = "panel-uygulama";
     kabuk.dataset["jeton"] = "jeton-kabuk";
@@ -74,7 +77,7 @@ function kur(put?: (adres: string, govde: unknown) => Response) {
                 return new Response(
                     JSON.stringify({ uygulamalar: ["keepchat"] }),
                 );
-            return new Response(JSON.stringify(YANIT));
+            return new Response(JSON.stringify(yanit));
         }),
     );
     render(
@@ -96,6 +99,63 @@ afterEach(() => {
 });
 
 describe("Yasal metinler", () => {
+    // P8: belgeler sekme — uzun sayfa bölünür; sekme değişince yazılan
+    // kaydedilmemiş metin kalır (kart gizlenir, sökülmez).
+    it("belgeler sekmede: yalnız seçili belge görünür, yazılan metin sekme değişince kalır", async () => {
+        kur(undefined, {
+            ...YANIT,
+            belgeler: [
+                belge("tr"),
+                belge("en"),
+                belge("tr", {
+                    belge: "gizlilik",
+                    baslik: "Gizlilik politikası",
+                    metin: "Gizlilik taslak",
+                }),
+                belge("en", {
+                    belge: "gizlilik",
+                    baslik: "Privacy policy",
+                    metin: "Privacy draft",
+                }),
+            ],
+        });
+        const sekmeler = within(
+            await screen.findByRole("navigation", { name: "Belgeler" }),
+        );
+        const sartlar = () =>
+            screen.queryByRole("textbox", {
+                name: "Kullanım şartları (Türkçe)",
+            });
+        const gizlilik = () =>
+            screen.queryByRole("textbox", {
+                name: "Gizlilik politikası (Türkçe)",
+            });
+        expect(sartlar()).not.toBeNull();
+        expect(gizlilik()).toBeNull();
+        fireEvent.change(sartlar()!, {
+            target: { value: "yarım kalan metin" },
+        });
+
+        fireEvent.click(
+            sekmeler.getByRole("link", { name: "Gizlilik politikası" }),
+        );
+        await waitFor(() => expect(gizlilik()).not.toBeNull());
+        expect(sartlar()).toBeNull();
+        expect(
+            sekmeler
+                .getByRole("link", { name: "Gizlilik politikası" })
+                .getAttribute("aria-current"),
+        ).toBe("page");
+
+        fireEvent.click(
+            sekmeler.getByRole("link", { name: "Kullanım şartları" }),
+        );
+        await waitFor(() => expect(sartlar()).not.toBeNull());
+        expect((sartlar() as HTMLTextAreaElement).value).toBe(
+            "yarım kalan metin",
+        );
+    });
+
     it("taslak uyarısı, taslak durumu, eksik yer tutucu; menüde işaretli", async () => {
         kur();
         expect(
