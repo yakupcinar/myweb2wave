@@ -122,6 +122,7 @@ final readonly class McpSunucusu
             MyWeb2Wave huni platformu, uygulama: {$app}. Huni = reklamdan gelen ziyaretçinin gördüğü adımlar (bloklardan ekran — karşılama, soru, yorum, bilgi hepsi ekran; "planın hazırlanıyor" yükleme — düğmesiz, süre dolunca geçer, ödemeden hemen önce iyi durur; ödeme ekranı).
             Çalışma: huniler_listele ile bak; değiştirmeden önce huni_oku ile tanımı ve imzayı al; TAM tanımı taslak_kaydet ile yaz (imza zorunlu). Hata dönerse düzeltip yeniden kaydet. Sonuçta onizleme_adresi ile bağlantı ver.
             Raporlar (rapor_ozet, rapor_kaynaklar, rapor_kohort, rapor_kampanyalar, rapor_cevaplar, deney_sonuclari) yalnız okur; tutarlar para birimi başına, çevrilmez — farklı para birimlerini toplama.
+            Uygulamanın kod tabanında çekirdeğe bağlantı kuruyorsan önce entegrasyon_rehberi'ni oku (talimat + ölçülen durum).
             Yalnız TASLAĞA yazarsın; yayınlamak panelde insanın işi. Gerçek olmayan müşteri yorumu uydurma (unvana "Örnek — yayından önce gerçeğiyle değiştir"); fiyat yazma (ödeme ekranı Stripe'tan gösterir); kesin sonuç vaadi yazma.
             METIN;
         $metin .= "\n".Tanim::EKRAN_YONERGESI."\n".Tema::aiYonergesi()."\n".TasarimYonergesi::METIN;

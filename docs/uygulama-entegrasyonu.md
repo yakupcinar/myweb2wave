@@ -4,7 +4,7 @@
 > geliştiricisi. Kaynaklar: sözleşme `contract/openapi.yaml` (tek kaynak),
 > kararlar `docs/pre-setup.md` A4, A5, Ç29, ölçümler `docs/decisions/kimlik-hak.md`.
 > ⚠️ Uygulamaya özel kısa hâli çekirdekte `core/src/Uygulama/EntegrasyonRehberi.php` (panel "Yapay zekâ için
-> kopyala", BR2) — bu belge değişince o da (kural 7).
+> kopyala", BR2; MCP aracı `entegrasyon_rehberi`, BR3) — bu belge değişince o da (kural 7).
 
 ## 1 · Kimin neyi yaptığı
 

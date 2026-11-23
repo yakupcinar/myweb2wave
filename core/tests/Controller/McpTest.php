@@ -102,7 +102,7 @@ final class McpTest extends WebTestCase
         $araclar = self::yol($liste, 'result', 'tools');
         self::assertIsArray($araclar);
         self::assertSame(['huniler_listele', 'huni_oku', 'tanim_dogrula', 'taslak_kaydet', 'onizleme_adresi', 'ekran_goruntusu', 'stok_gorsel_ara', 'stok_gorsel_al', 'yeni_huni',
-            'rapor_ozet', 'rapor_kaynaklar', 'rapor_kohort', 'rapor_kampanyalar', 'rapor_cevaplar', 'deney_sonuclari'], array_column($araclar, 'name'));
+            'rapor_ozet', 'rapor_kaynaklar', 'rapor_kohort', 'rapor_kampanyalar', 'rapor_cevaplar', 'deney_sonuclari', 'entegrasyon_rehberi'], array_column($araclar, 'name'));
         $sema = array_column($araclar, 'inputSchema', 'name')['taslak_kaydet'] ?? null;
         self::assertIsArray(self::yol($sema, '$defs', 'HuniTanimi'));
 
@@ -158,6 +158,42 @@ final class McpTest extends WebTestCase
         self::assertTrue(self::yol($this->rpc(self::cagri(4, 'deney_sonuclari', ['ad' => 'yok']), $bearer), 'result', 'isError'));
         // Şema dışı aralık araç çalışmadan SDK'da reddedilir (JSON-RPC geçersiz parametre).
         self::assertSame(-32602, self::yol($this->rpc(self::cagri(5, 'rapor_ozet', ['gun' => 5]), $bearer), 'error', 'code'));
+    }
+
+    /**
+     * BR3: entegrasyon_rehberi panelin "Yapay zekâ için kopyala" metninin
+     * AYNISI (tek kaynak: EntegrasyonRehberi) + BR1 durumu; salt okur, her
+     * anahtarda görünür ve anahtarın uygulamasıyla sınırlı — başka uygulamanın
+     * bağlaması sayılmaz, gerçek uygulama anahtarı metne girmez.
+     */
+    public function testEntegrasyonRehberiPanelMetniVeDurum(): void
+    {
+        $this->db->executeStatement('TRUNCATE baglantilar, kisiler CASCADE');
+        $kisi = $this->db->fetchOne("INSERT INTO kisiler (email) VALUES ('a@example.com') RETURNING id");
+        $this->db->insert('baglantilar', ['app' => 'keepchat', 'harici_kullanici' => 'u1', 'kisi_id' => $kisi]);
+        $this->db->insert('baglantilar', ['app' => 'baska', 'harici_kullanici' => 'u2', 'kisi_id' => $kisi]);
+        $this->db->insert('baglantilar', ['app' => 'baska', 'harici_kullanici' => 'u3', 'kisi_id' => $kisi]);
+        $bearer = 'Bearer '.$this->anahtarlar->olustur('keepchat', 'okur')['anahtar'];
+        $ilk = $this->rpc(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize', 'params' => self::ilk()], $bearer);
+        $this->rpc(['jsonrpc' => '2.0', 'method' => 'notifications/initialized'], $bearer);
+        // Uygulama deposundaki yapay zekâ aracı talimattan bulur.
+        self::assertStringContainsString('önce entegrasyon_rehberi', self::metin(self::yol($ilk, 'result', 'instructions')));
+
+        $araclar = array_column((array) self::yol($this->rpc(['jsonrpc' => '2.0', 'id' => 2, 'method' => 'tools/list'], $bearer), 'result', 'tools'), null, 'name');
+        self::assertTrue(self::yol($araclar, 'entegrasyon_rehberi', 'annotations', 'readOnlyHint'));
+        $yanit = $this->rpc(self::cagri(3, 'entegrasyon_rehberi', []), $bearer);
+        self::assertFalse(self::yol($yanit, 'result', 'isError'));
+        $sonuc = self::yol($yanit, 'result', 'structuredContent');
+
+        $rehber = static::getContainer()->get(\App\Uygulama\EntegrasyonRehberi::class);
+        self::assertInstanceOf(\App\Uygulama\EntegrasyonRehberi::class, $rehber);
+        $metin = self::metin(self::yol($sonuc, 'metin'));
+        self::assertSame($rehber->metin('keepchat'), $metin);
+        self::assertStringContainsString('/apps/keepchat/baglama/kod', $metin);
+        self::assertStringNotContainsString('test-anahtar-keepchat', $metin);
+        self::assertSame(['tamam' => true], self::yol($sonuc, 'durum', 'anahtar'));
+        self::assertSame(1, self::yol($sonuc, 'durum', 'baglama', 'sayi'), 'baska uygulamanın 2 bağlaması sayılmaz');
+        self::assertSame([['entegrasyon_rehberi', false]], array_map(static fn (array $s): array => [$s['arac'], $s['hata']], $this->db->fetchAllAssociative('SELECT arac, hata FROM mcp_cagrilari ORDER BY id')));
     }
 
     /**

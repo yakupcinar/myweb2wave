@@ -7,12 +7,16 @@ namespace App\Mcp;
 use App\Huni\Deneyler;
 use App\Panel\Rapor;
 use App\Panel\RaporSuzgeci;
+use App\Uygulama\BaglantiDurumu;
+use App\Uygulama\EntegrasyonRehberi;
 
 /**
  * M7c1 (A21): MCP'de yalnız okuyan rapor araçları — anahtarın uygulamasıyla
  * sınırlı (Rapor'un app süzgeci). Panelle aynı hesap; satır listesi ve
  * serbest yanıt yok (kişisel veri MCP'ye gitmez). Meta harcaması reklam
  * hesabı düzeyinde: uygulamaya bölünmez, gelir ve ziyaret bölünür.
+ * BR3: entegrasyon_rehberi de burada — salt okur, panelin "Yapay zekâ için
+ * kopyala" metniyle (EntegrasyonRehberi) ve BR1 durumuyla aynı kaynak.
  */
 final readonly class RaporAraclari
 {
@@ -21,6 +25,8 @@ final readonly class RaporAraclari
     public function __construct(
         private Rapor $rapor,
         private Deneyler $deneyler,
+        private EntegrasyonRehberi $rehber,
+        private BaglantiDurumu $baglanti,
     ) {
     }
 
@@ -42,6 +48,11 @@ final readonly class RaporAraclari
                 'name' => 'deney_sonuclari',
                 'description' => 'Deneyler ve sonuçları (varyant başına ziyaret, ödemeye geçti, abone, ödedi, kazanma olasılığı). ad verilmezse hepsi.',
                 'input_schema' => ['type' => 'object', 'properties' => ['ad' => ['type' => 'string', 'pattern' => '^[a-z0-9_-]{1,64}$']], 'additionalProperties' => false],
+            ],
+            [
+                'name' => 'entegrasyon_rehberi',
+                'description' => 'Uygulamayı çekirdeğe bağlama talimatı (Markdown: uçlar, sıra, test, App Store kuralları; anahtar yer tutucu) ve çalışan sistemden ölçülen bağlantı durumu. Önce metindeki "Şu an eksik" listesini yap.',
+                'input_schema' => ['type' => 'object', 'properties' => (object) [], 'additionalProperties' => false],
             ],
         ];
     }
@@ -65,6 +76,7 @@ final readonly class RaporAraclari
             'rapor_kampanyalar' => ['icerik' => ['gun' => $gun, 'kampanyalar' => $this->rapor->kampanyalar($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
             'rapor_cevaplar' => ['icerik' => ['gun' => $gun, 'cevaplar' => $this->rapor->cevaplar($gun, RaporSuzgeci::uygulama($app))], 'hata' => false],
             'deney_sonuclari' => $this->deneyler($app, $girdi['ad'] ?? null),
+            'entegrasyon_rehberi' => ['icerik' => ['metin' => $this->rehber->metin($app), 'durum' => $this->baglanti->durum($app)], 'hata' => false],
             default => ['icerik' => ['hata' => "bilinmeyen araç: {$ad}"], 'hata' => true],
         };
     }
