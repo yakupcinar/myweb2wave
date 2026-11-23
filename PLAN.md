@@ -4,6 +4,12 @@
 > *sıradaki* durur. Bitmiş iş `docs/decisions/` altına **tam metniyle**
 > taşınır. ⚠️ Satır bütçesi 400 — `wc -l PLAN.md`.
 
+> 🗄️ **PROJE RAFTA — kullanıcı kararı 2026-11-23.** Gerçek kullanıcıya çıkılmayacak; test modunda canlı
+> (`/health` sürümü `c3297cbbb973`, `keepchat-vps`). Son iş: BR3, P8, P8b. Açık kalanlar olduğu gibi bırakıldı:
+> P8 kullanıcının tarayıcı turu, Ç160/Ç161 (TikTok olay değeri ve adı), Ç163–Ç166, değişmeyen anahtarlar (§C),
+> canlıya geçiş (§C), backlog (§2). **Yeniden açma ölçütü:** gerçek trafik / gerçek ödeme kararı — o zaman önce
+> §C (anahtarlar, canlı Stripe, alan adı) ve Ç160/Ç161. Sıradaki iş başka depoda (yeni proje demosu).
+
 ## 0. Durum — tek bakışta
 
 | Katman | Durum | Kanıt |
