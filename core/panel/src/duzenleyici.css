@@ -6,13 +6,118 @@
 #duzenleyici-stil-isareti {
     --duzenleyici-stil: 1;
 }
+
+/* P8: panel dili — Puck'ın bütün renkleri gri ve mavi ölçeklerinden türüyor;
+   ölçekler panelin renkleriyle (uygulama/stil.css) yeniden tanımlanır, koyu
+   tema panelin data-tema'sıyla. Yalnız --puck-* ve --dz-* adları: panelin
+   --metin gibi adları huni.css'le aynı ve Puck stilleri önizleme çerçevesine
+   kopyalıyor (P3) — huniyi ezerdi. Renkler stil.css'le birlikte değişir (kural 7). */
+html:root {
+    --puck-font-family:
+        -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+        sans-serif;
+    --puck-button-radius: 999px;
+    --puck-color-white: #ffffff;
+    --puck-color-black: #1d1d1f;
+    --puck-color-grey-01: #1d1d1f;
+    --puck-color-grey-02: #2c2c2e;
+    --puck-color-grey-03: #424245;
+    --puck-color-grey-04: #515154;
+    --puck-color-grey-05: #6e6e73;
+    --puck-color-grey-06: #8e8e93;
+    --puck-color-grey-07: #aeaeb2;
+    --puck-color-grey-08: #c7c7cc;
+    --puck-color-grey-09: #d2d2d7;
+    --puck-color-grey-10: #e5e5ea;
+    --puck-color-grey-11: #f2f2f7;
+    --puck-color-grey-12: #f5f5f7;
+    --puck-color-azure-01: #003a75;
+    --puck-color-azure-02: #004a94;
+    --puck-color-azure-03: #0058b0;
+    --puck-color-azure-04: #0066cc;
+    --puck-color-azure-05: #3385d6;
+    --puck-color-azure-06: #66a3e0;
+    --puck-color-azure-07: #8cbbe8;
+    --puck-color-azure-08: #b3d1f0;
+    --puck-color-azure-09: #d6e7f7;
+    --puck-color-azure-10: #e8f1fb;
+    --puck-color-azure-11: #f2f7fd;
+    --puck-color-azure-12: #f7fafe;
+    --puck-color-overlay-backdrop: rgb(0 0 0 / 0.5);
+    --dz-iyi: #1b7a3a;
+    --dz-iyi-zemin: #e3f4e8;
+    --dz-uyari: #9a5b00;
+    --dz-uyari-zemin: #fff1dc;
+    --dz-tehlike: #c4312a;
+    --dz-tehlike-zemin: #fde7e6;
+    --dz-golge: 0 4px 20px rgb(0 0 0 / 0.15);
+    --dz-ust-yukseklik: 40px;
+}
+html:root[data-tema="koyu"] {
+    color-scheme: dark;
+    --puck-color-white: #1c1c1e;
+    --puck-color-black: #f5f5f7;
+    --puck-color-grey-01: #f5f5f7;
+    --puck-color-grey-02: #e5e5ea;
+    --puck-color-grey-03: #d1d1d6;
+    --puck-color-grey-04: #c7c7cc;
+    --puck-color-grey-05: #a1a1a6;
+    --puck-color-grey-06: #8e8e93;
+    --puck-color-grey-07: #636366;
+    --puck-color-grey-08: #48484a;
+    --puck-color-grey-09: #38383a;
+    --puck-color-grey-10: #333336;
+    --puck-color-grey-11: #2c2c2e;
+    --puck-color-grey-12: #232325;
+    --puck-color-azure-01: #b3d6ff;
+    --puck-color-azure-02: #8cc0ff;
+    --puck-color-azure-03: #6aaeff;
+    --puck-color-azure-04: #4c9dff;
+    --puck-color-azure-05: #3d84d9;
+    --puck-color-azure-06: #336fb5;
+    --puck-color-azure-07: #2a5a91;
+    --puck-color-azure-08: #22476f;
+    --puck-color-azure-09: #1b3756;
+    --puck-color-azure-10: #162a40;
+    --puck-color-azure-11: #12202f;
+    --puck-color-azure-12: #0f1a26;
+    --dz-iyi: #34c759;
+    --dz-iyi-zemin: #34c75926;
+    --dz-uyari: #ff9f0a;
+    --dz-uyari-zemin: #ff9f0a26;
+    --dz-tehlike: #ff6961;
+    --dz-tehlike-zemin: #ff696126;
+    --dz-golge: 0 4px 20px rgb(0 0 0 / 0.6);
+    /* Önizleme çerçevesi huninin göreceği gibi kalır (huni teması kendi zeminini çizer). */
+    --puck-canvas-preview-color-bg: #ffffff;
+}
 .puck-ust {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    padding: 8px 12px;
-    font-size: 14px;
-    border-bottom: 1px solid #8884;
+    box-sizing: border-box;
+    height: var(--dz-ust-yukseklik);
+    align-items: center;
+    padding: 0 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--puck-color-border-muted);
+    background: var(--puck-color-surface);
+}
+/* P8: özel alanlardaki onay kutusu ve renk seçici panelin vurgusunda; yalnız
+   düzenleyicinin kökünde (önizleme çerçevesine kopyalanırsa huniyi etkilemesin). */
+.puck-kok {
+    accent-color: var(--puck-color-interactive);
+}
+/* P8: geri bağlantısı panel menüsündeki gibi soluk, altı çizgisiz. */
+.puck-ust a {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    color: var(--puck-color-text-secondary);
+    text-decoration: none;
+}
+.puck-ust a:hover {
+    color: var(--puck-color-text);
 }
 .puck-durum {
     position: fixed;
@@ -22,15 +127,15 @@
     max-width: 420px;
     padding: 12px 36px 12px 12px;
     border-radius: 8px;
-    background: #fff;
-    color: #111;
-    box-shadow: 0 4px 20px #0003;
+    background: var(--puck-color-surface);
+    color: var(--puck-color-text);
+    box-shadow: var(--dz-golge);
 }
 .puck-durum.hata {
-    border-left: 4px solid #cf222e;
+    border-left: 4px solid var(--dz-tehlike);
 }
 .puck-durum.tamam {
-    border-left: 4px solid #1a7f37;
+    border-left: 4px solid var(--dz-iyi);
 }
 .puck-durum ul {
     margin: 6px 0 0;
@@ -42,6 +147,7 @@
     right: 8px;
     border: 0;
     background: none;
+    color: inherit;
     font-size: 18px;
     cursor: pointer;
 }
@@ -51,21 +157,38 @@
     gap: 8px;
     font-size: 14px;
 }
+/* P8: panel düğmesi (ui/Dugme) gibi — hap biçimi, 13 px orta kalınlık; ana düğme vurgu mavisi. */
 .puck-ust-cubuk button,
-.puck-dugme {
+.puck-dugme,
+.puck-surumler summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    box-sizing: border-box;
+    white-space: nowrap;
     font: inherit;
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #8886;
-    background: #fff;
-    color: #111;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--puck-color-grey-09);
+    background: var(--puck-color-surface);
+    color: var(--puck-color-text);
     cursor: pointer;
     text-decoration: none;
 }
+.puck-ust-cubuk button:hover,
+.puck-dugme:hover,
+.puck-surumler summary:hover {
+    background: var(--puck-color-grey-11);
+}
 .puck-ust-cubuk .ana {
-    background: #1a7f37;
-    border-color: #1a7f37;
-    color: #fff;
+    background: var(--puck-color-interactive);
+    border-color: var(--puck-color-interactive);
+    color: var(--puck-color-text-inverse);
+}
+.puck-ust-cubuk .ana:hover {
+    background: var(--puck-color-interactive-hover);
 }
 .puck-ust-cubuk :disabled,
 .puck-dugme[aria-disabled="true"] {
@@ -79,8 +202,9 @@
     gap: 7px;
     padding: 6px 10px;
     border-radius: 999px;
-    background: #f6f8fa;
-    color: #57606a;
+    white-space: nowrap;
+    background: var(--puck-color-grey-11);
+    color: var(--puck-color-text-secondary);
     font-size: 13px;
     font-weight: 600;
 }
@@ -93,32 +217,39 @@
     background: currentColor;
 }
 .puck-not-kaydedilmemis {
-    background: #fff8c5;
-    color: #7d4e00;
+    background: var(--dz-uyari-zemin);
+    color: var(--dz-uyari);
 }
 .puck-not-taslak {
-    background: #ddf4ff;
-    color: #0969a3;
+    background: var(--puck-color-azure-10);
+    color: var(--puck-color-interactive);
 }
 .puck-not-uyari {
-    background: #ffebe9;
-    color: #a40e26;
+    background: var(--dz-tehlike-zemin);
+    color: var(--dz-tehlike);
 }
 .puck-not-yayinlandi {
-    background: #dafbe1;
-    color: #1a7f37;
+    background: var(--dz-iyi-zemin);
+    color: var(--dz-iyi);
 }
 .puck-not-bilinmiyor,
 .puck-not-mesgul {
-    background: #f6f8fa;
-    color: #57606a;
+    background: var(--puck-color-grey-11);
+    color: var(--puck-color-text-secondary);
 }
 .puck-surumler {
     position: relative;
 }
 .puck-surumler summary {
-    cursor: pointer;
-    padding: 6px 4px;
+    list-style: none;
+}
+.puck-surumler summary::-webkit-details-marker {
+    display: none;
+}
+.puck-surumler summary::after {
+    content: "▾";
+    margin-left: 6px;
+    color: var(--puck-color-text-secondary);
 }
 .puck-surumler ul {
     position: absolute;
@@ -128,10 +259,10 @@
     margin: 4px 0 0;
     padding: 8px;
     list-style: none;
-    background: #fff;
-    color: #111;
+    background: var(--puck-color-surface);
+    color: var(--puck-color-text);
     border-radius: 8px;
-    box-shadow: 0 4px 20px #0003;
+    box-shadow: var(--dz-golge);
 }
 .puck-surumler li {
     display: flex;
@@ -160,22 +291,27 @@
     font: inherit;
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid #8886;
+    border: 1px solid var(--puck-color-grey-09);
+    background: var(--puck-color-surface);
+    color: var(--puck-color-text);
     resize: vertical;
 }
 .ai-sohbet button {
     font: inherit;
-    padding: 7px 12px;
-    border-radius: 8px;
-    border: 1px solid #8886;
-    background: #fff;
-    color: #111;
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--puck-color-grey-09);
+    background: var(--puck-color-surface);
+    color: var(--puck-color-text);
     cursor: pointer;
 }
 .ai-sohbet button.ana {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #fff;
+    background: var(--puck-color-interactive);
+    border-color: var(--puck-color-interactive);
+    color: var(--puck-color-text-inverse);
 }
 .ai-sohbet button:disabled {
     opacity: 0.5;
@@ -196,28 +332,84 @@
     white-space: pre-wrap;
 }
 .ai-istem {
-    background: #eef2ff;
+    background: var(--puck-color-azure-10);
     justify-self: end;
 }
 .ai-metin {
-    background: #f6f8fa;
+    background: var(--puck-color-grey-11);
 }
 .ai-adim {
-    color: #57606a;
+    color: var(--puck-color-text-secondary);
     font-size: 13px;
 }
 .ai-hata,
 .ai-kapali {
-    background: #ffebe9;
-    color: #a40e26;
+    background: var(--dz-tehlike-zemin);
+    color: var(--dz-tehlike);
 }
 .ai-bitti {
-    color: #1a7f37;
+    color: var(--dz-iyi);
     font-size: 13px;
 }
 .ai-not {
     margin: 0;
-    color: #57606a;
+    color: var(--puck-color-text-secondary);
+    font-size: 12px;
+}
+/* P8: özel alanlar (yapilandirma.tsx: görsel seçici, stok arama) Puck'ın kendi
+   alanlarıyla aynı görünür — tarayıcının ham denetimi ve İngilizce dosya seçici yok. */
+.dz-alan {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 10px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--puck-color-text);
+    background: var(--puck-color-surface);
+    border: 1px solid var(--puck-color-grey-09);
+    border-radius: 6px;
+}
+.dz-alan:focus {
+    outline: 2px solid var(--puck-color-focus-ring);
+    outline-offset: -1px;
+}
+.dz-dugme {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 36px;
+    padding: 0 14px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--puck-color-text);
+    background: var(--puck-color-surface);
+    border: 1px solid var(--puck-color-grey-09);
+    border-radius: 999px;
+    cursor: pointer;
+}
+.dz-dugme:hover {
+    background: var(--puck-color-grey-11);
+}
+.dz-dugme:focus-within {
+    outline: 2px solid var(--puck-color-focus-ring);
+    outline-offset: 2px;
+}
+/* Gerçek dosya girdisi yerinde (klavye, ekran okuyucu); yalnız görünmez. */
+.dz-gizli {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.dz-baglanti {
+    color: var(--puck-color-text-secondary);
     font-size: 12px;
 }
 @media (max-width: 760px) {

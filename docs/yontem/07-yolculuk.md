@@ -100,3 +100,4 @@
 | 93 | Ç148: adsız düğme | "erişilebilir adı boş" bulgusu kodun değil ölçüm aracının kusuruydu: araç iç içe metni okumuyordu. Bulguyu düzeltmeden önce aracı aynı biçimde küçük bir sayfada ölç |
 | 94 | Ç152: panel yazma denetimi | 45 rotaya tek tek kayıt eklemek yerine tek dinleyici; ama ilk kırma turundan önce "yalnız /panel/api" bozmasını ölçen test yoktu. Bir kuralı tek yerden uygulamak, ailenin her üyesini test etmenin yerini tutmaz |
 | 95 | Ç149 + Ç152 sayfası | iki yeni test boşluğunu kırma turundan önce kapattım: "boş kaynak {} mi" ve "her rota adlı mı" sorularını ölçen test yoktu. Tutmayacak kırma denemesini önceden görmek, testi yazarken "bu kararı ne bozardı" diye sormaktan geçiyor |
+| 96 | P8: düzenleyici panel dilinde | `nowrap` kaldırılınca ekran ölçümü yeşil kaldı ama ekranda düğme kırılıyordu: iki satır `min-height`'ın içine sığıyordu. Ölçüm kusurun kendisini (satır sayısı) değil yan etkisini (yükseklik) arıyordu; kırma bunu gösterdi. |

@@ -26,7 +26,7 @@ Her denemede üç şey ölçülür ve yazılır:
 |---|---|
 | **Bozma uygulandı mı?** (`grep -F`, "tam bir kez geçiyor mu") | Uygulanmayan deneme "yeşil" değil **KOŞULMADI**'dır. Bu projede 5+ kez yaşandı: desen bulunamadı, kabuk tırnaklaması bozuldu, komut geçersiz seçenek aldı. |
 | **Doğru sebepten mi düştü?** | Sözdizimi hatasıyla düşen deneme sahtedir: 11 test hata, 0 doğrulama koştu (Stripe S8 ilk deneme). |
-| **Geri alma uygulandı mı?** | DB kısıtını geri koyma ilk denemede sessizce başarısız oldu (yinelenen satır vardı); sayım gösterdi (S10). |
+| **Geri alma uygulandı mı?** | DB kısıtını geri koyma ilk denemede sessizce başarısız oldu (yinelenen satır vardı); sayım gösterdi (S10). Derlenen yüzde geri alma kaynağı düzeltir, derlemeyi değil — ekran bozuk hâli ölçmeye devam etti (P8, tuzak §63). |
 
 **Deneme tutmazsa (hiçbir test düşmezse) testi suçla, kodu değil.** Örnek:
 "ödeme olayı durum yazmaz" kararını bozdum, test düşmedi; çünkü test

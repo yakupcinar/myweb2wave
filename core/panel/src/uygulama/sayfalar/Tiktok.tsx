@@ -281,7 +281,8 @@ function TiktokGovdesi({
                     </ul>
                 </Kart>
             ) : null}
-            <div className="flex flex-wrap items-center justify-end gap-3">
+            {/* P8: satırdaki her düğme büyük "Bağlantıyı kaydet" ile aynı yükseklikte. */}
+            <div className="flex flex-wrap items-center justify-end gap-3 [&_button]:min-h-11">
                 {(hataMesaji ?? dene.error?.message) ? (
                     <span role="alert" className="text-tehlike">
                         {hataMesaji ?? dene.error?.message}

@@ -4,8 +4,10 @@
 // alan bu sınıfı kullanır (p7-taslak-farki.md).
 import { useId, type ReactNode } from "react";
 
+// P8: yerel <select> aynı dolguyla 38 px çiziliyordu (alan ve düğme 36) — satır
+// içi formda göze batıyordu (bin/panel-ekran esitsizSatirlar); yalnız seçim sabitlenir.
 const temel =
-    "min-w-0 rounded-lg border border-kenar-2 bg-yuzey px-2.5 py-2 text-[15px] text-metin placeholder:text-soluk focus:outline-2 focus:-outline-offset-1 focus:outline-vurgu disabled:bg-yuzey-2 disabled:text-soluk";
+    "min-w-0 [&:is(select)]:h-9 rounded-lg border border-kenar-2 bg-yuzey px-2.5 py-2 text-[15px] text-metin placeholder:text-soluk focus:outline-2 focus:-outline-offset-1 focus:outline-vurgu disabled:bg-yuzey-2 disabled:text-soluk";
 
 export const alanSinifi = `w-full ${temel}`;
 

@@ -68,7 +68,9 @@ const hazirTemaAlani = (
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
+                    // P8: sabit 3 sütun dar sağ panelde (çekmece açık) taşıyordu; sütun
+                    // sayısı genişlikten — 88 px en uzun ad (Okyanus) + nokta + dolgu.
+                    gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))",
                     gap: 6,
                 }}
             >
@@ -191,9 +193,12 @@ function StokArama({
                     placeholder="Stok fotoğraf ara (İngilizce)"
                     value={sorgu}
                     onChange={(e) => setSorgu(e.target.value)}
-                    style={{ flex: 1, minWidth: 0 }}
+                    className="dz-alan"
+                    style={{ flex: 1 }}
                 />
-                <button type="submit">Ara</button>
+                <button type="submit" className="dz-dugme">
+                    Ara
+                </button>
             </form>
             {sonuclar.length ? (
                 <div
@@ -231,6 +236,7 @@ function StokArama({
                     href="https://www.pexels.com"
                     target="_blank"
                     rel="noreferrer"
+                    className="dz-baglanti"
                 >
                     Fotoğraflar: Pexels
                 </a>
@@ -307,7 +313,11 @@ function GorselSecici({
                     }}
                 />
             ) : null}
-            <select value={value} onChange={(e) => onChange(e.target.value)}>
+            <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="dz-alan"
+            >
                 <option value="">— görsel yok —</option>
                 {liste.map((g) => (
                     <option key={g.id} value={g.id}>
@@ -315,33 +325,40 @@ function GorselSecici({
                     </option>
                 ))}
             </select>
-            <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    const govde = new FormData();
-                    govde.append("dosya", f);
-                    const y = await fetch(ortam.medyaAdresi, {
-                        method: "POST",
-                        headers: { "X-CSRF-Token": ortam.jeton },
-                        body: govde,
-                    });
-                    const j = (await y.json()) as {
-                        id?: string;
-                        hatalar?: string[];
-                    };
-                    if (!y.ok || !j.id) {
-                        setHata((j.hatalar ?? ["yüklenemedi"]).join(" · "));
-                        return;
-                    }
-                    setHata("");
-                    await yenile();
-                    onChange(j.id);
-                }}
-            />
-            {hata ? <small style={{ color: "#cf222e" }}>{hata}</small> : null}
+            {/* P8: tarayıcının "Choose File" düğmesi yerine panel düğmesi; girdi içinde, görünmez. */}
+            <label className="dz-dugme" style={{ justifySelf: "start" }}>
+                Görsel yükle
+                <input
+                    type="file"
+                    className="dz-gizli"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        const govde = new FormData();
+                        govde.append("dosya", f);
+                        const y = await fetch(ortam.medyaAdresi, {
+                            method: "POST",
+                            headers: { "X-CSRF-Token": ortam.jeton },
+                            body: govde,
+                        });
+                        const j = (await y.json()) as {
+                            id?: string;
+                            hatalar?: string[];
+                        };
+                        if (!y.ok || !j.id) {
+                            setHata((j.hatalar ?? ["yüklenemedi"]).join(" · "));
+                            return;
+                        }
+                        setHata("");
+                        await yenile();
+                        onChange(j.id);
+                    }}
+                />
+            </label>
+            {hata ? (
+                <small style={{ color: "var(--dz-tehlike)" }}>{hata}</small>
+            ) : null}
             {kaynak ? (
                 <small>
                     Foto:{" "}
@@ -1457,7 +1474,8 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             // M3b: ödeme sonrası ekran — adım değil; giriş bağlantısı alanı sayfada sabit.
             OdemeSonrasi: {
-                label: "Ödeme sonrası ekran (en çok bir)",
+                // P8: çekmecede "Ödeme sonrası ekran (en ç…" diye kesiliyordu.
+                label: "Ödeme sonrası (en çok bir)",
                 fields: {
                     baslik: { type: "text", label: "Başlık" },
                     bloklar: { type: "slot", allow: BLOK_BILESENLERI },
@@ -1515,7 +1533,7 @@ export function yapilandirma(ortam: Ortam): Config<Bilesenler, KokProps> {
             },
             Paywall: {
                 // M2c: birden çok olabilir; son adım ödeme olmalı, öndekine yönlendirmeyle gidilir.
-                label: "Ödeme (son adım ödeme olmalı)",
+                label: "Ödeme (son adım)",
                 fields: {
                     kimlik: kimlikAlani,
                     baslik: { type: "text", label: "Başlık" },

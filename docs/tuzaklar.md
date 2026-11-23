@@ -488,3 +488,14 @@ metnini de katar, tarayıcı ve ekran okuyucu bu adı kullanır.
 ayrı `generic` düğümde); `<button>Duz metin</button>` → `button "Duz metin"`.
 **Doğrusu:** adı araçtan değil testten ölç: `getByRole("button", { name: "…" })` (dom-accessibility-api accname
 hesaplar); tarayıcıda `read_page` `filter: "all"` ile alt düğümdeki metne bak.
+
+## §63 — Kırma denemesinde kaynağı geri almak derlenmiş çıktıyı geri almaz
+**Belirti:** derlenen bir ön yüzde (panel `npm run build` → `dist`) kırma denemesi sonrası dosya `cp` ile geri alınır,
+sonraki ölçüm (ekran döngüsü, tarayıcı) yine **bozuk** hâli ölçer; düzgün kod "kusurlu" görünür ya da sonraki denemenin
+kırmızısı önceki denemeden gelir.
+**Sebep:** ekran döngüsü kaynağı değil derlenmiş `dist`'i sunar; geri alma yalnız kaynağı düzeltir, derleme bozuk
+denemedeki gibi kalır.
+**Ölçüm (2026-11-23, P8):** K10b (rozetin `nowrap`'ı kaldırıldı) → geri alındı, derlenmedi → sonraki ölçümde
+"Yayındakiyle aynı" iki satır (`63/92, 82/31`), CSS dosyasında kural yerindeydi; yeniden derleyince satır tek.
+**Doğrusu:** derlenen yüzde kırma betiği geri almadan sonra **yeniden derler** (`npm run build`), ölçüm ondan sonra;
+derleme hatasıyla gelen kırmızı sahtedir (§8).

@@ -22,6 +22,7 @@ import {
     type Tanim,
     type Tema,
 } from "./donustur";
+import { GORUNUMLER, SOZLUK } from "./sozluk";
 import { AiSohbeti } from "./AiSohbeti";
 import {
     disaridakiBloklar,
@@ -273,6 +274,10 @@ export function Duzenleyici({
                 config={yapilandirma(ortam)}
                 data={ilk}
                 headerTitle={baslik}
+                dictionary={SOZLUK}
+                // P8: üst şerit (← Huniler) Puck'ın 100dvh'sine eklenince sayfa kayıyor, kaydırma çubuğu sağ paneli 15 px kesiyordu.
+                height="calc(100dvh - var(--dz-ust-yukseklik))"
+                viewports={GORUNUMLER}
                 plugins={eklentiler}
                 onChange={(veri) => setGuncel(imza(veri))}
                 overrides={{

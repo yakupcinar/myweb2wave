@@ -59,6 +59,8 @@ değil; KeepChat'te **her seferinde** iddia başka bir şeyi ölçüyordu
 | İddia her koşulda aynı sonucu veriyor | İşleç önceliği: birleştirme karşılaştırmadan **önce** bağlanıyor | Koşulu parantez içine al |
 | Ayar doğru ama davranış ölçülmemiş | Test nesneyi **elle kuruyor**; uygulamanın kendi kurulum yolunu kullanmıyor | Nesneyi uygulamanın yolundan al |
 | İzin/dosya kontrolü hiç düşmüyor | "Çalıştırılabilir mi" sorusu **root** olarak her zaman evet der | İzin bitlerini doğrudan oku |
+| Geri alındı, sonraki ölçüm hâlâ bozuk | Ekran **derlenmiş** çıktıyı ölçüyor; geri alma yalnız kaynağı düzeltti (tuzak §63) | Geri almadan sonra yeniden derle |
+| Kural kaldırıldı, ekran ölçümü yeşil ama ekranda kusur var | Ölçümün eşiği kusuru yutuyor: iki satıra kırılan düğme `min-height`'ın içinde kaldı, yükseklik farkı yok | Kusuru doğrudan ölç (satır sayısı); ekranla karşılaştır |
 
 ⚠️ Testi düzelttikten sonra **denemeyi tekrarla**. Düştüğünü görmeden
 "tamam" deme.
