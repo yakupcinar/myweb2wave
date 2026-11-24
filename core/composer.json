@@ -13,7 +13,7 @@
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.7",
         "maxmind-db/reader": "^1.14",
-        "mcp/sdk": "0.8.1",
+        "mcp/sdk": "0.10.0",
         "nelmio/cors-bundle": "^2.6",
         "nyholm/psr7": "^1.8",
         "psr/log": "^3.0",
